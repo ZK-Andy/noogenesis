@@ -1,0 +1,32 @@
+# validate.yml — CI 拥有穷尽矩阵（hooks 只做快检查）；与本地 pre-push 同一套门禁
+# Provenance：蒸馏自 dotnet-deepseek-harness-desktop .github/workflows/ci.yml 的文档门禁面（MIT，2026-09-05）；
+# P2 共享层"CI 复验闸"的雏形（主设计 §9.3：跨机器重跑同一套验证，绿了才合入）。
+name: validate
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  gates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 门禁第一梯队（七件）
+        run: |
+          python3 scripts/verify-adr-format.py
+          python3 scripts/verify-doc-budgets.py --manifest scripts/doc-budgets.manifest.json
+          python3 scripts/verify-md-links.py
+          python3 scripts/verify-cookbook.py
+          python3 scripts/verify-skill-format.py
+          python3 scripts/verify-handoff-structure.py
+          bash scripts/change-scope.sh
+
+      - name: self-test 抽查（违约样例必须 FAIL）
+        run: |
+          python3 scripts/verify-adr-format.py --self-test
+          python3 scripts/verify-cookbook.py --self-test
+          python3 scripts/verify-skill-format.py --self-test
+          python3 scripts/verify-handoff-structure.py --self-test

@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """Verify word budgets for standing docs, driven by a manifest JSON.
 
+Provenance: distilled from dotnet-deepseek-harness-desktop/scripts/verify-doc-budgets.py
+(MIT, 2026-09-05); verbatim port, no logic changes for Noogenesis.
+
 Manifest format (doc-budgets.manifest.json at repo root or passed via --manifest):
 {
   "budgets": [

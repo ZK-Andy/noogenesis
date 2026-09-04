@@ -1,5 +1,7 @@
 # AGENTS.md 分层模板（适用任意语言/任意平台项目）
 
+> Provenance：逐字节搬运自 dotnet-deepseek-harness-desktop `templates/agents-hierarchy.md`（MIT，2026-09-05；desktop 版已修复 devops-template 版的 typo 与校验 bug）。
+
 > 原则：**每个事实只有一个家**；根文件只放"每次会话都需要的常驻命令"（每条 1-3 行 + 链接）；详情放专属文档，由 agent 按需读取。
 > 用法：把下面各节内容填入对应文件，删掉不需要的节；按 `## 字数预算` 表为每份文件定上限。
 

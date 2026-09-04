@@ -1,5 +1,7 @@
 # Agent Note: <标题：动宾短句>
 
+> Provenance：逐字节搬运自 dotnet-deepseek-harness-desktop `templates/adr-implemented.md`（MIT，2026-09-05；desktop 版已修复 devops-template 版的 typo 与校验 bug）。
+
 Status: implemented
 
 中文（双语暂不启用；启用时恢复 .md + .zh.md 配对 + .i18n.yaml）

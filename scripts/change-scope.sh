@@ -10,6 +10,8 @@
 #   ./scripts/change-scope.sh [<base-ref> [<head-ref>]]   # 显式指定；缺省自动取最近 fork-point
 #   ./scripts/change-scope.sh                             # 自动推导 base
 #
+# Provenance：逐字节搬运自 dotnet-deepseek-harness-desktop/scripts/change-scope.sh（MIT，2026-09-05），零修改。
+#
 # 原则（来自 dsh-pre-push-checks 的最小证据）：绝不臆测 base，能用显式 ref 就用显式 ref；
 # 自动推导仅作为便利，结果需人工确认。
 set -euo pipefail

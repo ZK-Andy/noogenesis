@@ -10,3 +10,6 @@ node_modules/
 /.codegraph/
 /.zcode/
 /.saucer/
+
+# 评审简报（评审启动门禁的输入；证据进 journal/HANDOFF，简报本体不入库——desktop 惯例）
+/.review-briefs/
