@@ -32,7 +32,7 @@ Status: implemented
 ## Consequences
 
 - ①行为恒等与门禁：新旧脚本输出逐行一致实测（含 self-test dead-link 负路径）；七门禁 + 四 self-test 全绿。
-- ②=约定已立即生效；合规验收待 v0.2 的 `verify-review-tier` / `verify-review-brief` 出生时对照 Decision 第 2 条执行（当前无新脚本可判）。
+- ②=约定已立即生效且首轮合规验收已对照执行（2026-09-05：`verify-review-tier` / `verify-review-brief` 出生即按 Decision 第 2 条落地——argparse 分派 / fixture 触碰主逻辑 / assert 带消息 / OK 行格式，见 [review-mechanical-gate ADR](../process/2026-09-05-review-mechanical-gate.md)）；后续新增 `verify-*` 脚本继续对照本条执行。
 - `import mdref` 依赖 sys.path[0]=scripts/（CI/hooks 均以 `python3 scripts/verify-*.py` 从仓根调用，实测成立）；出现包外导入用例时需改包结构——当前无此用例。
 - 两脚本 provenance 头与 desktop 上游差异扩大（共享件移至 `mdref.py`），头注已同步更新差异说明。
 - feature-flow 评审节不再自持范围/简报/并行契约全文，改读 review.md——同一定义单一来源消除漂移，代价是读流程卡需跳转一次。

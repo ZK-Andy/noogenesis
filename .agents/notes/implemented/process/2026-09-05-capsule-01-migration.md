@@ -11,7 +11,7 @@ Status: implemented
 
 ## Decision
 
-按"提炼后搬迁"执行（[计划 §2](../../../../capsule-01-migration-plan.md) 六原则）：常驻基座（双层 AGENTS）+ 流程卡 6 张 + ADR 生命周期 + 门禁第一梯队 7 个零依赖脚本 + cookbook 原子踩坑 + HANDOFF 家庭；评审机械闸（verify-review-tier / verify-review-brief）延后胶囊 v0.2 落地（ADR `2026-09-05-review-mechanical-gate`）；dsh-continual-evolve 整仓冻结留原地、仅作 P1 演化引擎对标。负面清单（不搬项）以计划 §6 为准，其中"自动沉淀零收益"等负面结论将蒸馏为 cookbook 原子保留失败面。每件资产头部带 provenance 行；已知缺陷 9 条在搬迁时修复（计划 §7）。本仓同时 self-hosting：用心源体系开发心源。
+按"提炼后搬迁"执行（[计划 §2](../../../../capsule-01-migration-plan.md) 六原则）：常驻基座（双层 AGENTS）+ 流程卡 6 张 + ADR 生命周期 + 门禁第一梯队 7 个零依赖脚本 + cookbook 原子踩坑 + HANDOFF 家庭；评审机械闸（verify-review-tier / verify-review-brief）延后胶囊 v0.2 落地（ADR [2026-09-05-review-mechanical-gate](2026-09-05-review-mechanical-gate.md)）；dsh-continual-evolve 整仓冻结留原地、仅作 P1 演化引擎对标。负面清单（不搬项）以计划 §6 为准，其中"自动沉淀零收益"等负面结论将蒸馏为 cookbook 原子保留失败面。每件资产头部带 provenance 行；已知缺陷 9 条在搬迁时修复（计划 §7）。本仓同时 self-hosting：用心源体系开发心源。
 
 ## Alternatives considered
 

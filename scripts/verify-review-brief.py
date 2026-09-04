@@ -10,25 +10,9 @@ lane completes without needing an interrupt. This script mechanically
 checks that discipline.
 
 A brief is a fixed-structure Markdown file at `<repo>/.review-briefs/R<N>-<topic>.md`
-(local work doc, gitignored). Structure mirrors docs/method/review.md §3:
-
-    # R<N> 评审简报（<lane name>）
-
-    ## Scope
-    - base: <git ref>  head: <git ref>
-    - 需深审面（精读，逐行判读）：<files this lane reads line-by-line>
-    - 陪跑文件（机器门禁已盖，扫读确认即可）：<other changed files; 无 when none>
-    - 门禁自证（主会话实跑，exit 随行）：<script>:<exit>，…
-    - diff 面相邻件（一层以内，按需引用）：<list or 无>
-
-    ## Directed checks（≤5 条）
-    - [ ] <check: what to verify + where the evidence is>
-
-    ## Explicitly out of scope
-    - <what this lane must NOT do>
-
-    ## Report contract
-    - 返回 Blocker[]/Suggestion[]，每条 `文件:行 + 一句证据`；空即"无发现"
+(local work doc, gitignored). The structure template and its field rules are
+owned by docs/method/review.md §3 (single home); this gate enforces the
+machine-checkable subset.
 
 Rules enforced:
   - lanes R1/R2/R3 each require exactly one brief under .review-briefs/

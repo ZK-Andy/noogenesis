@@ -1,6 +1,6 @@
 # 功能开发流程（feature-flow）
 
-> Provenance：蒸馏自 dotnet-deepseek-harness-desktop（MIT，2026-09-05）。差异：.NET 命令 → 本仓门禁面；评审机械闸已落地（ADR `2026-09-05-review-mechanical-gate`），路径触发机械分类 + 语义判据人工定档，按 [docs/method/review.md](../../docs/method/review.md) 判据；**结构重排**——源版步骤 5 为 321 词单段（超密长段教训），本版全部契约拆小节，段落密度纪律：单段 ≤120 词，多契约用小节或表格。
+> Provenance：蒸馏自 dotnet-deepseek-harness-desktop（MIT，2026-09-05）。差异：.NET 命令 → 本仓门禁面；评审机械闸已落地（ADR [2026-09-05-review-mechanical-gate](../notes/implemented/process/2026-09-05-review-mechanical-gate.md)），路径触发机械分类 + 语义判据人工定档，按 [docs/method/review.md](../../docs/method/review.md) 判据；**结构重排**——源版步骤 5 为 321 词单段（超密长段教训），本版全部契约拆小节，段落密度纪律：单段 ≤120 词，多契约用小节或表格。
 >
 > 非平凡功能/变更的主链路；琐碎修改走简化路径（实现+门禁+提交）。
 

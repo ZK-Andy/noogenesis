@@ -9,6 +9,7 @@
 
 - 2026-09-05｜**胶囊 01 搬迁收口（S7 dogfood FULL 三审全过；ADR `capsule-01-migration` + 三拍板 ADR；commits `dd32053`→`1b7346f`）**：R1/R2/R3 Blocker 0+0+4，30 条建议 21 修 3 落简化候选待办；R3 Blocker（虚引用/决策无家/证据强度升级）全修，结论见 journal 2026-09 卷。README 核对无变更。
 - 2026-09-05｜**简化候选收口（FULL 三审全过；ADR `consolidate-r1-simplification-candidates`；commits `cf45f32`→收口）**：R1/R2/R3 = 0/3、0/3、1/4，Blocker（ADR 措辞失实）+8 建议全修；`scripts/mdref.py` 单一来源化 −84 行、行为恒等实测；py 头注 ADR 引用立日期+主题口径。
+- 2026-09-05｜**评审机械闸落地（胶囊 v0.2 收口件；ADR `2026-09-05-review-mechanical-gate`；commits `0b3a501`→收口）**：R1/R2/R3 = 1/7、2/6、2/2 全采纳（fail-closed 双修、lane 推导修复、CI 真强制）；门禁 7→9；Review 证据行首签、tier 全链路转绿。**节点：体系 v0.2 收口，下一步（D）立项讨论轮。**
 
 ## 背景
 
@@ -26,7 +27,7 @@ Noogenesis（心源）：DeepSeek Harness 之上的"蜂群进化框架"；终极
 
 ## 当前状态
 
-- **胶囊 01 搬迁按计划实施中**（S1 骨架 ✅、S2 常驻基座 ✅、S3 门禁第一梯队 ✅、S4 流程卡 6 张 ✅、S5 知识层 ✅；S6 交接、S7 CI+dogfood 进行中）。
+- **胶囊 01 搬迁已收口**（S1–S7 全过：骨架/基座/门禁/流程卡/知识层/交接/CI+dogfood，FULL 三审全过）；**胶囊 v0.2 评审机械闸已落地**（tier + brief 两闸，门禁 7→9；ADR `2026-09-05-review-mechanical-gate`）。
 - 门禁第一梯队 7 件全绿（含 self-test）：adr-format / doc-budgets / md-links（含 skills/）/ cookbook / skill-format / handoff-structure（修复版）/ change-scope。
 - 技能 noo-* 7 个已被 DSH 自动发现；评审机械闸已落地（verify-review-tier + verify-review-brief，ADR [2026-09-05-review-mechanical-gate](.agents/notes/implemented/process/2026-09-05-review-mechanical-gate.md)），门禁 7→9。
 - 四项拍板：评审闸延后 v0.2 ✅ / journal 入 git ✅ / 技能前缀 noo-* ✅ / cookbook 首批 15 条 ✅。
