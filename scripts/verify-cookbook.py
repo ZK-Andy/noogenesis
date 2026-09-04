@@ -3,8 +3,8 @@
 entry format, and date validity.
 
 The cookbook is the single home for implementation-stage procedural pitfalls
-(see root AGENTS.md doc discipline "procedure → cookbook" and the ADR
-2026-08-27-adr-naming-and-script-pitfall-records.md). Each entry must carry a
+(see root AGENTS.md doc discipline "procedure → cookbook" and
+.agents/notes/README.md for the ADR home). Each entry must carry a
 stage label from a closed set so the product/environment/script discriminators
 stay machine-checkable — labels degrade into synonyms if left free-form.
 
@@ -35,12 +35,14 @@ from pathlib import Path
 
 DEFAULT_PATH = Path("docs/cookbook.md")
 
-# Closed stage set — kept in sync with root AGENTS.md / .agents/AGENTS.md and
-# the ADR. Adding or renaming a stage must update all three + this set.
+# Closed stage set — canonical home is this set + docs/cookbook.md header
+# (the "sync with AGENTS/ADR" claim of the desktop source was stale: no such
+# enumeration lives elsewhere here). Adding or renaming a stage must update
+# this set, the display order below, and re-run --self-test.
 STAGE_SET = ("演化", "门禁", "文档", "协作", "环境", "上游", "产品")
 
-# Stage sorted into a canonical display order for the doc; must be a permutation
-# of STAGE_SET. Used by --self-test and to keep the section order deterministic.
+# Canonical display order; asserted to be a permutation of STAGE_SET in
+# --self-test (no silent drift).
 STAGE_ORDER = ("演化", "门禁", "文档", "协作", "环境", "上游", "产品")
 
 # An entry line inside a stage section:
@@ -108,7 +110,7 @@ def _scan(path: Path) -> tuple[int, list[str]]:
         hm = HEADING_RE.match(line.strip())
         if hm:
             stage = hm.group("stage").strip()
-            if stage.startswith("#") or stage == "Gotchas":
+            if stage.startswith("#"):
                 current_stage = None
                 continue
             if stage not in STAGE_SET:
@@ -136,6 +138,9 @@ def _self_test() -> int:
     """Offline fixture self-check: build a conforming and a violating cookbook,
     assert the validator flags exactly the expected ones."""
     import tempfile
+
+    # display order must be a permutation of the closed set (drift guard)
+    assert sorted(STAGE_ORDER) == sorted(STAGE_SET), "STAGE_ORDER drifted from STAGE_SET"
 
     HEADERS = "\n".join(f"## {s}" for s in STAGE_ORDER)
     # Use a past date so "not after today" holds regardless of run day.

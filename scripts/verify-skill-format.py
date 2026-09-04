@@ -10,9 +10,10 @@ Checks every `<dir>/SKILL.md` under `.agents/skills/`:
     the fragment matches a heading slug or explicit `<a id="...">`
   - body contains a positioning line and a workflow section (guards empty filler)
 
-Skills are the project's own; references must resolve against this repo (this
-script intentionally does NOT skip skills/, unlike verify-md-links, because the
-whole point is to surface broken references that upstream skills would hide).
+Skills are the project's own; references must resolve against this repo.
+verify-md-links.py also checks skills/ by default since the same fix; this
+script additionally enforces frontmatter/structure, so a skill cannot be
+introduced with broken references at all.
 
 Usage: python3 scripts/verify-skill-format.py [--self-test]
 Exit code 0 = pass, 1 = violations.

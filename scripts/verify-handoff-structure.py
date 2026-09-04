@@ -64,7 +64,11 @@ TODOS_REF_RE = re.compile(r"HANDOFF-todos\.md")
 # (upstream hardcoded one month and broke on rollover); existence is only
 # enforced for volumes of past months — a fresh month may legitimately have
 # nothing archived yet.
-CURRENT_MONTH = datetime.date.today().strftime("%Y-%m")
+# Single clock: UTC now, read once at import; CURRENT_MONTH and the self-test
+# fixtures derive from it (UTC aligns with verify-cookbook.py's tolerance
+# precedent; single read kills the cross-midnight two-read nondeterminism).
+_NOW = datetime.datetime.now(datetime.timezone.utc)
+CURRENT_MONTH = _NOW.strftime("%Y-%m")
 
 
 def _scan(handoff: Path, todos_path: Path, max_window: int, max_entry: int,
@@ -79,7 +83,10 @@ def _scan(handoff: Path, todos_path: Path, max_window: int, max_entry: int,
     false-failing.
     """
     if not handoff.is_file():
-        return 0, []  # absent in clean CI: nothing to guard
+        # HANDOFF family is committed in git (ADR 2026-09-05-journal-in-git):
+        # absence is a violation, not a clean-CI exemption.
+        return 0, [f"{handoff}: HANDOFF not found — the family is tracked in "
+                   f"git; deleting it must go through an ADR, not silence."]
 
     errors: list[str] = []
     text = handoff.read_text(encoding="utf-8")
@@ -149,22 +156,26 @@ def _scan(handoff: Path, todos_path: Path, max_window: int, max_entry: int,
         errors.append(f"{handoff}: todos file missing: {todos_path} "
                       f"(create {todos_path.name} for the action area).")
 
-    # 5) journal archive pointer present + referenced volume resolution
-    journal_ref = JOURNAL_RE.search(text)
-    if not journal_ref:
+    # 5) journal pointers: every `journal/…​.md` mention must resolve for
+    # past months; the current month may legitimately have no volume yet.
+    # Validating ALL matches (not just the first) removes the fragility where
+    # an early prose mention silently retargets the check.
+    refs = JOURNAL_RE.findall(text)
+    if not refs:
         errors.append(
             f"{handoff}: missing archive pointer to `journal/<YYYY-MM>.md` "
             f"(add a '## 会话叙事档案' note so old narrative has a home).")
     else:
-        vol = journal_ref.group(0).split("/")[-1]
-        jpath = handoff.parent / "journal" / vol
-        if not jpath.is_file():
+        for ref in refs:
+            vol = ref.split("/")[-1]
+            jpath = handoff.parent / "journal" / vol
+            if jpath.is_file():
+                continue
             m = re.fullmatch(r"(\d{4})-(\d{2})\.md", vol)
-            is_current = bool(m) and m.group(1) == CURRENT_MONTH[:4] \
-                and m.group(2) == CURRENT_MONTH[5:]
+            is_current = bool(m) and vol == f"{CURRENT_MONTH}.md"
             if not is_current:
-                errors.append(f"{handoff}: referenced journal volume '{vol}' not "
-                              f"found at {jpath}")
+                errors.append(f"{handoff}: referenced journal volume '{vol}' "
+                              f"not found at {jpath}")
     return window_count, errors
 
 
@@ -204,12 +215,13 @@ def _self_test() -> int:
     """Offline fixture self-check built from synthetic HANDOFF trees."""
     import tempfile
 
-    # Deterministic volume names: a past month that exists / a past month that
-    # does not exist / the current month (allowed to be missing).
-    today = datetime.date.today()
-    prev_month = (today.replace(day=1) - datetime.timedelta(days=1)).strftime("%Y-%m")
+    # Deterministic volume names, derived from the single module-level UTC
+    # clock (no second read -> no cross-midnight flake): a past month that
+    # exists / a past month that does not exist / the current month (allowed
+    # to be missing).
+    prev_month = (_NOW.replace(day=1) - datetime.timedelta(days=1)).strftime("%Y-%m")
     vol_exists = f"{prev_month}.md"
-    vol_missing = f"{prev_month - 1 if False else (today.replace(day=1) - datetime.timedelta(days=41)).strftime('%Y-%m')}.md"
+    vol_missing = (_NOW.replace(day=1) - datetime.timedelta(days=41)).strftime("%Y-%m") + ".md"
     vol_current = f"{CURRENT_MONTH}.md"
 
     def build(tree: Path, entries: list[str], journal: bool, sections: bool,

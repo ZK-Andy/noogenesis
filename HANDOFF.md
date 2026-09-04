@@ -11,7 +11,7 @@
 
 ## 背景
 
-Noogenesis（心源）：DeepSeek Harness 之上的"蜂群进化框架"；终极北极星 AGI（只定方向）；当前落地 = 第一个进化胶囊「AI 协作编码方法论」——四源（devops-template / dotnet-deepseek-harness-desktop / dsh-frecency / work 区）提炼搬迁，self-hosting：用心源体系开发心源。设计基准 `docs/research/dsh-swarm-evolution-framework-design.md`；搬迁计划 `capsule-01-migration-plan.md`（评审定稿 2026-09-05）。
+Noogenesis（心源）：DeepSeek Harness 之上的"蜂群进化框架"；终极北极星 AGI（只定方向）；当前落地 = 第一个进化胶囊「AI 协作编码方法论」——四源（devops-template / dotnet-deepseek-harness-desktop / dsh-frecency / work 区）提炼搬迁，self-hosting：用心源体系开发心源。设计基准 `docs/research/dsh-swarm-evolution-framework-design.md`；搬迁计划 [capsule-01-migration-plan.md](capsule-01-migration-plan.md)（评审定稿 2026-09-05）。
 
 ## 位置
 
@@ -44,6 +44,6 @@ Noogenesis（心源）：DeepSeek Harness 之上的"蜂群进化框架"；终极
 
 1. 读本文件状态区 + 滚动窗 + `HANDOFF-todos.md` 待办区；过程细节按需读 `journal/2026-09.md`。
 2. `git log --oneline -8 && git status` 对账（HEAD 多出提交先查明）。
-3. 门禁基线：`scripts/verify-*.py` 七脚本全绿。
+3. 门禁基线：质量门七件全绿（六个 `verify-*.py` + `change-scope.sh`，清单见根 AGENTS「质量门」）。
 4. 读根 `AGENTS.md` 与 `.agents/workflows/session-modes.md`，声明会话模式。
 5. 向用户复述关键状态与待办，等待命令。

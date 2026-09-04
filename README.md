@@ -6,7 +6,7 @@ noogenesis＝心智的发生与持续生长（德日进谱系下集体知识演�
 
 ## 当前状态
 
-**胶囊 01「AI 协作编码方法论」**（本仓即其第一个宿主，self-hosting）：由四个来源项目提炼搬迁而成——常驻基座（双层 AGENTS）+ 流程卡 + ADR 生命周期 + 机器门禁 + 原子踩坑库 + 交接家庭。搬迁计划与决策留痕见 `capsule-01-migration-plan.md` 与 `.agents/notes/`。
+**胶囊 01「AI 协作编码方法论」**（本仓即其第一个宿主，self-hosting）：由四个来源项目提炼搬迁而成——常驻基座（双层 AGENTS）+ 流程卡 + ADR 生命周期 + 机器门禁 + 原子踩坑库 + 交接家庭。搬迁计划见 [capsule-01-migration-plan.md](capsule-01-migration-plan.md)，决策留痕见 [.agents/notes/](.agents/notes/README.md)。
 
 ## 结构
 

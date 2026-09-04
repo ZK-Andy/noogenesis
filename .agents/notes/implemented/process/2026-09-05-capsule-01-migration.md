@@ -2,7 +2,7 @@
 
 Status: implemented
 
-> Provenance：决策依据为 `capsule-01-migration-plan.md`（评审定稿 2026-09-05）；四路来源盘点结论已并入该计划 §3/§5/§6/§7。
+> Provenance：决策依据为 [capsule-01-migration-plan.md](../../../../capsule-01-migration-plan.md)（评审定稿 2026-09-05）；四路来源盘点结论已并入该计划 §3/§5/§6/§7。
 
 ## Problem
 
