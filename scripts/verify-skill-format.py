@@ -20,7 +20,9 @@ Exit code 0 = pass, 1 = violations.
 
 Provenance: distilled from dotnet-deepseek-harness-desktop/scripts/verify-skill-format.py
 (MIT, 2026-09-05). Diff vs source: expected minimum skill count 8 -> 7
-(Noogenesis ships 7 skills: noo-* prefix per ADR 2026-09-05-skill-prefix-noo).
+(Noogenesis ships 7 skills: noo-* prefix per ADR 2026-09-05-skill-prefix-noo);
+link/anchor primitives consolidated into scripts/mdref.py (ADR
+.agents/notes/proposed/simplification/2026-09-05-consolidate-r1-simplification-candidates.md).
 """
 
 import argparse
@@ -28,37 +30,13 @@ import re
 import sys
 from pathlib import Path
 
+from mdref import check_relative_links
+
 ROOT = Path(__file__).resolve().parent.parent
 SKILLS_DIR = ROOT / ".agents" / "skills"
 
 NAME_RE = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 FRONTMATTER_RE = re.compile(r"^---\s*$")
-LINK_RE = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
-HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*#*\s*$")
-ANCHOR_RE = re.compile(r'<a\s+id="([^"]+)"')
-
-
-def slugify(text: str) -> str:
-    text = text.strip().lower()
-    text = re.sub(r"[^\w\u4e00-\u9fff \-]", "", text)
-    text = re.sub(r"\s+", "-", text)
-    return text
-
-
-def heading_slugs(path: Path) -> set[str]:
-    slugs: set[str] = set()
-    try:
-        lines = path.read_text(encoding="utf-8").splitlines()
-    except OSError:
-        return slugs
-    for line in lines:
-        m = HEADING_RE.match(line)
-        if m:
-            slugs.add(slugify(m.group(2)))
-        m = ANCHOR_RE.search(line)
-        if m:
-            slugs.add(m.group(1))
-    return slugs
 
 
 def parse_frontmatter(text: str) -> dict | None:
@@ -107,23 +85,7 @@ def check_skill(path: Path, errors: list[str]) -> None:
             )
 
     # relative md links resolve
-    for target in LINK_RE.findall(text):
-        target = target.strip()
-        if target.startswith(("http://", "https://", "mailto:", "#", "<")):
-            continue
-        if "://" in target:
-            continue
-        if target.startswith("/"):
-            resolved = (ROOT / target.lstrip("/")).resolve()
-        else:
-            resolved = (path.parent / target.split("#")[0]).resolve()
-        if not resolved.is_file():
-            errors.append(f"{path}: missing target '{target}'")
-            continue
-        if "#" in target:
-            frag = target.split("#", 1)[1]
-            if frag and frag not in heading_slugs(resolved):
-                errors.append(f"{path}: dead anchor '#{frag}' in '{target}'")
+    check_relative_links(text, str(path), path.parent, ROOT, errors)
 
     # structure guards: positioning + workflow
     body = text

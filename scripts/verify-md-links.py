@@ -19,40 +19,16 @@ Exit code 0 = pass, 1 = violations.
 Provenance: distilled from dotnet-deepseek-harness-desktop/scripts/verify-md-links.py
 (MIT, 2026-09-05). Diff vs source: skills/ exclusion removed (checked by
 default); .plan/ exclusion removed (Noogenesis keeps journal in git under
-journal/); third-party/build dir skip list kept.
+journal/); third-party/build dir skip list kept; link/anchor primitives
+consolidated into scripts/mdref.py (ADR
+.agents/notes/proposed/simplification/2026-09-05-consolidate-r1-simplification-candidates.md).
 """
 
 import argparse
-import re
 import sys
 from pathlib import Path
 
-LINK_RE = re.compile(r"\[[^\]]*\]\(([^)]+)\)")
-HEADING_RE = re.compile(r"^(#{1,6})\s+(.+?)\s*#*\s*$")
-ANCHOR_RE = re.compile(r'<a\s+id="([^"]+)"')
-
-
-def slugify(text: str) -> str:
-    text = text.strip().lower()
-    text = re.sub(r"[^\w\u4e00-\u9fff \-]", "", text)
-    text = re.sub(r"\s+", "-", text)
-    return text
-
-
-def heading_slugs(path: Path) -> set[str]:
-    slugs: set[str] = set()
-    try:
-        lines = path.read_text(encoding="utf-8").splitlines()
-    except OSError:
-        return slugs
-    for line in lines:
-        m = HEADING_RE.match(line)
-        if m:
-            slugs.add(slugify(m.group(2)))
-        m = ANCHOR_RE.search(line)
-        if m:
-            slugs.add(m.group(1))
-    return slugs
+from mdref import check_relative_links
 
 
 def main() -> int:
@@ -71,24 +47,7 @@ def main() -> int:
         if ".agents" in md.parts and "notes" in md.parts and "archived" in md.parts:
             continue
         text = md.read_text(encoding="utf-8")
-        for target in LINK_RE.findall(text):
-            target = target.strip()
-            if target.startswith(("http://", "https://", "mailto:", "#", "<")):
-                continue
-            if "://" in target:
-                continue
-            if target.startswith("/"):  # repo-root absolute: resolve against root
-                resolved = (root / target.lstrip("/")).resolve()
-            else:
-                resolved = (md.parent / target.split("#")[0]).resolve()
-            if not resolved.is_file():
-                errors.append(f"{md}: missing target '{target}'")
-                continue
-            checked += 1
-            if "#" in target:
-                frag = target.split("#", 1)[1]
-                if frag and frag not in heading_slugs(resolved):
-                    errors.append(f"{md}: dead anchor '#{frag}' in '{target}'")
+        checked += check_relative_links(text, str(md), md.parent, root, errors)
 
     print(f"Checked {checked} link targets")
     if errors:
