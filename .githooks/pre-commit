@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# pre-commit — 快检查（仅暂存区；hooks 只做快检查，CI 拥有穷尽矩阵）
+# Provenance：蒸馏自 dotnet-deepseek-harness-desktop .githooks/pre-commit（MIT）；
+# 裁剪：去掉 .NET build/test、verify-governance/code-health/code-conventions、
+# verify-review-tier（评审机械闸延后 v0.2，ADR 2026-09-05-review-mechanical-gate-deferred）；
+# 增加 skill-format（引入即适配纪律）。
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+echo "== pre-commit: 空白与门禁快检 =="
+
+# 1) 空白错误（git 内置 check）
+if ! git diff --cached --check; then
+  echo "error: 发现空白错误（行尾空格/缺换行），请修复后重试" >&2
+  exit 1
+fi
+
+# 2) ADR 格式（仅当 .agents/notes/** 有暂存变更时）
+if git diff --cached --name-only | grep -q "^\.agents/notes/"; then
+  echo "-> verify-adr-format.py"
+  python3 scripts/verify-adr-format.py
+fi
+
+# 3) Markdown 相对链接（快；skills/ 纳入校验——引入即适配）
+echo "-> verify-md-links.py"
+python3 scripts/verify-md-links.py
+
+# 4) cookbook（踩坑记录格式与域标签封闭集）
+echo "-> verify-cookbook.py"
+python3 scripts/verify-cookbook.py
+
+# 5) doc-budgets（快）
+echo "-> verify-doc-budgets.py"
+python3 scripts/verify-doc-budgets.py --manifest scripts/doc-budgets.manifest.json
+
+# 6) 技能格式（仅当 .agents/skills/** 有暂存变更时）
+if git diff --cached --name-only | grep -q "^\.agents/skills/"; then
+  echo "-> verify-skill-format.py"
+  python3 scripts/verify-skill-format.py
+fi
+
+# 7) HANDOFF 结构（快；HANDOFF 家庭入 git，仅存在即校验）
+echo "-> verify-handoff-structure.py"
+python3 scripts/verify-handoff-structure.py
+
+echo "pre-commit OK"

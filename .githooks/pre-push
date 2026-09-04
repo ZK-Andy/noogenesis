@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# pre-push — push 前门禁全跑（最小证据范围内的穷尽；无 .NET 构建面）
+# Provenance：蒸馏自 dotnet-deepseek-harness-desktop .githooks/pre-push（MIT）；
+# 裁剪：去掉 dotnet build/test 与 verify-review-tier（评审机械闸延后 v0.2）。
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+echo "== pre-push: 文档与结构门禁 =="
+
+# 变更范围（供人确认；绝不臆测 base）
+if [[ -x scripts/change-scope.sh ]]; then
+  scripts/change-scope.sh || true
+  echo
+fi
+
+echo "-> 文档与结构门禁"
+python3 scripts/verify-adr-format.py
+python3 scripts/verify-doc-budgets.py --manifest scripts/doc-budgets.manifest.json
+python3 scripts/verify-md-links.py
+python3 scripts/verify-cookbook.py
+python3 scripts/verify-skill-format.py
+python3 scripts/verify-handoff-structure.py
+
+echo "pre-push OK"
