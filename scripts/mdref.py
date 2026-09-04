@@ -1,9 +1,8 @@
 """Shared Markdown link primitives for the verify-* gates.
 
-Single source (ADR .agents/notes/proposed/simplification/
-2026-09-05-consolidate-r1-simplification-candidates.md) for the link/anchor
-definitions and the relative-link resolution loop previously duplicated
-byte-for-byte in verify-md-links.py and verify-skill-format.py.
+Single source (ADR 2026-09-05-consolidate-r1-simplification-candidates)
+for the link/anchor definitions and the relative-link resolution loop of
+verify-md-links.py and verify-skill-format.py.
 
 Consumers run as `python3 scripts/verify-*.py` from the repo root, so
 `sys.path[0]` is scripts/ and a plain `import mdref` resolves. Covered by
@@ -12,7 +11,7 @@ dead-link path through check_skill).
 
 Provenance: distilled from dotnet-deepseek-harness-desktop
 scripts/verify-md-links.py + verify-skill-format.py (MIT, 2026-09-05);
-the shared pieces moved here unchanged per the ADR above.
+the shared pieces live here unchanged per the ADR above.
 """
 
 import re
@@ -47,15 +46,16 @@ def heading_slugs(path: Path) -> set[str]:
 
 
 def check_relative_links(
-    text: str, label: str, base_dir: Path, root: Path, errors: list[str]
+    text: str, path: Path, root: Path, errors: list[str]
 ) -> int:
     """Resolve relative Markdown links in `text` and verify their anchors.
 
-    `label` prefixes error messages (the file being checked). `base_dir`
-    resolves relative targets; `root` resolves repo-root-absolute targets
-    ("/..."). Appends "missing target" / "dead anchor" entries to `errors`
-    and returns the number of targets whose file exists. External
-    (http(s)/mailto) and same-page ("#...") targets are skipped.
+    `path` is the file being checked: its string form prefixes error
+    messages and its parent directory resolves relative targets. `root`
+    resolves repo-root-absolute targets ("/..."). Appends "missing target"
+    / "dead anchor" entries to `errors` and returns the number of targets
+    whose file exists. External (http(s)/mailto) and same-page ("#...")
+    targets are skipped.
     """
     checked = 0
     for target in LINK_RE.findall(text):
@@ -67,13 +67,13 @@ def check_relative_links(
         if target.startswith("/"):  # repo-root absolute: resolve against root
             resolved = (root / target.lstrip("/")).resolve()
         else:
-            resolved = (base_dir / target.split("#")[0]).resolve()
+            resolved = (path.parent / target.split("#")[0]).resolve()
         if not resolved.is_file():
-            errors.append(f"{label}: missing target '{target}'")
+            errors.append(f"{path}: missing target '{target}'")
             continue
         checked += 1
         if "#" in target:
             frag = target.split("#", 1)[1]
             if frag and frag not in heading_slugs(resolved):
-                errors.append(f"{label}: dead anchor '#{frag}' in '{target}'")
+                errors.append(f"{path}: dead anchor '#{frag}' in '{target}'")
     return checked

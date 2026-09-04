@@ -21,8 +21,8 @@ Exit code 0 = pass, 1 = violations.
 Provenance: distilled from dotnet-deepseek-harness-desktop/scripts/verify-skill-format.py
 (MIT, 2026-09-05). Diff vs source: expected minimum skill count 8 -> 7
 (Noogenesis ships 7 skills: noo-* prefix per ADR 2026-09-05-skill-prefix-noo);
-link/anchor primitives consolidated into scripts/mdref.py (ADR
-.agents/notes/proposed/simplification/2026-09-05-consolidate-r1-simplification-candidates.md).
+link/anchor primitives consolidated into scripts/mdref.py (per ADR
+2026-09-05-consolidate-r1-simplification-candidates).
 """
 
 import argparse
@@ -85,7 +85,7 @@ def check_skill(path: Path, errors: list[str]) -> None:
             )
 
     # relative md links resolve
-    check_relative_links(text, str(path), path.parent, ROOT, errors)
+    check_relative_links(text, path, ROOT, errors)
 
     # structure guards: positioning + workflow
     body = text

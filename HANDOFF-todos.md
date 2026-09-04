@@ -6,6 +6,7 @@
 - [ ] **（A）胶囊 v0.2：评审机械闸**——按本仓评审面重写 verify-review-tier 与 verify-review-brief（契约见 [review.md](docs/method/review.md) §1/§3 与 ADR [2026-09-05-review-mechanical-gate-deferred](.agents/notes/implemented/process/2026-09-05-review-mechanical-gate-deferred.md)）；前置：≥1 个真实 FULL 档评审案例作回归对照。
 - [ ] **（A）基因库 repo 名与 npm 注册核验**——npm `@noogenesis` org / `noogenesis` 包名占用再验一次（搜索服务恢复后或手动）；基因库仓库名拍板（设计稿暂用 `dsh-gene-bank`，与 noo-* 技能前缀同理考虑改名）；域名等 taxonomy 细分（主设计 §13.1 开放项）。
 - [x] （B）胶囊 01 v0 首次真实评审：FULL 三审 2026-09-05 完成（Blocker 4→全修），对照样本在 journal 2026-09 卷。
-- [ ] **（C）简化候选实施（三件已拍板，ADR [2026-09-05-consolidate-r1-simplification-candidates](.agents/notes/proposed/simplification/2026-09-05-consolidate-r1-simplification-candidates.md)）**——按 ADR 顺序实施：③ feature-flow 评审节收敛为指针 +「不给结论倾向」迁入 review.md §3 → ① `scripts/mdref.py` 收敛链接校验五件套 → ② self-test 约定随 v0.2 机械闸新脚本生效（存量不回改）；完成后 ADR 转 implemented。
+- [x] （C）简化候选三件拍板+实施 2026-09-05（FULL 三审全过），ADR [2026-09-05-consolidate-r1-simplification-candidates](.agents/notes/implemented/simplification/2026-09-05-consolidate-r1-simplification-candidates.md)。
+- [ ] **（C）verify-adr-format.py 虚引用清理**——L16 provenance 头引用的 ADR「2026-08-27-adr-naming-and-script-pitfall-records.md」在 notes 树不存在（R3 评审旁证实锤）；按 consolidate-r1 ADR Decision 第 4 条口径（日期+主题、引用前核对存在）改写为真实来源。
 - [ ] **（C）cookbook 原子持续蒸馏**——来源仓剩余有价值的踩坑（desktop cookbook 未搬条目、dsh-continual-evolve docs/FAQ 通用项）按需蒸馏；宁少勿滥，每条须有真实症状/根因/规避。
 - [ ] **（D）P1 演化引擎立项准备**——Gene/Capsule Schema 定稿（主设计 §5.1）；对标 dsh-continual-evolve 治理四件套与两段式评估（融合仅在架构定稿后，主设计 §13.5）。

@@ -7,7 +7,8 @@ Checks, for every .md file under the given root (default: current directory):
     slug (GitHub-style: lowercase, spaces->hyphens, strip punctuation) or an
     explicit <a id="slug"> anchor in that file
   - `](https://…)` / `](mailto:…)` / `](<…>)` -> skipped (external)
-  - bare filenames or absolute paths are NOT validated here
+  - bare filenames resolve against the containing file's directory;
+    leading-`/` targets resolve against the scan root
 
 skills/ directories ARE checked (unlike the desktop upstream): Noogenesis
 adopts "引入即适配" — a skill whose upstream path references are not remapped
@@ -20,8 +21,8 @@ Provenance: distilled from dotnet-deepseek-harness-desktop/scripts/verify-md-lin
 (MIT, 2026-09-05). Diff vs source: skills/ exclusion removed (checked by
 default); .plan/ exclusion removed (Noogenesis keeps journal in git under
 journal/); third-party/build dir skip list kept; link/anchor primitives
-consolidated into scripts/mdref.py (ADR
-.agents/notes/proposed/simplification/2026-09-05-consolidate-r1-simplification-candidates.md).
+consolidated into scripts/mdref.py (per ADR
+2026-09-05-consolidate-r1-simplification-candidates).
 """
 
 import argparse
@@ -47,7 +48,7 @@ def main() -> int:
         if ".agents" in md.parts and "notes" in md.parts and "archived" in md.parts:
             continue
         text = md.read_text(encoding="utf-8")
-        checked += check_relative_links(text, str(md), md.parent, root, errors)
+        checked += check_relative_links(text, md, root, errors)
 
     print(f"Checked {checked} link targets")
     if errors:
