@@ -1,7 +1,7 @@
 # 心源胶囊 01「AI 协作编码方法论」搬迁计划
 
 > 日期：2026-09-05
-> 状态：**待审核**（用户拍板后才实施）
+> 状态：**已实施**（2026-09-05 评审定稿拍板后执行完毕；commits `dd32053`→`fe1a43d`，验收记录见 journal/2026-09.md 与 HANDOFF 滚动窗）
 > 定位：Noogenesis 第一个胶囊（= 设计文档 §10"AI 协作编码框架"的 v0 种群）。**提炼后搬迁，不照搬**；本仓同时是这套方法论的第一个宿主（self-hosting：用心源的体系开发心源）。
 > 输入：四路深度盘点（devops-template / dotnet-deepseek-harness-desktop / dsh-frecency / work 区）+ 逐文件亲读交叉印证。
 
