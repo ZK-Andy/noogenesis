@@ -3,7 +3,7 @@
 Status: implemented
 
 > Provenance：决策依据为 [capsule-01-migration-plan.md](../../../../capsule-01-migration-plan.md)（评审定稿 2026-09-05）；四路来源盘点结论已并入该计划 §3/§5/§6/§7。
-> Related：[journal-in-git](2026-09-05-journal-in-git.md) · [review-mechanical-gate-deferred](2026-09-05-review-mechanical-gate-deferred.md) · [skill-prefix-noo](2026-09-05-skill-prefix-noo.md)——三条为本 ADR Decision 的展开拍板项。
+> Related：[journal-in-git](2026-09-05-journal-in-git.md) · [review-mechanical-gate](2026-09-05-review-mechanical-gate.md) · [skill-prefix-noo](2026-09-05-skill-prefix-noo.md)——后两条为 Decision 展开拍板项（机械闸 v0.2 落地）。
 
 ## Problem
 
@@ -11,7 +11,7 @@ Status: implemented
 
 ## Decision
 
-按"提炼后搬迁"执行（[计划 §2](../../../../capsule-01-migration-plan.md) 六原则）：常驻基座（双层 AGENTS）+ 流程卡 6 张 + ADR 生命周期 + 门禁第一梯队 7 个零依赖脚本 + cookbook 原子踩坑 + HANDOFF 家庭；评审机械闸（verify-review-tier / verify-review-brief）延后胶囊 v0.2；dsh-continual-evolve 整仓冻结留原地、仅作 P1 演化引擎对标。负面清单（不搬项）以计划 §6 为准，其中"自动沉淀零收益"等负面结论将蒸馏为 cookbook 原子保留失败面。每件资产头部带 provenance 行；已知缺陷 9 条在搬迁时修复（计划 §7）。本仓同时 self-hosting：用心源体系开发心源。
+按"提炼后搬迁"执行（[计划 §2](../../../../capsule-01-migration-plan.md) 六原则）：常驻基座（双层 AGENTS）+ 流程卡 6 张 + ADR 生命周期 + 门禁第一梯队 7 个零依赖脚本 + cookbook 原子踩坑 + HANDOFF 家庭；评审机械闸（verify-review-tier / verify-review-brief）延后胶囊 v0.2 落地（ADR `2026-09-05-review-mechanical-gate`）；dsh-continual-evolve 整仓冻结留原地、仅作 P1 演化引擎对标。负面清单（不搬项）以计划 §6 为准，其中"自动沉淀零收益"等负面结论将蒸馏为 cookbook 原子保留失败面。每件资产头部带 provenance 行；已知缺陷 9 条在搬迁时修复（计划 §7）。本仓同时 self-hosting：用心源体系开发心源。
 
 ## Alternatives considered
 
@@ -21,4 +21,4 @@ Status: implemented
 
 ## Consequences
 
-收益：四源被验证的纪律以零平台绑定的形式落入本仓；每条纪律自带门禁与出处，成为 P1 gene 协议化的现成基因池。代价：评审机械闸延后意味着 v0 阶段评审靠流程卡契约 + 人工执行（已知缝隙，v0.2 补机械闸）；journal/HANDOFF 入 git 会带来仓库体积与提交噪音增长。验收标准见计划 §9。
+收益：四源被验证的纪律以零平台绑定的形式落入本仓；每条纪律自带门禁与出处，成为 P1 gene 协议化的现成基因池。代价：评审机械闸延后到 v0.2 落地——期间 v0 阶段评审靠流程卡契约 + 人工执行的档位缝隙已由机械闸闭合；journal/HANDOFF 入 git 会带来仓库体积与提交噪音增长。验收标准见计划 §9。

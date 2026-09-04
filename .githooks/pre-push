@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # pre-push — push 前门禁全跑（最小证据范围内的穷尽；无 .NET 构建面）
 # Provenance：蒸馏自 dotnet-deepseek-harness-desktop .githooks/pre-push（MIT）；
-# 裁剪：去掉 dotnet build/test 与 verify-review-tier（评审机械闸延后 v0.2）。
+# 裁剪：去掉 dotnet build/test；评审机械闸 v0.2 落地——tier 闸以 --enforce
+# 挂入（FULL 档 outgoing 缺评审证据即拒推，ADR 2026-09-05-review-mechanical-gate）。
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
@@ -21,5 +22,18 @@ python3 scripts/verify-md-links.py
 python3 scripts/verify-cookbook.py
 python3 scripts/verify-skill-format.py
 python3 scripts/verify-handoff-structure.py
+
+# 评审档位强制：base = 远端现有 sha（git 从 stdin 传 "<local_ref> <local_sha>
+# <remote_ref> <remote_sha>"）；远端为全零（新分支）时退化为工作树报告态。
+echo "-> 评审档位（--enforce）"
+base=""
+if read -r _ local_sha _ remote_sha; then
+  [[ "$remote_sha" =~ ^0+$ ]] || base="$remote_sha"
+fi
+if [[ -n "$base" ]]; then
+  python3 scripts/verify-review-tier.py --enforce --since "$base"
+else
+  python3 scripts/verify-review-tier.py --enforce
+fi
 
 echo "pre-push OK"

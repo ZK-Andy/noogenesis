@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # pre-commit — 快检查（仅暂存区；hooks 只做快检查，CI 拥有穷尽矩阵）
 # Provenance：蒸馏自 dotnet-deepseek-harness-desktop .githooks/pre-commit（MIT）；
-# 裁剪：去掉 .NET build/test、verify-governance/code-health/code-conventions、
-# verify-review-tier（评审机械闸延后 v0.2，ADR 2026-09-05-review-mechanical-gate-deferred）；
-# 增加 skill-format（引入即适配纪律）。
+# 裁剪：去掉 .NET build/test、verify-governance/code-health/code-conventions；
+# 增加 skill-format（引入即适配纪律）；评审机械闸 v0.2 落地——tier 闸以报告态
+# 挂入（批次边界强制在 pre-push --enforce，ADR 2026-09-05-review-mechanical-gate）。
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
@@ -43,5 +43,9 @@ fi
 # 7) HANDOFF 结构（快；HANDOFF 家庭入 git，仅存在即校验）
 echo "-> verify-handoff-structure.py"
 python3 scripts/verify-handoff-structure.py
+
+# 8) 评审档位（报告态：FULL 触发时提示证据缺口，不阻断批内中间提交）
+echo "-> verify-review-tier.py --staged（报告态）"
+python3 scripts/verify-review-tier.py --staged
 
 echo "pre-commit OK"

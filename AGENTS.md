@@ -39,6 +39,8 @@ python3 scripts/verify-md-links.py
 python3 scripts/verify-cookbook.py
 python3 scripts/verify-skill-format.py
 python3 scripts/verify-handoff-structure.py
+python3 scripts/verify-review-tier.py [--staged|--since <base>] [--enforce]
+python3 scripts/verify-review-brief.py [--lanes R1,R2,R3] [--enforce]
 scripts/change-scope.sh [<base> <head>]
 ```
 

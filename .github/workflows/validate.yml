@@ -23,7 +23,7 @@ jobs:
         with:
           fetch-depth: 0   # change-scope.sh 需要 fork-point 历史；浅克隆会退化为空集 no-op
 
-      - name: 门禁第一梯队（七件）
+      - name: 门禁第一梯队（九件）
         run: |
           python3 scripts/verify-adr-format.py
           python3 scripts/verify-doc-budgets.py --manifest scripts/doc-budgets.manifest.json
@@ -31,6 +31,8 @@ jobs:
           python3 scripts/verify-cookbook.py
           python3 scripts/verify-skill-format.py
           python3 scripts/verify-handoff-structure.py
+          python3 scripts/verify-review-tier.py
+          python3 scripts/verify-review-brief.py
           bash scripts/change-scope.sh
 
       - name: self-test 抽查（违约样例必须 FAIL）
@@ -39,3 +41,5 @@ jobs:
           python3 scripts/verify-cookbook.py --self-test
           python3 scripts/verify-skill-format.py --self-test
           python3 scripts/verify-handoff-structure.py --self-test
+          python3 scripts/verify-review-tier.py --self-test
+          python3 scripts/verify-review-brief.py --self-test

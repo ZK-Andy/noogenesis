@@ -1,6 +1,7 @@
 # Agent Note: 评审机械闸延后至胶囊 v0.2
 
 Status: implemented
+Archived: 2026-09-05
 
 ## Problem
 

@@ -28,7 +28,7 @@ Noogenesis（心源）：DeepSeek Harness 之上的"蜂群进化框架"；终极
 
 - **胶囊 01 搬迁按计划实施中**（S1 骨架 ✅、S2 常驻基座 ✅、S3 门禁第一梯队 ✅、S4 流程卡 6 张 ✅、S5 知识层 ✅；S6 交接、S7 CI+dogfood 进行中）。
 - 门禁第一梯队 7 件全绿（含 self-test）：adr-format / doc-budgets / md-links（含 skills/）/ cookbook / skill-format / handoff-structure（修复版）/ change-scope。
-- 技能 noo-* 7 个已被 DSH 自动发现；评审机械闸延后 v0.2（ADR [review-mechanical-gate-deferred](.agents/notes/implemented/process/2026-09-05-review-mechanical-gate-deferred.md)）。
+- 技能 noo-* 7 个已被 DSH 自动发现；评审机械闸已落地（verify-review-tier + verify-review-brief，ADR [2026-09-05-review-mechanical-gate](.agents/notes/implemented/process/2026-09-05-review-mechanical-gate.md)），门禁 7→9。
 - 四项拍板：评审闸延后 v0.2 ✅ / journal 入 git ✅ / 技能前缀 noo-* ✅ / cookbook 首批 15 条 ✅。
 
 ## 待办
