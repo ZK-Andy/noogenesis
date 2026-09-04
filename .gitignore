@@ -13,3 +13,7 @@ node_modules/
 
 # 评审简报（一次性调度工件；决策与边界见 ADR 2026-09-05-journal-in-git 的边界段，证据进 journal/HANDOFF）
 /.review-briefs/
+
+# 第三方参考仓库本地镜像（调研考古用；MIT 时代快照，证据指针在
+# docs/research/evomap-evolver-engine-evolution.md，永不入库）
+/.research-mirror/

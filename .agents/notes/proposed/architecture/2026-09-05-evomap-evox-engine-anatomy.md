@@ -2,7 +2,7 @@
 
 Status: proposed
 
-> Provenance：本仓原创调研（2026-09-05，gh CLI + fork 考古；分析对象为第三方仓库源码，提炼不搬运——合规姿态见 Alternatives）。
+> Provenance：本仓原创调研（2026-09-05，gh CLI + fork 考古；分析对象为第三方仓库源码，提炼不搬运——合规姿态见 Alternatives）。引擎**更新史解剖**（一周长成的里程碑序列与可借思路）在 [evomap-evolver-engine-evolution.md](../../../../docs/research/evomap-evolver-engine-evolution.md)；本地镜像 `/.research-mirror/`（gitignored）。
 
 ## Problem
 
