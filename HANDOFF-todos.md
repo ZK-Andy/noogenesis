@@ -9,4 +9,4 @@
 - [x] （C）简化候选三件拍板+实施 2026-09-05（FULL 三审全过），ADR [2026-09-05-consolidate-r1-simplification-candidates](.agents/notes/implemented/simplification/2026-09-05-consolidate-r1-simplification-candidates.md)。
 - [ ] **（C）verify-adr-format.py 虚引用清理**——L16 provenance 头引用的 ADR「2026-08-27-adr-naming-and-script-pitfall-records.md」在 notes 树不存在（R3 评审旁证实锤）；按 consolidate-r1 ADR Decision 第 4 条口径（日期+主题、引用前核对存在）改写为真实来源。
 - [ ] **（C）cookbook 原子持续蒸馏**——来源仓剩余有价值的踩坑（desktop cookbook 未搬条目、dsh-continual-evolve docs/FAQ 通用项）按需蒸馏；宁少勿滥，每条须有真实症状/根因/规避。
-- [ ] **（D）P1 演化引擎立项准备**——Gene/Capsule Schema 定稿（主设计 §5.1）；对标 dsh-continual-evolve 治理四件套与两段式评估（融合仅在架构定稿后，主设计 §13.5）。
+- [ ] **（D）P1 演化引擎立项准备**——发动机骨架待拍板：Gene schema 六字段定稿 + 四接口签名（select/propose/evaluate/solidify）+ `engine/` 目录 + Gene/Event 最小闭环，底座 = ADR [2026-09-05-evomap-evox-engine-anatomy](.agents/notes/proposed/architecture/2026-09-05-evomap-evox-engine-anatomy.md)（码级实证）；对标 dsh-continual-evolve 治理四件套（融合仅在架构定稿后，主设计 §13.5）；（A）npm/repo 名核验随本轮一并处理。

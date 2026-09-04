@@ -6,7 +6,7 @@ noogenesis＝心智的发生与持续生长（德日进谱系下集体知识演�
 
 ## 当前状态
 
-**胶囊 01「AI 协作编码方法论」**（本仓即其第一个宿主，self-hosting）：由四个来源项目提炼搬迁而成——常驻基座（双层 AGENTS）+ 流程卡 + ADR 生命周期 + 机器门禁 + 原子踩坑库 + 交接家庭。搬迁计划见 [capsule-01-migration-plan.md](capsule-01-migration-plan.md)，决策留痕见 [.agents/notes/](.agents/notes/README.md)。
+**胶囊 01「AI 协作编码方法论」**（本仓即其第一个宿主，self-hosting）：由四个来源项目提炼搬迁而成——常驻基座（双层 AGENTS）+ 流程卡 + ADR 生命周期 + 机器门禁（九件，含评审档位/简报两闸）+ 原子踩坑库 + 交接家庭。胶囊 v0.2 评审机械闸已落地（ADR 见 [.agents/notes/](.agents/notes/README.md)）。搬迁计划见 [capsule-01-migration-plan.md](capsule-01-migration-plan.md)。
 
 ## 结构
 
@@ -16,7 +16,7 @@ noogenesis＝心智的发生与持续生长（德日进谱系下集体知识演�
 ├── docs/
 │   ├── method/             # 方法论正文（被演化的内容域）
 │   ├── cookbook.md         # 踩坑单一事实源（原子条目）
-│   └── research/           # 设计文档（蜂群框架设计 / 共享层设计 / JIT-Agent 研究）
+│   └── research/           # 设计文档（蜂群框架设计 / 共享层设计 / JIT-Agent 研究）+ 参考引擎调研解剖
 ├── scripts/                # verify-* 机器门禁（零依赖 Python）
 ├── templates/              # ADR / AGENTS 分层模板
 ├── HANDOFF.md + HANDOFF-todos.md   # 交接家庭
@@ -32,6 +32,9 @@ python3 scripts/verify-md-links.py
 python3 scripts/verify-cookbook.py
 python3 scripts/verify-skill-format.py
 python3 scripts/verify-handoff-structure.py
+python3 scripts/verify-review-tier.py [--staged|--since <base>] [--enforce]
+python3 scripts/verify-review-brief.py [--lanes R1,R2,R3] [--enforce]
+scripts/change-scope.sh [<base> <head>]
 ```
 
 hooks 只做快检查（`bash scripts/setup-hooks.sh` 接线），CI 拥有穷尽矩阵（`.github/workflows/validate.yml`）。
