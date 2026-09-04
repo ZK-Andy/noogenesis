@@ -1,0 +1,12 @@
+# Python 门禁脚本运行缓存
+__pycache__/
+*.pyc
+
+# 本地工具缓存（pnpm store / 组件缓存等工作区态）
+/.cache/
+node_modules/
+
+# 本地代码索引 / 会话工作目录（开发侧工具生成）
+/.codegraph/
+/.zcode/
+/.saucer/
