@@ -10,11 +10,14 @@ classification for lane derivation.
 A diff touching any FULL-tier path requires review evidence travelling WITH
 the change before it may be pushed. Evidence = an implemented ADR under
 .agents/notes that is part of THIS change set (same base..HEAD range /
-staged set) whose header carries a valid `Review:` line:
+staged set) whose header carries a valid `Review:` line — format and
+strictness rules are owned by docs/method/review.md §1 (single home):
 
     Review: FULL/<yyyy-mm-dd>/R1=ok R2=ok R3=ok
 
-Proposed ADRs cannot self-certify; R values are strict (=ok only).
+Proposed ADRs cannot self-certify. A git moment that cannot be parsed
+(bad ref, git failure) is a violation, never a silent pass (fail-closed:
+an escape-proofing gate must not read an unparsable diff as "no change").
 
 Diff scope (caller picks the mode matching the git moment):
   --staged            index vs HEAD          -> pre-commit (report-only)
@@ -24,11 +27,13 @@ Diff scope (caller picks the mode matching the git moment):
 Default is report-only (exit 0). `--enforce` exits 1 when a FULL-tier diff
 lacks review evidence.
 
-Consumption contract: verify-review-brief.py imports _repo_changed_paths /
-_classify / FULL_TRIGGERS. That import is only safe because this module has
-NO top-level side effects beyond constant/regex definition (the
-`if __name__ == "__main__"` guard keeps main() out of import). Keep it that
-way: any change here is itself FULL-tier (scripts/** trigger) by design.
+Consumption contract: verify-review-brief.py imports _classify via
+importlib (the brief gate derives lanes from the tier of the diff range
+its briefs declare, and runs its own git diff). That import is only safe
+because this module has NO top-level side effects beyond constant/regex
+definition (the `if __name__ == "__main__"` guard keeps main() out of
+import). Keep it that way: any change here is itself FULL-tier
+(scripts/** trigger) by design.
 
 Usage:
     python3 scripts/verify-review-tier.py [--repo ROOT] [--staged|--since BASE] [--enforce]
@@ -86,9 +91,11 @@ def _valid_date(s: str) -> bool:
 
 
 def _repo_changed_paths(repo: Path, staged_only: bool = False,
-                        since: str | None = None) -> list[str]:
+                        since: str | None = None) -> list[str] | None:
     """Changed paths for the selected git moment:
-    --staged => index vs HEAD; --since => <base>..HEAD; default => working tree."""
+    --staged => index vs HEAD; --since => <base>..HEAD; default => working tree.
+    Returns None when a git command fails — fail-closed: an unparsable diff
+    must never read as "no FULL change" (R2 review, 2026-09-05)."""
     out: set[str] = set()
     if staged_only:
         cmds = (["git", "diff", "--cached", "--name-only"],)
@@ -98,24 +105,25 @@ def _repo_changed_paths(repo: Path, staged_only: bool = False,
         cmds = (
             ["git", "diff", "--name-only", "HEAD"],
             ["git", "diff", "--cached", "--name-only"],
-            ["git", "diff", "--name-only"],
         )
     for cmd in cmds:
         try:
             r = subprocess.run(cmd, cwd=repo, capture_output=True, text=True, check=False)
-            if r.returncode == 0:
-                out.update(x for x in r.stdout.splitlines() if x.strip())
         except Exception:
-            pass
+            return None
+        if r.returncode != 0:
+            return None
+        out.update(x for x in r.stdout.splitlines() if x.strip())
     if not staged_only and not since:
         # untracked (not in HEAD, not ignored)
         try:
             r = subprocess.run(["git", "ls-files", "--others", "--exclude-standard"],
                                cwd=repo, capture_output=True, text=True, check=False)
-            if r.returncode == 0:
-                out.update(x for x in r.stdout.splitlines() if x.strip())
         except Exception:
-            pass
+            return None
+        if r.returncode != 0:
+            return None
+        out.update(x for x in r.stdout.splitlines() if x.strip())
     return sorted(out)
 
 
@@ -181,6 +189,9 @@ def _evidence_in_change(paths: list[str], repo: Path) -> str | None:
 
 def _scan(repo: Path, staged_only: bool = False, since: str | None = None) -> list[str]:
     paths = _repo_changed_paths(repo, staged_only, since)
+    if paths is None:
+        return ["review-tier: git moment failed (bad ref or git error) — "
+                "fail-closed, refusing to classify an unparsable diff"]
     if not paths:
         return []
     full, reasons = _classify(paths, repo)
@@ -319,8 +330,15 @@ def _self_test() -> int:
         ok(any("FULL-tier change lacks review evidence" in x for x in _scan(r)),
            "proposed ADR self-Review does not clear a FULL change")
 
+        # 11) git moment failure is fail-closed: --since with a bad ref is a
+        #     violation, never a silent pass (R2 review, 2026-09-05)
+        r = _new_repo(Path(td), "f11")
+        rows = _scan(r, since="no-such-ref")
+        ok(any("git moment failed" in x for x in rows),
+           "--since with an unparsable ref fails closed")
+
     if failed == 0:
-        print("verify-review-tier --self-test OK (10 fixtures: triggers/evidence/modes)")
+        print("verify-review-tier --self-test OK (11 fixtures: triggers/evidence/modes/fail-closed)")
     else:
         print("verify-review-tier --self-test FAIL", file=sys.stderr)
     return failed

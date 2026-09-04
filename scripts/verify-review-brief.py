@@ -48,10 +48,12 @@ Lane derivation (single source of truth = the tier classification):
   briefs' own Scope (base..head — fits the commit-then-review batch order);
   --lanes R1,R2,R3 overrides; conservative fallback = all three.
 
-Consumption contract: imports verify-review-tier's _repo_changed_paths and
-_classify via importlib (module has NO top-level side effects — its
-__main__ guard keeps main() out of import). Editing either script is
-FULL-tier by design (scripts/** trigger). Do not silently drift the two.
+Consumption contract: imports verify-review-tier's _classify via importlib
+for lane derivation (the diff range itself comes from the briefs' declared
+base..head, fetched with this script's own git call). Module has NO
+top-level side effects — its __main__ guard keeps main() out of import.
+Editing either script is FULL-tier by design (scripts/** trigger). Do not
+silently drift the two.
 
 Usage:
     python3 scripts/verify-review-brief.py [--repo ROOT] [--lanes R1,R2,R3] [--enforce]
@@ -87,16 +89,20 @@ OUTSCOPE_HEADING = "## Explicitly out of scope"
 REPORT_HEADING = "## Report contract"
 REPORT_SENTENCE = "Blocker[]/Suggestion[]"
 CHECK_ITEM_RE = re.compile(r"^\s*-\s*\[ \]\s+.+")
-BASE_RE = re.compile(r"base:\s*(\S+)")
-HEAD_RE = re.compile(r"head:\s*(\S+)")
+# Scope refs: capture a bare git ref only — the template permits a trailing
+# annotation ("head: 0b3a501（评审对象 = …）"); a \S+ capture would swallow the
+# annotation and poison lane derivation (R2 review, 2026-09-05).
+BASE_RE = re.compile(r"base:\s*([0-9A-Za-z._/~^\-]+)")
+HEAD_RE = re.compile(r"head:\s*([0-9A-Za-z._/~^\-]+)")
 DEEP_RE = re.compile(r"需深审面[^\n]*?[:：]")
 COMPANION_RE = re.compile(r"陪跑文件[^\n]*?[:：]")
 # 门禁自证行：声明陪跑文件「机器门禁已盖」必须由主会话实跑的 exit 码背书。
 # 形如「门禁自证：md-links:0，skill-format:0」。
 SELFASSERT_RE = re.compile(r"门禁自证[^\n]*?[:：]")
-# 自证单项 <name>:<exit>（容忍全角冒号）。exit 必须 0/1/2；扫描绑定在本行内，
-# 简报正文其余部分的 `<token>:1`（文件:行引用）不会误报。
-SELFASSERT_ITEM_RE = re.compile(r"([A-Za-z0-9._\-]+)[:：]([012])\b")
+# 自证单项 <name>:<exit>（容忍全角冒号）。exit 为任意数字、非 0 即拒收——[012]
+# 会让 exit 3 等码被静默忽略成"全 0 通过"（R2 review, 2026-09-05）。扫描绑定在本行
+# 内，简报正文其余部分的 `<token>:1`（文件:行引用）不会误报。
+SELFASSERT_ITEM_RE = re.compile(r"([A-Za-z0-9._\-]+)[:：](\d+)\b")
 
 
 def _violations_for_lane(path: Path, lane: str) -> list[str]:
@@ -105,7 +111,7 @@ def _violations_for_lane(path: Path, lane: str) -> list[str]:
     if not path.exists():
         return [f"{lane}: missing brief {BRIEFS_DIR}/R{lane[1]}-*.md (must write brief before launching review)"]
 
-    text = path.read_text(encoding="utf-8")
+    text = path.read_text(encoding="utf-8", errors="replace")
 
     title_match = TITLE_RE.search(text)
     if not title_match:
@@ -248,7 +254,7 @@ def _lanes_from_brief_range(repo: Path, briefs: dict[str, Path]) -> list[str]:
     for p in briefs.values():
         if p is None or not p.exists():
             continue
-        text = p.read_text(encoding="utf-8")
+        text = p.read_text(encoding="utf-8", errors="replace")
         mb, mh = BASE_RE.search(text), HEAD_RE.search(text)
         if mb and mh:
             base, head = mb.group(1), mh.group(1)
@@ -282,12 +288,32 @@ def check_repo(repo: Path, lanes: list[str] | None = None) -> list[str]:
     if lanes is None:
         if all(p is None for p in paths.values()):
             return duplicates
+        out = list(duplicates) + _inconsistent_range_violations(paths)
         lanes = _lanes_from_brief_range(repo, paths)
-    out: list[str] = list(duplicates)
+    else:
+        out = list(duplicates)
     for lane in lanes:
         p = paths[lane]
         out.extend(_violations_for_lane(p, lane) if p else [f"{lane}: missing brief under {BRIEFS_DIR}/"])
     return out
+
+
+def _inconsistent_range_violations(paths: dict[str, Path]) -> list[str]:
+    """All in-flight briefs must declare the same base..head range — divergent
+    ranges would let one brief's (narrower) scope silently downgrade the lane
+    set for the whole review (R1 review, 2026-09-05)."""
+    declared: dict[str, tuple[str, str]] = {}
+    for lane, p in paths.items():
+        if p is None or not p.exists():
+            continue
+        text = p.read_text(encoding="utf-8", errors="replace")
+        mb, mh = BASE_RE.search(text), HEAD_RE.search(text)
+        if mb and mh:
+            declared[lane] = (mb.group(1), mh.group(1))
+    if len({v for v in declared.values()}) > 1:
+        detail = "; ".join(f"{k}: {v[0]}..{v[1]}" for k, v in sorted(declared.items()))
+        return [f"briefs declare inconsistent diff ranges — {detail}"]
+    return []
 
 
 def self_test() -> int:
@@ -402,7 +428,57 @@ def self_test() -> int:
         assert check_repo(root10) == [], \
             "fixture 10 (no briefs in flight) should pass vacuously"
 
-    print("verify-review-brief --self-test OK (10 fixtures: structure/self-assertion/vacuous)")
+        # lane derivation against a REAL git repo (R1 review, 2026-09-05):
+        # FULL range -> three lanes required; LIGHT range -> R2 only.
+        repo = Path(td) / "f11"
+        (repo / "scripts").mkdir(parents=True)
+        (repo / "docs").mkdir()
+        (repo / "docs" / "note.md").write_text("base\n", encoding="utf-8")
+
+        def git(*a: str) -> None:
+            subprocess.run(["git", *a], cwd=repo, capture_output=True, check=True)
+
+        git("init", "-q")
+        git("config", "user.email", "t@t")
+        git("config", "user.name", "t")
+        git("add", "-A")
+        git("commit", "-qm", "init")
+        (repo / "scripts" / "verify-x.py").write_text("# gate\n", encoding="utf-8")
+        git("add", "-A")
+        git("commit", "-qm", "full change")
+        base = subprocess.run(["git", "rev-parse", "HEAD~1"], cwd=repo,
+                              capture_output=True, text=True, check=True).stdout.strip()
+        head = subprocess.run(["git", "rev-parse", "HEAD"], cwd=repo,
+                              capture_output=True, text=True, check=True).stdout.strip()
+
+        def brief_text(lane: str, b: str, h: str) -> str:
+            return (f"# {lane} 评审简报（lane）\n\n## Scope\n- base: {b}  head: {h}\n"
+                    "- 需深审面：scripts/verify-x.py\n- 陪跑文件：无\n\n"
+                    "## Directed checks\n- [ ] c\n\n## Explicitly out of scope\n- d\n\n"
+                    "## Report contract\n- 返回 `Blocker[]/Suggestion[]`；空即无发现\n")
+
+        root11 = repo / BRIEFS_DIR
+        root11.mkdir()
+        (root11 / "R2-a.md").write_text(brief_text("R2", base, head), encoding="utf-8")
+        vs_full = check_repo(repo)  # lanes derived from the declared FULL range
+        assert any("R1: missing brief" in s for s in vs_full), \
+            f"fixture 11a (FULL range) should derive three lanes, got {vs_full}"
+        assert not any("R2" in s for s in vs_full), \
+            f"fixture 11a: R2 brief itself is well-formed, got {vs_full}"
+        # LIGHT range (base..HEAD~1 touches only docs/) -> R2 suffices
+        (root11 / "R2-a.md").write_text(brief_text("R2", base, "HEAD~1"), encoding="utf-8")
+        assert check_repo(repo) == [], \
+            "fixture 11b (LIGHT range) should derive R2-only and pass"
+
+        # divergent declared ranges -> violation (anti-downgrade guard)
+        root12 = Path(td) / "f12"
+        (root12 / BRIEFS_DIR).mkdir(parents=True)
+        (root12 / BRIEFS_DIR / "R1-a.md").write_text(brief_text("R1", "a", "b"), encoding="utf-8")
+        (root12 / BRIEFS_DIR / "R2-a.md").write_text(brief_text("R2", "a", "HEAD~2"), encoding="utf-8")
+        assert any("inconsistent diff ranges" in s for s in check_repo(root12)), \
+            "fixture 12 (divergent ranges) should be reported"
+
+    print("verify-review-brief --self-test OK (12 fixtures: structure/self-assertion/lane-derivation)")
     return 0
 
 
