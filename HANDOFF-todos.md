@@ -5,7 +5,7 @@
 
 - [ ] **（A）胶囊 v0.2：评审机械闸**——按本仓评审面重写 verify-review-tier 与 verify-review-brief（契约见 [review.md](docs/method/review.md) §1/§3 与 ADR [2026-09-05-review-mechanical-gate-deferred](.agents/notes/implemented/process/2026-09-05-review-mechanical-gate-deferred.md)）；前置：≥1 个真实 FULL 档评审案例作回归对照。
 - [ ] **（A）基因库 repo 名与 npm 注册核验**——npm `@noogenesis` org / `noogenesis` 包名占用再验一次（搜索服务恢复后或手动）；基因库仓库名拍板（设计稿暂用 `dsh-gene-bank`，与 noo-* 技能前缀同理考虑改名）；域名等 taxonomy 细分（主设计 §13.1 开放项）。
-- [ ] **（B）胶囊 01 v0 首次真实评审（dogfood 闭环收尾）**——S7 CI 落地后，对本搬迁批次做一次按 `docs/method/review.md` 的人工定档评审（档位判定 + 三路或轻审结论 + 修复收口），结论入交接滚动窗，作为 v0.2 机械闸的对照样本。
+- [x] （B）胶囊 01 v0 首次真实评审：FULL 三审 2026-09-05 完成（Blocker 4→全修），对照样本在 journal 2026-09 卷。
 - [ ] **（C）简化候选打包 ADR（R1 评审产出，v0.2 前拍板）**——三件候选待立 simplification ADR：①md-links 与 skill-format 的链接校验五件套（LINK_RE/slugify/heading_slugs/解析循环）重复（最强）；②三份 self-test 公共 runner 骨架同构 + assert 范式不一；③feature-flow §4.2–4.4 对 review.md §2/§3/§6 近逐句复述收敛为指针 + 差异面（同一定义两处表述，暂未漂移）。
 - [ ] **（C）cookbook 原子持续蒸馏**——来源仓剩余有价值的踩坑（desktop cookbook 未搬条目、dsh-continual-evolve docs/FAQ 通用项）按需蒸馏；宁少勿滥，每条须有真实症状/根因/规避。
 - [ ] **（D）P1 演化引擎立项准备**——Gene/Capsule Schema 定稿（主设计 §5.1）；对标 dsh-continual-evolve 治理四件套与两段式评估（融合仅在架构定稿后，主设计 §13.5）。

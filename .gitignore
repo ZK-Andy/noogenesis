@@ -11,5 +11,5 @@ node_modules/
 /.zcode/
 /.saucer/
 
-# 评审简报（评审启动门禁的输入；证据进 journal/HANDOFF，简报本体不入库——desktop 惯例）
+# 评审简报（一次性调度工件；决策与边界见 ADR 2026-09-05-journal-in-git 的边界段，证据进 journal/HANDOFF）
 /.review-briefs/

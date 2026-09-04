@@ -1,6 +1,6 @@
 # 评审体系（三重审核契约）
 
-> Provenance：蒸馏自 dotnet-deepseek-harness-desktop（MIT，2026-09-05）：ADR `2026-08-31-review-scope-narrowing` + `2026-09-03-review-tier-escape-proofing` + `2026-09-04-review-brief-gate-self-assertion` + feature-flow 评审节。差异：.NET 具体判据（IPC 帧/csproj）泛化为本仓等价面；机械闸（verify-review-tier / verify-review-brief）延后胶囊 v0.2（ADR `2026-09-05-review-mechanical-gate-deferred`），本文同时承载 v0 人工判据与 v0.2 机械化的验收基准。
+> Provenance：蒸馏自 dotnet-deepseek-harness-desktop（MIT，2026-09-05）：ADR `2026-08-31-review-scope-narrowing` + `2026-09-03-review-tier-escape-proofing` + `2026-09-04-review-brief-gate-self-assertion` + feature-flow 评审节。差异：.NET 具体判据（IPC 帧/csproj）泛化为本仓等价面；机械闸（verify-review-tier / verify-review-brief）延后胶囊 v0.2（ADR [2026-09-05-review-mechanical-gate-deferred](../../.agents/notes/implemented/process/2026-09-05-review-mechanical-gate-deferred.md)），本文同时承载 v0 人工判据与 v0.2 机械化的验收基准。
 
 ## 1. 定档判据（命中任一 → FULL 三重审核）
 

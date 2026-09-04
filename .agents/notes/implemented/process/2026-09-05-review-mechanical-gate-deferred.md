@@ -8,7 +8,7 @@ desktop 的评审机械闸（`verify-review-tier.py` 17KB + `verify-review-brief
 
 ## Decision
 
-v0 阶段：评审契约以流程卡（feature-flow 评审节）+ `docs/method/review.md` 承载——机械定档暂由主会话按"AI 兜底清单"人工判定（判据从 desktop `review-scope-narrowing` ADR 提炼，写进 review.md），简报结构模板化但暂不机器校验。胶囊 v0.2：待本仓积累 ≥1 个真实 FULL 档评审案例后，按本仓评审面重写两个机械闸（届时含"中断即未审计/简报自证"防逃逸机制）。任务已入 HANDOFF-todos。
+v0 阶段：评审契约以流程卡（feature-flow 评审节）+ [review.md](../../../../docs/method/review.md) 承载——机械定档暂由主会话按"AI 兜底清单"人工判定（判据从 desktop `review-scope-narrowing` ADR 提炼，写进 review.md），简报结构模板化但暂不机器校验。胶囊 v0.2：待本仓积累 ≥1 个真实 FULL 档评审案例后，按本仓评审面重写两个机械闸（届时含"中断即未审计/简报自证"防逃逸机制）。任务已入 HANDOFF-todos。
 
 ## Alternatives considered
 

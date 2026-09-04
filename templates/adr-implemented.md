@@ -1,6 +1,6 @@
 # Agent Note: <标题：动宾短句>
 
-> Provenance：逐字节搬运自 dotnet-deepseek-harness-desktop `templates/adr-implemented.md`（MIT，2026-09-05；desktop 版已修复 devops-template 版的 typo 与校验 bug）。
+> Provenance：逐字节搬运自 dotnet-deepseek-harness-desktop `templates/adr-implemented.md`（MIT，2026-09-05）。血统：desktop 版自身已相对 devops-template 版完成单语化（删双语链接行）与 typo 修复；本仓未再改动。
 
 Status: implemented
 
@@ -33,4 +33,4 @@ Status: implemented
 
 ---
 
-<!-- 归档规则：决定完成且理由不再指导未来工作时，经 dsh-archive-agent-notes 流程移入 archived/<class>/，Status 下插入 "Archived: YYYY-MM-DD"，之后永久冻结（禁改/禁译/禁删）。 -->
+<!-- 归档规则：决定完成且理由不再指导未来工作时，经 noo-archive-agent-notes 技能流程移入 archived/<class>/，Status 下插入 "Archived: YYYY-MM-DD"，之后永久冻结（禁改/禁译/禁删）。 -->

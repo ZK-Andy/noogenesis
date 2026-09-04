@@ -1,13 +1,13 @@
 # HANDOFF — Noogenesis（心源）
 
 > 项目交接主文档（**唯一入口**）：背景 / 位置 / 当前状态 / 待办 / 开始步骤 / 记录索引。
-> 文件架构（ADR `2026-09-05-journal-in-git`）：**稳定区 + 更新摘要**在本文件；**行动区（待办）**在 [HANDOFF-todos.md](HANDOFF-todos.md)；**叙事全文**在 `journal/`（**入 git**——过程即资产）。
+> 文件架构（ADR [2026-09-05-journal-in-git](.agents/notes/implemented/process/2026-09-05-journal-in-git.md)）：**稳定区 + 更新摘要**在本文件；**行动区（待办）**在 [HANDOFF-todos.md](HANDOFF-todos.md)；**叙事全文**在 `journal/`（**入 git**——过程即资产）。
 
 ## 交接更新记录（摘要滚动窗）
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-05｜**胶囊 01 搬迁 S1–S5（implemented；ADR `capsule-01-migration`）**：骨架 + 双层 AGENTS + ADR 系统（4 条首批）+ 门禁 7 件（md-links 纳入 skills/、handoff 卷名按月推导、cookbook 域标签重定）+ 流程卡 6 张 + docs/method 4 篇 + cookbook 15 原子 + 技能 noo-* 7 个。README 核对：随 S6 新建，无漂移。
+- 2026-09-05｜**胶囊 01 搬迁收口（S7 dogfood FULL 三审全过；ADR `capsule-01-migration` + 三拍板 ADR；commits `dd32053`→`1b7346f`）**：R1/R2/R3 Blocker 0+0+4，30 条建议 21 修 3 落简化候选待办；R3 Blocker（虚引用/决策无家/证据强度升级）全修，结论见 journal 2026-09 卷。README 核对无变更。
 
 ## 背景
 
@@ -27,7 +27,7 @@ Noogenesis（心源）：DeepSeek Harness 之上的"蜂群进化框架"；终极
 
 - **胶囊 01 搬迁按计划实施中**（S1 骨架 ✅、S2 常驻基座 ✅、S3 门禁第一梯队 ✅、S4 流程卡 6 张 ✅、S5 知识层 ✅；S6 交接、S7 CI+dogfood 进行中）。
 - 门禁第一梯队 7 件全绿（含 self-test）：adr-format / doc-budgets / md-links（含 skills/）/ cookbook / skill-format / handoff-structure（修复版）/ change-scope。
-- 技能 noo-* 7 个已被 DSH 自动发现；评审机械闸延后 v0.2（ADR `review-mechanical-gate-deferred`）。
+- 技能 noo-* 7 个已被 DSH 自动发现；评审机械闸延后 v0.2（ADR [review-mechanical-gate-deferred](.agents/notes/implemented/process/2026-09-05-review-mechanical-gate-deferred.md)）。
 - 四项拍板：评审闸延后 v0.2 ✅ / journal 入 git ✅ / 技能前缀 noo-* ✅ / cookbook 首批 15 条 ✅。
 
 ## 待办
