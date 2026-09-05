@@ -2,8 +2,11 @@
 """gates.py — 门禁清单单源发射器（清单 = engine/gates.json，M2 ADR 归口收口）。
 
 hooks/CI 不再手抄 verify-* 清单：清单（名 + 命令）从 engine/gates.json 读取，
-与引擎 evaluate 同一来源。槽位替换与 engine/gates.js instantiate 同口径
-（{{outgoing_base}} / {{head}}，空白容忍；值仅由调用方注入——缺失即 fail-closed）。
+与引擎 evaluate 同一来源。槽位替换**形似而非同口径**（勿照抄互通）：
+- 本脚本替换任意 {{key}}（含 cmd），缺值 fail-closed；
+- engine/gates.js instantiate 只认 outgoing_base/head 两键，缺键静默留字面量
+  （无害的前提是引擎侧 deriveSlots 保证两键齐全）——今日两侧行为等价纯因
+  白名单只有这两键且都在 args，非机制等价。
 
 清单单源的**结构性例外**（有意为之，勿"修复"）：
 - review-tier：pre-push 以 per-ref merge-base 循环逐 ref enforce（新分支首推
@@ -13,6 +16,9 @@ hooks/CI 不再手抄 verify-* 清单：清单（名 + 命令）从 engine/gates
   发射前检查，非 push 前提）。
 - change-scope：hooks/CI 用脚本自身的缺省推导（fork-point）；gates.json 内的
   槽位形态供引擎 evaluate 使用。同一脚本、两种推导口径，见 P1 实现 ADR D4。
+- gene-format（第十门禁）：白名单外独立件——它消费引擎产物（genes/ + events/
+  复算），进白名单会让 solidify 入档中途复算自身（语义循环）；hooks/CI 保留
+  显式行，不在本脚本跳过清单里表达。
 
 用法：
   gates.py --list                                  # 打印 name<TAB>cmd...

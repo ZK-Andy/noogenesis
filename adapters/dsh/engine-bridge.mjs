@@ -81,17 +81,24 @@ export function runEngine(args, { repoRoot, timeoutMs = 120_000 } = {}) {
 
 /**
  * 同步执行引擎命令（system-prompt 节 provider 用——宿主 text provider 是同步
- * 面 dictated by the host API）。引擎无 LLM、无网络，阻塞窗有界。
+ * 面 dictated by the host API）。引擎无 LLM、无网络，但同步面仍强制界：
+ * spawnSync timeout 到点 kill，status null → FAIL_CLOSED（与 async 面同口径）。
  */
-export function runEngineSync(args, { repoRoot } = {}) {
+const SYNC_TIMEOUT_MS = 60_000;
+
+export function runEngineSync(args, { repoRoot, timeoutMs = SYNC_TIMEOUT_MS } = {}) {
 	const r = spawnSync(process.execPath, [ENGINE_ENTRY, ...args], {
 		cwd: repoRoot,
 		env: minimalEnv(),
 		stdio: ["ignore", "pipe", "pipe"],
 		encoding: "utf8",
+		timeout: timeoutMs,
 	});
 	if (r.error) {
 		return { code: EXIT.FAIL_CLOSED, stdout: r.stdout ?? "", stderr: `${r.stderr ?? ""}${r.error.message}\n` };
+	}
+	if (r.signal) {
+		return { code: EXIT.FAIL_CLOSED, stdout: r.stdout ?? "", stderr: `${r.stderr ?? ""}engine timed out after ${timeoutMs}ms (signal ${r.signal})\n` };
 	}
 	return { code: r.status ?? EXIT.FAIL_CLOSED, stdout: r.stdout ?? "", stderr: r.stderr ?? "" };
 }

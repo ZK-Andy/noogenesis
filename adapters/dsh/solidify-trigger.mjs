@@ -23,10 +23,14 @@ export function buildSolidifyArgs(candidatePath, actor, repoRoot) {
 	return ["solidify", path.relative(repoRoot, candidatePath), "--actor", actor];
 }
 
-/** 提醒文案：候选清单 + 精确可复制的命令（诊断纪律：指名路径与动作）。 */
+/** 提问兜底超时：answerer 半存活时 ask 可能永久挂起，超时按"仅提醒"降级。 */
+export const ASK_TIMEOUT_MS = 300_000;
+
+/** 提醒文案：候选清单 + 精确可复制的命令（自 buildSolidifyArgs 派生——提醒
+ * 文案与实跑参数是同一事实，防双形态漂移）。 */
 export function solidifyNotice(repoRoot, stagingDir, actor, candidates) {
 	const rel = candidates.map((candidate) => `  ${path.relative(repoRoot, candidate)}`);
-	const commands = candidates.map((candidate) => `  node engine/bin.js solidify ${path.relative(repoRoot, candidate)} --actor ${actor}`);
+	const commands = candidates.map((candidate) => `  node engine/bin.js ${buildSolidifyArgs(candidate, actor, repoRoot).join(" ")}`);
 	return [
 		`Noogenesis: ${candidates.length} staged gene candidate(s) in ${stagingDir}/ await solidify (human-approved write path):`,
 		...rel,
@@ -39,12 +43,21 @@ export function solidifyNotice(repoRoot, stagingDir, actor, candidates) {
  * 会话边界触发体。注入面：
  * - logger: {info, warn}（宿主 ctx.logger 绑定名后的对象）
  * - ask: async (question) => "archive" | "later" | null（宿主 userQuestions 封装；缺席传 null）
+ * - askTimeoutMs: ask 兜底超时（默认 ASK_TIMEOUT_MS；超时按 null 处理 = 只提醒）
  * 返回 { asked, approved, archived[], failed[] }——selftest 可注入假宿主全路径驱动。
  */
-export async function runSolidifyTrigger({ repoRoot, stagingDir, actor, candidates, logger, ask, runEngine }) {
+export async function runSolidifyTrigger({ repoRoot, stagingDir, actor, candidates, logger, ask, runEngine, askTimeoutMs = ASK_TIMEOUT_MS }) {
 	if (!candidates.length) return { asked: false, approved: false, archived: [], failed: [] };
 	const notice = solidifyNotice(repoRoot, stagingDir, actor, candidates);
-	const decision = ask ? await ask(candidates) : null;
+	let decision = null;
+	if (ask) {
+		let timer;
+		const timeout = new Promise((resolve) => {
+			timer = setTimeout(() => resolve(null), askTimeoutMs);
+			if (timer.unref) timer.unref();
+		});
+		decision = await Promise.race([ask(candidates), timeout]).finally(() => clearTimeout(timer));
+	}
 	if (decision !== "archive") {
 		logger.info(notice);
 		return { asked: ask !== null, approved: false, archived: [], failed: [] };

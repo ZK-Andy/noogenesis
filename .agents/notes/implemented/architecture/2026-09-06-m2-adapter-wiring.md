@@ -34,12 +34,12 @@ Noogenesis/                  ← npm 包根（真包首发时替换占位 0.0.0�
 
 **M2 接线点 = 最小四件**（Detect 信号源全表不做）：
 
-1. **system-prompt 双节**：基座节（固定极小，陈述工具面 + 写路径纪律）+ 命中节（`injectSignals` 显式声明的信号喂引擎 select，命中基因逐行注入、行数封顶、单行截断）；空命中渲染 `""` → 宿主 prompt 渲染器丢弃 → 零 token。信号只来自显式声明（配置 / 模型调工具），Detect 禁区（骨架 D2）不解除。
-2. **`defineTool` 三件**：`noo_select` / `noo_propose` / `noo_evaluate`——模型面只读路径。退出码映射：0=结果文本；1=闸红（红是有效评测结论，以 `RED (exit 1)` 文本返回，不抛错）；2=fail-closed（抛错，重试无益）。
-3. **solidify 触发**：挂 `agent/disposed`。发现 staging 目录（默认 `genes-staging/`，相对目标仓根）下的 `<id>.json` 候选 → 有 `userQuestions` 且 `askOnDispose`（默认 true）则提问人工确认；批准才逐候选实跑 solidify，拒绝/提问面缺席 → 只输出带精确命令的提醒。绝不自动写。
+1. **system-prompt 双节**：基座节（固定极小，陈述工具面 + 写路径纪律）+ 命中节（`injectSignals` 显式声明的信号喂引擎 select，命中基因逐行注入、行数封顶、单行截断）；空命中渲染 `""` → 宿主 prompt 渲染器丢弃 → 零 token（`injectSignals` 为空时短路，不 spawn 引擎）。引擎 stdout 进宿主 prompt 前对 `{{` 做零宽中性化——宿主 interpolate 对未知 `{{name}}` 抛错且 renderPrompt 每模型步无包裹调用（R2-B1），模板语法的基因 summary 不得原样透传。信号只来自显式声明（配置 / 模型调工具），Detect 禁区（骨架 D2）不解除。
+2. **`defineTool` 三件**：`noo_select` / `noo_propose` / `noo_evaluate`——模型面只读路径。退出码映射：0=结果文本；1=闸红（红是有效评测结论，以 `RED (exit 1)` 文本返回，不抛错）——但 **exit 1 + 空 stdout = 引擎内部故障**（非 EngineError 走 `throw e`，崩溃退出码同为 1 且无报告），按 fail-closed 抛错不放行；2=fail-closed（抛错，重试无益）。
+3. **solidify 触发**：挂 `agent/disposed`（带 in-flight 去重——多 agent 近同时 dispose 不重复弹问/重复入档）。发现 staging 目录（默认 `genes-staging/`，相对目标仓根）下的 `<id>.json` 候选 → 提问人工确认（`userQuestions` **不在 inject 声明**，disposal 时懒取用——cordis 对缺席注入服务会推迟整个插件装载，声明注入会让降级不可达；ask 兜底超时 300s，超时/缺席/拒绝 → 只输出带精确命令的提醒）；批准才逐候选实跑 solidify。绝不自动写。
 4. **`/noo` 人面命令**：后补，不在本层。
 
-**M3 调用方式 = spawn CLI 单合同**。适配层每次调用 `node <包根>/engine/bin.js <命令>`（结构化参数数组直传、最小 env 透传 PATH/HOME/LANG、超时 kill）；system-prompt 命中节经同步版 spawn（宿主 text provider 是同步面；引擎无 LLM 无网络，阻塞窗有界）。
+**M3 调用方式 = spawn CLI 单合同**。适配层每次调用 `node <包根>/engine/bin.js <命令>`（结构化参数数组直传、最小 env 透传 PATH/HOME/LANG）；异步面（工具执行）120s 超时 kill，同步面（system-prompt 命中节，宿主 text provider 是同步面）60s 超时 kill——两侧都有强制界，超时按 FAIL_CLOSED 映射。
 
 **耦合防火墙（三条硬规则，机器检查落位）**：
 
@@ -70,6 +70,7 @@ Noogenesis/                  ← npm 包根（真包首发时替换占位 0.0.0�
 ## Consequences
 
 - **采用面**：`package.json`（裸名 noogenesis@0.1.0，AGPL-3.0-only，`type: commonjs`，files 白名单，`dsh.bundle.patch`）、`cordis.patch.yml`（plugin row insert）、`adapters/dsh/` 八件（index / engine-bridge / section / tools / solidify-trigger / config / selftest / README）、`scripts/gates.py`、`.githooks/pre-push` 与 `.github/workflows/validate.yml` 改引单源、engine README（open 项收口 + 消费方补 adapters/dsh）。引擎本体零改动。
-- **已验证**（2026-09-06）：adapter selftest 24 组夹具全绿（bridge 合同实跑 / cwd 锚定 / section 空渲染 / 工具退出码映射 / solidify 全路径 / 配置 fail-closed / 防火墙机器检查 / 包结构契约）；`gates.py --self-test` 3 组全绿；gates.py 单源发射实跑七门禁全绿；engine self-test 全绿。
+- **已验证**（2026-09-06）：adapter selftest 25 组夹具全绿（bridge 合同实跑 / cwd 锚定 / section 空渲染 + `{{` 中性化 / 工具退出码映射含 exit1-空报告故障分型 / solidify 全路径含 ask 兜底超时 / 配置 fail-closed / 防火墙机器检查 / 包结构契约）；`gates.py --self-test` 3 组全绿；gates.py 单源发射实跑七门禁全绿；engine self-test 全绿。
+- **评审收口（2026-09-06，FULL 三审）**：R1（简化路）0B/4S、R2（代码路）1B/8S **全部采纳**——B1（命中节 `{{` 未转义，宿主 interpolate 每模型步抛错，会话级破坏）+ R1 头注/README 单源、gates.py「同口径」措辞失实（实为形似而非等价：本脚本任意槽位 fail-closed vs engine 硬编码双键）、BASE_SECTION 措辞断言删除、提醒命令自 buildSolidifyArgs 派生、sync spawn 加 60s 界、空 injectSignals 短路、noo_select required、userQuestions 懒取用、disposal in-flight 去重 + ask 兜底超时、gates.py 头注补 gene-format 例外归口；R3（ADR 路）结论见 Review 行。
 - **待首发收口**：`dsh plugin add noogenesis` 的真安装验证需 npm 真包（release-flow 发布时做）；本地证据 = patch 形状对 cordis-plugin-loader 方言的机器比对 + 装载契约（name/inject/apply）与参照件同构。
-- **运行边界**：spawn 每调用一子进程——调用频次若随接线面扩大（Detect 轮）抬升，是重开 M3 拍板的信号，不是默默改进程内；DSH 插件面仍在 rc 期，peerDependencies 版本锚定（`^0.1.0-rc.6`）随 DSH 发版对齐；npm 占位包首发替换涉及账号 openorbit 与 repository 字段一致性（占位包不可下架只可 deprecate）；solidify 提问发生在 agent disposal 时，无应答方的环境（headless）会抛错降级为只提醒——降级路径有 warn 留痕。
+- **运行边界**：spawn 每调用一子进程——调用频次若随接线面扩大（Detect 轮）抬升，是重开 M3 拍板的信号，不是默默改进程内；DSH 插件面仍在 rc 期，peerDependencies 版本锚定（`^0.1.0-rc.6`）随 DSH 发版对齐；npm 占位包首发替换涉及账号 openorbit 与 repository 字段一致性（占位包不可下架只可 deprecate）；solidify 提问发生在 agent disposal 时，无应答方环境（headless → NO_PROVIDER）或 ask 超时（兜底 300s）都降级为只提醒——降级路径有 warn 留痕，迟到回答被丢弃但提醒文案带可手跑的精确命令。

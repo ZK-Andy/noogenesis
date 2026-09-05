@@ -32,5 +32,10 @@ export function hitsSectionText(selectResult, { maxGenes = 12, maxSummaryChars =
 	if (!hitLines.length) return "";
 	const capped = hitLines.slice(0, maxGenes).map((line) => (line.length > maxSummaryChars ? `${line.slice(0, maxSummaryChars)}…` : line));
 	const truncated = hitLines.length > maxGenes ? `\n(+${hitLines.length - maxGenes} more — refine signals)` : "";
-	return `Noogenesis genes matched by declared signals:\n${capped.join("\n")}${truncated}`;
+	// `{{` 中性化：宿主 system-prompt 的 interpolate 对未知 {{name}} 直接抛错，
+	// 而 renderPrompt 在每个模型步无包裹调用——基因 summary 含模板语法（引擎
+	// schema 允许）时会让会话每步持续崩。零宽插入保持肉眼内容不变，只拆散
+	// 插值记号；engine stdout 不可信面在进入宿主 prompt 前在此一次性收口。
+	const neutralized = capped.join("\n").replaceAll("{{", "{\u200b{");
+	return `Noogenesis genes matched by declared signals:\n${neutralized}${truncated}`;
 }

@@ -19,9 +19,9 @@ import { execFileSync } from "node:child_process";
 import { isBuiltin } from "node:module";
 import { fileURLToPath } from "node:url";
 import { runEngineSync, resolveRepoRoot, EXIT } from "./engine-bridge.mjs";
-import { BASE_SECTION, hitsSectionText } from "./section.mjs";
+import { hitsSectionText } from "./section.mjs";
 import { registerNooTools } from "./tools.mjs";
-import { listStagingCandidates, buildSolidifyArgs, solidifyNotice, runSolidifyTrigger } from "./solidify-trigger.mjs";
+import { listStagingCandidates, buildSolidifyArgs, solidifyNotice, runSolidifyTrigger, ASK_TIMEOUT_MS } from "./solidify-trigger.mjs";
 import { validateConfig } from "./config.mjs";
 
 const ADAPTER_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -92,9 +92,13 @@ function writeFixtureGene(repoRoot) {
 	const long = `demo/x  ${"字".repeat(200)}`;
 	assert.ok(hitsSectionText({ stdout: `signals: x\n${long}\n` }, { maxSummaryChars: 160 }).includes("…"));
 	ok("section: per-line summary truncated");
-	assert.match(BASE_SECTION, /noo_select/);
-	assert.match(BASE_SECTION, /human approval/);
-	ok("section: base section states tools + write-path discipline");
+
+	// `{{` 中性化（R2-B1）：宿主 interpolate 对未知 {{name}} 抛错且每模型步调用
+	// renderPrompt——模板语法基因 summary 不得原样进 system-prompt 节。
+	const templated = hitsSectionText({ stdout: "signals: x\ndemo/tmpl  prefer {{placeholder}} tokens\n" });
+	assert.ok(!templated.includes("{{"), "literal {{ must not survive into section text");
+	assert.ok(templated.includes("{\u200b{placeholder}"), "neutralized form keeps visible content");
+	ok("section: '{{' neutralized (interpolate cannot throw on gene summaries)");
 }
 
 // ── 3) tools：依赖注入面（假 defineTool + 假引擎，退出码映射全路径） ──────
@@ -107,12 +111,17 @@ function writeFixtureGene(repoRoot) {
 		select: { code: 0, stdout: "signals: demo signal\ndemo/demo-hit  demo gene\n", stderr: "" },
 		propose: { code: 0, stdout: "## demo-hit\nstep one\n", stderr: "" },
 		evaluateRed: { code: 1, stdout: "gate adr-format: FAIL\n", stderr: "" },
+		evaluateCrash: { code: 1, stdout: "", stderr: "engine: internal fault\n" },
 		evaluateBad: { code: 2, stdout: "", stderr: "engine: gene not found: demo/x\n" },
 	};
 	const fakeRunEngine = async (args) => {
 		if (args[0] === "select") return responses.select;
 		if (args[0] === "propose") return responses.propose;
-		if (args[0] === "evaluate") return args[1] === "demo/red" ? responses.evaluateRed : responses.evaluateBad;
+		if (args[0] === "evaluate") {
+			if (args[1] === "demo/red") return responses.evaluateRed;
+			if (args[1] === "demo/crash") return responses.evaluateCrash;
+			return responses.evaluateBad;
+		}
 		throw new Error(`unexpected args ${args}`);
 	};
 	registerNooTools(fakeCtx, { defineTool: fakeDefineTool, runEngine: fakeRunEngine, repoRoot: "/tmp/nowhere" });
@@ -125,7 +134,10 @@ function writeFixtureGene(repoRoot) {
 	assert.match((await byName.noo_propose.execute({ gene: "demo/demo-hit" })).text, /step one/);
 	const red = await byName.noo_evaluate.execute({ gene: "demo/red" });
 	assert.match(red.text, /^RED \(exit 1\)\n/);
-	ok("tools: exit 0 → text; exit 1 → RED verdict as text (valid result, not thrown)");
+	// exit 1 + 空 stdout = 引擎内部故障（非 EngineError 走 throw e，退出码同为 1
+	// 且无报告输出）——不得当红档结论放行。
+	await assert.rejects(() => byName.noo_evaluate.execute({ gene: "demo/crash" }), /fail-closed \(exit 2\)/);
+	ok("tools: exit 0 → text; exit 1+report → RED verdict; exit 1+empty report → throw; exit 2 → throw");
 
 	await assert.rejects(() => byName.noo_evaluate.execute({ gene: "demo/missing" }), /fail-closed \(exit 2\)/);
 	await assert.rejects(() => byName.noo_select.execute({ signals: [] }), /non-empty array/);
@@ -170,6 +182,25 @@ function writeFixtureGene(repoRoot) {
 	assert.equal(failed.failed.length, 1);
 	assert.match(warns.at(-1), /solidify failed for 1 candidate/);
 	ok("solidify: gate red → failed list via warn (write refused, engine semantics)");
+
+	// ask 兜底超时（R2-S9）：answerer 永久挂起 → 超时按"仅提醒"降级，不挂死触发体。
+	// keep-alive 句柄：降级定时器 unref（生产语义——不拖住宿主关停），自测进程
+	// 需自备存活窗让 20ms 超时先于事件循环排空触发。
+	const keepAlive = setTimeout(() => {}, 200);
+	const hung = await runSolidifyTrigger({
+		repoRoot: repo,
+		stagingDir: staging,
+		actor: "t",
+		candidates,
+		logger,
+		ask: () => new Promise(() => {}),
+		runEngine: async () => assert.fail("must not run engine on ask timeout"),
+		askTimeoutMs: 20,
+	});
+	clearTimeout(keepAlive);
+	assert.equal(hung.approved, false);
+	assert.match(infos.at(-1), /genes-staging\/alpha\.json/);
+	ok(`solidify: hung ask times out (default ${ASK_TIMEOUT_MS}ms) → notice-only fallback`);
 }
 
 // ── 5) 配置校验：fail-closed + 缺省补全 ───────────────────────────────────

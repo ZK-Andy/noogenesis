@@ -52,6 +52,7 @@ export function registerNooTools(ctx, { defineTool, runEngine, repoRoot }) {
 				signals: {
 					type: "array",
 					items: { type: "string" },
+					required: true,
 					description: "Signal phrases to match against gene signals, e.g. ['git 对账', 'push 前检查'].",
 				},
 			},
@@ -81,7 +82,7 @@ export function registerNooTools(ctx, { defineTool, runEngine, repoRoot }) {
 		defineTool({
 			name: "noo_evaluate",
 			description:
-				"Run a gene against the full validation whitelist (gates.json). 0=green, 1=gate red (the red report is returned as text — it is a valid verdict), 2=fail-closed (throws). Read-only.",
+				"Run a gene against the full validation whitelist (gates.json). 0=green, 1=gate red (the red report is returned as text — a valid verdict; exit 1 with an empty report means an engine fault and throws), 2=fail-closed (throws). Read-only.",
 			parameters: {
 				gene: { type: "string", description: 'Gene reference "<domain>/<id>", e.g. "doc/doc-single-home".' },
 			},
@@ -90,6 +91,10 @@ export function registerNooTools(ctx, { defineTool, runEngine, repoRoot }) {
 				const gene = requireGeneRef(args.gene, "noo_evaluate");
 				const result = await runEngine(["evaluate", gene], { repoRoot });
 				if (result.code === 2) failClosed("noo_evaluate", result);
+				// exit 1 + 空 stdout ≠ 红档结论：引擎对非 EngineError 的内部异常走
+				// `throw e`（Node 崩溃退出码同为 1，无报告输出）——当红档放行会把
+				// 引擎 bug 伪装成有效评测结论；红档必有报告 stdout，空则 fail-closed。
+				if (result.code === 1 && !result.stdout.trim()) failClosed("noo_evaluate", result);
 				const verdict = result.code === 0 ? "GREEN" : "RED (exit 1)";
 				return textResult(`${verdict}\n${result.stdout}${result.stderr}`);
 			},
