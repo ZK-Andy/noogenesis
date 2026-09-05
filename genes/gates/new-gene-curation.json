@@ -1,0 +1,21 @@
+{
+  "id": "new-gene-curation",
+  "domain": "gates",
+  "summary": "新基因只能人工策展进入：翻译 → evaluate 全绿 → solidify 原子入档",
+  "signals": [
+    "新增基因",
+    "基因入档",
+    "策展",
+    "gene 翻译"
+  ],
+  "strategy": [
+    "人工把方法论/流程卡/门禁翻译为 gene 八字段 JSON（候选文件以 <id>.json 命名）",
+    "node engine/bin.js evaluate <domain>/<id>——gates.json 全集必须绿",
+    "node engine/bin.js solidify <candidate> --actor <name>——genes/ 与 events/ 同一 commit 原子入档"
+  ],
+  "avoid": [
+    "让 propose 产生新基因（propose 只渲染，永不生成）",
+    "引擎自动生成/自动变异基因（无金标，#18 负结果约束）",
+    "手改 genes/ 下文件而不走 solidify（事件轨缺失，第十门禁会拦）"
+  ]
+}
