@@ -104,7 +104,8 @@ function main(argv) {
     const actor = actorIdx >= 0 ? rest[actorIdx + 1] : null;
     const retireIdx = rest.indexOf('--retire');
     const { solidify, retire } = require('./solidify');
-    const candidate = rest.find((a, i) => a !== '--actor' && i !== actorIdx + 1 && i !== retireIdx + 1);
+    const candidate = rest.find((a, i) => a !== '--actor' && i !== actorIdx + 1
+      && (retireIdx < 0 || i !== retireIdx + 1));
     if (!candidate) fail('solidify needs <candidate.json> or --retire <domain>/<id>');
     if (!actor) fail('solidify needs --actor <name>');
     let r;
