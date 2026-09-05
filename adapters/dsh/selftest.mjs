@@ -417,6 +417,14 @@ function writeFixtureGene(repoRoot) {
 	assert.match(warns.join("\n"), /bad-skill\/SKILL\.md/);
 	ok("skills: cache dir lists curated skill at rank 600; bad frontmatter skipped with warn");
 
+	// list 级 CRLF：CRLF 收录的库缓存不得整技能面静默清空（R2-B1 回归）
+	const crlfDir = path.join(skillsDir, "crlf-skill");
+	fs.mkdirSync(crlfDir, { recursive: true });
+	fs.writeFileSync(path.join(crlfDir, "SKILL.md"), "---\r\nname: crlf-skill\r\ndescription: Survives CRLF\r\n---\r\n\r\n# CRLF body\r\n");
+	const crlfList = await provider.list({ cwd: "/tmp/elsewhere" });
+	assert.ok(crlfList.some((c) => c.name === "crlf-skill"), "CRLF skill must be served, not dropped");
+	ok("skills: CRLF skill served by list (no silent whole-surface wipe)");
+
 	// get：全文定义 + 合同防线（外来 candidate / 文件消失 → undefined）
 	const def = await provider.get(candidates[0]);
 	assert.equal(def.name, "alpha-skill");
@@ -439,22 +447,43 @@ function writeFixtureGene(repoRoot) {
 	assert.equal((await dyn.list({ cwd: repoB }))[0].name, "beta-skill");
 	ok("skills: per-lookup cwd resolution — two repos each see their own cached skills");
 
+	const crlf = parseSkillFile("---\r\nname: crlf-skill\r\ndescription: survives CRLF\r\n---\r\n\r\n# Body\r\nline\r\n");
+	assert.equal(crlf.meta.name, "crlf-skill");
+	assert.match(crlf.content, /^# Body\nline\n$/);
+	ok("skills: CRLF SKILL.md parses — entry normalization, body \\r stripped (R2-B1 regression)");
+
 	// 降级：无缓存目录 → 空数组，绝不抛（selftest 进程 cwd 在真实仓根，无缓存）
 	assert.deepEqual(await dyn.list({}), []);
 	ok("skills: missing cache → empty skill surface (degrade, never throw)");
 
-	// 接线：宿主 skills 面缺席 → 降级 false；在场 → 注册成功且 provider 动态可用
-	assert.equal(registerBankSkills({}, { logger: { warn() {} } }), false);
-	const captured = [];
+	// 非 ENOENT 读错误（skills 路径是文件 → ENOTDIR）：warn 留痕仍空面（bank-pull 同款纪律）
+	const blocker = tempRepo("bank-skills-block");
+	fs.mkdirSync(path.join(blocker, ".noogenesis", "genes-cache", ".agents"), { recursive: true });
+	fs.writeFileSync(path.join(blocker, ".noogenesis", "genes-cache", ".agents", "skills"), "not a directory");
+	const blockWarns = [];
+	const blocked = createBankSkillProvider({ config: { repoRoot: blocker }, logger: { warn: (m) => blockWarns.push(m) } });
+	assert.deepEqual(await blocked.list({}), []);
+	assert.match(blockWarns.join("\n"), /unreadable/);
+	ok("skills: non-ENOENT read error → warn + empty surface; ENOENT stays silent");
+
+	// 接线：宿主 skills 面缺席 → 降级 {ok:false}；在场 → 注册成功 + invalidate 钩子
+	assert.equal(registerBankSkills({}, { logger: { warn() {} } }).ok, false);
+	const invalidated = [];
+	let created;
 	const fakeSkillsCtx = {
 		skills: {
-			registerProvider: (create) => captured.push(create({ signal: new AbortController().signal, invalidate() {} })),
+			registerProvider: (create) => {
+				created = create({ signal: new AbortController().signal, invalidate: () => invalidated.push(1) });
+			},
 		},
 	};
-	assert.equal(registerBankSkills(fakeSkillsCtx, { config: { repoRoot: repo }, logger: { warn() {} } }), true);
-	assert.equal(captured[0].name, PROVIDER_NAME);
-	assert.equal((await captured[0].list({}))[0].name, "alpha-skill");
-	ok("skills: registerBankSkills — absent host service degrades; present service gets dynamic provider");
+	const wired = registerBankSkills(fakeSkillsCtx, { config: { repoRoot: repo }, logger: { warn() {} } });
+	assert.equal(wired.ok, true);
+	assert.equal(created.name, PROVIDER_NAME);
+	assert.equal((await created.list({}))[0].name, "alpha-skill");
+	wired.invalidate();
+	assert.equal(invalidated.length, 1);
+	ok("skills: registerBankSkills — absent host service degrades; invalidate hook bumps host catalog after pull");
 
 	// e2e：真实引擎 pull（bank 仓带 .agents/skills）→ provider 从缓存命中技能
 	const bankWithSkills = tempRepo("bank-skills-e2e");

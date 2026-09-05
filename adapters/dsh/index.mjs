@@ -78,12 +78,22 @@ export function apply(ctx, config = {}) {
 
 	ctx.provide("noogenesis", { repoRoot, runEngine });
 
+	// 技能随库分发（skills-ride-bank ADR）：provider 读 genes-cache/.agents/skills，
+	// rank 600（用户/项目同名可遮蔽）；宿主 skills 面缺席/注册失败 → 内部 warn
+	// 降级不阻塞装载。invalidate 钩子必须在 pull 块之前取得——pull 成功落地后
+	// bump 宿主 catalog revision，pull 前已被 list 过的 cwd 无需重启即重发现技能面。
+	const bankSkills = registerBankSkills(ctx, { config: cfg, logger });
+
 	// P2 只读消费（D7 + bank-pull.mjs 头注）：geneBankUrl 在场 → 装载时惰性
-	// pull 一次，失败仅 warn 降级离线，绝不阻塞会话。
+	// pull 一次，失败仅 warn 降级离线，绝不阻塞会话；成功 → 技能面缓存失效刷新。
 	if (cfg.geneBankUrl) {
-		pullBankOnce({ repoRoot, url: cfg.geneBankUrl, runEngine, logger }).catch((cause) => {
-			logger.warn(`noogenesis bank pull crashed: ${cause instanceof Error ? cause.message : String(cause)}`);
-		});
+		pullBankOnce({ repoRoot, url: cfg.geneBankUrl, runEngine, logger })
+			.then((result) => {
+				if (result.pulled) bankSkills.invalidate();
+			})
+			.catch((cause) => {
+				logger.warn(`noogenesis bank pull crashed: ${cause instanceof Error ? cause.message : String(cause)}`);
+			});
 	}
 
 	ctx.systemPrompt.section({ name: "tool:noogenesis", order: cfg.sectionOrder, text: BASE_SECTION });
@@ -96,11 +106,6 @@ export function apply(ctx, config = {}) {
 	});
 
 	registerNooTools(ctx, { defineTool, runEngine, repoRoot: repoRootFor });
-
-	// 技能随库分发（skills-ride-bank ADR）：provider 读 genes-cache/.agents/skills，
-	// rank 600（用户/项目同名可遮蔽）；宿主 skills 面缺席/注册失败 → 内部 warn
-	// 降级不阻塞装载（registerBankSkills 的「缺席降级」纪律，inject 不声明 skills）。
-	registerBankSkills(ctx, { config: cfg, logger });
 
 	// 写路径唯一触发点：agent/disposed。repoRoot 按 dispose 的那个 agent 逐次
 	// 解析（payload 携带 { agent }，与 auto 触发面同款实证）——异仓会话各归
