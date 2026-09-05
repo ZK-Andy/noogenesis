@@ -542,8 +542,10 @@ function writeFixtureGene(repoRoot) {
 	assert.match(crlf.content, /^# Body\nline\n$/);
 	ok("skills: CRLF SKILL.md parses — entry normalization, body \\r stripped (R2-B1 regression)");
 
-	// 降级：无缓存目录 → 空数组，绝不抛（selftest 进程 cwd 在真实仓根，无缓存）
-	assert.deepEqual(await dyn.list({}), []);
+	// 降级：无缓存目录 → 空数组，绝不抛。cwd 钉在 tmpdir——真实仓根可能已有
+	// 0.1.3+ 装载时拉下的 genes-cache，夹具不得依赖「环境缓存缺席」这一
+	// 会随功能生效而失效的假设（desktop 重装实测暴露）。
+	assert.deepEqual(await dyn.list({ cwd: os.tmpdir() }), []);
 	ok("skills: missing cache → empty skill surface (degrade, never throw)");
 
 	// 非 ENOENT 读错误（skills 路径是文件 → ENOTDIR）：warn 留痕仍空面（bank-pull 同款纪律）
