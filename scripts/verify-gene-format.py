@@ -224,7 +224,7 @@ def _scan(repo: Path) -> tuple[int, list[str]]:
         for p in sorted(genes_root.rglob("*.json")):
             checked += 1
             rel = p.relative_to(repo)
-            # 布局封闭：只认 genes/<domain>/<id>.json（与引擎 scanGenes 单层扫描镜像，R2-S3）
+            # 布局封闭：只认 genes/<domain>/<id>.json（与引擎 scanGenes 单层扫描镜像）
             if len(rel.parts) != 3 or rel.parts[0] != "genes":
                 errors.append(f"{rel}: gene files must be at genes/<domain>/<id>.json layout")
                 continue
@@ -240,7 +240,7 @@ def _scan(repo: Path) -> tuple[int, list[str]]:
                     errors.append(f"{p}: duplicate gene id '{gid}' (also {gene_files[gid]})")
                 gene_files[gid] = p
 
-    # events/：结构 + 月卷 + 时间序；并按 id 聚出事件流（ts 稳定排序，R2-S2）
+    # events/：结构 + 月卷 + 时间序；并按 id 聚出事件流（ts 稳定排序）
     per_gene: dict[str, list[dict]] = {}
     events_root = repo / "events"
     volumes: list[tuple[Path, list[tuple[datetime.datetime, dict]]]] = []
@@ -251,7 +251,7 @@ def _scan(repo: Path) -> tuple[int, list[str]]:
             volumes.append((vol, rows))
             for _, ev in rows:
                 per_gene.setdefault(ev["gene"], []).append(ev)
-    # 跨卷 ts 接续：前卷最大 ts ≤ 后卷最小 ts（月界 ±1 天容差下仍可辨乱序，R2-S2）
+    # 跨卷 ts 接续：前卷最大 ts ≤ 后卷最小 ts（月界 ±1 天容差下仍可辨乱序）
     for (v1, r1), (v2, r2) in zip(volumes, volumes[1:]):
         if r1 and r2 and r1[-1][0] > r2[0][0]:
             errors.append(f"{v2}: first ts precedes last ts of {v1.name} — cross-volume disorder")
@@ -260,7 +260,7 @@ def _scan(repo: Path) -> tuple[int, list[str]]:
         per_gene[gid].sort(key=lambda e: _parse_ts(e["ts"]) or datetime.datetime.min.replace(tzinfo=datetime.timezone.utc))
 
     # 复算规则分型（S2）：retired 划段；段内 ok 的 added/updated 对工作树复算；
-    # fail 事件只查结构不作复算（被拒候选内容 ≠ 工作树状态）——R2-B1 修复
+    # fail 事件只查结构不作复算（被拒候选内容 ≠ 工作树状态）
     for gid, evs in per_gene.items():
         candidates = list(genes_root.glob(f"*/{gid}.json")) if genes_root.is_dir() else []
         if len(candidates) > 1:
@@ -420,7 +420,7 @@ def _self_test() -> int:
             _event(ts="2026-07-01T00:00:00Z", sha=_sha_of(t, "genes/process/sample-gene.json")) + "\n")
     cases.append((wrong_month, ["outside volume month"], "ts far outside volume month -> fail"))
 
-    # R2-B1 修复夹具：合法红闸拒绝不得打红门禁
+    # 夹具：合法红闸拒绝不得打红门禁
     def rejected_update(t: Path):
         conforming(t); fix_sha(t)
         _mk(t, "events/2026-09.jsonl",
@@ -436,14 +436,14 @@ def _self_test() -> int:
             _event(gid="never-kept", sha="e" * 64, outcome="fail: stub-fail exit 1") + "\n")
     cases.append((rejected_add_only, [], "rejected-only candidate (no file) -> pass"))
 
-    # R2-S3 修复夹具：布局封闭
+    # 夹具：布局封闭
     def flat_layout(t: Path):
         _mk(t, "engine/gates.json", WHITELIST)
         _mk(t, "scripts/stub.py", "print('ok')\n")
         _mk(t, "genes/loose.json", _gene(domain="genes"))
     cases.append((flat_layout, ["genes/<domain>/<id>.json layout"], "flat gene file -> fail"))
 
-    # R2-S2 修复夹具：跨卷 ts 乱序（月界 ±1 天容差内仍须可辨）
+    # 夹具：跨卷 ts 乱序（月界 ±1 天容差内仍须可辨）
     def cross_volume_disorder(t: Path):
         conforming(t); fix_sha(t)
         sha = _sha_of(t, "genes/process/sample-gene.json")

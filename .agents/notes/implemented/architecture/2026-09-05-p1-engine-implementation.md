@@ -1,6 +1,7 @@
 # Agent Note: P1 实现轮拍板（实现层协议口径六题）
 
 Status: implemented
+Review: FULL/2026-09-05/R1=ok R2=ok R3=ok
 
 > Provenance：本仓原创（2026-09-05 P1 实现轮）。骨架与协议上游拍板见 [2026-09-05-p1-engine-skeleton](2026-09-05-p1-engine-skeleton.md)（D1–D4）与 [2026-09-05-gene-event-schema](2026-09-05-gene-event-schema.md)（S1–S3）；本 ADR 记实现轮遇到的协议未定细节，逐题拍板，引擎代码与 `scripts/verify-gene-format.py` 以此为口径。
 
@@ -30,6 +31,7 @@ Status: implemented
 ### D4（2026-09-05）：constraints 对照"出账变更面"，与 change-scope.sh 同口径
 
 - 出账面 = `{outgoing_base}...HEAD` 已提交 diff + 未暂存 diff + 未跟踪文件（dedupe）；`outgoing_base` = 与上游 merge-base，无上游（临时仓/自举仓）回退根提交——全部从 git 事实推导（骨架 ADR D4 槽值纪律的同一推导）。
+- "同口径"仅指三条 changed-path git 命令的集合一致（见 Consequences ①）；base 推导与 change-scope.sh 不同源（彼用 fork-point，此用上游 merge-base），差异是有意为之。
 - 依据：基因约束治理的是"这次变更"，入档时刻的这次变更 = 出账面；与 `scripts/change-scope.sh` 保持同口径避免双推导漂移。
 
 ### D5（2026-09-05）：数组字段封闭——空数组拒收，省略即无
@@ -50,7 +52,7 @@ Status: implemented
 
 ## Consequences
 
-- **采用面**：`engine/`（bin/util/gates/gene/select/propose/evaluate/solidify/selftest + gates.json + README）与 `scripts/verify-gene-format.py`（第十门禁，含 self-test）按 D1–D6 实现；hooks/CI/AGENTS 质量门同步挂入；首批 6 基因（process/doc/gates 三域）人工策展经 solidify 入档。
-- **域封闭集现状**：首批三域 = process / doc / gates；后续新域经 solidify 创建目录自然生长。
+- **采用面**：`engine/`（bin/util/gates/gene/select/propose/evaluate/solidify/selftest + gates.json + README）与 `scripts/verify-gene-format.py`（第十门禁，含 self-test）按 D1–D6 实现；hooks/CI/AGENTS 质量门同步挂入。首批 6 基因（process/doc/gates 三域）人工策展翻译完成（候选就绪），拟经 solidify 入档、事件轨落 `events/` 月卷。
+- **域封闭集起点**：首批三域 = process / doc / gates；后续新域经 solidify 创建目录自然生长。
 - **双实现镜像**：协议语义 JS（engine）与 Python（第十门禁）各有一份校验实现，漂移由两侧 self-test 夹具兜底；改动协议必须同轮改两侧夹具。
-- **评审收口口径（2026-09-05 FULL 三审采纳项）**：①D4 的"与 change-scope.sh 同口径"指三条 git 命令同集合；引擎额外 `-c core.quotePath=off` 保非 ASCII 文件名原样（change-scope.sh 是上游逐字节搬运件不改，其八进制转义是已知同源病，简化候选归口）；②复算规则细化 = retired 划段 + 段内 ok 的 added/updated 对工作树复算、fail 只查结构（schema ADR S2"fail/retired 不作工作树复算"的精确化）+ 跨卷 ts 接续校验；③solidify 的 commit 失败必须回滚写面（不留半应用状态）；④跨树 id 唯一性在 solidify 写路径强制（第十门禁只做事后兜底）。
+- **评审收口口径（2026-09-05 FULL 三审采纳项）**：①D4 的"与 change-scope.sh 同口径"仅指三条 changed-path git 命令同集合；引擎额外 `-c core.quotePath=off` 保非 ASCII 文件名原样（change-scope.sh 是上游逐字节搬运件不改，其八进制转义是已知同源病，简化候选归口 HANDOFF-todos（C 类随手候选））；②复算规则细化 = retired 划段 + 段内 ok 的 added/updated 对工作树复算、fail 只查结构（schema ADR S2"fail/retired 不作工作树复算"的精确化）+ 跨卷 ts 接续校验；③solidify 的 commit 失败必须回滚写面（不留半应用状态）；④跨树 id 唯一性在 solidify 写路径强制（第十门禁只做事后兜底）。

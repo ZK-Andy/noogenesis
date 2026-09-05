@@ -14,3 +14,4 @@
 - [x] （B）CI validate.yml 首跑复验 2026-09-05：push 三触发（2 绿 + 1 concurrency 取消），run 33970832391@74661d4 全绿——七门禁 + review-tier `--since event.before --enforce` 真强制 + 6 self-test；brief 闸按设计仅本地预发射，不入 CI。
 - [x] （D）P1 立项收口（三审全采纳）：ADR [p1-engine-skeleton](.agents/notes/implemented/architecture/2026-09-05-p1-engine-skeleton.md)、[gene-event-schema](.agents/notes/implemented/architecture/2026-09-05-gene-event-schema.md)。
 - [ ] **（D）P1 演化引擎实现轮**——骨架/schema 已拍板：`engine/` 目录 + 四命令（select/propose/evaluate/solidify）+ `gates.json` 白名单 + `verify-gene-format.py` 第十门禁 + engine self-test 夹具 + 首批基因人工策展翻译（AGENTS/流程卡/门禁 → `genes/`，首批 ≤3 域）。
+- [ ] （C）随手简化候选：`scripts/change-scope.sh` 输出面非 ASCII 文件名走 git 默认 `core.quotePath` 八进制转义（上游逐字节搬运件，改动须过其 provenance 约束）——归口见实现轮 ADR Consequences ①。

@@ -23,7 +23,7 @@ function checkConstraints(gene, changed) {
   return violations;
 }
 
-// 白名单子集检查单源在此（R1 收口）：readGene/scanGenes 不再重复。
+// 白名单子集检查单源在此：readGene/scanGenes 不再重复。
 function evaluateGeneObj(repoRoot, engineRoot, gene, ref) {
   const gates = loadGates(engineRoot, repoRoot);
   if (Array.isArray(gene.validation)) {

@@ -29,7 +29,7 @@ function validateGene(obj, opts) {
   }
   if (typeof obj.summary !== 'string' || !obj.summary.trim()) errors.push('summary must be a non-empty string');
 
-  // 数组字段同形校验（R1 收口：折叠重复块）；signals/strategy ≥1，validation/avoid 空即违约
+  // 数组字段同形校验；signals/strategy ≥1，validation/avoid 空即违约
   for (const [field, arr, minimum] of [['signals', obj.signals, 1], ['strategy', obj.strategy, 1],
                                        ['validation', obj.validation, 0], ['avoid', obj.avoid, 0]]) {
     if (arr === undefined) continue;
@@ -73,7 +73,7 @@ function validateGene(obj, opts) {
 
 // 读入并校验单个基因文件。目录锚点（domain == 父目录）只约束 genes/ 内的落盘位置；
 // solidify 的候选文件可放在 genes/ 之外（入档位置由 solidify 决定），故可关。
-// validation ⊆ 白名单的检查单源在 evaluate.evaluateGeneObj（R1 收口：此处不重复）。
+// validation ⊆ 白名单的检查单源在 evaluate.evaluateGeneObj，此处不重复。
 function readGene(filePath, opts = {}) {
   const fileName = path.basename(filePath);
   const parentDir = opts.skipDirAnchor ? null : path.basename(path.dirname(filePath));

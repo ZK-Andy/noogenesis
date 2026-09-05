@@ -249,7 +249,7 @@ function selfTest() {
     ok(throwsEngine(() => retire(td, gatesDir, 'process/sol-gene', 'tester')),
       'retire: retiring a missing gene refused');
 
-    // R1 收口夹具：跨树 id 唯一性（同 id 异域拒入档）
+    // 夹具：跨树 id 唯一性（同 id 异域拒入档）
     const dupGene = { ...gene, id: 'dup-id', domain: 'doc' };
     const dupPath = path.join(staging, 'dup-id.json');
     fs.writeFileSync(dupPath, JSON.stringify(dupGene, null, 2) + '\n');
@@ -265,7 +265,7 @@ function selfTest() {
         'solidify: same id in another domain refused (refs stay unambiguous)');
     }
 
-    // R2 收口夹具：无关暂存件不捎带（pathspec 隔离）
+    // 夹具：无关暂存件不捎带（pathspec 隔离）
     {
       writeGates(gatesDir, [{ name: 'stub-pass', cmd: 'python3', args: ['scripts/stub-pass.py'] }]);
       fs.writeFileSync(path.join(td, 'unrelated.txt'), 'unrelated\n');
@@ -282,7 +282,7 @@ function selfTest() {
         'solidify: unrelated file remains staged for its own commit');
     }
 
-    // R2 收口夹具：commit 失败 → 写面回滚（不留半应用状态）
+    // 夹具：commit 失败 → 写面回滚（不留半应用状态）
     {
       const hooksDir = path.join(td, 'failing-hooks');
       fs.mkdirSync(hooksDir);
@@ -302,7 +302,7 @@ function selfTest() {
     }
   }
 
-  // --- 5.5) bin.js 退出码三档端到端（R2-B2：fail-closed = exit 2，非堆栈 exit 1）---
+  // --- 5.5) bin.js 退出码三档端到端（fail-closed = exit 2，非堆栈 exit 1）---
   {
     const td = mkTemp();
     mkRepo(td);

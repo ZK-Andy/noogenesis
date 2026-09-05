@@ -21,7 +21,7 @@ function appendEvent(repoRoot, ev) {
   return p;
 }
 
-// 提交指定路径；失败时回滚本函数组已做的写面（R2 收口：不留半应用状态）。
+// 提交指定路径；失败时回滚本函数组已做的写面，不留半应用状态。
 function commitPaths(repoRoot, paths, msg) {
   const r1 = git(repoRoot, ['add', '--', ...paths]);
   if (r1.code !== 0) throw new EngineError(`git add failed: ${r1.stderr.trim()}`);
@@ -46,7 +46,7 @@ function redReason(ev) {
   return parts.join('; ') || 'unknown';
 }
 
-// 跨树 id 唯一性（R1 收口）：同一 id 不得在两个域并存（refs 必须无歧义）。
+// 跨树 id 唯一性：同一 id 不得在两个域并存（refs 必须无歧义）。
 function assertIdUnique(repoRoot, domain, id) {
   const root = path.join(repoRoot, 'genes');
   if (!fs.existsSync(root)) return;
