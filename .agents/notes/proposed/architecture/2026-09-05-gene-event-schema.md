@@ -36,7 +36,17 @@ Status: proposed
 - **落盘**：`events/<YYYY-MM>.jsonl`，月卷与 journal 同节奏（diff 可读、量有界）；**入 git**（审计面非缓存面，"过程即资产"直接适用）；**原子证据**：solidify 将 `genes/` 变更与 `events/` 追加行放同一 commit——基因更替与审计记录不可分离，是 content-addressable + append-only 在 git 载体上的落法。
 - **校验**：不新增第十一门禁——`verify-gene-format.py` 扩展覆盖 `events/`（行级 JSON、kind 封闭集、gene_sha 可复算、genes/ 与 events/ 引用一致），仍单脚本 = 第十门禁，gate 数量的克制性守住。
 
-<!-- S3（验证白名单 + 安全模型 + 元评测夹具）占位：拍板一题填一题。 -->
+### S3（2026-09-05，已拍板）：验证白名单、安全模型、元评测夹具
+
+- **白名单载体 = `engine/gates.json` 版本化机器清单**：v0 内容 = 九门禁确切命令行；`verify-gene-format.py` 增校验——白名单每条引用的脚本文件必须存在（防漂移）；CI、钩子、引擎三方引用同一清单。与 AGENTS 质量门（人读面）的漂移由"脚本存在性 + gene.validation 字面匹配"双机械闸兜底；hooks/CI 引用方式的完整合一超出 P1，记 open 不做。
+- **安全模型五条**（实现轮落 engine README + 夹具验证）：①白名单封闭，字面匹配，结构化 spawn 不走 shell 拼接；②引擎零网络（D1/D3 一脉）；③基因不含可执行内容——`strategy`/`avoid` 是渲染文本，永不 eval；④子进程最小 env、工作目录锁仓根；⑤fail-closed：白名单缺失/格式坏/条目不存在 → evaluate 拒跑不静默退化。
+- **元评测 = engine 自带 `self-test` 子命令**（对齐 verify-* self-test 惯例，违约样例必须 FAIL）：select 命中/未命中/多信号并集/归一化；propose 金样渲染精确匹配（D3 可测性兑现）；evaluate 白名单外命令必须拒、约束违约必须 FAIL；solidify 在临时 git 仓验证原子提交（genes/ + events/ 同 commit）与 gene_sha 可复算。CI 加一步 `node engine/bin.js self-test`，与 verify-* self-test 平级、不占门禁编号。
+- **自托管纪律**：self-test 全程临时目录/沙箱，不触碰真实仓（引擎测试自己不污染被演化对象）。
+
+## Open questions
+
+- "严格改进"的文档域度量（骨架 ADR D4 显式 open，M2 重议）。
+- hooks/CI 引用 `engine/gates.json` 的完整合一（S3 记 open，超出 P1）。
 
 ## Alternatives considered
 
