@@ -8,6 +8,9 @@ function isNatural(value) {
 	return Number.isInteger(value) && value > 0;
 }
 
+/** 官方基因库（P2 ADR D1 本仓即库；缺省进包 = 装完即部署，bug-fix ADR D2）。 */
+export const DEFAULT_GENE_BANK_URL = "https://github.com/ZK-Andy/noogenesis.git";
+
 export function validateConfig(config = {}) {
 	if (typeof config !== "object" || config === null || Array.isArray(config)) {
 		throw new Error("noogenesis: config must be an object");
@@ -35,8 +38,11 @@ export function validateConfig(config = {}) {
 	if (config.maxIndexGenes !== undefined && !isNatural(config.maxIndexGenes)) {
 		throw new Error("noogenesis: config.maxIndexGenes must be a positive integer");
 	}
-	if (config.geneBankUrl !== undefined && (typeof config.geneBankUrl !== "string" || config.geneBankUrl.length === 0)) {
-		throw new Error("noogenesis: config.geneBankUrl must be a non-empty string");
+	// geneBankUrl：undefined → 缺省官方库（装完即部署）；false → 显式禁用
+	// （pull 面短路，零 clone 尝试）；非空 string → 自定义库；空串/其余类型违约。
+	if (config.geneBankUrl !== undefined && config.geneBankUrl !== false
+		&& (typeof config.geneBankUrl !== "string" || config.geneBankUrl.length === 0)) {
+		throw new Error("noogenesis: config.geneBankUrl must be a non-empty string or false");
 	}
 	return {
 		repoRoot: config.repoRoot,
@@ -46,6 +52,6 @@ export function validateConfig(config = {}) {
 		askOnDispose: config.askOnDispose ?? true,
 		actor: config.actor ?? "noogenesis",
 		maxIndexGenes: config.maxIndexGenes ?? 12,
-		geneBankUrl: config.geneBankUrl,
+		geneBankUrl: config.geneBankUrl === false ? false : (config.geneBankUrl ?? DEFAULT_GENE_BANK_URL),
 	};
 }

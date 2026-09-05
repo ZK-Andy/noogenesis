@@ -360,7 +360,7 @@ DSH 的官方设计哲学（[Everything is a plugin](https://www.deepseek.com/ha
 1. **命名：已拍板（2026-09-05）——项目名 `Noogenesis`（英）·「心源」（中，2026-09-05 拍板）**（noogenesis＝心智的发生与持续生长，德日进谱系下集体知识演化过程；AGI 北极星词根，与 Gene 原语同源：gene→genesis→Noogenesis。中文双名制：品牌名「心源」+ 文档术语「心智发生」，即"心源 · Noogenesis，心智的发生与持续生长"；「智源」因 BAAI（北京智源人工智能研究院）撞车弃用，「生智」因语感不佳弃用）。**占用核验（2026-09-05 registry/GitHub API 实测）**：npm 双名注册占位完成——裸名 `noogenesis@0.0.0` 与 org `@noogenesis`（占位包 `@noogenesis/genesis@0.0.0`，均 AGPL-3.0，账号 openorbit）；真包随首发替换，占位包 repository 字段预填 `github.com/openorbit/noogenesis`，宿主名有变须同改（操作过程见 journal 2026-09 卷）。GitHub 用户名 `noogenesis` 被 2021-01-16 注册的休眠账号占用（0 仓库零活动，实际不可回收）——仅阻碍将来若想开同名专用 org，不影响 `github.com/<宿主>/noogenesis` 仓库命名（仓库重名不跨账号）。P2 基因库仓库名（设计稿占位 `dsh-gene-bank`，与 `noo-*` 前缀约定有张力）与域名等 taxonomy 细分：随 P2 立项拍板。**P2 拍板回写（2026-09-06，ADR `2026-09-06-p2-shared-consumer`）**：P2 首批本仓即库、不开新仓；`dsh-gene-bank` 占位名弃用，独立基因库仓随贡献开放再立、命名走 `noogenesis` 系；**taxonomy 细分仍 open**（随贡献开放拍板）。
 2. `validate.yml` 具体复刻哪些 `verify-*`（最小集先跑，还是全覆盖）。
 3. ~~集体层首批"只读消费公开基因库"起步，还是直接开放贡献 PR~~ **已拍板（2026-09-06）**：只读消费起步（本仓即库、pull → 注入已落地）；贡献 PR 随多人阶段再开（分阶段，ADR 同上）。
-4. ~~是否保留"单人队列 → 共享"迁移开关~~ **已拍板（2026-09-06）**：保留——引擎默认离线、显式配置（adapter `geneBankUrl` / `engine pull` 手动入口）才接库（ADR 同上 D4/D7）。
+4. ~~是否保留"单人队列 → 共享"迁移开关~~ **已拍板（2026-09-06）**：保留——引擎默认离线、`engine pull` 手动入口；adapter `geneBankUrl` 缺省官方库（`false` 显式禁用）、触发点随会话工作区（P2 ADR D4/D7 + bug-fix ADR `2026-09-06-bank-pull-session-trigger`）。
 5. 与 `dsh-continual-evolve` 的边界：协议层放同一插件还是独立插件；及其与旧引擎的融合顺序（本设计不沿用旧体系决策，融合仅在架构定稿后）。
 
 ---

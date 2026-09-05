@@ -18,13 +18,13 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { isBuiltin } from "node:module";
 import { fileURLToPath } from "node:url";
-import { runEngineSync, resolveRepoRoot, sessionWorkspaceOf, EXIT } from "./engine-bridge.mjs";
+import { runEngineSync, resolveRepoRoot, sessionWorkspaceOf, explicitRepoRootOf, EXIT } from "./engine-bridge.mjs";
 import { hitsSectionText } from "./section.mjs";
 import { registerNooTools } from "./tools.mjs";
 import { listStagingCandidates, buildSolidifyArgs, solidifyNotice, runSolidifyTrigger, createInFlightGate, ASK_TIMEOUT_MS } from "./solidify-trigger.mjs";
-import { buildPullArgs, pullBankOnce } from "./bank-pull.mjs";
+import { buildPullArgs, pullBankOnce, createBankPullScheduler } from "./bank-pull.mjs";
 import { BUNDLED_SKILL_RANK, PROVIDER_NAME, createBankSkillProvider, parseSkillFile, registerBankSkills } from "./skill-provider.mjs";
-import { validateConfig } from "./config.mjs";
+import { validateConfig, DEFAULT_GENE_BANK_URL } from "./config.mjs";
 
 const ADAPTER_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.join(ADAPTER_DIR, "..", "..");
@@ -341,12 +341,15 @@ function writeFixtureGene(repoRoot) {
 	assert.match(warns.at(-1), /continuing offline/);
 	ok("bank-pull: engine failure → warn, degraded offline, never throws");
 
-	// config: geneBankUrl 校验 + 缺省
+	// config: geneBankUrl 缺省官方库（装完即部署，bug-fix ADR D2）/ false 显式禁用 / 自定义串 / 违约抛
 	const cfg = validateConfig({});
-	assert.equal(cfg.geneBankUrl, undefined);
-	assert.throws(() => validateConfig({ geneBankUrl: "" }), /geneBankUrl/);
-	assert.throws(() => validateConfig({ geneBankUrl: 42 }), /geneBankUrl/);
-	ok("bank-pull: config.geneBankUrl — default undefined, type violations throw");
+	assert.equal(cfg.geneBankUrl, DEFAULT_GENE_BANK_URL);
+	assert.equal(validateConfig({ geneBankUrl: false }).geneBankUrl, false);
+	assert.equal(validateConfig({ geneBankUrl: "https://example.com/bank.git" }).geneBankUrl, "https://example.com/bank.git");
+	for (const bad of ["", 42, null]) {
+		assert.throws(() => validateConfig({ geneBankUrl: bad }), /geneBankUrl/);
+	}
+	ok("bank-pull: config.geneBankUrl — default official bank, false disables, custom string passes, violations throw");
 
 	// e2e：真实引擎 pull（本地临时 bank）→ 缓存基因经 select 命中
 	const bank = tempRepo("bank");
@@ -379,6 +382,95 @@ function writeFixtureGene(repoRoot) {
 	assert.match(shadowed.stdout, /demo\/bank-only\s+local wins/);
 	assert.doesNotMatch(shadowed.stdout, /bank-only gene/);
 	ok("bank-pull: e2e — repo gene shadows same-ref cache copy (repo-first)");
+
+	// 触发点调度（bug-fix ADR D1）：装载期仅显式锚定；会话期仅会话工作区锚定；
+	// 两路径共享闸（每实例每仓至多一次）；成功回调 onPulled（技能面 invalidate）。
+	{
+		const schedCfg = { geneBankUrl: "https://example.com/bank.git" };
+		const pulls = [];
+		const pulledCallbacks = [];
+		const logger = { info: () => {}, warn: () => {} };
+		const runEngine = async (args, { repoRoot } = {}) => {
+			pulls.push(repoRoot);
+			return { code: EXIT.OK, stdout: "pull: cloned bank\n", stderr: "" };
+		};
+		const sched = createBankPullScheduler({ config: schedCfg, runEngine, logger, onPulled: () => pulledCallbacks.push(1) });
+		assert.equal(sched.enabled, true);
+
+		// 装载期：无显式锚定 → 跳过，且绝不落 cwd 兜底（错位落地回归：宿主 cwd ≠ 用户仓）
+		assert.deepEqual(await sched.pullAtLoad(), { pulled: false, reason: "repoRoot unknown at load" });
+		assert.deepEqual(pulls, []);
+		ok("bank-pull: scheduler — load-time pull skipped without explicit anchor (never cwd fallback)");
+
+		// 会话期：会话工作区锚定；成功回调即技能面 invalidate
+		const session = await sched.pullForSession({ agent: { session: { header: { cwd: "/tmp/repo-a" } } } });
+		assert.equal(session.pulled, true);
+		assert.deepEqual(pulls, ["/tmp/repo-a"]);
+		assert.equal(pulledCallbacks.length, 1);
+		ok("bank-pull: scheduler — session workspace anchors the pull; onPulled fires on success");
+
+		// 同仓重复发射（subagent 各自 agent/created）→ 闸吞掉，onPulled 不重复
+		assert.deepEqual(await sched.pullForSession({ agent: { session: { header: { cwd: "/tmp/repo-a" } } } }), { pulled: false, reason: "in-flight" });
+		assert.equal(pulledCallbacks.length, 1);
+		// 异仓各归各仓
+		await sched.pullForSession({ agent: { session: { header: { cwd: "/tmp/repo-b" } } } });
+		assert.deepEqual(pulls, ["/tmp/repo-a", "/tmp/repo-b"]);
+		// 无会话工作区 → 跳过（不落 cwd 兜底）
+		assert.deepEqual(await sched.pullForSession({}), { pulled: false, reason: "no session workspace" });
+		assert.equal(pulls.length, 2);
+		ok("bank-pull: scheduler — shared gate dedupes per repo (never released); missing session cwd skipped");
+
+		// 显式锚定 → 装载期触发（0.1.2 显式配置部署行为不变）
+		pulls.length = 0;
+		const pinned = createBankPullScheduler({ config: { ...schedCfg, repoRoot: "/tmp/pinned" }, runEngine, logger });
+		assert.equal((await pinned.pullAtLoad()).pulled, true);
+		assert.deepEqual(pulls, ["/tmp/pinned"]);
+		ok("bank-pull: scheduler — explicit repoRoot keeps load-time trigger");
+
+		// 禁用面：false → 两路径零引擎 spawn
+		let spawned = false;
+		const off = createBankPullScheduler({
+			config: { geneBankUrl: false, repoRoot: "/tmp/off" },
+			runEngine: async () => { spawned = true; return { code: EXIT.OK, stdout: "", stderr: "" }; },
+			logger,
+		});
+		assert.equal(off.enabled, false);
+		assert.deepEqual(await off.pullAtLoad(), { pulled: false, reason: "disabled" });
+		assert.deepEqual(await off.pullForSession({ agent: { session: { header: { cwd: "/tmp/x" } } } }), { pulled: false, reason: "disabled" });
+		assert.equal(spawned, false);
+		ok("bank-pull: scheduler — geneBankUrl false disables both paths with zero engine spawns");
+
+		// 失败面：引擎红档 → warn 降级，onPulled 不触发
+		const failWarns = [];
+		const failCallbacks = [];
+		const failing = createBankPullScheduler({
+			config: schedCfg,
+			runEngine: async () => ({ code: EXIT.FAIL_CLOSED, stdout: "", stderr: "engine: git clone failed: network down\n" }),
+			logger: { info: () => {}, warn: (m) => failWarns.push(m) },
+			onPulled: () => failCallbacks.push(1),
+		});
+		assert.equal((await failing.pullForSession({ agent: { session: { header: { cwd: "/tmp/repo-c" } } } })).pulled, false);
+		assert.match(failWarns.at(-1), /continuing offline/);
+		assert.equal(failCallbacks.length, 0);
+		ok("bank-pull: scheduler — engine failure degrades offline, onPulled withheld");
+	}
+
+	// explicitRepoRootOf：config → env → undefined（无 cwd 兜底）；resolveRepoRoot 是其超集
+	{
+		const saved = process.env.NOGENESIS_REPO_ROOT;
+		try {
+			delete process.env.NOGENESIS_REPO_ROOT;
+			assert.equal(explicitRepoRootOf({}), undefined);
+			assert.equal(explicitRepoRootOf({ repoRoot: "/tmp/config-repo" }), "/tmp/config-repo");
+			process.env.NOGENESIS_REPO_ROOT = "/tmp/env-repo";
+			assert.equal(explicitRepoRootOf({}), "/tmp/env-repo");
+			assert.equal(explicitRepoRootOf({ repoRoot: "/tmp/config-repo" }), "/tmp/config-repo");
+		} finally {
+			if (saved === undefined) delete process.env.NOGENESIS_REPO_ROOT;
+			else process.env.NOGENESIS_REPO_ROOT = saved;
+		}
+		ok("bank-pull: explicitRepoRootOf — config → env → undefined, no cwd fallback");
+	}
 }
 
 // ── 5.6) 技能随库分发：provider 动态 list/get + 降级 + 逐仓解析 ───────────

@@ -42,13 +42,24 @@ export function sessionWorkspaceOf(agentCarrier) {
 }
 
 /**
+ * 显式锚定提取（bank-pull 触发面专用）：config → env → undefined——**无 cwd
+ * 兜底**。装载期 cwd 与用户仓无关（宿主进程 cwd），拿它当 pull 目标会把缓存
+ * 落进错位目录（bug-fix ADR 2026-09-06-bank-pull-session-trigger 的根因面）；
+ * 只有显式锚定才允许装载期动作。resolveRepoRoot 是本函数的超集（补会话工作区
+ * 与 cwd 两级），链语义单源在此。
+ */
+export function explicitRepoRootOf(config = {}) {
+	return config.repoRoot || process.env.NOGENESIS_REPO_ROOT || undefined;
+}
+
+/**
  * 目标仓根锚定（部署收口 ADR 2026-09-06-adapter-deploy-hardening 四级链）：
  * 显式 config.repoRoot 优先，其次 NOGENESIS_REPO_ROOT，再次会话工作区
  * （工具体/disposal 面逐次传入——装在 DSH 侧的插件 ≠ 运行仓，且多 agent
  * 异仓各归各仓），兜底 process.cwd()。返回绝对路径。
  */
 export function resolveRepoRoot(config = {}, sessionCwd) {
-	return path.resolve(config.repoRoot || process.env.NOGENESIS_REPO_ROOT || sessionCwd || process.cwd());
+	return path.resolve(explicitRepoRootOf(config) || sessionCwd || process.cwd());
 }
 
 /**

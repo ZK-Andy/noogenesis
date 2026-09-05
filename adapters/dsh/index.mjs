@@ -15,7 +15,7 @@ import { runEngine, runEngineSync, resolveRepoRoot, sessionWorkspaceOf } from ".
 import { registerNooTools } from "./tools.mjs";
 import { BASE_SECTION, hitsSectionText } from "./section.mjs";
 import { runSolidifyTrigger, listStagingCandidates, createInFlightGate, ASK_TIMEOUT_MS } from "./solidify-trigger.mjs";
-import { pullBankOnce } from "./bank-pull.mjs";
+import { createBankPullScheduler } from "./bank-pull.mjs";
 import { registerBankSkills } from "./skill-provider.mjs";
 import { validateConfig } from "./config.mjs";
 
@@ -84,17 +84,20 @@ export function apply(ctx, config = {}) {
 	// bump 宿主 catalog revision，pull 前已被 list 过的 cwd 无需重启即重发现技能面。
 	const bankSkills = registerBankSkills(ctx, { config: cfg, logger });
 
-	// P2 只读消费（D7 + bank-pull.mjs 头注）：geneBankUrl 在场 → 装载时惰性
-	// pull 一次，失败仅 warn 降级离线，绝不阻塞会话；成功 → 技能面缓存失效刷新。
-	if (cfg.geneBankUrl) {
-		pullBankOnce({ repoRoot, url: cfg.geneBankUrl, runEngine, logger })
-			.then((result) => {
-				if (result.pulled) bankSkills.invalidate();
-			})
-			.catch((cause) => {
-				logger.warn(`noogenesis bank pull crashed: ${cause instanceof Error ? cause.message : String(cause)}`);
-			});
-	}
+	// P2 只读消费 + 触发点修正（D7 + bank-pull.mjs 头注）：geneBankUrl 缺省官方库
+	// （false 显式禁用）。装载期 repoRoot 显式可知（config/env）→ 装载触发；否则
+	// 首个 agent/created 以会话工作区锚定触发（缺席跳过，绝不落 cwd 兜底）。闸跨
+	// 两路径共享——每实例每仓至多一次；失败仅 warn 降级离线，绝不阻塞会话；成功 →
+	// 技能面缓存失效刷新。
+	const bankPull = createBankPullScheduler({ config: cfg, runEngine, logger, onPulled: bankSkills.invalidate });
+	bankPull.pullAtLoad().catch((cause) => {
+		logger.warn(`noogenesis bank pull crashed: ${cause instanceof Error ? cause.message : String(cause)}`);
+	});
+	ctx.on("agent/created", (payload) => {
+		bankPull.pullForSession(payload).catch((cause) => {
+			logger.warn(`noogenesis bank pull crashed: ${cause instanceof Error ? cause.message : String(cause)}`);
+		});
+	});
 
 	ctx.systemPrompt.section({ name: "tool:noogenesis", order: cfg.sectionOrder, text: BASE_SECTION });
 	ctx.systemPrompt.section({
