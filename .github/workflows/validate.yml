@@ -23,14 +23,13 @@ jobs:
         with:
           fetch-depth: 0   # change-scope.sh 需要 fork-point 历史；浅克隆会退化为空集 no-op
 
-      - name: 门禁第一梯队（十件 + 评审档位强制）
+      # 门禁清单单源：engine/gates.json（经 scripts/gates.py 发射；tier 的
+      # 事件条件步、change-scope 的缺省推导、review-brief 的仅本地语义是
+      # 结构性例外，见该脚本头注；第十门禁是白名单外独立件——消费引擎产物，
+      # 进白名单会让 solidify 入档中途复算自身，故保留显式行）
+      - name: 门禁第一梯队（gates.json 单源 + 白名单外独立件）
         run: |
-          python3 scripts/verify-adr-format.py
-          python3 scripts/verify-doc-budgets.py --manifest scripts/doc-budgets.manifest.json
-          python3 scripts/verify-md-links.py
-          python3 scripts/verify-cookbook.py
-          python3 scripts/verify-skill-format.py
-          python3 scripts/verify-handoff-structure.py
+          python3 scripts/gates.py --run --skip review-tier,review-brief,change-scope
           python3 scripts/verify-gene-format.py
           bash scripts/change-scope.sh
 
@@ -49,7 +48,13 @@ jobs:
           python3 scripts/verify-review-tier.py --self-test
           python3 scripts/verify-review-brief.py --self-test
           python3 scripts/verify-gene-format.py --self-test
+          python3 scripts/gates.py --self-test
 
       # 引擎元评测（schema ADR S3）：与 verify-* self-test 平级，不占门禁编号
       - name: engine self-test
         run: node engine/bin.js self-test
+
+      # 适配层元评测（M2 ADR）：零宿主依赖 + 防火墙机器检查（import 面 / 引擎
+      # 零第三方依赖 / 插件包结构契约），与 engine self-test 平级
+      - name: adapter self-test
+        run: node adapters/dsh/selftest.mjs

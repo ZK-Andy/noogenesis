@@ -1,0 +1,41 @@
+{
+  "name": "noogenesis",
+  "version": "0.1.0",
+  "description": "Noogenesis (心源) — swarm evolution framework on DeepSeek Harness: zero-dependency evolution engine (P1) + DSH adapter wiring genes into the session lifecycle.",
+  "license": "AGPL-3.0-only",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/openorbit/noogenesis.git"
+  },
+  "type": "commonjs",
+  "main": "adapters/dsh/index.mjs",
+  "exports": {
+    ".": "./adapters/dsh/index.mjs",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "adapters/dsh/**/*.mjs",
+    "adapters/dsh/README.md",
+    "engine/**/*.js",
+    "engine/gates.json",
+    "engine/README.md",
+    "cordis.patch.yml",
+    "README.md",
+    "LICENSE",
+    "THIRD-PARTY-NOTICES.md"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "peerDependencies": {
+    "@deepseek-ai/dsh-tools": "^0.1.0-rc.6"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

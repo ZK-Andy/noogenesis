@@ -2,7 +2,9 @@
 # pre-push — push 前门禁全跑（最小证据范围内的穷尽；无 .NET 构建面）
 # Provenance：蒸馏自 dotnet-deepseek-harness-desktop .githooks/pre-push（MIT）；
 # 裁剪：去掉 dotnet build/test；评审机械闸 v0.2 落地——tier 闸以 --enforce
-# 挂入（FULL 档 outgoing 缺评审证据即拒推，ADR 2026-09-05-review-mechanical-gate）。
+# 挂入（FULL 档 outgoing 缺评审证据即拒推，ADR 2026-09-05-review-mechanical-gate）；
+# M2 起门禁清单单源 engine/gates.json（经 scripts/gates.py 发射；tier 的
+# per-ref 循环与 change-scope 的缺省推导是结构性例外，见该脚本头注）。
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
@@ -15,15 +17,13 @@ if [[ -x scripts/change-scope.sh ]]; then
   echo
 fi
 
-echo "-> 文档与结构门禁"
-python3 scripts/verify-adr-format.py
-python3 scripts/verify-doc-budgets.py --manifest scripts/doc-budgets.manifest.json
-python3 scripts/verify-md-links.py
-python3 scripts/verify-cookbook.py
-python3 scripts/verify-skill-format.py
-python3 scripts/verify-handoff-structure.py
+echo "-> 文档与结构门禁（清单单源：engine/gates.json）"
+python3 scripts/gates.py --run --skip review-tier,review-brief,change-scope
+# 第十门禁是白名单外独立件：它消费引擎产物（genes/ + events/ 复算），进
+# gates.json 白名单会让 solidify 在入档中途复算自身（语义循环）——保留显式行。
 python3 scripts/verify-gene-format.py
 node engine/bin.js self-test
+node adapters/dsh/selftest.mjs
 
 # 评审档位强制：git 从 stdin 逐行传 "<local_ref> <local_sha> <remote_ref> <remote_sha>"。
 # 每个被推 ref 独立 enforce：base = merge-base(remote, local)（收口收窄 outgoing）；
