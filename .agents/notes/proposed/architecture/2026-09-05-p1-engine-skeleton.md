@@ -1,4 +1,4 @@
-# Agent Note: P1 发动机骨架拍板（语言·合同面·序列化）
+# Agent Note: P1 发动机骨架拍板（语言·信号入口·propose·评估边界）
 
 Status: proposed
 
@@ -39,7 +39,19 @@ Status: proposed
 - **被否选项**：B propose 接 LLM API 自动变异（违反"不插电" + #18；API key/成本/不可复现）；C 引擎产变异骨架人补全（Mutation 原语提前入场，违反最小闭环拍板；其合理内核留待 M2/P3 蒸馏轮）。
 - **P1 闭环全貌**（D2+D3 合成）：人策展产出候选 gene → evaluate 闸验证 → solidify 入档 → 下次 select 命中 → propose 渲染注入 → 真实使用产生 Event——无环节假装智能，每环节机器可验证。
 
-<!-- D4（评估与不变量边界）占位：拍板一题填一题。 -->
+### D4（2026-09-05，已拍板）：评估 = 保守可执行子集；token 不变量 P1 由 doc-budgets 承担
+
+- **evaluate**：约束检查 + 真跑验证命令收 exit code。v0 验证面 = 固定 9 门禁集；`gene.validation` 字段 v0 可选，仅允许指向白名单内命令（白名单与安全模型归 schema ADR）。
+- **入档条件 = 门禁全绿，仅此一条**：红即拒，无豁免——"前沿单调不降"在文档域的可执行形态。
+- **"严格改进"正向度量 = 显式 open**：文档域无可信改进分数（字数下降可作弊；LLM judge 违反零网络且无金标）。P1 不假装量化改进；M2 重议（候选信号：评审 Blocker 数追踪、dsh-token-meter 常驻注入度量）。
+- **token 基线不变量的 P1 落点 = doc-budgets 字数预算门禁**（已在 CI 真强制）——文档域的"别变臃肿"机器不变量；`dsh-token-meter` 退 M2 适配层（届时量常驻注入 token，与字数预算是同一不变量的两个测量层）。
+- **canary 后置**：evolver canary 是 daemon 重启安全网，P1 无 daemon；入档闸 = 本地门禁全绿 + CI 跨机器复验（已具备），进程隔离 canary 等 M2 常驻形态。
+- **被否选项**：B 量化"严格改进"（字数下降可作弊，无真值）；C LLM judge（违反 D1 零网络 + 无金标自报分）。
+
+## Open questions
+
+- "严格改进"的文档域度量（D4 显式 open，M2 重议）。
+- schema 细节（Gene/Event 落盘协议、验证白名单 + 安全模型、元评测夹具）另立 schema ADR，与本 ADR 一并三审。
 
 
 ## Alternatives considered
