@@ -1,0 +1,20 @@
+{
+  "id": "doc-single-home",
+  "domain": "doc",
+  "summary": "每个事实只有一个家：rationale→ADR、踩坑→cookbook、方法→docs/method、规则→AGENTS",
+  "signals": [
+    "文档放哪",
+    "事实只有一个家",
+    "doc slop",
+    "文档重复"
+  ],
+  "strategy": [
+    "落笔前先判家：rationale/取舍 → ADR；procedure/踩坑 → docs/cookbook.md；方法论正文 → docs/method/；规则 → AGENTS + 链接",
+    "durable 文档写当前状态，不写变更历史",
+    "跨文件引用一律相对 Markdown 链接 + 机器可校验，禁裸文件名"
+  ],
+  "avoid": [
+    "durable 文档出现 previously / now / no longer / renamed 变更史叙述",
+    "同一事实散落多处造成双记账漂移"
+  ]
+}
