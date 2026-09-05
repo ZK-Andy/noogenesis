@@ -1,5 +1,5 @@
 'use strict';
-// bin.js — CLI 四命令合同面（骨架 ADR D1：select/propose/evaluate/solidify 为唯一合同面）+ self-test 元评测。
+// bin.js — CLI 五命令合同面（骨架 ADR D1：select/propose/evaluate/solidify 为唯一合同面；P2 增 pull 只读消费）+ self-test 元评测。
 // 零第三方依赖（Node 标准库 only）；退出码：0 成功 / 1 红（评估不绿、违规） / 2 用法或 fail-closed 错误。
 
 const path = require('path');

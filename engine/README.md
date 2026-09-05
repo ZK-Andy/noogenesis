@@ -4,7 +4,7 @@
 
 - 骨架：[.agents/notes/implemented/architecture/2026-09-05-p1-engine-skeleton.md](../.agents/notes/implemented/architecture/2026-09-05-p1-engine-skeleton.md)
 - 协议：[.agents/notes/implemented/architecture/2026-09-05-gene-event-schema.md](../.agents/notes/implemented/architecture/2026-09-05-gene-event-schema.md)
-- P2 共享消费：[.agents/notes/proposed/architecture/2026-09-06-p2-shared-consumer.md](../.agents/notes/proposed/architecture/2026-09-06-p2-shared-consumer.md)
+- P2 共享消费：[.agents/notes/implemented/architecture/2026-09-06-p2-shared-consumer.md](../.agents/notes/implemented/architecture/2026-09-06-p2-shared-consumer.md)
 
 ## 合同面（唯一 CLI）
 
