@@ -7,6 +7,8 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-06｜**技能随库分发收口（skills-ride-bank；FULL 三审全采纳；ADR `2026-09-06-skills-ride-bank`；commits `8c99f4c`→`2a05764`）**：技能经 genes-cache 进 DSH 技能面（rank 600 + invalidate）；7 技能蒸馏通用层+参照层；`noogenesis-dsh@0.1.2` + tag 发布（hook tag 缺口入待办）；desktop 重验待用户。README 有变更已同步。
+
 - 2026-09-06｜**护栏延后拍板 + P1 遗留对账（ADR `2026-09-06-guardrail-defer-trigger` proposed）**：护栏三件需要但延后，触发 = 首个胶囊优化完成后；session-open 喂信号条落地；token-meter API 实测漂移在案。README 核对见 P2 条。
 
 - 2026-09-06｜**P2 只读共享消费落地（FULL 三审 R1 1B/5S、R2 1B/8S、R3 0B/6S 全采纳；ADR `2026-09-06-p2-shared-consumer` implemented）**：本仓即库 + `engine pull` + 缓存合并扫描（本仓优先）+ manifest 索引/门禁（11 件）+ adapter `geneBankUrl` 惰性 pull；设计稿未决 1/3/4 回写。**节点：P2 闭环。** README 核对无漂移。
@@ -44,7 +46,7 @@ Noogenesis（心源）：DeepSeek Harness 之上的"蜂群进化框架"；终极
 
 - **胶囊 01 搬迁已收口**（S1–S7 全过：骨架/基座/门禁/流程卡/知识层/交接/CI+dogfood，FULL 三审全过）；**胶囊 v0.2 评审机械闸已落地**（tier + brief 两闸；ADR `2026-09-05-review-mechanical-gate`）。
 - **P1 演化发动机已落地**（骨架/schema/实现三 ADR implemented，FULL 三审全采纳）：`engine/` 四命令 + `gates.json` 白名单 + `verify-gene-format.py` 第十门禁 + 首批 6 基因（process/doc/gates）经 solidify 原子入档（ADR [p1-engine-implementation](.agents/notes/implemented/architecture/2026-09-05-p1-engine-implementation.md)）。
-- **M2 适配层已落地**（ADR [2026-09-06-m2-adapter-wiring](.agents/notes/implemented/architecture/2026-09-06-m2-adapter-wiring.md)；部署收口 ADR [2026-09-06-adapter-deploy-hardening](.agents/notes/implemented/architecture/2026-09-06-adapter-deploy-hardening.md)）：本仓 = npm 插件包形态（[`noogenesis-dsh@0.1.1`](https://www.npmjs.com/package/noogenesis-dsh) = latest，裸名 `noogenesis`@0.1.0 已 deprecate；宿主件包名规则 = 裸名 + 宿主后缀）；`adapters/dsh/` spawn 单合同接线（system-prompt 节 + noo_* 三工具 + solidify 人工确认触发；repoRoot 四级回退链零配置生效）；hooks/CI 门禁清单单源 `scripts/gates.py`。desktop 已装 0.1.1，新会话重验三件事已过（todos [x]）。
+- **M2 适配层已落地**（ADR [2026-09-06-m2-adapter-wiring](.agents/notes/implemented/architecture/2026-09-06-m2-adapter-wiring.md)；部署收口 ADR [2026-09-06-adapter-deploy-hardening](.agents/notes/implemented/architecture/2026-09-06-adapter-deploy-hardening.md)）：本仓 = npm 插件包形态（[`noogenesis-dsh@0.1.2`](https://www.npmjs.com/package/noogenesis-dsh) = latest，tag `v0.1.2`；宿主件包名规则 = 裸名 + 宿主后缀）；`adapters/dsh/` spawn 单合同接线（system-prompt 节 + noo_* 三工具 + solidify 人工确认触发；repoRoot 四级回退链零配置生效）；hooks/CI 门禁清单单源 `scripts/gates.py`。**技能随库分发已落地**（ADR [2026-09-06-skills-ride-bank](.agents/notes/implemented/architecture/2026-09-06-skills-ride-bank.md)）：`noo_*` 7 技能经 genes-cache 进 DSH 技能面（`noogenesis-bank` provider，rank 600，pull 落地即 invalidate 刷新；蒸馏 = 通用方法论层 + 参照实现层）。desktop 在装 0.1.1——0.1.2 重装 + 重验（geneBankUrl + 技能面）由用户手动执行（todos（C））。
 - **P2 只读共享消费已落地**（ADR [2026-09-06-p2-shared-consumer](.agents/notes/implemented/architecture/2026-09-06-p2-shared-consumer.md)，FULL 三审全采纳）：本仓即基因库（`dsh-gene-bank` 占位名弃用）；`engine pull`（五命令）+ `manifest.json` 检索索引（gen-manifest 生成 + verify-manifest 门禁）+ 缓存合并扫描（本仓基因优先遮蔽、evaluate/solidify 恒本仓面）；adapter `geneBankUrl` 惰性 pull（失败 warn 降级离线）。贡献 PR / 观测透镜 / gene→skill / Genesis 基因随贡献开放轮。
 - **护栏延后拍板**（ADR [2026-09-06-guardrail-defer-trigger](.agents/notes/proposed/architecture/2026-09-06-guardrail-defer-trigger.md) proposed）：护栏三件（token-meter 真测量 / 严格改进度量 / canary）需要但延后，触发 = 首个胶囊优化完成后。
 - 门禁第一梯队 11 件全绿（含 self-test）：adr-format / doc-budgets / md-links / cookbook / skill-format / handoff-structure / gene-format / manifest / review-tier / review-brief / change-scope；engine self-test 与 CI 同跑（run 33976291727 绿）。
