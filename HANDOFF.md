@@ -14,6 +14,7 @@
 - 2026-09-05｜**许可切换 AGPL-3.0 + npm 双名注册 + 建仓首推（ADR `2026-09-05-license-agpl-3`；commits `f53d4c6`→`45f736c`）**：FULL 三审（0B/2S、1B/2S、0B/4S）全采纳；THIRD-PARTY-NOTICES 承接上游 MIT 义务；npm 裸名+org 占位；公开仓 ZK-Andy/noogenesis（首推豁免记 journal）。README 核对无漂移。
 - 2026-09-05｜**P1 立项拍板收口（骨架 D1–D4 + schema S1–S3 两 ADR implemented；FULL 三审 R1 0B/7S、R2 3B/10S、R3 6B/4S 全采纳；commits `3c74240`→`55afa92`）**：零依赖 Node CLI + 显式信号 + 确定性 propose + 保守入档；genes/ 八字段 + Event 月卷 + gates.json。CI 首跑复验含内。README 核对补 P1 拍板一行。**节点：下一轮 = 实现轮。**
 - 2026-09-05｜**P1 引擎实现轮落地（FULL 三审全采纳 R1 0B/5S、R2 2B/6S、R3 1B/4S；ADR `p1-engine-implementation`；commits `9265308`→`3fe09d5`）**：四命令 + gates.json + 第十门禁 + 首批 6 基因入档；CI 33976291727 绿。README 核对同步。**节点：P1 闭环转真；下一轮 = 基因使用反馈轮或 M2 立项。**
+- 2026-09-05｜**C 类候选批收口（FULL 三审全采纳 R1 1B/5S、R2 0B/5S、R3 2B/5S；ADR `change-scope-quotepath`；commits `3769ed7`→`1365f70`）**：change-scope 三命令 quotePath=off（非 ASCII 原样）+ selftest 49 夹具（propose happy/红档 exit 1/fail-closed 根因钉死）；CI 33977855483 绿。README 核对无变更。
 
 ## 背景
 
