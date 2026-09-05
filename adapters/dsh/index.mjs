@@ -89,14 +89,23 @@ export function apply(ctx, config = {}) {
 
 	// 写路径唯一触发点：agent/disposed。repoRoot 按 dispose 的那个 agent 逐次
 	// 解析（payload 携带 { agent }，与 auto 触发面同款实证）——异仓会话各归
-	// 各仓；in-flight 去重逐仓隔离（R2-B1，部署收口 ADR）：同仓近同时 dispose
-	// 不重复弹问/重复入档（重复跑会把已入档候选撞成 exit 2 假失败），异仓
-	// 互不阻塞（ask 窗口可达 5 分钟，全局旗标会把异仓提示静默丢掉）。
+	// 各仓；in-flight 去重逐仓隔离：同仓近同时 dispose 不重复弹问/重复入档
+	// （重复跑会把已入档候选撞成 exit 2 假失败），异仓互不阻塞（ask 窗口可达
+	// 5 分钟，全局旗标会把异仓提示静默丢掉）。
 	const solidifyGate = createSolidifyGate();
 	ctx.on("agent/disposed", (payload) => {
 		const disposalRepoRoot = resolveRepoRoot(cfg, sessionWorkspaceOf(payload));
 		if (!solidifyGate.acquire(disposalRepoRoot)) return;
-		const candidates = listStagingCandidates(disposalRepoRoot, cfg.stagingDir);
+		let candidates;
+		try {
+			candidates = listStagingCandidates(disposalRepoRoot, cfg.stagingDir);
+		} catch (cause) {
+			// staging 扫描同步抛错（readdirSync EACCES 等）：释放该仓闸 + warn 留痕
+			// （降级纪律），绝不把该仓写路径永久静音。
+			solidifyGate.release(disposalRepoRoot);
+			logger.warn(`noogenesis solidify staging scan failed for ${disposalRepoRoot}: ${cause instanceof Error ? cause.message : String(cause)}`);
+			return;
+		}
 		if (!candidates.length) {
 			solidifyGate.release(disposalRepoRoot);
 			return;

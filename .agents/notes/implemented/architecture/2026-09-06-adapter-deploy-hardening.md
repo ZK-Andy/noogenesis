@@ -1,6 +1,7 @@
 # Agent Note: M2 部署收口——包改名 noogenesis-dsh + 工具注册单参合同 + repoRoot 会话工作区回退
 
 Status: implemented
+Review: FULL/2026-09-06/R1=ok R2=ok R3=ok
 
 ## Problem
 
@@ -10,9 +11,11 @@ Status: implemented
 2. **repoRoot 结构性锚定失败**：回退链 config → env → cwd 在 desktop 部署下全落空——profile 无 noogenesis 配置节、`NOGENESIS_REPO_ROOT` 未设、宿主进程 cwd 非目标仓。实调 `noo_select` 引擎 fail-closed（exit 2「不是 Git 仓库」）。插件装载时一次性解析 repoRoot 的设计，使"装完即用"在 desktop 形态下不可能达成。
 3. **包名身份错位**：裸名 `noogenesis` 被宿主接线件占用，多宿主命名规则悬空——若 PI 届时改用带标识包名，则与 DSH 裸名不对称（用户拍板明言排除）。
 
-合同面证据：DSH 工具执行面 `execute(args, exec)` 的 `ToolExecution` 携带 `agent?`；官方 bash 工具体以 `exec.agent?.session.header.cwd` 取会话工作区（`dsh-tool-bash` lib 源码，2026-09-06 实测）；事件 payload 携带 `{ agent }`（`dsh-continual-evolve` `auto.ts` 实证注）。
+合同面证据：DSH 工具执行面 `execute(args, exec)` 的 `ToolExecution` 携带 `agent?`；官方 bash 工具体以 `exec.agent?.session.header.cwd` 取会话工作区（`dsh-tool-bash` `lib/index.js` `resolveWorkdir` :178，2026-09-06 实测）；事件 payload 携带 `{ agent }`（`dsh-continual-evolve` `src/auto.ts` :143 实证注；`dsh-agent` `lib/index.js` :642 同面）。
 
 ## Decision
+
+本 ADR **部分取代** [2026-09-06-m2-adapter-wiring](2026-09-06-m2-adapter-wiring.md) 的两处决定面——M1 插件形态的包名拍板（裸名 → 宿主后缀）与耦合防火墙规则 3（三级回退链 → 四级链）；M2 其余拍板（插件壳形态 / 接线点 / spawn 单合同 / M4 技能分发）继续有效。
 
 **命名规则（用户拍板）：宿主件 = 裸名 + 宿主后缀；裸名本体留给框架引擎。**
 

@@ -19,7 +19,7 @@ P1 演化发动机（`engine/` 四命令 CLI）已落地并闭环，但它是裸
 
 M2 适配层 = 把 P1 引擎接进 DSH 会话生命周期。四题拍板 + 两项范围：
 
-**M1 插件形态 = 最小插件壳**。`package.json` 裸名 `noogenesis`（npm 占位包 0.0.0 随首发替换，repository 字段预填 `github.com/openorbit/noogenesis`，宿主名有变须同改）+ ESM lib 入口 + `cordis.patch.yml`（plugin row `id: noogenesis`）。技能不进包（见 M4）。目录布局与模块分叉（2026-09-06 讨论补拍板）：
+**M1 插件形态 = 最小插件壳**。`package.json` 包名 `noogenesis-dsh`（宿主件 = 裸名 + 宿主后缀；命名规则与改名拍板见 [2026-09-06-adapter-deploy-hardening](2026-09-06-adapter-deploy-hardening.md)，裸名 `noogenesis` 保留给框架引擎）+ ESM lib 入口 + `cordis.patch.yml`（plugin row `id: noogenesis`）。技能不进包（见 M4）。目录布局与模块分叉（2026-09-06 讨论补拍板）：
 
 ```
 Noogenesis/                  ← npm 包根（真包首发时替换占位 0.0.0）
@@ -37,7 +37,7 @@ Noogenesis/                  ← npm 包根（真包首发时替换占位 0.0.0�
 
 1. **system-prompt 双节**：基座节（固定极小，陈述工具面 + 写路径纪律）+ 命中节（`injectSignals` 显式声明的信号喂引擎 select，命中基因逐行注入、行数封顶、单行截断）；空命中渲染 `""` → 宿主 prompt 渲染器丢弃 → 零 token（`injectSignals` 为空时短路，不 spawn 引擎）。引擎 stdout 进宿主 prompt 前对 `{{` 做零宽中性化——宿主 interpolate 对未知 `{{name}}` 抛错且 renderPrompt 每模型步无包裹调用（R2-B1），模板语法的基因 summary 不得原样透传。信号只来自显式声明（配置 / 模型调工具），Detect 禁区（骨架 D2）不解除。
 2. **`defineTool` 三件**：`noo_select` / `noo_propose` / `noo_evaluate`——模型面只读路径。退出码映射：0=结果文本；1=闸红（红是有效评测结论，以 `RED (exit 1)` 文本返回，不抛错）——但 **exit 1 + 空 stdout = 引擎内部故障**（非 EngineError 走 `throw e`，崩溃退出码同为 1 且无报告），按 fail-closed 抛错不放行；2=fail-closed（抛错，重试无益）。
-3. **solidify 触发**：挂 `agent/disposed`（in-flight 去重逐仓隔离——同仓近同时 dispose 不重复弹问/重复入档，异仓互不阻塞；部署收口后口径见 [2026-09-06-adapter-deploy-hardening](2026-09-06-adapter-deploy-hardening.md)）。发现 staging 目录（默认 `genes-staging/`，相对目标仓根）下的 `<id>.json` 候选 → 提问人工确认（`userQuestions` **不在 inject 声明**，disposal 时懒取用——cordis 对缺席注入服务会推迟整个插件装载，声明注入会让降级不可达；ask 兜底超时 300s，超时/缺席/拒绝 → 只输出带精确命令的提醒）；批准才逐候选实跑 solidify。绝不自动写。
+3. **solidify 触发**：挂 `agent/disposed`（in-flight 去重逐仓隔离——同仓近同时 dispose 不重复弹问/重复入档，异仓互不阻塞；逐仓口径见 [2026-09-06-adapter-deploy-hardening](2026-09-06-adapter-deploy-hardening.md)）。发现 staging 目录（默认 `genes-staging/`，相对目标仓根）下的 `<id>.json` 候选 → 提问人工确认（`userQuestions` **不在 inject 声明**，disposal 时懒取用——cordis 对缺席注入服务会推迟整个插件装载，声明注入会让降级不可达；ask 兜底超时 300s，超时/缺席/拒绝 → 只输出带精确命令的提醒）；批准才逐候选实跑 solidify。绝不自动写。
 4. **`/noo` 人面命令**：后补，不在本层。
 
 **M3 调用方式 = spawn CLI 单合同**。适配层每次调用 `node <包根>/engine/bin.js <命令>`（结构化参数数组直传、最小 env 透传 PATH/HOME/LANG）；异步面（工具执行）120s 超时 kill，同步面（system-prompt 命中节，宿主 text provider 是同步面）60s 超时 kill——两侧都有强制界，超时按 FAIL_CLOSED 映射。
@@ -46,13 +46,13 @@ Noogenesis/                  ← npm 包根（真包首发时替换占位 0.0.0�
 
 1. **依赖方向单向，只过合同面**：适配层只允许 spawn `node <包根>/engine/bin.js <命令>`，禁止 import 引擎模块；引擎不 import 任何宿主层代码。合同 = stdout 文本 + 退出码三档——适配层是 CLI 合同面的第一个进程外消费者，零共享代码、零共享 schema 解析。机器检查：adapter selftest 扫描 `adapters/dsh/*.mjs`（index.mjs 除外）无 `@deepseek-ai/*` import、扫描 `engine/*.js` 零第三方 require。
 2. **宿主依赖收敛在适配层**：peerDependencies 只有 `@deepseek-ai/dsh-tools`，且只在 `index.mjs` import；其余模块零宿主依赖、可脱离 DSH 自测。
-3. **运行仓锚定**：`resolveRepoRoot` 回退链 = config `repoRoot` → `NOGENESIS_REPO_ROOT` → `process.cwd()`；spawn cwd 显式指向目标仓根（装在 DSH 侧的插件 ≠ 运行仓）。selftest 以"process.cwd 停在别处仍命中夹具仓基因"实证锚定。
+3. **运行仓锚定**：`resolveRepoRoot` 回退链 = config `repoRoot` → `NOGENESIS_REPO_ROOT` → 会话工作区 → `process.cwd()`（四级链与逐次解析口径以 [2026-09-06-adapter-deploy-hardening](2026-09-06-adapter-deploy-hardening.md) 为准）；spawn cwd 显式指向目标仓根（装在 DSH 侧的插件 ≠ 运行仓）。selftest 以"process.cwd 停在别处仍命中夹具仓基因"实证锚定。
 
 **M4 技能分发 = M2 保持 repo-local，分发随 P2**。noo-* 留本仓 `.agents/skills`；跨仓分发走 P2 基因库的 gene→skill 渲染语义，不在 M2 提前背。
 
 **范围附带：gates.json 单源收口**。`scripts/gates.py` 为 hooks/CI 的门禁清单唯一发射器（清单 = engine/gates.json）。槽位替换与 engine/gates.js instantiate **形似而非同口径**（勿照抄互通）：本脚本替换任意 `{{key}}`（含 cmd）且缺值 fail-closed；engine 侧只认 outgoing_base/head 双键、缺键静默留字面量（无害的前提是引擎 deriveSlots 保证两键齐全）——今日两侧行为等价纯因白名单只有这两键且都在 args。结构性例外（tier 的 per-ref/事件条件形态、change-scope 的缺省推导、review-brief 仅本地预发射、第十门禁 gene-format 为白名单外独立件——它消费引擎产物，进白名单会让 solidify 入档中途复算自身）逐一记录在 gates.py 头注与 engine README。
 
-**发布 gate**：`dsh plugin add noogenesis` 可装，且装上即转——空 `genes/` 项目优雅退化（select 无命中 → system-prompt 命中节零 token；四命令可跑但产出空/红）。
+**发布 gate**：`dsh plugin add noogenesis-dsh` 可装，且装上即转——空 `genes/` 项目优雅退化（select 无命中 → system-prompt 命中节零 token；四命令可跑但产出空/红）。
 
 **分层边界（防重辩）**：插件包只是 DSH 适配层——DSH 特有面收敛在适配层内，引擎（P1 骨架 D1 零 DSH 依赖）、技能（纯 markdown）、基因库（P2 git+CI）均 harness 无关。**多 harness 适配是设计稿 §12 P4 的事**（借 superpowers 分发范式），M2 不背；届时其他宿主各写一个薄适配器，引擎与资产零改动。本 ADR 全部拍板均为 DSH 域内。
 
@@ -72,8 +72,8 @@ Noogenesis/                  ← npm 包根（真包首发时替换占位 0.0.0�
 
 ## Consequences
 
-- **采用面**：`package.json`（裸名 noogenesis@0.1.0，AGPL-3.0-only，`type: commonjs`，files 白名单，`dsh.bundle.patch`）、`cordis.patch.yml`（plugin row insert）、`adapters/dsh/` 八件（index / engine-bridge / section / tools / solidify-trigger / config / selftest / README）、`scripts/gates.py`、`.githooks/pre-push` 与 `.github/workflows/validate.yml` 改引单源、engine README（open 项收口 + 消费方补 adapters/dsh）。引擎本体零改动。
-- **已验证**（2026-09-06）：adapter selftest 25 组夹具全绿（bridge 合同实跑 / cwd 锚定 / section 空渲染 + `{{` 中性化 / 工具退出码映射含 exit1-空报告故障分型 / solidify 全路径含 ask 兜底超时 / 配置 fail-closed / 防火墙机器检查 / 包结构契约）；`gates.py --self-test` 3 组全绿；gates.py 单源发射实跑七门禁全绿；engine self-test 全绿。
+- **采用面**：`package.json`（noogenesis-dsh，AGPL-3.0-only，`type: commonjs`，files 白名单，`dsh.bundle.patch`）、`cordis.patch.yml`（plugin row insert）、`adapters/dsh/` 八件（index / engine-bridge / section / tools / solidify-trigger / config / selftest / README）、`scripts/gates.py`、`.githooks/pre-push` 与 `.github/workflows/validate.yml` 改引单源、engine README（open 项收口 + 消费方补 adapters/dsh）。引擎本体零改动。
+- **已验证**（2026-09-06）：adapter selftest 夹具全绿（bridge 合同实跑 / cwd 锚定 / section 空渲染 + `{{` 中性化 / 工具退出码映射含 exit1-空报告故障分型 / solidify 全路径含 ask 兜底超时 / 配置 fail-closed / 防火墙机器检查 / 包结构契约）；`gates.py --self-test` 3 组全绿；gates.py 单源发射实跑七门禁全绿；engine self-test 全绿。
 - **评审收口（2026-09-06，FULL 三审）**：R1（简化路）0B/4S、R2（代码路）1B/8S、R3（ADR 路）3B/4S **全部采纳**——B1（命中节 `{{` 未转义，宿主 interpolate 每模型步抛错，会话级破坏）+ R1 头注/README 单源、BASE_SECTION 措辞断言删除、提醒命令自 buildSolidifyArgs 派生、sync spawn 加 60s 界、空 injectSignals 短路、noo_select required、userQuestions 懒取用、disposal in-flight 去重 + ask 兜底超时、gates.py 头注补 gene-format 例外归口；R3 收「同口径」措辞残留面（gates.py 函数注 + 本 ADR Decision）、P1 两 ADR open 项单源更新、Alternatives 补 session/flush 与声明式注入两条落败、README 待首发措辞。
 - **发布 gate 已过（2026-09-06 npm 首发）**：`noogenesis@0.1.0` 为 npm latest（repository 对齐宿主仓 `ZK-Andy/noogenesis`，占位包 0.0.0 保留不 deprecate）；desktop profile 实装验证——profile manifest `dsh.profile.bundles` 含 noogenesis、组合树含 plugin row 层（`dsh plugin add` 实机制 = pnpm 装包 + manifest 层栈对账，不写用户 cordis.patch.yml，包自带 patch 以 bundle 层身份在启动时合成）、安装位引擎空仓 select exit 0 `(no genes matched)`（空 `genes/` 优雅退化）+ 真仓多信号并集命中；会话级装载（工具注册 + 基座节）由新会话确认。安装环境事实：pnpm `minimumReleaseAge` 供应链闸拦新发布包（add 触发 lockfile 全集重验会连坐已装的 too-young 条目），单命令豁免 `--config.minimumReleaseAge=0`，详见 cookbook [环境] 条目。
 - **运行边界**：spawn 每调用一子进程——调用频次若随接线面扩大（Detect 轮）抬升，是重开 M3 拍板的信号，不是默默改进程内；DSH 插件面仍在 rc 期，peerDependencies 版本锚定（`^0.1.0-rc.6`）随 DSH 发版对齐；npm 占位包首发替换涉及账号 openorbit 与 repository 字段一致性（占位包不可下架只可 deprecate）；solidify 提问发生在 agent disposal 时，无应答方环境（headless → NO_PROVIDER）或 ask 超时（兜底 300s）都降级为只提醒——降级路径有 warn 留痕，迟到回答被丢弃但提醒文案带可手跑的精确命令。

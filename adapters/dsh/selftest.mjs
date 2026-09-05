@@ -172,8 +172,8 @@ function writeFixtureGene(repoRoot) {
 
 // ── 4) solidify 触发体：发现 / 提醒 / 确认 / 失败清单 ─────────────────────
 {
-	// 逐仓去重闸（R2-B1 修复钉子）：同仓 in-flight 丢弃，异仓互不阻塞，
-	// release 后同仓恢复放行——多 agent 异仓近同时 dispose 各归各仓。
+	// 逐仓去重闸：同仓 in-flight 丢弃，异仓互不阻塞，release 后同仓恢复
+	// 放行——多 agent 异仓近同时 dispose 各归各仓。
 	const gate = createSolidifyGate();
 	assert.equal(gate.acquire("/repo-a"), true);
 	assert.equal(gate.acquire("/repo-a"), false);
