@@ -6,7 +6,7 @@
  * （实现轮 ADR D6：0 成功 / 1 闸红 / 2 用法或 fail-closed）。
  *
  * 环境纪律（schema ADR S3 同款）：只透传 PATH / HOME / LANG；cwd 锁目标仓根
- * （防火墙规则 3：装在 DSH 侧的插件 ≠ 运行仓，repoRoot 必须显式锚定）。
+ * （防火墙规则 3：装在 DSH 侧的插件 ≠ 运行仓——四级回退链见 resolveRepoRoot）。
  */
 import { spawn, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -32,11 +32,23 @@ function minimalEnv() {
 }
 
 /**
- * 目标仓根锚定：显式 config.repoRoot 优先，其次 NOGENESIS_REPO_ROOT，
- * 兜底 process.cwd()。返回绝对路径。
+ * 会话工作区提取（工具体 / 事件面的唯一会话 cwd 源，与官方 bash 工具同源同款）：
+ * 吃 exec / 事件 payload 整体（`<…>.agent.session.header.cwd`）。任何一环缺席
+ * → undefined，由 resolveRepoRoot 回退链兜底。纯函数，selftest 直测。
  */
-export function resolveRepoRoot(config = {}) {
-	return path.resolve(config.repoRoot || process.env.NOGENESIS_REPO_ROOT || process.cwd());
+export function sessionWorkspaceOf(agentCarrier) {
+	const cwd = agentCarrier?.agent?.session?.header?.cwd;
+	return typeof cwd === "string" && cwd.length > 0 ? cwd : undefined;
+}
+
+/**
+ * 目标仓根锚定（部署收口 ADR 2026-09-06-adapter-deploy-hardening 四级链）：
+ * 显式 config.repoRoot 优先，其次 NOGENESIS_REPO_ROOT，再次会话工作区
+ * （工具体/disposal 面逐次传入——装在 DSH 侧的插件 ≠ 运行仓，且多 agent
+ * 异仓各归各仓），兜底 process.cwd()。返回绝对路径。
+ */
+export function resolveRepoRoot(config = {}, sessionCwd) {
+	return path.resolve(config.repoRoot || process.env.NOGENESIS_REPO_ROOT || sessionCwd || process.cwd());
 }
 
 /**

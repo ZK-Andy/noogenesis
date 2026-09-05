@@ -11,7 +11,7 @@
  * 校验实现在 ./config.mjs（fail-closed，selftest 直测）。
  */
 import { defineTool } from "@deepseek-ai/dsh-tools";
-import { runEngine, runEngineSync, resolveRepoRoot } from "./engine-bridge.mjs";
+import { runEngine, runEngineSync, resolveRepoRoot, sessionWorkspaceOf } from "./engine-bridge.mjs";
 import { registerNooTools } from "./tools.mjs";
 import { BASE_SECTION, hitsSectionText } from "./section.mjs";
 import { runSolidifyTrigger, listStagingCandidates, ASK_TIMEOUT_MS } from "./solidify-trigger.mjs";
@@ -69,6 +69,11 @@ export function apply(ctx, config = {}) {
 	const repoRoot = resolveRepoRoot(cfg);
 	const logger = ctx.logger("noogenesis");
 
+	// 逐次解析（部署收口 ADR 2026-09-06-adapter-deploy-hardening）：工具体吃
+	// exec.agent 的会话工作区走四级回退链——多 agent 异仓各归各仓；无会话
+	// 上下文的调用面（如 selftest 静态注入）退化为入口静态锚定。
+	const repoRootFor = (exec) => resolveRepoRoot(cfg, sessionWorkspaceOf(exec));
+
 	ctx.provide("noogenesis", { repoRoot, runEngine });
 
 	ctx.systemPrompt.section({ name: "tool:noogenesis", order: cfg.sectionOrder, text: BASE_SECTION });
@@ -80,19 +85,21 @@ export function apply(ctx, config = {}) {
 		text: () => (cfg.injectSignals.length ? hitsSectionText(runEngineSync(["select", ...cfg.injectSignals], { repoRoot }), { maxGenes: cfg.maxIndexGenes }) : ""),
 	});
 
-	registerNooTools(ctx, { defineTool, runEngine, repoRoot });
+	registerNooTools(ctx, { defineTool, runEngine, repoRoot: repoRootFor });
 
 	// 写路径唯一触发点：agent/disposed。in-flight 去重——多 agent 近同时
 	// dispose 时不重复弹问、不重复跑 solidify（重复跑会把已入档候选撞成
-	// exit 2 假失败）。
+	// exit 2 假失败）。repoRoot 按 dispose 的那个 agent 逐次解析（payload
+	// 携带 { agent }，与 auto 触发面同款实证）——异仓会话各归各仓。
 	let solidifyInFlight = false;
-	ctx.on("agent/disposed", () => {
+	ctx.on("agent/disposed", (payload) => {
 		if (solidifyInFlight) return;
-		const candidates = listStagingCandidates(repoRoot, cfg.stagingDir);
+		const disposalRepoRoot = resolveRepoRoot(cfg, sessionWorkspaceOf(payload));
+		const candidates = listStagingCandidates(disposalRepoRoot, cfg.stagingDir);
 		if (!candidates.length) return;
 		solidifyInFlight = true;
 		runSolidifyTrigger({
-			repoRoot,
+			repoRoot: disposalRepoRoot,
 			stagingDir: cfg.stagingDir,
 			actor: cfg.actor,
 			candidates,

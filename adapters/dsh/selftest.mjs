@@ -18,7 +18,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { isBuiltin } from "node:module";
 import { fileURLToPath } from "node:url";
-import { runEngineSync, resolveRepoRoot, EXIT } from "./engine-bridge.mjs";
+import { runEngineSync, resolveRepoRoot, sessionWorkspaceOf, EXIT } from "./engine-bridge.mjs";
 import { hitsSectionText } from "./section.mjs";
 import { registerNooTools } from "./tools.mjs";
 import { listStagingCandidates, buildSolidifyArgs, solidifyNotice, runSolidifyTrigger, ASK_TIMEOUT_MS } from "./solidify-trigger.mjs";
@@ -105,7 +105,17 @@ function writeFixtureGene(repoRoot) {
 {
 	const registered = [];
 	const fakeDefineTool = (def) => def;
-	const fakeCtx = { tools: { register: (...tools) => registered.push(...tools) } };
+	// 单参合同（部署收口 ADR）：DSH 的 ctx.tools.register(definition) 一次只收
+	// 一个定义，多余实参被静默忽略——假面必须复刻该形状，多实参照收即漏检
+	// （0.1.0 首发实测教训：三工具只上了一个）。
+	const fakeCtx = {
+		tools: {
+			register: (...tools) => {
+				assert.equal(tools.length, 1, "register must be called with exactly one definition (DSH single-arg contract)");
+				registered.push(tools[0]);
+			},
+		},
+	};
 	const byName = {};
 	const responses = {
 		select: { code: 0, stdout: "signals: demo signal\ndemo/demo-hit  demo gene\n", stderr: "" },
@@ -114,7 +124,9 @@ function writeFixtureGene(repoRoot) {
 		evaluateCrash: { code: 1, stdout: "", stderr: "engine: internal fault\n" },
 		evaluateBad: { code: 2, stdout: "", stderr: "engine: gene not found: demo/x\n" },
 	};
-	const fakeRunEngine = async (args) => {
+	const rootsSeen = [];
+	const fakeRunEngine = async (args, { repoRoot } = {}) => {
+		rootsSeen.push(repoRoot);
 		if (args[0] === "select") return responses.select;
 		if (args[0] === "propose") return responses.propose;
 		if (args[0] === "evaluate") {
@@ -124,15 +136,28 @@ function writeFixtureGene(repoRoot) {
 		}
 		throw new Error(`unexpected args ${args}`);
 	};
-	registerNooTools(fakeCtx, { defineTool: fakeDefineTool, runEngine: fakeRunEngine, repoRoot: "/tmp/nowhere" });
+	// 函数形 repoRoot = 逐次解析面：吃 exec，返回本次调用的仓根（多 agent 异仓
+	// 各归各仓的正确性来源）。
+	const execA = { agent: { session: { header: { cwd: "/tmp/repo-a" } } } };
+	const execB = { agent: { session: { header: { cwd: "/tmp/repo-b" } } } };
+	registerNooTools(fakeCtx, { defineTool: fakeDefineTool, runEngine: fakeRunEngine, repoRoot: (exec) => exec?.agent?.session?.header?.cwd ?? "/tmp/fallback" });
+	assert.equal(registered.length, 3);
 	for (const tool of registered) byName[tool.name] = tool;
 	assert.deepEqual(Object.keys(byName).sort(), ["noo_evaluate", "noo_propose", "noo_select"]);
 	assert.match(byName.noo_select.description, /literal normalized match/);
-	ok("tools: three read-only tools registered (no solidify tool)");
+	ok("tools: three read-only tools registered one-per-register call (no solidify tool)");
 
+	assert.match((await byName.noo_select.execute({ signals: ["demo signal"] }, execA)).text, /demo\/demo-hit/);
+	assert.match((await byName.noo_propose.execute({ gene: "demo/demo-hit" }, execB)).text, /step one/);
+	assert.deepEqual(rootsSeen.slice(0, 2), ["/tmp/repo-a", "/tmp/repo-b"]);
+	ok("tools: function repoRoot resolved per call from exec (per-agent anchoring)");
+
+	// exec 缺席（静态注入面）→ 解析器自己的兜底分支，工具体不得因此崩。
 	assert.match((await byName.noo_select.execute({ signals: ["demo signal"] })).text, /demo\/demo-hit/);
-	assert.match((await byName.noo_propose.execute({ gene: "demo/demo-hit" })).text, /step one/);
-	const red = await byName.noo_evaluate.execute({ gene: "demo/red" });
+	assert.equal(rootsSeen[2], "/tmp/fallback");
+	ok("tools: exec-less execute still resolves (function repoRoot handles undefined exec)");
+
+	const red = await byName.noo_evaluate.execute({ gene: "demo/red" }, execA);
 	assert.match(red.text, /^RED \(exit 1\)\n/);
 	// exit 1 + 空 stdout = 引擎内部故障（非 EngineError 走 throw e，退出码同为 1
 	// 且无报告输出）——不得当红档结论放行。
@@ -228,7 +253,33 @@ function writeFixtureGene(repoRoot) {
 
 	assert.equal(resolveRepoRoot({}), process.cwd());
 	assert.equal(resolveRepoRoot({ repoRoot: "rel/path" }), path.resolve("rel/path"));
-	ok("config: repoRoot fallback chain (config → env → cwd)");
+	// 四级回退链（部署收口 ADR）：config → env → 会话工作区 → cwd；逐级抢占。
+	{
+		const saved = process.env.NOGENESIS_REPO_ROOT;
+		try {
+			delete process.env.NOGENESIS_REPO_ROOT;
+			assert.equal(resolveRepoRoot({}, "/tmp/session-repo"), "/tmp/session-repo");
+			assert.equal(resolveRepoRoot({}, "/tmp/session-repo"), path.resolve("/tmp/session-repo"));
+			assert.equal(resolveRepoRoot({}), process.cwd());
+			process.env.NOGENESIS_REPO_ROOT = "/tmp/env-repo";
+			assert.equal(resolveRepoRoot({}, "/tmp/session-repo"), "/tmp/env-repo");
+			assert.equal(resolveRepoRoot({ repoRoot: "/tmp/config-repo" }, "/tmp/session-repo"), "/tmp/config-repo");
+		} finally {
+			if (saved === undefined) delete process.env.NOGENESIS_REPO_ROOT;
+			else process.env.NOGENESIS_REPO_ROOT = saved;
+		}
+	}
+	ok("config: repoRoot fallback chain (config → env → session workspace → cwd)");
+
+	// 会话工作区提取：与官方 bash 工具同源（agent.session.header.cwd），
+	// 缺环/空串 → undefined（交给回退链，绝不抛）。
+	assert.equal(sessionWorkspaceOf(null), undefined);
+	assert.equal(sessionWorkspaceOf({}), undefined);
+	assert.equal(sessionWorkspaceOf({ agent: {} }), undefined);
+	assert.equal(sessionWorkspaceOf({ agent: { session: {} } }), undefined);
+	assert.equal(sessionWorkspaceOf({ agent: { session: { header: { cwd: "" } } } }), undefined);
+	assert.equal(sessionWorkspaceOf({ agent: { session: { header: { cwd: "/tmp/x" } } } }), "/tmp/x");
+	ok("config: sessionWorkspaceOf extracts agent.session.header.cwd, absent chain → undefined");
 }
 
 // ── 6) 防火墙机器检查：import 面 / 引擎零依赖 / 包结构契约 ────────────────
@@ -249,20 +300,20 @@ function writeFixtureGene(repoRoot) {
 	ok("firewall: engine/*.js has zero third-party requires");
 
 	const pkg = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, "package.json"), "utf8"));
-	assert.equal(pkg.name, "noogenesis");
+	assert.equal(pkg.name, "noogenesis-dsh");
 	assert.notEqual(pkg.type, "module");
 	assert.equal(pkg.main, "adapters/dsh/index.mjs");
 	assert.equal(pkg.dsh?.bundle?.patch, "./cordis.patch.yml");
 	for (const needle of ["engine/**/*.js", "adapters/dsh/**/*.mjs", "cordis.patch.yml", "LICENSE"]) {
 		assert.ok(pkg.files.some((f) => f === needle || f.startsWith(needle.replace("/**", ""))), `files whitelist must ship ${needle}`);
 	}
-	ok("package: name/main/bundle-patch/files-whitelist contract");
+	ok("package: name(dsh-suffixed)/main/bundle-patch/files-whitelist contract");
 
 	assert.match(
 		fs.readFileSync(path.join(REPO_ROOT, "cordis.patch.yml"), "utf8"),
-		/- insert:\s*\n\s*- id: noogenesis\s*\n\s*name: 'noogenesis'/,
+		/- insert:\s*\n\s*- id: noogenesis\s*\n\s*name: 'noogenesis-dsh'/,
 	);
-	ok("patch: plugin row insert shape matches loader dialect");
+	ok("patch: plugin row insert shape matches loader dialect (id noogenesis, package noogenesis-dsh)");
 }
 
 console.log(`\nadapter self-test: ${PASSED.length} fixture groups passed`);
