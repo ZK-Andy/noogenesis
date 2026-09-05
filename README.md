@@ -6,7 +6,7 @@ noogenesis＝心智的发生与持续生长（德日进谱系下集体知识演�
 
 ## 当前状态
 
-**胶囊 01「AI 协作编码方法论」**（本仓即其第一个宿主，self-hosting）：由四个来源项目提炼搬迁而成——常驻基座（双层 AGENTS）+ 流程卡 + ADR 生命周期 + 机器门禁（九件，含评审档位/简报两闸）+ 原子踩坑库 + 交接家庭。胶囊 v0.2 评审机械闸已落地（ADR 见 [.agents/notes/](.agents/notes/README.md)）。搬迁计划见 [capsule-01-migration-plan.md](capsule-01-migration-plan.md)。P1 演化发动机骨架与 Gene/Event schema 已拍板收口（两 ADR implemented，同见 [.agents/notes/](.agents/notes/README.md)），`engine/` 实现轮待启。
+**胶囊 01「AI 协作编码方法论」**（本仓即其第一个宿主，self-hosting）：由四个来源项目提炼搬迁而成——常驻基座（双层 AGENTS）+ 流程卡 + ADR 生命周期 + 机器门禁（十件，含评审档位/简报两闸）+ 原子踩坑库 + 交接家庭。胶囊 v0.2 评审机械闸已落地（ADR 见 [.agents/notes/](.agents/notes/README.md)）。搬迁计划见 [capsule-01-migration-plan.md](capsule-01-migration-plan.md)。P1 演化发动机已落地：`engine/` 四命令（select/propose/evaluate/solidify，Node 零依赖）+ 验证白名单 + 第十门禁 + 首批 6 基因（process/doc/gates 三域）经 solidify 原子入档（ADR 同见 [.agents/notes/](.agents/notes/README.md)）。
 
 ## 结构
 
@@ -18,6 +18,9 @@ noogenesis＝心智的发生与持续生长（德日进谱系下集体知识演�
 │   ├── cookbook.md         # 踩坑单一事实源（原子条目）
 │   └── research/           # 设计文档（蜂群框架设计 / 共享层设计 / JIT-Agent 研究）+ 参考引擎调研解剖
 ├── scripts/                # verify-* 机器门禁（零依赖 Python）
+├── engine/                 # P1 演化发动机（Node 零依赖四命令 + gates.json 白名单）
+├── genes/                  # 基因库（<domain>/<id>.json，经 solidify 入档）
+├── events/                 # 演化事件月卷（JSONL 审计面，入 git）
 ├── templates/              # ADR / AGENTS 分层模板
 ├── HANDOFF.md + HANDOFF-todos.md   # 交接家庭
 └── journal/                # 会话叙事月卷（过程即资产，入 git）
@@ -32,6 +35,7 @@ python3 scripts/verify-md-links.py
 python3 scripts/verify-cookbook.py
 python3 scripts/verify-skill-format.py
 python3 scripts/verify-handoff-structure.py
+python3 scripts/verify-gene-format.py
 python3 scripts/verify-review-tier.py [--staged|--since <base>] [--enforce]
 python3 scripts/verify-review-brief.py [--lanes R1,R2,R3] [--enforce]
 scripts/change-scope.sh [<base> <head>]

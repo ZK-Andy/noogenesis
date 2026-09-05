@@ -52,7 +52,7 @@ Review: FULL/2026-09-05/R1=ok R2=ok R3=ok
 
 ## Consequences
 
-- **采用面**：`engine/`（bin/util/gates/gene/select/propose/evaluate/solidify/selftest + gates.json + README）与 `scripts/verify-gene-format.py`（第十门禁，含 self-test）按 D1–D6 实现；hooks/CI/AGENTS 质量门同步挂入。首批 6 基因（process/doc/gates 三域）人工策展翻译完成（候选就绪），拟经 solidify 入档、事件轨落 `events/` 月卷。
+- **采用面**：`engine/`（bin/util/gates/gene/select/propose/evaluate/solidify/selftest + gates.json + README）与 `scripts/verify-gene-format.py`（第十门禁，含 self-test）按 D1–D6 实现；hooks/CI/AGENTS 质量门同步挂入。首批 6 基因（process/doc/gates 三域）已人工策展并经 solidify 原子入档（事件轨 `events/2026-09.jsonl`）。
 - **域封闭集起点**：首批三域 = process / doc / gates；后续新域经 solidify 创建目录自然生长。
 - **双实现镜像**：协议语义 JS（engine）与 Python（第十门禁）各有一份校验实现，漂移由两侧 self-test 夹具兜底；改动协议必须同轮改两侧夹具。
 - **评审收口口径（2026-09-05 FULL 三审采纳项）**：①D4 的"与 change-scope.sh 同口径"仅指三条 changed-path git 命令同集合；引擎额外 `-c core.quotePath=off` 保非 ASCII 文件名原样（change-scope.sh 是上游逐字节搬运件不改，其八进制转义是已知同源病，简化候选归口 HANDOFF-todos（C 类随手候选））；②复算规则细化 = retired 划段 + 段内 ok 的 added/updated 对工作树复算、fail 只查结构（schema ADR S2"fail/retired 不作工作树复算"的精确化）+ 跨卷 ts 接续校验；③solidify 的 commit 失败必须回滚写面（不留半应用状态）；④跨树 id 唯一性在 solidify 写路径强制（第十门禁只做事后兜底）。
