@@ -1,7 +1,7 @@
 # Cookbook（踩坑记录）
 
 > 踩坑单一事实源。条目格式：`- **[域] 主题（日期 来源）**：症状。根因。规避。`——域标签封闭集见 `scripts/verify-cookbook.py`（演化/门禁/文档/协作/环境/上游/产品），格式由该门禁机器强制。
-> Provenance：首批原子蒸馏自 dotnet-deepseek-harness-desktop、dsh-frecency、work 区（dsh-continual-evolve #18/D2/OBSERVATION）的已验证踩坑（2026-09-05 搬迁，见 ADR `2026-09-05-capsule-01-migration`）。
+> Provenance：原子蒸馏自 dotnet-deepseek-harness-desktop、dsh-frecency、work 区（dsh-continual-evolve）的已验证踩坑（首批搬迁见 ADR `2026-09-05-capsule-01-migration`）。
 
 ## 演化
 
@@ -9,12 +9,17 @@
 - **[演化] 沉淀形态路由：自由沉淀导致技能爆炸（2026-09-05 来源：work 区 hermes 式沉淀 100+ 技能被否定）**：症状——agent 把一切经验自由沉淀为技能条目，技能目录爆炸、质量参差、检索失效。根因——形态与知识类型错配：交接/流程类知识被沉淀成 harness skill 条目。规避——形态路由：交接/流程类 → 指导型技能（人工按写作规范创建，见 [ai-collaboration-method.md](method/ai-collaboration-method.md) §三）；一次性 → 流程卡/文档；事实 → cookbook/README。
 - **[演化] 存在性检查类用例天花板低（2026-09-05 来源：dsh-continual-evolve D2 实验两连，n=2 探索性）**：症状——benchmark 用例只验证"产物存在"，候选再差也能过，分数失去区分度。根因——用例只测存在性，不测行为。规避——测行为必须用"执行任务观察行为"型用例；"继承加速"类收益以耗时度量不可靠（波动远超信号），需行为级指标。
 - **[演化] 机械守卫不对称：防过度写入不防过度归档（2026-09-05 来源：dsh-continual-evolve wrapup 同 id 弱信号误判）**：症状——守卫误判 + LLM 顺着错误前提行动，把不该归档的条目批量归档。根因——守卫只对写方向设限，归档方向无对称拦截；LLM 缺"质疑机械前提"的纪律。规避——治理守卫必须双向对称；LLM 不得基于机械判定的前提行动，机械误判须有勘误/回滚通道。
+- **[演化] 推理模型把输出预算烧在可见思考上，最终文本块为空（2026-09-05 来源：dsh-continual-evolve FAQ #7）**：症状——推理模型做门禁判定/结构化提取时报 `produced no text`，而 maxTokens 预算充足。根因——输出预算被可见思考整段耗尽，最终 text 块为零。规避——提取类 LLM 调用显式关 reasoning（DeepSeek 适配器 `reasoningEffort: "off"`），并显式处理 max-tokens 截断，不要假设"预算够就有正文"。
 
 ## 门禁
 
 - **[门禁] 门禁阈值与现实脱节即失效（2026-09-05 来源：dsh-frecency verify-handoff-structure）**：症状——260 字上限形同虚设，实测条目普遍 400+ 字。根因——立阈值时未实测现有分布，之后默默改宽无痕。规避——立阈值先实测样本分布；阈值失守必须触发 ADR（改宽要留痕），禁止静默调整。
 - **[门禁] Python 移植的门禁未经真实样例校准会带 bug（2026-09-05 来源：devops-template verify-adr-format 头注释自证）**：症状——移植脚本按误读的约定实现，首次落地即跑才抓出。根因——照文本移植，未对真实合规样例校验。规避——移植类门禁落地即对真实样例跑通 + `--self-test` 夹具（违约样例应 FAIL、合规样例应 PASS）。
 - **[门禁] 弱检查长期红着没人发现（2026-09-05 来源：desktop verify-governance 自曝注释）**：症状——某模板豁免检查后，门禁对该文件长期红、无人处理。根因——豁免无自动执行点，无 follow-up。规避——豁免必须带注释说明豁免范围与补偿机制；弱检查（关键词级）要么升档要么显式标注为"快检非穷尽"。
+- **[门禁] 本地 YAML/模板解析通过 ≠ CI 平台接受（2026-08-28 来源：desktop release.yml 实证）**：症状——workflow 解析失败后，每次 push 都产出零 job 的 `failure` run，Actions 列表里 workflow 名回退为文件路径（与 `on` 过滤器无关）。根因——step `with:` 里的 GitHub 表达式被表达式层拒绝，本地 PyYAML 通过不等于 GitHub 接受；且解析失败 run 的 name 字段是最快判别位。规避——复杂判定（正则等）改写为 step 内 bash + output 引用；判别走 `gh api .../actions/workflows` 看 name。
+- **[门禁] CI 缓存按分支/ref 作用域隔离，tag 首 run 必 miss（2026-08-21 来源：desktop 实测）**：症状——同一缓存键在 tag 发布流首 run 不命中，误判为缓存配置坏了。根因——Actions 缓存不跨 ref 互通，每个 tag 是独立 ref。规避——做缓存优化别期待跨 tag 复利；命中条件只有同 tag 重跑或与默认分支共享。
+- **[门禁] 沙箱只能验降级分支，成功分支须真机或 force 开关走通（2026-08-24 来源：desktop dev 门禁）**：症状——「命令路由不存在即优雅降级」类功能在沙箱验过即当功能验证完成。根因——沙箱环境只能触达失败/降级路径，成功路径根本没执行。规避——成功分支需真机或显式 force 开关（如 `*_FORCE=1`）实走一遍再定性；"优雅降级正常"与"功能正常"是两个结论。
+- **[门禁] 超类型聚合对象 + 遍历键当数据键，是迟早误判的脆弱模式（2026-09-05 来源：dsh-continual-evolve FAQ #11）**：症状——候选分数大涨（0→100）却被判回归 REJECTED，理由 `case totalDurationMs regressed`，且 `autoRollbackOnReject` 连坐回滚删掉刚沉淀的产物。根因——聚合返回值把 per-case 键与元数据键（`overall`/`totalDurationMs` 等）混在同一对象，回归判定遍历 `Object.entries` 只硬编码排除部分元数据键；新增键漏排除，且"耗时更短"方向语义相反仍被当分数比对。规避——判定/报告从真实数据键集合（cells 派生的 caseId 集）出发，元数据只在明确键名上取，不做"遍历一切键"式兜底。
 
 ## 文档
 
@@ -31,6 +36,7 @@
 ## 环境
 
 - **[环境] 日期相关常量写死会跨月失效（2026-09-05 来源：dsh-frecency verify-handoff-structure 卷名）**：症状——journal 卷名硬编码 `2026-08-session-journal.md`，九月起校验对象失焦。根因——把"当前月"物化成常量。规避——日期常量按当前日期推导 + self-test 覆盖跨月场景（本仓修复版已含当月卷宽容与跨月夹具）。
+- **[环境] 跨平台 shell 语义差五连坑（2026-08-27 来源：desktop CI 三平台实机/评审沉淀）**：症状——同一脚本在 Linux/macOS/Git Bash 行为分裂：`sed -i` 的 GNU/BSD 语法不同；`xargs -r` 是 GNU 专属；Git Bash 命令行上限 32K，批量处理超限 `CreateProcess` 失败；`set -euo pipefail` 下 `grep -rl` 零命中非零退出炸管道；`grep -rlZ` 输出 NUL 分隔使 `wc -l` 恒 0、`for` 循环吞整串。根因——GNU/BSD 语义差 + Windows 32K 限制。规避——跨平台脚本：`sed -i` 改 `perl -i`（三平台一致）；空输入守卫用 `[[ -s "$list" ]]` 不用 `-r`；批量显式 `-n 64` 级分批；`grep -rl` 补 `|| true`；NUL 输出先 `tr '\0' '\n'` 再数。
 
 ## 上游
 

@@ -12,8 +12,7 @@ Checks, for every .md under .agents/notes/ (excluding archived/ and .zh.md files
      ## Proposal for proposed)
   4. implemented notes must NOT contain spec-speak headings
      (## Proposal / ## Plan / ## Migration plan / ## Acceptance criteria)
-  5. File/path naming (ADR naming rule, see proposed ADR
-     2026-08-27-adr-naming-and-script-pitfall-records.md):
+  5. File/path naming (ADR naming rule, single source: .agents/notes/README.md):
        - path is exactly <lifecycle>/<class>/<name>.md (top-level README exempt)
        - lifecycle ∈ {proposed, implemented, rejected} — matches Status (reused)
        - class ∈ {feature, bug-fix, simplification, architecture, process, testing}
