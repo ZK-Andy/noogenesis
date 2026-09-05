@@ -1,11 +1,13 @@
 ---
 name: noo-prose-standard
-description: Use when writing, reviewing, restoring, trimming, or auditing prose in this repo (Noogenesis) — deciding where documentation or comments are required across Markdown, public-API contract comments, code and test comments, prompts, descriptions, diagnostics, and UI strings.
+description: Use when writing, reviewing, restoring, trimming, or auditing prose in this repo — deciding where documentation or comments are required across Markdown, public-API contract comments, code and test comments, prompts, descriptions, diagnostics, and UI strings.
 ---
 
 # 本仓的散文标准
 
 > Provenance：蒸馏自 dotnet-deepseek-harness-desktop `dsh-prose-standard`（MIT，2026-09-05）；.NET XML doc 专属面泛化为"公共 API 契约注释"；双语纪律按本仓单语决策删除。
+>
+> 宿主口径：`noo-*` 技能随胶囊分发——引用的心源仓路径在 self-hosting 仓（Noogenesis）为活路径，在其他宿主为缓存参照实现（`<repoRoot>/.noogenesis/genes-cache/`），照读恒可，照跑先确认路径归谁。
 >
 > **本技能是引导，不是脚本（guidance, not a script）。** 写到足以保住契约，然后删除推理转写、重复与装饰。**契约** = 调用方/被调方/实现者/生产者/消费者所依赖的义务、不变量、前置/后置条件或兼容承诺。文档放置与预算用 [noo-doc-standards](../noo-doc-standards/SKILL.md)；猎杀推理泄漏用 [noo-trim-cot-leakage](../noo-trim-cot-leakage/SKILL.md)。
 

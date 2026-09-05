@@ -1,11 +1,13 @@
 ---
 name: noo-find-simplifications
-description: Use when working in this repo (Noogenesis) to find non-obvious simplification candidates, write proposed Agent Notes or inline TODO/FIXME notes, audit or coalesce superseded Agent Notes — especially dead, duplicated, speculative, over-built, added-then-removed, or hand-rolled-where-a-dependency-exists surfaces.
+description: Use when working in this repo to find non-obvious simplification candidates, write proposed Agent Notes or inline TODO/FIXME notes, audit or coalesce superseded Agent Notes — especially dead, duplicated, speculative, over-built, added-then-removed, or hand-rolled-where-a-dependency-exists surfaces.
 ---
 
 # 在本仓寻找简化候选
 
 > Provenance：蒸馏自 dotnet-deepseek-harness-desktop `dsh-find-simplifications`（MIT，2026-09-05）；.NET 专属判据泛化，语言替换为本仓语境。
+>
+> 宿主口径：`noo-*` 技能随胶囊分发——引用的心源仓路径在 self-hosting 仓（Noogenesis）为活路径，在其他宿主为缓存参照实现（`<repoRoot>/.noogenesis/genes-cache/`），照读恒可，照跑先确认路径归谁。
 >
 > **本技能是引导，不是脚本（guidance, not a script）。** 把"找简化的地方"变成**有证据的 ADR**，删除或折叠真实存在的表面积。跟着代码走、保持判断活跃；几条论证充分的候选胜过一 pile 薄猜。
 

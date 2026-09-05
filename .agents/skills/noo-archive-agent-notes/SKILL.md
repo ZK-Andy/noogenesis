@@ -1,11 +1,13 @@
 ---
 name: noo-archive-agent-notes
-description: Use when adding, auditing, pruning, archiving, or reviewing Agent Notes (ADR) in this repo (Noogenesis) — checks every new note for superseded active records, classifies implemented notes by future decision value, deletes rejected notes that no longer prevent a tempting fallacy, and applies the frozen archived rules.
+description: Use when adding, auditing, pruning, archiving, or reviewing Agent Notes (ADR) in this repo — checks every new note for superseded active records, classifies implemented notes by future decision value, deletes rejected notes that no longer prevent a tempting fallacy, and applies the frozen archived rules.
 ---
 
 # ADR 归档与治理
 
 > Provenance：蒸馏自 dotnet-deepseek-harness-desktop `dsh-archive-agent-notes`（MIT，2026-09-05）；单语决策已内置（无双语三件套）。
+>
+> 宿主口径：`noo-*` 技能随胶囊分发——引用的心源仓路径在 self-hosting 仓（Noogenesis）为活路径，在其他宿主为缓存参照实现（`<repoRoot>/.noogenesis/genes-cache/`），照读恒可，照跑先确认路径归谁。
 >
 > **本技能是引导，不是脚本（guidance, not a script）。** 在不抹掉仍能指导未来的历史的前提下收缩活跃决策库。逐条语义判断；词数与年龄只是发现辅助，**永远不是归档标准**。
 

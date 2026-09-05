@@ -1,11 +1,13 @@
 ---
 name: noo-code-review
-description: Use when reviewing a change or batch of changes in this repo (Noogenesis) — orients the reviewer to this project's standards (root AGENTS.md「评审检查项」AI-兜底清单, docs/method/review.md 契约, docs/method/doc-standards.md 语义面) and the semantic checks machine gates cannot cover. Run before closing a FULL-tier review (the 三重审核 path).
+description: Use when reviewing a change or batch of changes in this repo — orients the reviewer to this project's standards (root AGENTS.md「评审检查项」AI-兜底清单, docs/method/review.md 契约, docs/method/doc-standards.md 语义面) and the semantic checks machine gates cannot cover. Run before closing a FULL-tier review (the 三重审核 path).
 ---
 
 # 评审本仓的一次变更
 
 > Provenance：蒸馏自 dotnet-deepseek-harness-desktop `dsh-code-review`（MIT，2026-09-05）；.NET/C# 判据（D001–D003/R1/R3/IPC）按元规则替换为本仓"AI 兜底清单"机制。
+>
+> 宿主口径：`noo-*` 技能随胶囊分发——引用的心源仓路径在 self-hosting 仓（Noogenesis）为活路径，在其他宿主为缓存参照实现（`<repoRoot>/.noogenesis/genes-cache/`），照读恒可，照跑先确认路径归谁。
 >
 > **本技能是引导，不是脚本（guidance, not a script）。** 它补的是机器门禁盖不住的语义评审：指名缺陷、位置、影响、证据。正确性、生命周期、安全、被破坏的必需行为优先于风格；一条有实证的 blocker 胜过一串 nit。
 
@@ -24,7 +26,7 @@ description: Use when reviewing a change or batch of changes in this repo (Nooge
 
 ## 工作流（Workflow）——审 diff
 
-1. 确认范围与 base 后读 diff，对照本仓自己的分层（docs/ 方法论层 / .agents/ 协作层 / scripts/ 门禁层 / 未来插件面）。
+1. 确认范围与 base 后读 diff，对照本仓自己的分层（docs/ 方法论层 / .agents/ 协作层 / scripts/ 门禁层 / engine/ 演化机 + adapters/ 适配层）。
 2. 按语义检查逐项过；上游/来源项目的私有概念**不适用**——按本仓等价物核对，无等价物的直接忽略（不硬映射）。
 3. 语义检查清单（通用形态）：
    - **意图与接口契约**：追每个被改接口的双侧（调用方+实现方）；实现与 PR/ADR 陈述一致，含错误、取消、所有权、处置。

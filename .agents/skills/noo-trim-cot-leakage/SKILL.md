@@ -1,11 +1,13 @@
 ---
 name: noo-trim-cot-leakage
-description: Use when auditing or fixing prose in this repo (Noogenesis) that reads like a leaked reasoning transcript — dead design-session citations such as (decision N), audit item codes, or §N of uncommitted drafts; change narration such as "used to", "no longer"; stack or review vantage; reviewer-addressed justifications; control-flow narration; or hedged planning residue in comments, docs, or Agent Notes.
+description: Use when auditing or fixing prose in this repo that reads like a leaked reasoning transcript — dead design-session citations such as (decision N), audit item codes, or §N of uncommitted drafts; change narration such as "used to", "no longer"; stack or review vantage; reviewer-addressed justifications; control-flow narration; or hedged planning residue in comments, docs, or Agent Notes.
 ---
 
 # 清理思维链泄漏（CoT Leakage）
 
 > Provenance：蒸馏自 dotnet-deepseek-harness-desktop `dsh-trim-cot-leakage`（MIT，2026-09-05）；双语镜像类按单语决策删除。
+>
+> 宿主口径：`noo-*` 技能随胶囊分发——引用的心源仓路径在 self-hosting 仓（Noogenesis）为活路径，在其他宿主为缓存参照实现（`<repoRoot>/.noogenesis/genes-cache/`），照读恒可，照跑先确认路径归谁。
 >
 > **本技能是引导，不是脚本（guidance, not a script）。** 思维链泄漏 = 视角是**写作会话**而非**仓库**的散文：引用只有那个会话能看到的产物、叙述变更而非状态、与已离场的评审者争论。修复从不是一删了之——先从仓库视角重述每个存活的事实子句，再删掉它周围的转写；一个事实子句都没有的段落（审计编号、控制流叙述）直接删。[noo-prose-standard](../noo-prose-standard/SKILL.md) 拥有完整命题规则，本技能应用它。
 

@@ -1,11 +1,13 @@
 ---
 name: noo-doc-standards
-description: Use when writing, moving, reviewing, or auditing documentation in this repo (Noogenesis) — choosing placement/tier, separating tutorial from reference, trimming doc slop, responding to a verify-doc-budgets/verify-md-links failure, or "improve/audit the docs".
+description: Use when writing, moving, reviewing, or auditing documentation in this repo — choosing placement/tier, separating tutorial from reference, trimming doc slop, responding to a verify-doc-budgets/verify-md-links failure, or "improve/audit the docs".
 ---
 
 # 应用本仓文档标准
 
 > Provenance：蒸馏自 dotnet-deepseek-harness-desktop `dsh-doc-standards`（MIT，2026-09-05）；tier 按本仓精简版重定向。
+>
+> 宿主口径：`noo-*` 技能随胶囊分发——引用的心源仓路径在 self-hosting 仓（Noogenesis）为活路径，在其他宿主为缓存参照实现（`<repoRoot>/.noogenesis/genes-cache/`），照读恒可，照跑先确认路径归谁。
 >
 > **本技能是引导，不是脚本（guidance, not a script）。** 文档规则的单一事实源在 [docs/method/doc-standards.md](../../../docs/method/doc-standards.md)（tier 表/写作铁律/slop 清单/证据严肃性）与根 [AGENTS.md](../../../AGENTS.md)「文档纪律」「字数预算」；本技能只提供操作工作流。散文判断与必需覆盖用 [noo-prose-standard](../noo-prose-standard/SKILL.md)；从不把长度本身当缺陷。
 
@@ -34,7 +36,7 @@ description: Use when writing, moving, reviewing, or auditing documentation in t
 
 结构检查后，用最便宜探针先跑 slop 清单。先用 `scripts/change-scope.sh <base> <head>` 定范围再做语义判断。
 
-1. 度量：`python3 scripts/verify-doc-budgets.py --manifest scripts/doc-budgets.manifest.json`，再 `git ls-files '*.md' | xargs wc -w | sort -rn | head -30` 找未入预算的超重文件。
+1. 度量：`python3 scripts/verify-doc-budgets.py --manifest scripts/doc-budgets.manifest.json`（manifest 是心源仓实例——外部宿主自建同款清单后同法跑），再 `git ls-files '*.md' | xargs wc -w | sort -rn | head -30` 找未入预算的超重文件。
 2. 猎杀推理转写泄漏（叙述史/死设计引用/评审编舞/控制流叙述/walkthrough）——用 [noo-trim-cot-leakage](../noo-trim-cot-leakage/SKILL.md)。
 3. grep 标志性短语猎重复；留一个家，其余改链接。
 4. 手抄目录/状态清单换成权威源头（真实树/脚本/生成参考）。

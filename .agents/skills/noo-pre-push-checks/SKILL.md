@@ -1,11 +1,13 @@
 ---
 name: noo-pre-push-checks
-description: Use before pushing, force-pushing, marking ready for review, or claiming checks pass on this repo (Noogenesis) to select the smallest checks that cover the outgoing diff without reflexively running the full repository suite. Aligns with root AGENTS.md Git discipline (hooks fast / CI exhaustive, --force-with-lease, change-scope).
+description: Use before pushing, force-pushing, marking ready for review, or claiming checks pass in this repo to select the smallest checks that cover the outgoing diff without reflexively running the full repository suite. Aligns with root AGENTS.md Git discipline (hooks fast / CI exhaustive, --force-with-lease, change-scope).
 ---
 
 # Push 前检查选择（最小证据）
 
 > Provenance：蒸馏自 dotnet-deepseek-harness-desktop `dsh-pre-push-checks`（MIT，2026-09-05）；.NET 构建面替换为本仓门禁面。
+>
+> 宿主口径：`noo-*` 技能随胶囊分发——引用的心源仓路径在 self-hosting 仓（Noogenesis）为活路径，在其他宿主为缓存参照实现（`<repoRoot>/.noogenesis/genes-cache/`），照读恒可，照跑先确认路径归谁。
 >
 > **本技能是引导，不是脚本（guidance, not a script）。** push 前把相关本地证据跑**一次**，然后停。git hooks 故意只做窄快检；CI 拥有穷尽覆盖。
 
