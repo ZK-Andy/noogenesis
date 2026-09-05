@@ -48,7 +48,13 @@ function main(argv) {
     }
     if (!signals.length) fail('select needs at least one signal (argv or --stdin)');
     const { runSelect } = require('./select');
-    const out = runSelect(repoRoot, signals);
+    let out;
+    try {
+      out = runSelect(repoRoot, signals);
+    } catch (e) {
+      if (e.engine) return fail(e.message, 2);
+      throw e;
+    }
     process.stdout.write(out.stdout);
     return out.code;
   }
@@ -60,8 +66,14 @@ function main(argv) {
     if (!ref) fail('propose needs <domain>/<id>');
     const { scanGenes } = require('./gene');
     const { renderGene, resolveGeneRef } = require('./propose');
-    const genes = scanGenes(repoRoot);
-    const hit = resolveGeneRef(repoRoot, ref, genes);
+    let hit;
+    try {
+      const genes = scanGenes(repoRoot);
+      hit = resolveGeneRef(repoRoot, ref, genes);
+    } catch (e) {
+      if (e.engine) return fail(e.message, 2);
+      throw e;
+    }
     const text = renderGene(hit.obj);
     if (outFile) {
       fs.writeFileSync(outFile, text, 'utf8');

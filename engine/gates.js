@@ -23,7 +23,7 @@ function loadGates(engineRoot, repoRoot) {
   }
   const errors = [];
   if (!doc || typeof doc !== 'object' || Array.isArray(doc)) errors.push('root must be an object');
-  if (doc && typeof doc.version !== 'number') errors.push('version must be a number');
+  if (doc && (!Number.isInteger(doc.version) || doc.version < 1)) errors.push('version must be a positive integer');
   const gates = doc && doc.gates;
   if (!Array.isArray(gates) || !gates.length) errors.push('gates must be a non-empty array');
   const byName = new Map();

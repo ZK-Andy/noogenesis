@@ -5,9 +5,7 @@
 const crypto = require('crypto');
 const { spawnSync } = require('child_process');
 
-const EVENT_KINDS = Object.freeze(['gene.added', 'gene.updated', 'gene.retired']);
 const KEBAB_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-const SHA_RE = /^[0-9a-f]{64}$/;
 
 class EngineError extends Error {
   constructor(msg) { super(msg); this.engine = true; }
@@ -65,6 +63,7 @@ function deriveSlots(repoRoot) {
 }
 
 // 出账变更面（与 scripts/change-scope.sh 同口径）：已提交 diff + 未暂存 diff + 未跟踪，dedupe 排序。
+// -c core.quotePath=off：非 ASCII 文件名保持原样（默认八进制转义会让 forbidden_paths 前缀匹配失配）。
 function changedPaths(repoRoot, slots) {
   const out = new Set();
   const cmds = [
@@ -73,7 +72,7 @@ function changedPaths(repoRoot, slots) {
     ['ls-files', '--others', '--exclude-standard'],
   ];
   for (const c of cmds) {
-    const r = git(repoRoot, c);
+    const r = git(repoRoot, ['-c', 'core.quotePath=off', ...c]);
     if (r.code !== 0) throw new EngineError(`git ${c[0]} failed: ${r.stderr.trim()}`);
     for (const line of r.stdout.split('\n')) if (line.trim()) out.add(line.trim());
   }
@@ -89,6 +88,6 @@ function pathUnder(relPath, prefix) {
 }
 
 module.exports = {
-  EngineError, EVENT_KINDS, KEBAB_RE, SHA_RE,
+  EngineError, KEBAB_RE,
   normalizeSignal, sha256Hex, run, git, deriveSlots, changedPaths, pathUnder,
 };

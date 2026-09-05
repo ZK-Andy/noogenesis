@@ -223,48 +223,70 @@ def _scan(repo: Path) -> tuple[int, list[str]]:
     if genes_root.is_dir():
         for p in sorted(genes_root.rglob("*.json")):
             checked += 1
+            rel = p.relative_to(repo)
+            # 布局封闭：只认 genes/<domain>/<id>.json（与引擎 scanGenes 单层扫描镜像，R2-S3）
+            if len(rel.parts) != 3 or rel.parts[0] != "genes":
+                errors.append(f"{rel}: gene files must be at genes/<domain>/<id>.json layout")
+                continue
             try:
                 data = json.loads(p.read_text(encoding="utf-8"))
             except ValueError as e:
                 errors.append(f"{p}: not valid JSON: {e}")
                 continue
-            errors.extend(_check_gene(data, p.relative_to(repo), whitelist))
+            errors.extend(_check_gene(data, rel, whitelist))
             gid = data.get("id") if isinstance(data, dict) else None
             if isinstance(gid, str):
                 if gid in gene_files:
                     errors.append(f"{p}: duplicate gene id '{gid}' (also {gene_files[gid]})")
                 gene_files[gid] = p
 
-    # events/：结构 + 月卷 + 时间序；并按 id 聚出全局有序事件流
+    # events/：结构 + 月卷 + 时间序；并按 id 聚出事件流（ts 稳定排序，R2-S2）
     per_gene: dict[str, list[dict]] = {}
     events_root = repo / "events"
+    volumes: list[tuple[Path, list[tuple[datetime.datetime, dict]]]] = []
     if events_root.is_dir():
         for vol in sorted(events_root.glob("*.jsonl")):
             rows = _check_events(repo, vol, errors)
             checked += len(rows)
+            volumes.append((vol, rows))
             for _, ev in rows:
                 per_gene.setdefault(ev["gene"], []).append(ev)
+    # 跨卷 ts 接续：前卷最大 ts ≤ 后卷最小 ts（月界 ±1 天容差下仍可辨乱序，R2-S2）
+    for (v1, r1), (v2, r2) in zip(volumes, volumes[1:]):
+        if r1 and r2 and r1[-1][0] > r2[0][0]:
+            errors.append(f"{v2}: first ts precedes last ts of {v1.name} — cross-volume disorder")
+    # 每 id 的 latest 选择按 ts 稳定排序（同 ts 保持卷内行序），防月界容差把复算对象选错
+    for gid in per_gene:
+        per_gene[gid].sort(key=lambda e: _parse_ts(e["ts"]) or datetime.datetime.min.replace(tzinfo=datetime.timezone.utc))
 
-    # 复算规则分型（S2）：added/updated 对工作树复算；retired/fail 只查结构
+    # 复算规则分型（S2）：retired 划段；段内 ok 的 added/updated 对工作树复算；
+    # fail 事件只查结构不作复算（被拒候选内容 ≠ 工作树状态）——R2-B1 修复
     for gid, evs in per_gene.items():
-        latest = evs[-1]
-        target = None
-        candidates = list(genes_root.rglob(f"{gid}.json")) if genes_root.is_dir() else []
+        candidates = list(genes_root.glob(f"*/{gid}.json")) if genes_root.is_dir() else []
         if len(candidates) > 1:
             errors.append(f"gene id '{gid}' present in multiple domains: "
                           + ", ".join(str(c.relative_to(repo)) for c in candidates))
         target = candidates[0] if candidates else None
-        if latest["kind"] == "gene.retired":
+        last_retired = max((i for i, ev in enumerate(evs) if ev["kind"] == "gene.retired"), default=-1)
+        if last_retired == len(evs) - 1:
             if target is not None:
                 errors.append(f"{target}: latest event is gene.retired but the file still exists")
-        elif latest["kind"] in ("gene.added", "gene.updated"):
+            continue
+        post = evs[last_retired + 1:]  # 最后一次 retire 之后的事件决定工作树期望
+        ok_adds = [e for e in post if e["outcome"] == "ok" and e["kind"] in ("gene.added", "gene.updated")]
+        if ok_adds:
+            latest_ok = ok_adds[-1]
             if target is None:
-                errors.append(f"gene '{gid}': latest event is {latest['kind']} but no worktree file exists")
+                errors.append(f"gene '{gid}': latest accepted event is {latest_ok['kind']} but no worktree file exists")
             else:
                 digest = hashlib.sha256(target.read_bytes()).hexdigest()
-                if digest != latest["gene_sha"]:
-                    errors.append(f"{target}: gene_sha mismatch (event {latest['gene_sha'][:12]}… "
+                if digest != latest_ok["gene_sha"]:
+                    errors.append(f"{target}: gene_sha mismatch (event {latest_ok['gene_sha'][:12]}… "
                                   f"vs file {digest[:12]}…) — genes/ changes must go through solidify")
+        else:
+            # 分段内只有 fail：候选从未被（或自退役后未被）接受，工作树不应有该基因
+            if target is not None:
+                errors.append(f"{target}: no accepted event after last rejection/retire but the file exists")
 
     # 工作树基因必须有事件轨（solidify 是唯一入口）
     for gid, p in gene_files.items():
@@ -397,6 +419,37 @@ def _self_test() -> int:
         _mk(t, "events/2026-08.jsonl",
             _event(ts="2026-07-01T00:00:00Z", sha=_sha_of(t, "genes/process/sample-gene.json")) + "\n")
     cases.append((wrong_month, ["outside volume month"], "ts far outside volume month -> fail"))
+
+    # R2-B1 修复夹具：合法红闸拒绝不得打红门禁
+    def rejected_update(t: Path):
+        conforming(t); fix_sha(t)
+        _mk(t, "events/2026-09.jsonl",
+            _event(sha=_sha_of(t, "genes/process/sample-gene.json")) + "\n"
+            + _event(kind="gene.updated", gid="sample-gene", sha="d" * 64,
+                     outcome="fail: stub-fail exit 1") + "\n")
+    cases.append((rejected_update, [], "ok added + trailing rejected update -> pass"))
+
+    def rejected_add_only(t: Path):
+        _mk(t, "engine/gates.json", WHITELIST)
+        _mk(t, "scripts/stub.py", "print('ok')\n")
+        _mk(t, "events/2026-09.jsonl",
+            _event(gid="never-kept", sha="e" * 64, outcome="fail: stub-fail exit 1") + "\n")
+    cases.append((rejected_add_only, [], "rejected-only candidate (no file) -> pass"))
+
+    # R2-S3 修复夹具：布局封闭
+    def flat_layout(t: Path):
+        _mk(t, "engine/gates.json", WHITELIST)
+        _mk(t, "scripts/stub.py", "print('ok')\n")
+        _mk(t, "genes/loose.json", _gene(domain="genes"))
+    cases.append((flat_layout, ["genes/<domain>/<id>.json layout"], "flat gene file -> fail"))
+
+    # R2-S2 修复夹具：跨卷 ts 乱序（月界 ±1 天容差内仍须可辨）
+    def cross_volume_disorder(t: Path):
+        conforming(t); fix_sha(t)
+        sha = _sha_of(t, "genes/process/sample-gene.json")
+        _mk(t, "events/2026-09.jsonl", _event(ts="2026-10-01T00:00:00Z", sha=sha) + "\n")
+        _mk(t, "events/2026-10.jsonl", _event(ts="2026-09-30T00:00:00Z", sha=sha) + "\n")
+    cases.append((cross_volume_disorder, ["cross-volume disorder"], "next volume starts before previous ends -> fail"))
 
     failed = 0
     with tempfile.TemporaryDirectory() as td:

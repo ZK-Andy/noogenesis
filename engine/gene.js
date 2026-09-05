@@ -29,24 +29,21 @@ function validateGene(obj, opts) {
   }
   if (typeof obj.summary !== 'string' || !obj.summary.trim()) errors.push('summary must be a non-empty string');
 
-  if (!Array.isArray(obj.signals) || !obj.signals.every((s) => typeof s === 'string')) {
-    errors.push('signals must be an array of strings');
-  } else if (obj.signals.length < 1) {
-    errors.push('signals must have at least one key (an unselectable gene is dead weight)');
-  }
-
-  if (!Array.isArray(obj.strategy) || !obj.strategy.every((s) => typeof s === 'string')) {
-    errors.push('strategy must be an array of strings');
-  } else if (obj.strategy.length < 1) {
-    errors.push('strategy must have at least one step');
-  }
-
-  for (const [field, arr] of [['validation', obj.validation], ['avoid', obj.avoid]]) {
+  // 数组字段同形校验（R1 收口：折叠重复块）；signals/strategy ≥1，validation/avoid 空即违约
+  for (const [field, arr, minimum] of [['signals', obj.signals, 1], ['strategy', obj.strategy, 1],
+                                       ['validation', obj.validation, 0], ['avoid', obj.avoid, 0]]) {
     if (arr === undefined) continue;
     if (!Array.isArray(arr) || !arr.every((s) => typeof s === 'string')) {
       errors.push(`${field} must be an array of strings`);
-    } else if (!arr.length) {
+    } else if (minimum > 0 && arr.length < minimum) {
+      errors.push(`${field} must have at least ${minimum} item(s)`);
+    } else if (minimum === 0 && !arr.length) {
       errors.push(`${field} must not be empty (omit the field instead)`);
+    }
+  }
+  if (Array.isArray(obj.validation)) {
+    for (const v of obj.validation) {
+      if (!KEBAB_RE.test(v)) errors.push(`validation entries must be kebab-case gate names`);
     }
   }
 
@@ -74,11 +71,11 @@ function validateGene(obj, opts) {
   return errors;
 }
 
-// 读入并校验单个基因文件；gatesNames 用于 validation ⊆ 白名单检查（骨架 ADR D4）。
+// 读入并校验单个基因文件。目录锚点（domain == 父目录）只约束 genes/ 内的落盘位置；
+// solidify 的候选文件可放在 genes/ 之外（入档位置由 solidify 决定），故可关。
+// validation ⊆ 白名单的检查单源在 evaluate.evaluateGeneObj（R1 收口：此处不重复）。
 function readGene(filePath, opts = {}) {
   const fileName = path.basename(filePath);
-  // 目录锚点（domain == 父目录）只约束 genes/ 内的落盘位置；
-  // solidify 的候选文件可放在 genes/ 之外（入档位置由 solidify 决定），故可关闭。
   const parentDir = opts.skipDirAnchor ? null : path.basename(path.dirname(filePath));
   let raw;
   try {
@@ -93,28 +90,22 @@ function readGene(filePath, opts = {}) {
     throw new EngineError(`${filePath}: not valid JSON: ${e.message}`);
   }
   const errors = validateGene(obj, { fileName, parentDir });
-  if (obj && Array.isArray(obj.validation) && opts.gateNames) {
-    for (const v of obj.validation) {
-      if (!opts.gateNames.has(v)) errors.push(`validation entry '${v}' is not in the whitelist`);
-    }
-  }
   if (errors.length) throw new EngineError(`${filePath}: ${errors.join('; ')}`);
   return obj;
 }
 
 // 扫描 genes/ 目录（P1 无 manifest——engine 直接扫目录，schema ADR S1）。
-// 返回 [{ path, obj }]；目录不存在或为空返回空数组（调用方决定是否视为错误）。
-function scanGenes(repoRoot, opts = {}) {
+// 只认域子目录下一层；返回 [{ path, ref, obj }]，目录不存在或为空返回空数组。
+function scanGenes(repoRoot) {
   const root = path.join(repoRoot, 'genes');
   const out = [];
   if (!fs.existsSync(root)) return out;
-  const gateNames = opts.gateNames || null;
   for (const ent of fs.readdirSync(root, { withFileTypes: true }).sort((a, b) => a.name < b.name ? -1 : 1)) {
-    if (!ent.isDirectory()) continue; // genes/ 下只认域子目录；散文件无视
+    if (!ent.isDirectory()) continue; // genes/ 下只认域子目录；散文件无视（第十门禁拦其协议面）
     for (const f of fs.readdirSync(path.join(root, ent.name), { withFileTypes: true }).sort((a, b) => a.name < b.name ? -1 : 1)) {
       if (!f.isFile() || !f.name.endsWith('.json')) continue;
       const p = path.join(root, ent.name, f.name);
-      out.push({ path: p, ref: `${ent.name}/${f.name.slice(0, -5)}`, obj: readGene(p, { gateNames }) });
+      out.push({ path: p, ref: `${ent.name}/${f.name.slice(0, -5)}`, obj: readGene(p) });
     }
   }
   return out;

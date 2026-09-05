@@ -248,6 +248,81 @@ function selfTest() {
       'retire: gene.retired event records last content sha');
     ok(throwsEngine(() => retire(td, gatesDir, 'process/sol-gene', 'tester')),
       'retire: retiring a missing gene refused');
+
+    // R1 收口夹具：跨树 id 唯一性（同 id 异域拒入档）
+    const dupGene = { ...gene, id: 'dup-id', domain: 'doc' };
+    const dupPath = path.join(staging, 'dup-id.json');
+    fs.writeFileSync(dupPath, JSON.stringify(dupGene, null, 2) + '\n');
+    {
+      // 先入档 doc/dup-id，再尝试 process/dup-id → 必须拒
+      writeGates(gatesDir, [{ name: 'stub-pass', cmd: 'python3', args: ['scripts/stub-pass.py'] }]);
+      const r5 = solidify(td, gatesDir, dupPath, 'tester');
+      ok(r5.ok === true, 'solidify: cross-domain first placement accepted');
+      const dup2 = { ...dupGene, domain: 'process' };
+      const dup2Path = path.join(staging, 'dup-id.json');
+      fs.writeFileSync(dup2Path, JSON.stringify(dup2, null, 2) + '\n');
+      ok(throwsEngine(() => solidify(td, gatesDir, dup2Path, 'tester')),
+        'solidify: same id in another domain refused (refs stay unambiguous)');
+    }
+
+    // R2 收口夹具：无关暂存件不捎带（pathspec 隔离）
+    {
+      writeGates(gatesDir, [{ name: 'stub-pass', cmd: 'python3', args: ['scripts/stub-pass.py'] }]);
+      fs.writeFileSync(path.join(td, 'unrelated.txt'), 'unrelated\n');
+      git(td, ['add', 'unrelated.txt']);
+      const uGene = { ...gene, id: 'iso-gene' };
+      const isoPath = path.join(staging, 'iso-gene.json');
+      fs.writeFileSync(isoPath, JSON.stringify(uGene, null, 2) + '\n');
+      const r6 = solidify(td, gatesDir, isoPath, 'tester');
+      ok(r6.ok === true, 'solidify: with unrelated staged file, add succeeds');
+      const files6 = git(td, ['show', '--name-only', '--format=', 'HEAD']).trim().split('\n').sort();
+      ok(files6.length === 2 && !files6.includes('unrelated.txt'),
+        'solidify: pathspec commit excludes unrelated staged file');
+      ok(git(td, ['diff', '--cached', '--name-only']).trim() === 'unrelated.txt',
+        'solidify: unrelated file remains staged for its own commit');
+    }
+
+    // R2 收口夹具：commit 失败 → 写面回滚（不留半应用状态）
+    {
+      const hooksDir = path.join(td, 'failing-hooks');
+      fs.mkdirSync(hooksDir);
+      fs.writeFileSync(path.join(hooksDir, 'pre-commit'), '#!/bin/sh\nexit 1\n', { mode: 0o755 });
+      git(td, ['config', 'core.hooksPath', 'failing-hooks']);
+      const rGene = { ...gene, id: 'rollback-gene' };
+      const rPath = path.join(staging, 'rollback-gene.json');
+      fs.writeFileSync(rPath, JSON.stringify(rGene, null, 2) + '\n');
+      const eventsBefore = fs.readFileSync(path.join(td, 'events', fs.readdirSync(path.join(td, 'events')).sort().pop()), 'utf8');
+      let threw = false;
+      try { solidify(td, gatesDir, rPath, 'tester'); } catch (e) { threw = e instanceof EngineError; }
+      ok(threw, 'solidify: commit failure raises EngineError');
+      ok(!fs.existsSync(genePath(td, 'process', 'rollback-gene')), 'solidify: rollback removes placed gene');
+      const eventsAfter = fs.readFileSync(path.join(td, 'events', fs.readdirSync(path.join(td, 'events')).sort().pop()), 'utf8');
+      ok(eventsAfter === eventsBefore, 'solidify: rollback removes appended event line');
+      git(td, ['config', '--unset', 'core.hooksPath']);
+    }
+  }
+
+  // --- 5.5) bin.js 退出码三档端到端（R2-B2：fail-closed = exit 2，非堆栈 exit 1）---
+  {
+    const td = mkTemp();
+    mkRepo(td);
+    fs.mkdirSync(path.join(td, 'genes', 'process'), { recursive: true });
+    fs.writeFileSync(path.join(td, 'genes', 'process', 'broken.json'), '{not json');
+    const bin = path.join(__dirname, 'bin.js');
+    let code = -99;
+    try {
+      execFileSync('node', [bin, 'select', 'anything'], { cwd: td, encoding: 'utf8', stdio: 'pipe' });
+    } catch (e) {
+      code = e.status;
+    }
+    ok(code === 2, 'bin: malformed gene + select -> exit 2 (fail-closed, no stack)');
+    code = -99;
+    try {
+      execFileSync('node', [bin, 'propose', 'process/missing'], { cwd: td, encoding: 'utf8', stdio: 'pipe' });
+    } catch (e) {
+      code = e.status;
+    }
+    ok(code === 2, 'bin: propose missing gene -> exit 2');
   }
 
   if (failed === 0) {

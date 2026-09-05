@@ -23,8 +23,7 @@ function checkConstraints(gene, changed) {
   return violations;
 }
 
-// 核心：评估一个已载入的 gene 对象（候选未落盘时由 solidify 直接传入）。
-// fail-closed 的一切（白名单坏/推导失败）都抛 EngineError。
+// 白名单子集检查单源在此（R1 收口）：readGene/scanGenes 不再重复。
 function evaluateGeneObj(repoRoot, engineRoot, gene, ref) {
   const gates = loadGates(engineRoot, repoRoot);
   if (Array.isArray(gene.validation)) {
@@ -51,10 +50,9 @@ function evaluateGeneObj(repoRoot, engineRoot, gene, ref) {
   return { ok, gene, ref, violations, results, changedCount: changed.length };
 }
 
-// 按 ref 评估已入档基因。
+// 按 ref 评估已入档基因（loadGates 仅一次——在 evaluateGeneObj 内）。
 function evaluateGene(repoRoot, engineRoot, geneRef) {
-  const gates = loadGates(engineRoot, repoRoot);
-  const genes = scanGenes(repoRoot, { gateNames: new Set(gates.byName.keys()) });
+  const genes = scanGenes(repoRoot);
   const hit = resolveGeneRef(repoRoot, geneRef, genes);
   return evaluateGeneObj(repoRoot, engineRoot, hit.obj, hit.ref);
 }
