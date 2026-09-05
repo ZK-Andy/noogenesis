@@ -9,4 +9,5 @@
    - HEAD 若比 HANDOFF 最新记录**多出提交**：逐条查明内容再继续（教训：未记录的提交曾导致决策误读）。
 3. **门禁基线**：质量门十件全绿（九个 `verify-*.py` + `change-scope.sh`，清单见根 AGENTS「质量门」；`--self-test` 抽查一项）。
 4. **声明会话模式**：按 [session-modes.md](session-modes.md) 与用户确认本轮类型与边界。
-5. 向用户复述：关键状态、当前待办、相关踩坑判别（见 `docs/cookbook.md`）；然后等待命令。
+5. **（可选）喂信号**：动手前用 `noo_select` 喂当前任务关键词（如 `noo_select(["git 对账"])`）命中本仓基因——人判断"像不像踩过那个坑的场景"，引擎只做匹配（骨架 ADR D2 口径；信号词表见 `genes/` 各基因 `signals` 字段）。
+6. 向用户复述：关键状态、当前待办、相关踩坑判别（见 `docs/cookbook.md`）；然后等待命令。
