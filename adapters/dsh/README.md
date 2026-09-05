@@ -1,18 +1,19 @@
 # adapters/dsh — DSH 适配层
 
-M2 适配层拍板与耦合防火墙的单一事实源：[ADR 2026-09-06-m2-adapter-wiring](../../.agents/notes/implemented/architecture/2026-09-06-m2-adapter-wiring.md)。本目录是插件包里**唯一**允许携带 DSH 特有面的层。
+M2 适配层拍板与耦合防火墙的单一事实源：[ADR 2026-09-06-m2-adapter-wiring](../../.agents/notes/implemented/architecture/2026-09-06-m2-adapter-wiring.md)；部署收口（包改名 / 工具注册单参合同 / repoRoot 四级回退链）：[ADR 2026-09-06-adapter-deploy-hardening](../../.agents/notes/implemented/architecture/2026-09-06-adapter-deploy-hardening.md)。本目录是插件包里**唯一**允许携带 DSH 特有面的层。
 
 ## 消费契约（安装面）
 
-- 安装：`dsh plugin --profile <name> add noogenesis`（bundle patch 插入 plugin row `{id: noogenesis, name: noogenesis}`）。
+- 安装：`dsh plugin --profile <name> add noogenesis-dsh`（bundle patch 插入 plugin row `{id: noogenesis, name: noogenesis-dsh}`）。宿主件包名规则 = 裸名 + 宿主后缀；裸名 `noogenesis` 保留给框架引擎。
 - 装载契约：ESM 入口 `index.mjs` 导出 `name` / `inject` / `apply`；Config 手工校验，违约 fail-closed 抛错。`inject = ["tools", "systemPrompt"]`——**不含 userQuestions**（提问是可选能力，disposal 时懒取用；cordis 对缺席的注入服务会推迟整个插件装载，声明注入会让降级不可达）。
 - 运行时依赖收敛：仅 `@deepseek-ai/dsh-tools`（defineTool，经依赖注入进 tools.mjs）；引擎零第三方依赖不受影响。
+- **装上即转**：零配置安装即在三工具与 solidify 面生效——repoRoot 逐次调用解析（四级回退链，见下）；唯一例外是 system-prompt 命中节（同步面无会话上下文），动态索引需显式锚定（见 `repoRoot` 行）。
 
 ## 配置（profile patch 插件 row 的 `config` 字段，全部可选）
 
 | 字段 | 类型 / 默认 | 语义 |
 |---|---|---|
-| `repoRoot` | string / 回退 `NOGENESIS_REPO_ROOT` → cwd | 目标仓根（引擎与 genes/ 所在）。**装在 DSH 侧的插件 ≠ 运行仓**，部署时必须显式锚定 |
+| `repoRoot` | string / 回退 `NOGENESIS_REPO_ROOT` → **会话工作区** → cwd | 目标仓根（引擎与 genes/ 所在）。工具体与 solidify 面逐次解析（多 agent 异仓各归各仓）；system-prompt 命中节是同步面、无会话上下文，只能用 config/env/cwd 三级——要动态命中节就在部署时显式锚定 |
 | `sectionOrder` | 正整数 / 120 | system-prompt 基座节 order；命中节 = +1 |
 | `injectSignals` | string[] / `[]` | 常驻命中节的显式信号；空 → 命中节零 token |
 | `stagingDir` | string / `genes-staging` | 待入档候选目录（相对 repoRoot） |
