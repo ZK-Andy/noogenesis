@@ -96,16 +96,30 @@ function readGene(filePath, opts = {}) {
 
 // 扫描 genes/ 目录（P1 无 manifest——engine 直接扫目录，schema ADR S1）。
 // 只认域子目录下一层；返回 [{ path, ref, obj }]，目录不存在或为空返回空数组。
-function scanGenes(repoRoot) {
-  const root = path.join(repoRoot, 'genes');
+// P2 合并扫描（A/A/A 拍板）：<repoRoot>/.noogenesis/genes-cache/genes（基因库缓存）
+// 在场即并入扫描根——只读路径（select/propose）经此消费共享基因；同名 ref 本仓
+// 优先（先扫本仓、缓存同 ref 丢弃，不报错）。写路径（solidify/evaluate）不走本函数
+// 的缓存分支，仓库资产语义不变。
+function scanGenes(repoRoot, opts = {}) {
+  const roots = [path.join(repoRoot, 'genes')];
+  if (opts.cache !== false) {
+    const cache = path.join(repoRoot, '.noogenesis', 'genes-cache', 'genes');
+    if (fs.existsSync(cache)) roots.push(cache);
+  }
   const out = [];
-  if (!fs.existsSync(root)) return out;
-  for (const ent of fs.readdirSync(root, { withFileTypes: true }).sort((a, b) => a.name < b.name ? -1 : 1)) {
-    if (!ent.isDirectory()) continue; // genes/ 下只认域子目录；散文件无视（第十门禁拦其协议面）
-    for (const f of fs.readdirSync(path.join(root, ent.name), { withFileTypes: true }).sort((a, b) => a.name < b.name ? -1 : 1)) {
-      if (!f.isFile() || !f.name.endsWith('.json')) continue;
-      const p = path.join(root, ent.name, f.name);
-      out.push({ path: p, ref: `${ent.name}/${f.name.slice(0, -5)}`, obj: readGene(p) });
+  const seen = new Set();
+  for (const root of roots) {
+    if (!fs.existsSync(root)) continue;
+    for (const ent of fs.readdirSync(root, { withFileTypes: true }).sort((a, b) => a.name < b.name ? -1 : 1)) {
+      if (!ent.isDirectory()) continue; // genes/ 下只认域子目录；散文件无视（第十门禁拦其协议面）
+      for (const f of fs.readdirSync(path.join(root, ent.name), { withFileTypes: true }).sort((a, b) => a.name < b.name ? -1 : 1)) {
+        if (!f.isFile() || !f.name.endsWith('.json')) continue;
+        const ref = `${ent.name}/${f.name.slice(0, -5)}`;
+        if (seen.has(ref)) continue; // 本仓优先：缓存同名 ref 被遮蔽
+        seen.add(ref);
+        const p = path.join(root, ent.name, f.name);
+        out.push({ path: p, ref, obj: readGene(p) });
+      }
     }
   }
   return out;

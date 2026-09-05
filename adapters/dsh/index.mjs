@@ -7,7 +7,7 @@
  * 懒取用（cordis 对缺席的注入服务会推迟整个插件装载，声明注入反而让
  * 「提问面缺席 → 只提醒」降级不可达）。
  *
- * 配置面（7 字段 + 缺省 + 失败模式）单一事实源：./README.md「配置」表；
+ * 配置面（8 字段 + 缺省 + 失败模式）单一事实源：./README.md「配置」表；
  * 校验实现在 ./config.mjs（fail-closed，selftest 直测）。
  */
 import { defineTool } from "@deepseek-ai/dsh-tools";
@@ -15,6 +15,7 @@ import { runEngine, runEngineSync, resolveRepoRoot, sessionWorkspaceOf } from ".
 import { registerNooTools } from "./tools.mjs";
 import { BASE_SECTION, hitsSectionText } from "./section.mjs";
 import { runSolidifyTrigger, listStagingCandidates, createSolidifyGate, ASK_TIMEOUT_MS } from "./solidify-trigger.mjs";
+import { pullBankOnce } from "./bank-pull.mjs";
 import { validateConfig } from "./config.mjs";
 
 export const name = "noogenesis";
@@ -75,6 +76,15 @@ export function apply(ctx, config = {}) {
 	const repoRootFor = (exec) => resolveRepoRoot(cfg, sessionWorkspaceOf(exec));
 
 	ctx.provide("noogenesis", { repoRoot, runEngine });
+
+	// P2 只读消费（bank-pull.mjs 头注）：geneBankUrl 在场 → 装载时惰性 pull 一次。
+	// fire-and-forget：失败仅 warn 降级离线（缓存缺席 = select/propose 与无 P2
+	// 一致），绝不阻塞会话；每个插件实例至多一次（刷新 = 人重跑 pull 或重启）。
+	if (cfg.geneBankUrl) {
+		pullBankOnce({ repoRoot, url: cfg.geneBankUrl, runEngine, logger }).catch((cause) => {
+			logger.warn(`noogenesis bank pull crashed: ${cause instanceof Error ? cause.message : String(cause)}`);
+		});
+	}
 
 	ctx.systemPrompt.section({ name: "tool:noogenesis", order: cfg.sectionOrder, text: BASE_SECTION });
 	ctx.systemPrompt.section({

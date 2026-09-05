@@ -22,6 +22,7 @@ import { runEngineSync, resolveRepoRoot, sessionWorkspaceOf, EXIT } from "./engi
 import { hitsSectionText } from "./section.mjs";
 import { registerNooTools } from "./tools.mjs";
 import { listStagingCandidates, buildSolidifyArgs, solidifyNotice, runSolidifyTrigger, createSolidifyGate, ASK_TIMEOUT_MS } from "./solidify-trigger.mjs";
+import { buildPullArgs, pullBankOnce, createBankGate } from "./bank-pull.mjs";
 import { validateConfig } from "./config.mjs";
 
 const ADAPTER_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -291,6 +292,92 @@ function writeFixtureGene(repoRoot) {
 	assert.equal(sessionWorkspaceOf({ agent: { session: { header: { cwd: "" } } } }), undefined);
 	assert.equal(sessionWorkspaceOf({ agent: { session: { header: { cwd: "/tmp/x" } } } }), "/tmp/x");
 	ok("config: sessionWorkspaceOf extracts agent.session.header.cwd, absent chain → undefined");
+}
+
+// ── 5.5) P2 只读消费：bank-pull 触发体 + 缓存合并扫描 e2e ──────────────────
+{
+	assert.deepEqual(buildPullArgs("https://example.com/bank.git"), ["pull", "https://example.com/bank.git"]);
+	ok("bank-pull: args are structured (engine spawn contract)");
+
+	const gate = createBankGate();
+	assert.equal(gate.acquire("/repo-a"), true);
+	assert.equal(gate.acquire("/repo-a"), false);
+	assert.equal(gate.acquire("/repo-b"), true);
+	gate.release("/repo-a");
+	assert.equal(gate.acquire("/repo-a"), true);
+	gate.release("/repo-a");
+	gate.release("/repo-b");
+	ok("bank-pull: per-repo in-flight gate — same repo dropped, other repo unblocked");
+
+	const infos = [];
+	const warns = [];
+	const logger = { info: (m) => infos.push(m), warn: (m) => warns.push(m) };
+	const pulls = [];
+	const pulled = await pullBankOnce({
+		repoRoot: "/repo-a",
+		url: "https://example.com/bank.git",
+		runEngine: async (args, opts) => {
+			pulls.push({ args, opts });
+			return { code: EXIT.OK, stdout: "pull: cloned bank into /repo-a/.noogenesis/genes-cache\n", stderr: "" };
+		},
+		logger,
+		gate,
+	});
+	assert.deepEqual(pulls[0].args, ["pull", "https://example.com/bank.git"]);
+	assert.match(pulled.pulled ? infos[0] : "", /bank pulled/);
+	const again = await pullBankOnce({ repoRoot: "/repo-a", url: "x", runEngine: async () => assert.fail("gate held — must not re-pull"), logger, gate });
+	assert.equal(again.pulled, false);
+	assert.equal(again.reason, "in-flight");
+	ok("bank-pull: success → info log; gate held after settle (one pull per instance)");
+
+	const failedPull = await pullBankOnce({
+		repoRoot: "/repo-b",
+		url: "https://example.com/bank.git",
+		runEngine: async () => ({ code: EXIT.FAIL_CLOSED, stdout: "", stderr: "engine: git clone failed: network down\n" }),
+		logger,
+	});
+	assert.equal(failedPull.pulled, false);
+	assert.match(warns.at(-1), /continuing offline/);
+	ok("bank-pull: engine failure → warn, degraded offline, never throws");
+
+	// config: geneBankUrl 校验 + 缺省
+	const cfg = validateConfig({});
+	assert.equal(cfg.geneBankUrl, undefined);
+	assert.throws(() => validateConfig({ geneBankUrl: "" }), /geneBankUrl/);
+	assert.throws(() => validateConfig({ geneBankUrl: 42 }), /geneBankUrl/);
+	ok("bank-pull: config.geneBankUrl — default undefined, type violations throw");
+
+	// e2e：真实引擎 pull（本地临时 bank）→ 缓存基因经 select 命中
+	const bank = tempRepo("bank");
+	const bankGeneDir = path.join(bank, "genes", "demo");
+	fs.mkdirSync(bankGeneDir, { recursive: true });
+	fs.writeFileSync(path.join(bankGeneDir, "bank-only.json"), JSON.stringify({
+		id: "bank-only", domain: "demo", summary: "bank-only gene",
+		signals: ["bank-only signal"], strategy: ["bank step"],
+	}, null, 2) + "\n");
+	execFileSync("git", ["-C", bank, "add", "-A"], { stdio: "pipe" });
+	execFileSync("git", ["-C", bank, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "bank gene"], { stdio: "pipe" });
+
+	const target = tempRepo("consumer");
+	const pulledE2e = runEngineSync(["pull", bank], { repoRoot: target });
+	assert.equal(pulledE2e.code, EXIT.OK);
+	const hit = runEngineSync(["select", "bank-only signal"], { repoRoot: target });
+	assert.equal(hit.code, EXIT.OK);
+	assert.match(hit.stdout, /demo\/bank-only\s+bank-only gene/);
+	assert.match(hit.stdout, /signals: bank-only signal/);
+	ok("bank-pull: e2e — real engine pull caches bank genes; select hits cache-only gene");
+
+	// 本仓优先遮蔽：同 ref 双份 → 本仓版本胜出
+	const shadowDir = path.join(target, "genes", "demo");
+	fs.mkdirSync(shadowDir, { recursive: true });
+	fs.writeFileSync(path.join(shadowDir, "bank-only.json"), JSON.stringify({
+		id: "bank-only", domain: "demo", summary: "local wins",
+		signals: ["bank-only signal"], "strategy": ["local step"],
+	}, null, 2) + "\n");
+	const shadowed = runEngineSync(["select", "bank-only signal"], { repoRoot: target });
+	assert.match(shadowed.stdout, /demo\/bank-only\s+local wins/);
+	assert.doesNotMatch(shadowed.stdout, /bank-only gene/);
+	ok("bank-pull: e2e — repo gene shadows same-ref cache copy (repo-first)");
 }
 
 // ── 6) 防火墙机器检查：import 面 / 引擎零依赖 / 包结构契约 ────────────────

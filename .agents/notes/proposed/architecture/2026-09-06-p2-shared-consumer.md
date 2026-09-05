@@ -25,6 +25,13 @@ P1 引擎四命令只扫本地 `genes/`（repoRoot 四级链），共享层零�
 
 **D4 · 共享客户端落点 = `engine/` 新增命令，引擎默认离线，显式配置才接库。** 零依赖纪律不变：git fetch/pull 以子进程调用，库内容缓存到本地目录并入 select 扫描根；不配置则引擎行为与 `0.1.1` 完全一致（未决问题 4 收口 = 保留开关；分层边界不变——M2 ADR 拍板基因库 harness 无关，DSH 特有面收敛 adapter）。
 
+### 实现轮拍板（同日，用户逐题 A/A/A）
+
+- **D5 · 缓存落点与冲突语义**：仓内确定性缓存 `<repoRoot>/.noogenesis/genes-cache/`——select/propose 零额外合同即可发现（目录在场即扫描），`pull <url> [--cache DIR]` 缺省写这里；不跑 pull 就没有该目录 = 天然默认离线。同名 ref（`domain/id`）**本仓基因优先**：缓存副本被遮蔽、不报错——本仓是策展活体，库是分发副本。被否的全局缓存（`~/.cache/noogenesis/`）落败于 M2 spawn 合同最小 env 透传（PATH/HOME/LANG）无法携带发现路径。
+- **D6 · 合并扫描只走读路径**：`select` + `propose` 扫 `genes/` ∪ 缓存；`evaluate` / `solidify` 恒以本仓 `genes/` 为对象——缓存基因只读不可入档，守住「保守入档在本仓」纪律（schema ADR S2：solidify 是唯一入档入口）。
+- **D7 · pull 触发 = adapter 惰性一次**：adapter config 新增 `geneBankUrl`（可选）；在场时插件装载触发一次 `pull`（逐仓 in-flight 去重，拉取完成后不释放——每实例每仓至多一次，刷新 = 重跑 pull 或重启），失败仅 warn 降级离线不阻塞会话——拉取是便利面不是正确性面（本仓基因始终在场）。引擎 `pull` 命令同时保留手动入口。被否的纯手动触发落败于「配置了却忘 pull」的静默陈旧。
+- **manifest 语义**：仓根 `manifest.json` = 检索索引（`{version, genes:[{ref,path,summary,signals}]}`，确定性输出按 ref 排序、无时间戳——重跑字节恒等）；`scripts/gen-manifest.py` 生成 + `scripts/verify-manifest.py` 门禁（条目与 genes/ 树逐条对账，缺失/陈旧/漂移即红）入 `gates.json` 白名单（质量门 10→11 件）。消费端检索仍走目录扫描（引擎愚钝纪律），manifest 供人与消费端快速浏览，不进引擎合同面。
+
 ## Alternatives considered
 
 - **立即开独立公共仓**（`noogenesis-genes` 或沿用 `dsh-gene-bank`）：落败——只读起步下无外部贡献者，独立仓的存在理由不成立；本仓即库先跑通闭环，独立仓随贡献开放拍板。
@@ -35,7 +42,7 @@ P1 引擎四命令只扫本地 `genes/`（repoRoot 四级链），共享层零�
 ## Acceptance criteria
 
 - 实现轮后：配置指向基因库 URL 的环境可 pull 缓存并在 `noo_select` 命中库内基因；不配置时引擎行为与 `0.1.1` 逐字节一致（离线开关有夹具验证）；manifest 生成器 + 对应门禁入 CI。
-- 缓存目录与 repoRoot 四级链的优先级、同名基因冲突语义随实现轮拍板（本 ADR 不预设）。
+- 实现轮已落地（D5–D7）：`pull` 命令 + 缓存合并扫描（本仓优先遮蔽）+ `geneBankUrl` 惰性 pull + `manifest.json` 生成器与门禁；缓存优先级与同名冲突语义已拍板，不再 open。
 
 ## Risks
 

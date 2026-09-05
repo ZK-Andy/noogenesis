@@ -14,7 +14,7 @@ const { selectGenes } = require('./select');
 const { renderGene } = require('./propose');
 const { evaluateGeneObj, checkConstraints } = require('./evaluate');
 const { solidify, retire } = require('./solidify');
-const { genePath } = require('./gene');
+const { genePath, scanGenes } = require('./gene');
 
 let failed = 0;
 function ok(cond, msg) {
@@ -369,6 +369,69 @@ function selfTest() {
     writeGates(engineCopy, [{ name: 'ghost', cmd: 'python3', args: ['scripts/no-such-script.py'] }]);
     ok(spawnCode([path.join(engineCopy, 'bin.js'), 'evaluate', 'gates/e2e-solid'], td) === 2,
       'bin e2e: evaluate fail-closed (referenced script missing) -> exit 2');
+  }
+
+  // --- 6) P2 共享客户端：pull + 合并扫描（A/A/A 拍板：本仓优先遮蔽 / 读路径合并）---
+  {
+    const bank = mkTemp();
+    mkRepo(bank);
+    writeGene(bank, 'doc', {
+      id: 'bank-gene', domain: 'doc', summary: 'bank copy',
+      signals: ['bank signal'], strategy: ['bank step'],
+    });
+    git(bank, ['add', '-A']);
+    git(bank, ['commit', '-qm', 'bank gene']);
+
+    const td = mkTemp();
+    mkRepo(td);
+    writeGene(td, 'process', {
+      id: 'local-gene', domain: 'process', summary: 'local copy',
+      signals: ['local signal'], strategy: ['local step'],
+    });
+
+    const { pullBank, defaultCacheDir } = require('./pull');
+    const r1 = pullBank(td, bank);
+    ok(r1.action === 'cloned' && r1.count === 1, 'pull: clone into default cache (<repoRoot>/.noogenesis/genes-cache)');
+    ok(fs.existsSync(defaultCacheDir(td)), 'pull: default cache dir in place');
+
+    // 合并扫描：缓存基因进 select 命中面
+    const merged = selectGenes(td, ['bank signal', 'local signal']);
+    ok(merged.hits.length === 2, 'select: cache genes merged into scan roots');
+    ok(merged.hits.some((h) => h.ref === 'doc/bank-gene'), 'select: cache gene selectable');
+
+    // 本仓优先：同 ref 双份 → 本仓版本胜出（缓存副本被遮蔽，不报错）
+    writeGene(td, 'doc', {
+      id: 'bank-gene', domain: 'doc', summary: 'local wins',
+      signals: ['bank signal'], strategy: ['local step'],
+    });
+    const hit = scanGenes(td).find((g) => g.ref === 'doc/bank-gene');
+    ok(hit && hit.obj.summary === 'local wins' && hit.path.startsWith(td),
+      'merge: repo gene shadows same-ref cache copy (repo-first)');
+
+    // 更新：bank 新增基因 → --ff-only 更新 + 计数
+    writeGene(bank, 'gates', {
+      id: 'bank-gene-2', domain: 'gates', summary: 'second',
+      signals: ['bank2'], strategy: ['s'],
+    });
+    git(bank, ['add', '-A']);
+    git(bank, ['commit', '-qm', 'second gene']);
+    const r2 = pullBank(td, bank);
+    ok(r2.action === 'updated' && r2.count === 2, 'pull: ff-only update refreshes cache');
+
+    // fail-closed 三样：非 git 缓存目录 / 空 URL / 缓存 = 仓根本体
+    const bad = mkTemp();
+    mkRepo(bad);
+    fs.mkdirSync(defaultCacheDir(bad), { recursive: true });
+    ok(throwsEngine(() => pullBank(bad, bank)), 'pull: non-git cache dir refused (fail-closed)');
+    ok(throwsEngine(() => pullBank(bad, '')), 'pull: empty URL refused');
+    ok(throwsEngine(() => pullBank(bad, bank, bad)), 'pull: cache dir = repo root refused');
+    const bin = path.join(__dirname, 'bin.js');
+    ok(spawnCode([bin, 'pull'], bad) === 2, 'bin: pull without URL -> exit 2 (usage)');
+
+    // 默认离线：无缓存目录 → 扫描与 0.1.1 行为一致
+    const clean = mkTemp();
+    mkRepo(clean);
+    ok(scanGenes(clean).length === 0, 'merge: no cache dir → scan identical to offline (default)');
   }
 
   if (failed === 0) {

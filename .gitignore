@@ -17,3 +17,6 @@ node_modules/
 # 第三方参考仓库本地镜像（调研考古用；MIT 时代快照，证据指针在
 # docs/research/evomap-evolver-engine-evolution.md，永不入库）
 /.research-mirror/
+
+# 基因库只读消费缓存（P2 共享客户端 pull 目标；不入库——ADR 2026-09-06-p2-shared-consumer）
+/.noogenesis/

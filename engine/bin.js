@@ -15,6 +15,7 @@ function usage() {
     '  node engine/bin.js evaluate <domain>/<id>              # gates.json 全集 + 约束；红即拒',
     '  node engine/bin.js solidify <candidate.json> --actor N # 入档：evaluate 全绿 → genes/ + events/ 同一 commit',
     '  node engine/bin.js solidify --retire <domain>/<id> --actor N',
+    '  node engine/bin.js pull <bank-url> [--cache DIR]       # 只读消费：clone/pull 基因库进仓内缓存（P2）',
     '  node engine/bin.js self-test                           # 元评测夹具（临时沙箱，不触碰真实仓）',
     '',
   ].join('\n');
@@ -119,6 +120,23 @@ function main(argv) {
     }
     process.stdout.write(r.report);
     return r.ok ? 0 : 1;
+  }
+
+  if (cmd === 'pull') {
+    const cacheIdx = rest.indexOf('--cache');
+    const cacheDir = cacheIdx >= 0 ? rest[cacheIdx + 1] : null;
+    const url = rest.find((a, i) => i !== cacheIdx && !(cacheIdx >= 0 && i === cacheIdx + 1));
+    if (!url) fail('pull needs <bank-url>');
+    const { pullBank } = require('./pull');
+    let r;
+    try {
+      r = pullBank(repoRoot, url, cacheDir);
+    } catch (e) {
+      if (e.engine) return fail(e.message, 2);
+      throw e;
+    }
+    process.stdout.write(r.report);
+    return 0;
   }
 
   if (cmd === 'self-test') {

@@ -35,6 +35,9 @@ export function validateConfig(config = {}) {
 	if (config.maxIndexGenes !== undefined && !isNatural(config.maxIndexGenes)) {
 		throw new Error("noogenesis: config.maxIndexGenes must be a positive integer");
 	}
+	if (config.geneBankUrl !== undefined && (typeof config.geneBankUrl !== "string" || config.geneBankUrl.length === 0)) {
+		throw new Error("noogenesis: config.geneBankUrl must be a non-empty string");
+	}
 	return {
 		repoRoot: config.repoRoot,
 		sectionOrder: config.sectionOrder ?? 120,
@@ -43,5 +46,6 @@ export function validateConfig(config = {}) {
 		askOnDispose: config.askOnDispose ?? true,
 		actor: config.actor ?? "noogenesis",
 		maxIndexGenes: config.maxIndexGenes ?? 12,
+		geneBankUrl: config.geneBankUrl,
 	};
 }

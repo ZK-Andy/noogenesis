@@ -48,6 +48,7 @@ jobs:
           python3 scripts/verify-review-tier.py --self-test
           python3 scripts/verify-review-brief.py --self-test
           python3 scripts/verify-gene-format.py --self-test
+          python3 scripts/verify-manifest.py --self-test
           python3 scripts/gates.py --self-test
 
       # 引擎元评测（schema ADR S3）：与 verify-* self-test 平级，不占门禁编号

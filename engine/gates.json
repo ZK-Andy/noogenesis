@@ -7,6 +7,7 @@
     { "name": "cookbook", "cmd": "python3", "args": ["scripts/verify-cookbook.py"] },
     { "name": "skill-format", "cmd": "python3", "args": ["scripts/verify-skill-format.py"] },
     { "name": "handoff-structure", "cmd": "python3", "args": ["scripts/verify-handoff-structure.py"] },
+    { "name": "manifest", "cmd": "python3", "args": ["scripts/verify-manifest.py"] },
     { "name": "review-tier", "cmd": "python3", "args": ["scripts/verify-review-tier.py", "--since", "{{outgoing_base}}", "--enforce"] },
     { "name": "review-brief", "cmd": "python3", "args": ["scripts/verify-review-brief.py", "--lanes", "R1,R2,R3"] },
     { "name": "change-scope", "cmd": "bash", "args": ["scripts/change-scope.sh", "{{outgoing_base}}", "{{head}}"] }

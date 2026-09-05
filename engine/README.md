@@ -1,9 +1,10 @@
-# engine — P1 演化发动机
+# engine — 演化发动机（P1 + P2 共享消费）
 
-心源 P1 演化引擎：Node.js 标准库 only、零第三方依赖、零网络、零 LLM——"发动机不插电也能转"。骨架选型（D1–D4）与协议（S1–S3）的单一事实源：
+心源演化引擎：Node.js 标准库 only、零第三方依赖、零网络、零 LLM——"发动机不插电也能转"。骨架选型（D1–D4）与协议（S1–S3）的单一事实源：
 
 - 骨架：[.agents/notes/implemented/architecture/2026-09-05-p1-engine-skeleton.md](../.agents/notes/implemented/architecture/2026-09-05-p1-engine-skeleton.md)
 - 协议：[.agents/notes/implemented/architecture/2026-09-05-gene-event-schema.md](../.agents/notes/implemented/architecture/2026-09-05-gene-event-schema.md)
+- P2 共享消费：[.agents/notes/proposed/architecture/2026-09-06-p2-shared-consumer.md](../.agents/notes/proposed/architecture/2026-09-06-p2-shared-consumer.md)
 
 ## 合同面（唯一 CLI）
 
@@ -13,6 +14,7 @@ node engine/bin.js propose <domain>/<id> [--out FILE]  # gene → 注入文本�
 node engine/bin.js evaluate <domain>/<id>              # gates.json 全集 + 约束；红即拒，无豁免
 node engine/bin.js solidify <candidate.json> --actor N # 入档：全绿 → genes/ + events/ 同一 commit
 node engine/bin.js solidify --retire <domain>/<id> --actor N
+node engine/bin.js pull <bank-url> [--cache DIR]       # P2 只读消费：clone/pull 基因库进仓内缓存
 node engine/bin.js self-test                           # 元评测夹具（临时沙箱，不触碰真实仓）
 ```
 
@@ -25,9 +27,16 @@ node engine/bin.js self-test                           # 元评测夹具（临�
 | `bin.js` | CLI 分发 + 用法 |
 | `util.js` | 归一化 / SHA-256 / 结构化 spawn / git 封装 / 槽值推导 |
 | `gates.js` + `gates.json` | 验证白名单（fail-closed 装载） |
-| `gene.js` | Gene 八字段封闭 schema / 目录扫描 |
-| `select.js` / `propose.js` / `evaluate.js` / `solidify.js` | 四命令各一 |
+| `gene.js` | Gene 八字段封闭 schema / 目录扫描（含缓存合并扫描） |
+| `select.js` / `propose.js` / `evaluate.js` / `solidify.js` / `pull.js` | 五命令各一 |
 | `selftest.js` | 元评测夹具 |
+
+## 共享消费（P2，只读）
+
+- `pull <bank-url>` 把基因库 clone/pull 进仓内缓存 `<repoRoot>/.noogenesis/genes-cache/`（shallow clone，更新走 `--ff-only`）。**默认离线**：不跑 pull 就没有缓存目录，select/propose 行为与无 P2 时完全一致。
+- **合并扫描**：缓存在场时并入 `select` / `propose` 的扫描根；同名 ref（`domain/id`）**本仓基因优先**（缓存副本被遮蔽，不报错）——本仓是策展活体，库是分发副本。`evaluate` / `solidify` 恒以本仓 `genes/` 为对象，缓存基因**只读不可入档**。
+- 缓存目录不进 git（`.gitignore` `/.noogenesis/`）；安全边界：缓存绝不指向仓根本体或 `genes/` 本身。
+- 基因库侧的检索索引 = 仓根 `manifest.json`（`scripts/gen-manifest.py` 生成，确定性输出；`scripts/verify-manifest.py` 门禁防漂移，已入 `gates.json` 白名单）。
 
 ## 安全模型（五条，schema ADR S3）
 

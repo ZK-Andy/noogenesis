@@ -1,6 +1,6 @@
 # adapters/dsh — DSH 适配层
 
-M2 适配层拍板与耦合防火墙的单一事实源：[ADR 2026-09-06-m2-adapter-wiring](../../.agents/notes/implemented/architecture/2026-09-06-m2-adapter-wiring.md)；部署收口（包改名 / 工具注册单参合同 / repoRoot 四级回退链）：[ADR 2026-09-06-adapter-deploy-hardening](../../.agents/notes/implemented/architecture/2026-09-06-adapter-deploy-hardening.md)。本目录是插件包里**唯一**允许携带 DSH 特有面的层。
+M2 适配层拍板与耦合防火墙的单一事实源：[ADR 2026-09-06-m2-adapter-wiring](../../.agents/notes/implemented/architecture/2026-09-06-m2-adapter-wiring.md)；部署收口（包改名 / 工具注册单参合同 / repoRoot 四级回退链）：[ADR 2026-09-06-adapter-deploy-hardening](../../.agents/notes/implemented/architecture/2026-09-06-adapter-deploy-hardening.md)；P2 只读共享消费（geneBankUrl / 惰性 pull / 缓存合并扫描）：[ADR 2026-09-06-p2-shared-consumer](../../.agents/notes/proposed/architecture/2026-09-06-p2-shared-consumer.md)。本目录是插件包里**唯一**允许携带 DSH 特有面的层。
 
 ## 消费契约（安装面）
 
@@ -20,12 +20,14 @@ M2 适配层拍板与耦合防火墙的单一事实源：[ADR 2026-09-06-m2-adap
 | `askOnDispose` | bool / true | 会话结束发现候选时提问人工确认；提问面缺席、ask 抛错或超时（兜底 300s）→ 降级为只提醒 |
 | `actor` | string / `noogenesis` | solidify `--actor` 名 |
 | `maxIndexGenes` | 正整数 / 12 | 命中节行数封顶 |
+| `geneBankUrl` | string / 缺省（离线） | P2 只读消费：基因库 git URL；在场 → 装载时惰性 `pull` 一次进 `<repoRoot>/.noogenesis/genes-cache/`（每实例至多一次，刷新 = 重跑 pull 或重启），缓存并入 select/propose 扫描根（同名 ref 本仓优先） |
 
 ## 语义与失败模式
 
 - **三工具只读**：`noo_select` / `noo_propose` / `noo_evaluate` 不写盘不提交；引擎退出码映射：0=结果文本、1=闸红（红是有效结论，以 `RED (exit 1)` 文本返回；**exit 1 + 空 stdout = 引擎内部故障**（非 EngineError 走 `throw e` 崩溃退出码同为 1 且无报告），按 fail-closed 抛错不放行）、2=fail-closed（抛错，重试无益）。
 - **写路径唯一**：solidify 只在 `agent/disposed` 触发体里经人工确认执行；确认缺席/拒绝/超时 → 只输出带精确命令的提醒；in-flight 去重逐仓隔离（同仓近同时 dispose 不重复弹问/重复入档，异仓互不阻塞）；solidify 红档候选不入档（引擎语义），失败清单以 warn 汇报。
 - **system-prompt 双节**：基座节固定极小；命中节空渲染 → 宿主丢弃 → 零 token（`injectSignals` 为空时直接短路，不 spawn 引擎）。引擎 stdout 进宿主 prompt 前对 `{{` 做零宽中性化——宿主 interpolate 对未知 `{{name}}` 抛错且 renderPrompt 每模型步无包裹调用，模板语法基因 summary 不得原样透传。信号只来自 `injectSignals` 显式声明与模型显式调 `noo_select`——Detect 禁区（骨架 D2）不在本层解除。
+- **基因库拉取是便利面**（P2）：`geneBankUrl` 在场时装载时惰性 pull 一次，失败仅 warn 降级离线（缓存缺席 = select/propose 与无 P2 完全一致）；pull 是只读消费，写路径（solidify）恒以本仓 `genes/` 为对象，缓存基因不可入档。
 
 ## 自测
 

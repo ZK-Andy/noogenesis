@@ -1,0 +1,71 @@
+{
+  "version": 1,
+  "genes": [
+    {
+      "ref": "doc/doc-budget-overflow",
+      "path": "genes/doc/doc-budget-overflow.json",
+      "summary": "字数超限的处理序：迁移 → 精简 → 才允许提额度",
+      "signals": [
+        "字数超限",
+        "超预算",
+        "verify-doc-budgets 失败",
+        "word budget"
+      ]
+    },
+    {
+      "ref": "doc/doc-single-home",
+      "path": "genes/doc/doc-single-home.json",
+      "summary": "每个事实只有一个家：rationale→ADR、踩坑→cookbook、方法→docs/method、规则→AGENTS",
+      "signals": [
+        "文档放哪",
+        "事实只有一个家",
+        "doc slop",
+        "文档重复"
+      ]
+    },
+    {
+      "ref": "gates/new-gene-curation",
+      "path": "genes/gates/new-gene-curation.json",
+      "summary": "新基因只能人工策展进入：翻译 → evaluate 全绿 → solidify 原子入档",
+      "signals": [
+        "新增基因",
+        "基因入档",
+        "策展",
+        "gene 翻译"
+      ]
+    },
+    {
+      "ref": "gates/push-precheck-order",
+      "path": "genes/gates/push-precheck-order.json",
+      "summary": "push 前先用 change-scope 定 diff 面，再选最窄检查子集",
+      "signals": [
+        "push 前检查",
+        "准备推送",
+        "pre-push",
+        "最小证据"
+      ]
+    },
+    {
+      "ref": "process/git-reconcile-extra-commits",
+      "path": "genes/process/git-reconcile-extra-commits.json",
+      "summary": "HEAD 比 HANDOFF 多出提交时，先逐条查明再继续",
+      "signals": [
+        "git 对账",
+        "HEAD 多出提交",
+        "未记录的提交",
+        "session open 对账"
+      ]
+    },
+    {
+      "ref": "process/history-rewrite-lease",
+      "path": "genes/process/history-rewrite-lease.json",
+      "summary": "改写历史只用 --force-with-lease=<branch>:<observed-oid>，改写后重新审计评审状态",
+      "signals": [
+        "force push",
+        "改写历史",
+        "push 被拒",
+        "rebase 后推送"
+      ]
+    }
+  ]
+}
