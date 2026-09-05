@@ -18,7 +18,9 @@
 
 - 踩坑单一事实源在 [docs/cookbook.md](../docs/cookbook.md)：每条带域标签（封闭集）+ 日期，格式由 `scripts/verify-cookbook.py` 机器强制。
 
-## 出处声明（MIT）
+## 出处声明（上游均为 MIT）
+
+> 本仓许可为 AGPL-3.0（见根 [README](../README.md) §License）；上游 MIT 出处义务由 provenance 行承担，不受本仓许可影响。
 
 - `.agents/notes` 骨架、`templates/`、流程卡与技能的方法论：蒸馏自 `dotnet-deepseek-harness-desktop`、`dsh-frecency`、`devops-template`（MIT），其上游血统为 `deepseek-ai/deepseek-harness`（MIT）。**提炼后搬迁，非逐字节搬运**；每件资产头部带 provenance 行标注源与差异。
 - `scripts/verify-*.py` 门禁：源自 desktop 版（MIT），按本仓修复后使用（差异见各脚本头注释与 ADR [2026-09-05-capsule-01-migration](notes/implemented/process/2026-09-05-capsule-01-migration.md)）。

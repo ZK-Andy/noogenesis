@@ -206,7 +206,7 @@ evidence: { benchmark: ..., passed_checks: N/N, ci_run: ... }
 - **集中式仲裁**：维护者/CI 是唯一合入口 → 单点（但也因此可控/可信）。可用"多维护者 + 自动化闸"缓解。
 - **单复制 vs 多样性**：若全网只抄最强基因会单一文化。缓解：`manifest` 保留 domain 多样性、`AVOID` 保留失败面；观察"哪些被采用/被拒"做演化信号（对抗性参考 EvoMap 但只作观测，不作积分）。
 - **免费 CI 额度**：公共仓 Actions 有免费额度；PR 从 fork 触发需维护者批准（合理）。
-- **许可证**：引擎 + 基因库保持 MIT（自定协议、外置 git/CI，不链接 GPL 代码）。若将来接 GEP 生态需单独评审 GPL/source-available 影响。
+- **许可证**：整仓统一 AGPL-3.0（2026-09-05 拍板，见 ADR [2026-09-05-license-agpl-3](../../.agents/notes/implemented/process/2026-09-05-license-agpl-3.md)；自定协议、外置 git/CI、不链接 GPL 时代代码的纪律不变）。贡献进基因库的基因随整仓许可；若将来接 GEP 生态（GPL/source-available 代码）需单独评审兼容性——AGPLv3 §13 允许并入 GPLv3 代码（单向），反向不行。
 
 ---
 
