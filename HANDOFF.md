@@ -7,6 +7,8 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-06｜**M2 部署收口（FULL 三审 R1 0B/4S、R2 1B/2S、R3 3B/5S 全采纳；ADR `2026-09-06-adapter-deploy-hardening`；commits `ebb60d5`→`dd7ad6d`）**：0.1.0 实机三缺口全修 → 包改名 `noogenesis-dsh`@0.1.1（裸名 deprecate）、工具单参注册、repoRoot 四级链零配置生效。**节点：待新会话重验三件事（todos B 条）。**
+
 - 2026-09-06｜**npm 真包首发（release-flow；repository 修正 `cecc815`；tag `v0.1.0`）**：`noogenesis@0.1.0` = latest；desktop 实装（bundles 层栈 + plugin row 合成 + 引擎空仓退化/真仓命中）；minimumReleaseAge 拦新包 → 单命令豁免（cookbook [环境]）；M2 ADR 发布 gate 清账；会话级装载新会话确认。**节点：M2 全链路收口。**
 
 - 2026-09-06｜**M2 适配层实现轮（FULL 三审 R1 0B/4S、R2 1B/8S、R3 3B/4S 全采纳；ADR `2026-09-06-m2-adapter-wiring`；commits `78eb26f`→`65ca063`）**：adapters/dsh 八件 + npm 插件包形态 + gates.json 单源发射器；R2-B1（命中节 {{ 未转义）零宽中性化；真安装验证随 npm 首发收口；README 核对已同步（三处）。
@@ -38,7 +40,7 @@ Noogenesis（心源）：DeepSeek Harness 之上的"蜂群进化框架"；终极
 
 - **胶囊 01 搬迁已收口**（S1–S7 全过：骨架/基座/门禁/流程卡/知识层/交接/CI+dogfood，FULL 三审全过）；**胶囊 v0.2 评审机械闸已落地**（tier + brief 两闸；ADR `2026-09-05-review-mechanical-gate`）。
 - **P1 演化发动机已落地**（骨架/schema/实现三 ADR implemented，FULL 三审全采纳）：`engine/` 四命令 + `gates.json` 白名单 + `verify-gene-format.py` 第十门禁 + 首批 6 基因（process/doc/gates）经 solidify 原子入档（ADR [p1-engine-implementation](.agents/notes/implemented/architecture/2026-09-05-p1-engine-implementation.md)）。
-- **M2 适配层已落地**（ADR [2026-09-06-m2-adapter-wiring](.agents/notes/implemented/architecture/2026-09-06-m2-adapter-wiring.md)）：本仓 = npm 插件包形态（[`noogenesis@0.1.0`](https://www.npmjs.com/package/noogenesis) 已发布，repository 对齐宿主仓，desktop profile 实装验证过）；`adapters/dsh/` spawn 单合同接线（system-prompt 节 + noo_* 三工具 + solidify 人工确认触发）；hooks/CI 门禁清单单源 `scripts/gates.py`。
+- **M2 适配层已落地**（ADR [2026-09-06-m2-adapter-wiring](.agents/notes/implemented/architecture/2026-09-06-m2-adapter-wiring.md)；部署收口 ADR [2026-09-06-adapter-deploy-hardening](.agents/notes/implemented/architecture/2026-09-06-adapter-deploy-hardening.md)）：本仓 = npm 插件包形态（[`noogenesis-dsh@0.1.1`](https://www.npmjs.com/package/noogenesis-dsh) = latest，裸名 `noogenesis`@0.1.0 已 deprecate；宿主件包名规则 = 裸名 + 宿主后缀）；`adapters/dsh/` spawn 单合同接线（system-prompt 节 + noo_* 三工具 + solidify 人工确认触发；repoRoot 四级回退链零配置生效）；hooks/CI 门禁清单单源 `scripts/gates.py`。desktop 已装 0.1.1，**新会话重验三件事待做（todos B 条）**。
 - 门禁第一梯队 10 件全绿（含 self-test）：adr-format / doc-budgets / md-links / cookbook / skill-format / handoff-structure / gene-format / review-tier / review-brief / change-scope；engine self-test 与 CI 同跑（run 33976291727 绿）。
 - 技能 noo-* 7 个已被 DSH 自动发现；评审机械闸已落地（verify-review-tier + verify-review-brief，ADR [2026-09-05-review-mechanical-gate](.agents/notes/implemented/process/2026-09-05-review-mechanical-gate.md)），门禁 9→10。
 - 四项拍板：评审闸延后 v0.2 ✅ / journal 入 git ✅ / 技能前缀 noo-* ✅ / cookbook 首批 15 条 ✅。

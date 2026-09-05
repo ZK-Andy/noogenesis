@@ -18,3 +18,5 @@
 - [x] （D）M2 适配层立项讨论轮 2026-09-06 四题拍板（插件壳/最小接线/spawn 单合同/技能分发随 P2），ADR [2026-09-06-m2-adapter-wiring](.agents/notes/implemented/architecture/2026-09-06-m2-adapter-wiring.md)。
 - [x] （D）M2 适配层实现轮 2026-09-06（插件壳 + 最小接线 + spawn 单合同 + gates.json 单源；FULL 三审 R1 0B/4S、R2 1B/8S、R3 3B/4S 全采纳），ADR [2026-09-06-m2-adapter-wiring](.agents/notes/implemented/architecture/2026-09-06-m2-adapter-wiring.md)。
 - [x] （D）npm 真包首发 2026-09-06（release-flow）：`noogenesis@0.1.0` = latest（repository 对齐，commit `cecc815`；tag `v0.1.0`）；desktop 实装 + 空仓退化/真仓命中验证；minimumReleaseAge 单命令豁免（cookbook [环境]）；M2 ADR 发布 gate 清账。
+- [ ] （B）新会话重验 `noogenesis-dsh@0.1.1` 三件事：① `noo_select` / `noo_propose` / `noo_evaluate` 三工具都在模型工具面；② 实调 `noo_select`（如 `["git 对账"]`）**零配置**命中本仓基因（repoRoot 四级回退链生效，不再报「不是 Git 仓库」）；③ system-prompt 基座节在场。验过清本条。
+- [x] （D）M2 部署收口 2026-09-06（FULL 三审全采纳），ADR [2026-09-06-adapter-deploy-hardening](.agents/notes/implemented/architecture/2026-09-06-adapter-deploy-hardening.md)；`noogenesis-dsh@0.1.1` 发布 + 裸名 deprecate；desktop 实装完成。
