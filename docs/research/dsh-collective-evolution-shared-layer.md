@@ -77,7 +77,7 @@
 
 | 决策 | 选择 | 理由 |
 |---|---|---|
-| 协议 | **自定 DSH 私有协议**（不迁就 GEP/GPL） | 守住自己的验证门禁哲学 + MIT 干净；"参考但不依赖"；避免 GPL-3.0/source-available 传染与锁死 |
+| 协议 | **自定 DSH 私有协议**（不迁就 GEP/GPL） | 守住自己的验证门禁哲学 + 许可干净（不沾 GPL）；"参考但不依赖"；避免 GPL-3.0/source-available 传染与锁死 |
 | 共享层 | **git 仓库（免费 GitHub 公共仓）+ CI 验证闸**，**不自建服务器** | $0；git 提供存储/版本/审计/回滚/分发；CI 提供"跨机器可复现的真执行验证" |
 | 验证权 | **中央机器闸（CI 重跑验证）+ 维护者合入** | 保质量；避免自我验证/自报（EvoMap 败因） |
 | 集成面 | **DSH 插件**（本引擎 + 共享客户端一体） | 贴合 Cordis 插件生态 + capability manifest + 插件市场分发 |
@@ -206,7 +206,7 @@ evidence: { benchmark: ..., passed_checks: N/N, ci_run: ... }
 - **集中式仲裁**：维护者/CI 是唯一合入口 → 单点（但也因此可控/可信）。可用"多维护者 + 自动化闸"缓解。
 - **单复制 vs 多样性**：若全网只抄最强基因会单一文化。缓解：`manifest` 保留 domain 多样性、`AVOID` 保留失败面；观察"哪些被采用/被拒"做演化信号（对抗性参考 EvoMap 但只作观测，不作积分）。
 - **免费 CI 额度**：公共仓 Actions 有免费额度；PR 从 fork 触发需维护者批准（合理）。
-- **许可证**：整仓统一 AGPL-3.0（2026-09-05 拍板，见 ADR [2026-09-05-license-agpl-3](../../.agents/notes/implemented/process/2026-09-05-license-agpl-3.md)；自定协议、外置 git/CI、不链接 GPL 时代代码的纪律不变）。贡献进基因库的基因随整仓许可；若将来接 GEP 生态（GPL/source-available 代码）需单独评审兼容性——AGPLv3 §13 允许并入 GPLv3 代码（单向），反向不行。
+- **许可证**：整仓统一 AGPL-3.0（2026-09-05 拍板，见 ADR [2026-09-05-license-agpl-3](../../.agents/notes/implemented/process/2026-09-05-license-agpl-3.md)）；自定协议、外置 git/CI、不链接 GPL 时代代码的纪律不变。贡献进基因库的基因随整仓许可；GEP 生态兼容性与 npm 分发承接见该 ADR Consequences。
 
 ---
 

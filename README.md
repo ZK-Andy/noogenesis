@@ -49,4 +49,4 @@ hooks 只做快检查（`bash scripts/setup-hooks.sh` 接线），CI 拥有穷�
 
 ## License
 
-**AGPL-3.0**（见 [LICENSE](LICENSE)，整仓统一）。分发或网络服务使用须遵守其开源义务；闭源商用被排除。上游蒸馏资产（MIT）的出处义务由各资产 provenance 行承担。独立项目——与 DeepSeek 无关联。
+**AGPL-3.0**（见 [LICENSE](LICENSE)，整仓统一）。商用不被排除；被排除的是不履行源码提供义务的分发与网络服务形态（含 SaaS）。上游 MIT 资产的版权与许可文本见 [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md)，逐件血统标注由各资产 provenance 行承担。独立项目——与 DeepSeek 无关联。
