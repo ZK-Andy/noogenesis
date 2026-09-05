@@ -5,7 +5,7 @@
   "license": "AGPL-3.0-only",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/openorbit/noogenesis.git"
+    "url": "git+https://github.com/ZK-Andy/noogenesis.git"
   },
   "type": "commonjs",
   "main": "adapters/dsh/index.mjs",
