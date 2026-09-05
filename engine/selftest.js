@@ -27,6 +27,16 @@ function throwsEngine(fn, msg) {
   return false;
 }
 
+// CLI 级退码断言助手（execFileSync 非 0 退出抛错，折叠三处 try/catch 样板）
+function spawnCode(nodeArgs, cwd) {
+  try {
+    execFileSync('node', nodeArgs, { cwd, encoding: 'utf8', stdio: 'pipe' });
+    return 0;
+  } catch (e) {
+    return e.status;
+  }
+}
+
 function mkTemp() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'noo-engine-selftest-'));
 }
@@ -309,27 +319,17 @@ function selfTest() {
     fs.mkdirSync(path.join(td, 'genes', 'process'), { recursive: true });
     fs.writeFileSync(path.join(td, 'genes', 'process', 'broken.json'), '{not json');
     const bin = path.join(__dirname, 'bin.js');
-    let code = -99;
-    try {
-      execFileSync('node', [bin, 'select', 'anything'], { cwd: td, encoding: 'utf8', stdio: 'pipe' });
-    } catch (e) {
-      code = e.status;
-    }
-    ok(code === 2, 'bin: malformed gene + select -> exit 2 (fail-closed, no stack)');
-    code = -99;
-    try {
-      execFileSync('node', [bin, 'propose', 'process/missing'], { cwd: td, encoding: 'utf8', stdio: 'pipe' });
-    } catch (e) {
-      code = e.status;
-    }
-    ok(code === 2, 'bin: propose missing gene -> exit 2');
+    ok(spawnCode([bin, 'select', 'anything'], td) === 2,
+      'bin: malformed gene + select -> exit 2 (fail-closed, no stack)');
+    ok(spawnCode([bin, 'propose', 'process/missing'], td) === 2,
+      'bin: propose missing gene -> exit 2');
   }
 
   // --- 5.6) bin.js e2e 装配夹具（CLI 参数分派 + 真实 spawn 路径；直调函数盖不到的面）---
   {
-    // select / propose happy path：真 bin、真基因、真 spawn
     const td = mkTemp();
     mkRepo(td);
+    // select / propose happy path：真 bin、真基因、真 spawn
     writeGene(td, 'process', {
       id: 'e2e-gene', domain: 'process', summary: 'e2e fixture',
       signals: ['e2e signal'], strategy: ['step'],
@@ -337,15 +337,15 @@ function selfTest() {
     const bin = path.join(__dirname, 'bin.js');
     const out = execFileSync('node', [bin, 'select', 'E2E  Signal'], { cwd: td, encoding: 'utf8', stdio: 'pipe' });
     ok(out.includes('process/e2e-gene'), 'bin e2e: select happy path exits 0 and matches (normalized)');
+    const pout = execFileSync('node', [bin, 'propose', 'process/e2e-gene'], { cwd: td, encoding: 'utf8', stdio: 'pipe' });
+    ok(pout.includes('[noo-gene process/e2e-gene] e2e fixture'),
+      'bin e2e: propose happy path renders injection text via real CLI wiring');
 
     // solidify 全链 e2e：引擎目录复制到沙箱（gates.json 可换成 stub），CLI 真装配
     const engineCopy = path.join(td, 'engine-copy');
     fs.cpSync(__dirname, engineCopy, { recursive: true });
     stubScript(td);
-    fs.writeFileSync(path.join(engineCopy, 'gates.json'), JSON.stringify({
-      version: 1,
-      gates: [{ name: 'stub-pass', cmd: 'python3', args: ['scripts/stub-pass.py'] }],
-    }, null, 2) + '\n');
+    writeGates(engineCopy, [{ name: 'stub-pass', cmd: 'python3', args: ['scripts/stub-pass.py'] }]);
     const staging = path.join(td, 'candidates');
     fs.mkdirSync(staging);
     const cand = path.join(staging, 'e2e-solid.json');
@@ -359,12 +359,16 @@ function selfTest() {
     ok(readEvents(td).some((e) => e.gene === 'e2e-solid' && e.kind === 'gene.added'),
       'bin e2e: solidify appends event via real CLI wiring');
 
-    // evaluate 在无脚手架仓 fail-closed：真实 gates.json 引用的 scripts/ 在临时仓缺失 → exit 2
-    let code = -99;
-    try {
-      execFileSync('node', [bin, 'evaluate', 'process/e2e-gene'], { cwd: td, encoding: 'utf8', stdio: 'pipe' });
-    } catch (e) { code = e.status; }
-    ok(code === 2, 'bin e2e: evaluate fail-closed (whitelist scripts missing) -> exit 2');
+    // 红档 exit 1：stub 闸挂红 → 评估红（D6 第三档的 CLI 级断言）
+    writeGates(engineCopy, [{ name: 'stub-pass', cmd: 'python3', args: ['scripts/stub-pass.py'] },
+                            { name: 'stub-fail', cmd: 'python3', args: ['scripts/stub-fail.py'] }]);
+    ok(spawnCode([path.join(engineCopy, 'bin.js'), 'evaluate', 'gates/e2e-solid'], td) === 1,
+      'bin e2e: evaluate red gate -> exit 1');
+
+    // fail-closed exit 2，根因钉死：gates.json 引用缺失脚本（engineCopy 沙箱，不耦合真实 gates.json）
+    writeGates(engineCopy, [{ name: 'ghost', cmd: 'python3', args: ['scripts/no-such-script.py'] }]);
+    ok(spawnCode([path.join(engineCopy, 'bin.js'), 'evaluate', 'gates/e2e-solid'], td) === 2,
+      'bin e2e: evaluate fail-closed (referenced script missing) -> exit 2');
   }
 
   if (failed === 0) {

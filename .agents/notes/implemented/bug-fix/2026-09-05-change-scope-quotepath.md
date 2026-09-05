@@ -6,7 +6,7 @@ Status: implemented
 
 ## Problem
 
-`scripts/change-scope.sh` 的三条 path 输出命令未关 `core.quotePath`，非 ASCII 文件名以八进制转义形态进入人读面（review.md §2 口径：该输出"供人确认"）——中文文件名显示为 `"\346\226\207..."` 不可读；且与 `engine/util.js` changedPaths（`-c core.quotePath=off`）形成口径差。上游 provenance 约束"逐字节搬运、零修改"与此修复冲突，需正式解除。
+`scripts/change-scope.sh` 的三条 path 输出命令未关 `core.quotePath`，非 ASCII 文件名以八进制转义形态进入人读输出（该输出供人核读，无机器消费者——消费者全图核实见评审记录）；与 `engine/util.js` changedPaths（`-c core.quotePath=off`）形成口径差。上游 provenance 约束"逐字节搬运、零修改"与此修复冲突，需正式解除。
 
 ## Decision
 
@@ -22,6 +22,6 @@ Status: implemented
 
 ## Consequences
 
-- **采用面**：`scripts/change-scope.sh` 三条命令 + 头注释；[实现轮 ADR](../architecture/2026-09-05-p1-engine-implementation.md) Consequences ① 同步（"同口径"从此严格成立，"上游件不改"表述过期）。
-- **同批收口**：engine self-test 补 e2e CLI 装配夹具（select/propose happy、solidify 全链、evaluate fail-closed，共 5 条；修掉实现轮实跑发现的 `solidify` 候选解析 bug 同类盲区——直调函数盖不到 CLI 分派面）。
+- **采用面**：`scripts/change-scope.sh` 三条命令 + 头注释；[实现轮 ADR](../architecture/2026-09-05-p1-engine-implementation.md) Consequences ① 为"同口径"结论的单一事实源（本 ADR 不复述）。
+- **同批收口**：engine self-test 补 e2e CLI 装配夹具共 6 条（select happy / propose happy / solidify 全链×2 / evaluate 红档 exit 1 / evaluate fail-closed exit 2，fail-closed 根因以 engineCopy stub 钉死、不耦合真实 gates.json）；修掉实现轮实跑发现的 `solidify` 候选解析 bug 同类盲区——直调函数盖不到 CLI 分派面。
 - **行为面**：ASCII 文件名输出零变化；非 ASCII 原样输出。change-scope 输出无机器消费者（人读面），无连带破坏。
