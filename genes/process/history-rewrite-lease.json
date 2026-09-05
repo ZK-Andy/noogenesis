@@ -1,0 +1,20 @@
+{
+  "id": "history-rewrite-lease",
+  "domain": "process",
+  "summary": "改写历史只用 --force-with-lease=<branch>:<observed-oid>，改写后重新审计评审状态",
+  "signals": [
+    "force push",
+    "改写历史",
+    "push 被拒",
+    "rebase 后推送"
+  ],
+  "strategy": [
+    "raw --force 永远禁止，无例外",
+    "确需改写历史时，先 git fetch 观察 remote oid，用 --force-with-lease=<branch>:<observed-oid> 推送",
+    "改写完成后重新审计评审状态（评审证据是否仍随变更）"
+  ],
+  "avoid": [
+    "裸 --force-with-lease 不带规格（旧值留空 = 等效 --force）",
+    "改写后不复核 Review 证据行与 diff 范围"
+  ]
+}
