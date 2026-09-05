@@ -29,7 +29,14 @@ Status: proposed
 | `validation` | string[]，可选 | 白名单命令（白名单归 S3） | 同 §5.1，v0 可选 |
 | `avoid` | string[]，可选 | 失败面压缩警告，渲染进注入文本尾部 | `AVOID` → `avoid`（snake_case 统一） |
 
-<!-- S2（Event 最小 schema 与落盘位置）/ S3（验证白名单 + 安全模型）/ S4（元评测夹具）占位：拍板一题填一题。 -->
+### S2（2026-09-05，已拍板）：Event 最小 schema 与落盘协议
+
+- **kind 封闭集（演化事件 ≠ 运行日志）**：v0 仅 `gene.added` / `gene.updated` / `gene.retired` 三种。select/propose 运行不记（会话噪音，#18"常开确定性成本"同类）；evaluate 结果只在入档尝试时随 solidify 事件落一条（成功带证据，失败带拒因）。
+- **字段（P1 最小集）**：`ts`（ISO 时间）、`actor`、`kind`、`gene`（id）、`gene_sha`（内容寻址防篡改锚点）、`outcome`（ok | fail+拒因）、`evidence`（一行证据摘要）。设计稿 §5.1 的 `mutation_id`/`capsule_id`/`env_fingerprint`/`validation_report_id` 不进 P1——对应原语已后置，字段先于原语出现即死字段。
+- **落盘**：`events/<YYYY-MM>.jsonl`，月卷与 journal 同节奏（diff 可读、量有界）；**入 git**（审计面非缓存面，"过程即资产"直接适用）；**原子证据**：solidify 将 `genes/` 变更与 `events/` 追加行放同一 commit——基因更替与审计记录不可分离，是 content-addressable + append-only 在 git 载体上的落法。
+- **校验**：不新增第十一门禁——`verify-gene-format.py` 扩展覆盖 `events/`（行级 JSON、kind 封闭集、gene_sha 可复算、genes/ 与 events/ 引用一致），仍单脚本 = 第十门禁，gate 数量的克制性守住。
+
+<!-- S3（验证白名单 + 安全模型 + 元评测夹具）占位：拍板一题填一题。 -->
 
 ## Alternatives considered
 
