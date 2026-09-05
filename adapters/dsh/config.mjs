@@ -52,6 +52,6 @@ export function validateConfig(config = {}) {
 		askOnDispose: config.askOnDispose ?? true,
 		actor: config.actor ?? "noogenesis",
 		maxIndexGenes: config.maxIndexGenes ?? 12,
-		geneBankUrl: config.geneBankUrl === false ? false : (config.geneBankUrl ?? DEFAULT_GENE_BANK_URL),
+		geneBankUrl: config.geneBankUrl ?? DEFAULT_GENE_BANK_URL,
 	};
 }

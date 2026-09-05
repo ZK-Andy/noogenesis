@@ -42,7 +42,7 @@ P2 D7 拍板「`geneBankUrl` 在场时**插件装载**触发一次 pull」。但
 
 - 桌面默认安装（零 patch config）重启后：genes-cache 落在会话工作区仓内、cache remote = 官方库、技能面 rank 600 在场（被本仓同名活副本遮蔽时以遮蔽关系为准）、缓存基因并入 select 扫描。
 - 显式 config/env 部署行为与 0.1.2 完全一致（装载触发）。
-- 无会话工作区的 `agent/created` 不触发 pull（不落 cwd 兜底）——回归夹具在案。
+- 无会话工作区的 `agent/created` 不触发 pull（不落 cwd 兜底）——回归夹具钉在调度单元（`pullForSession` 缺载荷即跳过）。**测试边界如实声明**：宿主接线面（index.mjs 的 listener 交接与 `.catch` 兜底）不在零宿主自测面内（index.mjs 是唯一宿主依赖入口），接线正确性由 dsh-agent/dsh-session 源码实证（payload 形状 + session header 时序）+ solidify `agent/disposed` 同款先例支撑，随发版 desktop 实装验证。
 - `geneBankUrl: false` → 零 pull 尝试；空串/非 string 非 false 照旧抛。
 
 ## Risks

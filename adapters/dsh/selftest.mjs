@@ -395,7 +395,6 @@ function writeFixtureGene(repoRoot) {
 			return { code: EXIT.OK, stdout: "pull: cloned bank\n", stderr: "" };
 		};
 		const sched = createBankPullScheduler({ config: schedCfg, runEngine, logger, onPulled: () => pulledCallbacks.push(1) });
-		assert.equal(sched.enabled, true);
 
 		// 装载期：无显式锚定 → 跳过，且绝不落 cwd 兜底（错位落地回归：宿主 cwd ≠ 用户仓）
 		assert.deepEqual(await sched.pullAtLoad(), { pulled: false, reason: "repoRoot unknown at load" });
@@ -420,12 +419,14 @@ function writeFixtureGene(repoRoot) {
 		assert.equal(pulls.length, 2);
 		ok("bank-pull: scheduler — shared gate dedupes per repo (never released); missing session cwd skipped");
 
-		// 显式锚定 → 装载期触发（0.1.2 显式配置部署行为不变）
+		// 显式锚定 → 装载期触发（0.1.2 显式配置部署行为不变）；相对 repoRoot 过
+		// resolveRepoRoot 归一化——装载与会话两路径闸键同空间（R1-B1 回归）
 		pulls.length = 0;
-		const pinned = createBankPullScheduler({ config: { ...schedCfg, repoRoot: "/tmp/pinned" }, runEngine, logger });
+		const rel = "rel-pinned-repo";
+		const pinned = createBankPullScheduler({ config: { ...schedCfg, repoRoot: rel }, runEngine, logger });
 		assert.equal((await pinned.pullAtLoad()).pulled, true);
-		assert.deepEqual(pulls, ["/tmp/pinned"]);
-		ok("bank-pull: scheduler — explicit repoRoot keeps load-time trigger");
+		assert.deepEqual(pulls, [path.resolve(rel)]);
+		ok("bank-pull: scheduler — explicit repoRoot keeps load-time trigger; relative root normalized (absolute gate key)");
 
 		// 禁用面：false → 两路径零引擎 spawn
 		let spawned = false;
@@ -434,23 +435,20 @@ function writeFixtureGene(repoRoot) {
 			runEngine: async () => { spawned = true; return { code: EXIT.OK, stdout: "", stderr: "" }; },
 			logger,
 		});
-		assert.equal(off.enabled, false);
 		assert.deepEqual(await off.pullAtLoad(), { pulled: false, reason: "disabled" });
 		assert.deepEqual(await off.pullForSession({ agent: { session: { header: { cwd: "/tmp/x" } } } }), { pulled: false, reason: "disabled" });
 		assert.equal(spawned, false);
 		ok("bank-pull: scheduler — geneBankUrl false disables both paths with zero engine spawns");
 
-		// 失败面：引擎红档 → warn 降级，onPulled 不触发
-		const failWarns = [];
+		// 失败面：引擎红档 → 降级离线，onPulled 不触发（warn 文本已在 5.5 夹具钉过）
 		const failCallbacks = [];
 		const failing = createBankPullScheduler({
 			config: schedCfg,
 			runEngine: async () => ({ code: EXIT.FAIL_CLOSED, stdout: "", stderr: "engine: git clone failed: network down\n" }),
-			logger: { info: () => {}, warn: (m) => failWarns.push(m) },
+			logger: { info: () => {}, warn: () => {} },
 			onPulled: () => failCallbacks.push(1),
 		});
 		assert.equal((await failing.pullForSession({ agent: { session: { header: { cwd: "/tmp/repo-c" } } } })).pulled, false);
-		assert.match(failWarns.at(-1), /continuing offline/);
 		assert.equal(failCallbacks.length, 0);
 		ok("bank-pull: scheduler — engine failure degrades offline, onPulled withheld");
 	}

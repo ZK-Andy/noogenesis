@@ -90,13 +90,12 @@ export function apply(ctx, config = {}) {
 	// 两路径共享——每实例每仓至多一次；失败仅 warn 降级离线，绝不阻塞会话；成功 →
 	// 技能面缓存失效刷新。
 	const bankPull = createBankPullScheduler({ config: cfg, runEngine, logger, onPulled: bankSkills.invalidate });
-	bankPull.pullAtLoad().catch((cause) => {
+	const onCrash = (cause) => {
 		logger.warn(`noogenesis bank pull crashed: ${cause instanceof Error ? cause.message : String(cause)}`);
-	});
+	};
+	bankPull.pullAtLoad().catch(onCrash);
 	ctx.on("agent/created", (payload) => {
-		bankPull.pullForSession(payload).catch((cause) => {
-			logger.warn(`noogenesis bank pull crashed: ${cause instanceof Error ? cause.message : String(cause)}`);
-		});
+		bankPull.pullForSession(payload).catch(onCrash);
 	});
 
 	ctx.systemPrompt.section({ name: "tool:noogenesis", order: cfg.sectionOrder, text: BASE_SECTION });

@@ -14,9 +14,9 @@ export function buildPullArgs(url) {
 }
 
 /**
- * 惰性拉取一次：acquire 失败 = 已有在途拉取，直接跳过（独立实例——与 solidify
- * 闸生命周期不同，共享会互吞触发）。拉取完成后**不释放**该仓闸——每插件实例
- * 每仓至多一次 pull（刷新由人重跑 pull 命令或重启会话）。引擎失败（红/
+ * 惰性拉取一次：acquire 失败 = 已有在途拉取或该仓已拉过，直接跳过（独立实例——
+ * 与 solidify 闸生命周期不同，共享会互吞触发）。拉取完成后**不释放**该仓闸——
+ * 每插件实例每仓至多一次 pull（刷新由人重跑 pull 命令或重启会话）。引擎失败（红/
  * fail-closed）→ warn 降级离线；runEngine 自身的异常由调用方的 .catch 兜底。
  */
 export async function pullBankOnce({ repoRoot, url, runEngine, logger, gate = createInFlightGate(), timeoutMs }) {
@@ -33,27 +33,26 @@ export async function pullBankOnce({ repoRoot, url, runEngine, logger, gate = cr
 /**
  * 两路径触发调度（bug-fix ADR D1）：装载期只在 repoRoot **显式可知**（config/env，
  * explicitRepoRootOf——绝不落 cwd 兜底）时 pull；否则等首个 agent/created，以
- * 会话工作区锚定（缺席即跳过，同样不落 cwd 兜底）。gate 跨两路径共享——每实例
- * 每仓至多一次；pull 成功即回调 onPulled（宿主技能缓存 invalidate，index.mjs 接线）。
- * 返回 pulled/reason 报告对象，绝不抛（runEngine 自身异常由调用方 .catch 兜底）。
+ * 会话工作区锚定（缺席即跳过，同样不落 cwd 兜底）。两路径共享同一闸与 url
+ * （闸/降级/一次性契约见 pullBankOnce 注）；传给 pullAt 的根一律先过
+ * resolveRepoRoot 归一化——两路径闸键同空间（相对 repoRoot 不按宿主 cwd 解析）。
+ * geneBankUrl 为 false（显式禁用）→ 不 spawn 引擎。pull 成功即回调 onPulled
+ * （宿主技能缓存 invalidate，index.mjs 接线）。
  */
 export function createBankPullScheduler({ config = {}, runEngine, logger, gate = createInFlightGate(), onPulled } = {}) {
 	const url = config.geneBankUrl;
 	const pullAt = async (repoRoot) => {
+		if (!url) return { pulled: false, reason: "disabled" };
 		const r = await pullBankOnce({ repoRoot, url, runEngine, logger, gate });
 		if (r.pulled) onPulled?.();
 		return r;
 	};
 	return {
-		enabled: Boolean(url),
 		async pullAtLoad() {
-			if (!url) return { pulled: false, reason: "disabled" };
-			const root = explicitRepoRootOf(config);
-			if (!root) return { pulled: false, reason: "repoRoot unknown at load" };
-			return pullAt(root);
+			if (!explicitRepoRootOf(config)) return { pulled: false, reason: "repoRoot unknown at load" };
+			return pullAt(resolveRepoRoot(config));
 		},
 		async pullForSession(agentCarrier) {
-			if (!url) return { pulled: false, reason: "disabled" };
 			const sessionCwd = sessionWorkspaceOf(agentCarrier);
 			if (!sessionCwd) return { pulled: false, reason: "no session workspace" };
 			return pullAt(resolveRepoRoot(config, sessionCwd));
