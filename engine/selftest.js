@@ -325,6 +325,48 @@ function selfTest() {
     ok(code === 2, 'bin: propose missing gene -> exit 2');
   }
 
+  // --- 5.6) bin.js e2e 装配夹具（CLI 参数分派 + 真实 spawn 路径；直调函数盖不到的面）---
+  {
+    // select / propose happy path：真 bin、真基因、真 spawn
+    const td = mkTemp();
+    mkRepo(td);
+    writeGene(td, 'process', {
+      id: 'e2e-gene', domain: 'process', summary: 'e2e fixture',
+      signals: ['e2e signal'], strategy: ['step'],
+    });
+    const bin = path.join(__dirname, 'bin.js');
+    const out = execFileSync('node', [bin, 'select', 'E2E  Signal'], { cwd: td, encoding: 'utf8', stdio: 'pipe' });
+    ok(out.includes('process/e2e-gene'), 'bin e2e: select happy path exits 0 and matches (normalized)');
+
+    // solidify 全链 e2e：引擎目录复制到沙箱（gates.json 可换成 stub），CLI 真装配
+    const engineCopy = path.join(td, 'engine-copy');
+    fs.cpSync(__dirname, engineCopy, { recursive: true });
+    stubScript(td);
+    fs.writeFileSync(path.join(engineCopy, 'gates.json'), JSON.stringify({
+      version: 1,
+      gates: [{ name: 'stub-pass', cmd: 'python3', args: ['scripts/stub-pass.py'] }],
+    }, null, 2) + '\n');
+    const staging = path.join(td, 'candidates');
+    fs.mkdirSync(staging);
+    const cand = path.join(staging, 'e2e-solid.json');
+    fs.writeFileSync(cand, JSON.stringify({
+      id: 'e2e-solid', domain: 'gates', summary: 'solidify e2e',
+      signals: ['sol'], strategy: ['s'],
+    }, null, 2) + '\n');
+    execFileSync('node', [path.join(engineCopy, 'bin.js'), 'solidify', cand, '--actor', 't'],
+      { cwd: td, encoding: 'utf8', stdio: 'pipe' });
+    ok(fs.existsSync(genePath(td, 'gates', 'e2e-solid')), 'bin e2e: solidify places gene via real CLI wiring');
+    ok(readEvents(td).some((e) => e.gene === 'e2e-solid' && e.kind === 'gene.added'),
+      'bin e2e: solidify appends event via real CLI wiring');
+
+    // evaluate 在无脚手架仓 fail-closed：真实 gates.json 引用的 scripts/ 在临时仓缺失 → exit 2
+    let code = -99;
+    try {
+      execFileSync('node', [bin, 'evaluate', 'process/e2e-gene'], { cwd: td, encoding: 'utf8', stdio: 'pipe' });
+    } catch (e) { code = e.status; }
+    ok(code === 2, 'bin e2e: evaluate fail-closed (whitelist scripts missing) -> exit 2');
+  }
+
   if (failed === 0) {
     console.log('== engine self-test passed ==');
     return 0;
