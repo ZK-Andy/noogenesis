@@ -20,5 +20,6 @@
 - [x] （D）npm 真包首发 2026-09-06（release-flow）：`noogenesis@0.1.0` = latest（repository 对齐，commit `cecc815`；tag `v0.1.0`）；desktop 实装 + 空仓退化/真仓命中验证；minimumReleaseAge 单命令豁免（cookbook [环境]）；M2 ADR 发布 gate 清账。
 - [x] （B）`noogenesis-dsh@0.1.1` 新会话重验 2026-09-06：三工具在工具面 + `noo_select(["git 对账"])` 零配置命中本仓基因 + system-prompt 基座节在场，三件全绿。
 - [x] （D）M2 部署收口 2026-09-06（FULL 三审全采纳），ADR [2026-09-06-adapter-deploy-hardening](.agents/notes/implemented/architecture/2026-09-06-adapter-deploy-hardening.md)；`noogenesis-dsh@0.1.1` 发布 + 裸名 deprecate；desktop 实装完成。
+- [ ] （C）npm 0.1.2 可选首发：适配层 `geneBankUrl` 惰性 pull 尚未进 desktop 部署（在装 0.1.1）；发版走 release-flow（minimumReleaseAge 豁免命令见 cookbook [环境]），发后 desktop 重装 + 新会话验 geneBankUrl 面；不发也不影响现有功能（P2 消费在引擎/CLI 面已完整）。
 - [ ] （D）护栏延后拍板待收口（ADR [2026-09-06-guardrail-defer-trigger](.agents/notes/proposed/architecture/2026-09-06-guardrail-defer-trigger.md) proposed）：护栏三件（token-meter 真测量 / 严格改进度量 / canary 隔离）需要但延后至首个胶囊优化完成后触发；收口时转 implemented + 修正骨架 ADR 遗留面归口 + 设计稿 §6/§11 API 名以实测修正。对账余项：js-yaml + YAML 迁移器归口、Detect 信号源轮立项（D2 禁区逐源解除，连带 M3 频次重议）。
 - [x] （D）P2 实现轮 2026-09-06（FULL 三审 R1 1B/5S、R2 1B/8S、R3 0B/6S 全采纳），ADR [2026-09-06-p2-shared-consumer](.agents/notes/implemented/architecture/2026-09-06-p2-shared-consumer.md) implemented。

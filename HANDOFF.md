@@ -7,7 +7,9 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-06｜**P2 只读共享消费落地（FULL 三审 R1 1B/5S、R2 1B/8S、R3 0B/6S 全采纳；ADR `2026-09-06-p2-shared-consumer` implemented）**：本仓即库 + `engine pull` + 缓存合并扫描（本仓优先）+ manifest 索引/门禁（11 件）+ adapter `geneBankUrl` 惰性 pull；设计稿未决 1/3/4 回写。**节点：P2 闭环；余 = 护栏收口（触发未到）。**
+- 2026-09-06｜**护栏延后拍板 + P1 遗留对账（ADR `2026-09-06-guardrail-defer-trigger` proposed）**：护栏三件需要但延后，触发 = 首个胶囊优化完成后；session-open 喂信号条落地；token-meter API 实测漂移在案。README 核对见 P2 条。
+
+- 2026-09-06｜**P2 只读共享消费落地（FULL 三审 R1 1B/5S、R2 1B/8S、R3 0B/6S 全采纳；ADR `2026-09-06-p2-shared-consumer` implemented）**：本仓即库 + `engine pull` + 缓存合并扫描（本仓优先）+ manifest 索引/门禁（11 件）+ adapter `geneBankUrl` 惰性 pull；设计稿未决 1/3/4 回写。**节点：P2 闭环。** README 核对无漂移。
 
 - 2026-09-06｜**M2 部署收口（FULL 三审 R1 0B/4S、R2 1B/2S、R3 3B/5S 全采纳；ADR `2026-09-06-adapter-deploy-hardening`；commits `ebb60d5`→`dd7ad6d`）**：0.1.0 实机三缺口全修 → 包改名 `noogenesis-dsh`@0.1.1（裸名 deprecate）、工具单参注册、repoRoot 四级链零配置生效。**节点：待新会话重验三件事（todos B 条）。**
 
