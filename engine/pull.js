@@ -8,29 +8,51 @@
 const fs = require('fs');
 const path = require('path');
 const { EngineError, run } = require('./util');
-const { scanGenes } = require('./gene');
-
-// 仓内确定性缓存落点（实现轮拍板 A）：<repoRoot>/.noogenesis/genes-cache。
-// select/propose 据此零额外合同即可发现缓存（目录在场即扫描）。
-function defaultCacheDir(repoRoot) {
-  return path.join(repoRoot, '.noogenesis', 'genes-cache');
-}
+const { readGene, defaultCacheDir } = require('./gene');
 
 function bankHead(cacheDir) {
   const r = run('git', ['rev-parse', 'HEAD'], cacheDir);
   return r.code === 0 ? r.stdout.trim() : '(unknown)';
 }
 
-// 缓存目录安全边界：绝不指向 repoRoot 本体或其 genes/（防误清仓资产）。
+function bankOrigin(cacheDir) {
+  const r = run('git', ['remote', 'get-url', 'origin'], cacheDir);
+  return r.code === 0 ? r.stdout.trim() : null;
+}
+
+// 报告面容错计数：缓存里可解析的基因数（坏文件静默跳过——报告行不该被分发
+// 副本里的单个坏文件炸掉；消费面的降级语义在 scanGenes 缓存分支）。
+function countCacheGenes(cacheRepo) {
+  const root = path.join(cacheRepo, 'genes');
+  if (!fs.existsSync(root)) return 0;
+  let n = 0;
+  for (const d of fs.readdirSync(root, { withFileTypes: true })) {
+    if (!d.isDirectory()) continue;
+    for (const f of fs.readdirSync(path.join(root, d.name))) {
+      if (!f.endsWith('.json')) continue;
+      try { readGene(path.join(root, d.name, f), { skipDirAnchor: true }); n++; } catch (_) { /* 报告面容错 */ }
+    }
+  }
+  return n;
+}
+
+// 缓存目录安全边界：绝不指向 repoRoot 本体、genes/ 本身或其子树（防误清仓
+// 资产、防 git checkout 嵌进本仓扫描树——评审 R2-S5）。
 function assertCacheDirSafe(repoRoot, cacheDir) {
   const abs = path.resolve(cacheDir);
   if (abs === path.resolve(repoRoot)) throw new EngineError('cache dir must not be the repository root');
-  if (abs === path.resolve(repoRoot, 'genes')) throw new EngineError('cache dir must not be the genes/ directory');
+  const genesAbs = path.resolve(repoRoot, 'genes');
+  if (abs === genesAbs) throw new EngineError('cache dir must not be the genes/ directory');
+  const rel = path.relative(genesAbs, abs);
+  if (rel && !rel.startsWith('..') && !path.isAbsolute(rel)) {
+    throw new EngineError(`cache dir must not be inside genes/: ${abs}`);
+  }
   return abs;
 }
 
-// 拉取基因库到仓内缓存。已有缓存 → --ff-only 更新；否则 shallow clone。
-// 返回报告文本（stdout 合同面）。
+// 拉取基因库到仓内缓存。已有缓存 → 校验 origin 一致（换库 URL 静默更新旧库
+// 是评审 R2-S3 的指认：不一致即 fail-closed 并给出指引）→ --ff-only 更新；
+// 否则 shallow clone。返回报告文本（stdout 合同面）。
 function pullBank(repoRoot, url, cacheDir) {
   if (typeof url !== 'string' || !url.trim()) throw new EngineError('pull needs a non-empty bank URL');
   const target = assertCacheDirSafe(repoRoot, cacheDir || defaultCacheDir(repoRoot));
@@ -38,6 +60,10 @@ function pullBank(repoRoot, url, cacheDir) {
   if (fs.existsSync(target)) {
     if (!fs.existsSync(path.join(target, '.git'))) {
       throw new EngineError(`cache dir exists but is not a git checkout: ${target} — remove it or pass --cache <dir>`);
+    }
+    const origin = bankOrigin(target);
+    if (origin && origin !== url.trim()) {
+      throw new EngineError(`cache already tracks a different bank (${origin}); remove ${target} or pass --cache <dir> to switch`);
     }
     const r = run('git', ['pull', '--ff-only'], target);
     if (r.code !== 0) throw new EngineError(`git pull failed: ${r.stderr.trim() || r.stdout.trim()}`);
@@ -48,13 +74,13 @@ function pullBank(repoRoot, url, cacheDir) {
     if (r.code !== 0) throw new EngineError(`git clone failed: ${r.stderr.trim() || r.stdout.trim()}`);
     action = 'cloned';
   }
-  const genes = scanGenes(target, { cache: false });
+  const count = countCacheGenes(target);
   const lines = [
     `pull: ${action} bank into ${target}`,
-    `pull: genes available in cache: ${genes.length}`,
+    `pull: genes available in cache: ${count}`,
     `pull: HEAD ${bankHead(target)}`,
   ];
-  return { action, cacheDir: target, count: genes.length, report: lines.join('\n') + '\n' };
+  return { action, cacheDir: target, count, report: lines.join('\n') + '\n' };
 }
 
-module.exports = { pullBank, defaultCacheDir, assertCacheDirSafe };
+module.exports = { pullBank, assertCacheDirSafe };

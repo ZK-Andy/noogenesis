@@ -51,8 +51,9 @@ function evaluateGeneObj(repoRoot, engineRoot, gene, ref) {
 }
 
 // 按 ref 评估已入档基因（loadGates 仅一次——在 evaluateGeneObj 内）。
+// 评估恒以本仓 genes/ 为对象（P2 ADR D6）：缓存基因只读不可评估，cache 关闭。
 function evaluateGene(repoRoot, engineRoot, geneRef) {
-  const genes = scanGenes(repoRoot);
+  const genes = scanGenes(repoRoot, { cache: false });
   const hit = resolveGeneRef(repoRoot, geneRef, genes);
   return evaluateGeneObj(repoRoot, engineRoot, hit.obj, hit.ref);
 }

@@ -123,14 +123,25 @@ function main(argv) {
   }
 
   if (cmd === 'pull') {
-    const cacheIdx = rest.indexOf('--cache');
-    const cacheDir = cacheIdx >= 0 ? rest[cacheIdx + 1] : null;
-    const url = rest.find((a, i) => i !== cacheIdx && !(cacheIdx >= 0 && i === cacheIdx + 1));
-    if (!url) fail('pull needs <bank-url>');
+    // 解析：--cache <dir> 至多一次（缺值/重复 → exit 2，评审 R2-S1/S2）；
+    // 其余 token 必须恰为 <bank-url> 一个（未知旗标落进 url 计数 → 干净报错）。
+    const cacheVals = [];
+    const rest2 = [];
+    for (let i = 0; i < rest.length; i++) {
+      if (rest[i] === '--cache') {
+        if (i + 1 >= rest.length) fail('pull needs --cache <dir>');
+        cacheVals.push(rest[i + 1]);
+        i++;
+        continue;
+      }
+      rest2.push(rest[i]);
+    }
+    if (cacheVals.length > 1) fail('pull accepts --cache at most once');
+    if (rest2.length !== 1) fail('pull needs exactly one <bank-url>');
     const { pullBank } = require('./pull');
     let r;
     try {
-      r = pullBank(repoRoot, url, cacheDir);
+      r = pullBank(repoRoot, rest2[0], cacheVals[0] || null);
     } catch (e) {
       if (e.engine) return fail(e.message, 2);
       throw e;

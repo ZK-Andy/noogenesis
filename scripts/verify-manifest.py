@@ -59,8 +59,7 @@ def verify(repo: Path) -> tuple[int, list[str]]:
     mpath = repo / "manifest.json"
     if not mpath.is_file():
         tree = _scan_tree(repo)
-        return len(tree) + 1, (["manifest.json missing at repo root (run scripts/gen-manifest.py)"]
-                               if True else [])
+        return len(tree) + 1, ["manifest.json missing at repo root (run scripts/gen-manifest.py)"]
     try:
         manifest = json.loads(mpath.read_text(encoding="utf-8"))
     except json.JSONDecodeError as e:
@@ -81,9 +80,9 @@ def verify(repo: Path) -> tuple[int, list[str]]:
             errors.append(f"{where}: entry must have exactly {sorted(ENTRY_FIELDS)}")
             continue
         ref = entry.get("ref")
-        if not (isinstance(ref, str) and "/" in ref and KEBAB_RE.match(ref.split("/")[0])
-                and KEBAB_RE.match(ref.split("/")[1])):
-            errors.append(f"{where}: ref must be <domain>/<id> kebab-case")
+        segs = ref.split("/") if isinstance(ref, str) else []
+        if len(segs) != 2 or not all(KEBAB_RE.match(s) for s in segs):
+            errors.append(f"{where}: ref must be two kebab segments <domain>/<id>")
             continue
         if ref in rows:
             errors.append(f"{where}: duplicate ref {ref}")
@@ -109,7 +108,7 @@ def verify(repo: Path) -> tuple[int, list[str]]:
         if data.get("signals") != entry.get("signals"):
             errors.append(f"{where}: signals drift vs {p}")
 
-    refs = [e.get("ref") for e in genes if isinstance(e, dict)]
+    refs = [e.get("ref") for e in genes if isinstance(e, dict) and isinstance(e.get("ref"), str)]
     if refs != sorted(refs):
         errors.append("manifest.json: genes must be sorted by ref")
     for ref in sorted(set(tree) - set(rows)):
@@ -144,9 +143,8 @@ def _self_test() -> int:
         (t / "manifest.json").write_text(manifest_of(
             sorted([entry("doc/beta"), entry("process/alpha")], key=lambda e: e["ref"])), encoding="utf-8")
 
-    cases: list[tuple, ] = []
-    builder_ok = conforming
-    cases.append((builder_ok, [], "manifest matching genes tree -> pass"))
+    cases = []
+    cases.append((conforming, [], "manifest matching genes tree -> pass"))
 
     def missing_manifest(t: Path) -> None:
         (t / "genes/process").mkdir(parents=True)

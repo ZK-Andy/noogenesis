@@ -21,8 +21,8 @@ import { fileURLToPath } from "node:url";
 import { runEngineSync, resolveRepoRoot, sessionWorkspaceOf, EXIT } from "./engine-bridge.mjs";
 import { hitsSectionText } from "./section.mjs";
 import { registerNooTools } from "./tools.mjs";
-import { listStagingCandidates, buildSolidifyArgs, solidifyNotice, runSolidifyTrigger, createSolidifyGate, ASK_TIMEOUT_MS } from "./solidify-trigger.mjs";
-import { buildPullArgs, pullBankOnce, createBankGate } from "./bank-pull.mjs";
+import { listStagingCandidates, buildSolidifyArgs, solidifyNotice, runSolidifyTrigger, createInFlightGate, ASK_TIMEOUT_MS } from "./solidify-trigger.mjs";
+import { buildPullArgs, pullBankOnce } from "./bank-pull.mjs";
 import { validateConfig } from "./config.mjs";
 
 const ADAPTER_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -175,7 +175,7 @@ function writeFixtureGene(repoRoot) {
 {
 	// 逐仓去重闸：同仓 in-flight 丢弃，异仓互不阻塞，release 后同仓恢复
 	// 放行——多 agent 异仓近同时 dispose 各归各仓。
-	const gate = createSolidifyGate();
+	const gate = createInFlightGate();
 	assert.equal(gate.acquire("/repo-a"), true);
 	assert.equal(gate.acquire("/repo-a"), false);
 	assert.equal(gate.acquire("/repo-b"), true);
@@ -299,7 +299,7 @@ function writeFixtureGene(repoRoot) {
 	assert.deepEqual(buildPullArgs("https://example.com/bank.git"), ["pull", "https://example.com/bank.git"]);
 	ok("bank-pull: args are structured (engine spawn contract)");
 
-	const gate = createBankGate();
+	const gate = createInFlightGate();
 	assert.equal(gate.acquire("/repo-a"), true);
 	assert.equal(gate.acquire("/repo-a"), false);
 	assert.equal(gate.acquire("/repo-b"), true);

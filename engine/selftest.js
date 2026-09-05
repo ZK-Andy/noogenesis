@@ -14,7 +14,7 @@ const { selectGenes } = require('./select');
 const { renderGene } = require('./propose');
 const { evaluateGeneObj, checkConstraints } = require('./evaluate');
 const { solidify, retire } = require('./solidify');
-const { genePath, scanGenes } = require('./gene');
+const { genePath, scanGenes, defaultCacheDir } = require('./gene');
 
 let failed = 0;
 function ok(cond, msg) {
@@ -389,7 +389,7 @@ function selfTest() {
       signals: ['local signal'], strategy: ['local step'],
     });
 
-    const { pullBank, defaultCacheDir } = require('./pull');
+    const { pullBank } = require('./pull');
     const r1 = pullBank(td, bank);
     ok(r1.action === 'cloned' && r1.count === 1, 'pull: clone into default cache (<repoRoot>/.noogenesis/genes-cache)');
     ok(fs.existsSync(defaultCacheDir(td)), 'pull: default cache dir in place');
@@ -408,7 +408,18 @@ function selfTest() {
     ok(hit && hit.obj.summary === 'local wins' && hit.path.startsWith(td),
       'merge: repo gene shadows same-ref cache copy (repo-first)');
 
-    // 更新：bank 新增基因 → --ff-only 更新 + 计数
+    // 缓存侧坏 JSON → warn-skip（降级不红）；本仓坏 JSON 仍 fail-closed（§5.1 spawnCode 夹具）
+    fs.writeFileSync(path.join(defaultCacheDir(td), 'genes', 'doc', 'broken.json'), '{not json');
+    const withBad = selectGenes(td, ['bank signal']);
+    ok(withBad.hits.length === 1 && withBad.hits[0].ref === 'doc/bank-gene',
+      'merge: unparseable CACHE gene skipped (degrade, not red)');
+
+    // 换库 URL 撞已有缓存 → fail-closed 指引（评审 R2-S3）
+    const bank2 = mkTemp();
+    mkRepo(bank2);
+    ok(throwsEngine(() => pullBank(td, bank2)), 'pull: different bank URL on existing cache refused');
+
+    // 更新：bank 新增基因 → --ff-only 更新 + 计数（报告面容错：坏文件不计入）
     writeGene(bank, 'gates', {
       id: 'bank-gene-2', domain: 'gates', summary: 'second',
       signals: ['bank2'], strategy: ['s'],
@@ -416,17 +427,26 @@ function selfTest() {
     git(bank, ['add', '-A']);
     git(bank, ['commit', '-qm', 'second gene']);
     const r2 = pullBank(td, bank);
-    ok(r2.action === 'updated' && r2.count === 2, 'pull: ff-only update refreshes cache');
+    ok(r2.action === 'updated' && r2.count === 2, 'pull: ff-only update refreshes cache (broken cache file not counted)');
 
-    // fail-closed 三样：非 git 缓存目录 / 空 URL / 缓存 = 仓根本体
+    // fail-closed：非 git 缓存目录 / 空 URL / 缓存 = 仓根本体 / 缓存入 genes/ 子树
     const bad = mkTemp();
     mkRepo(bad);
     fs.mkdirSync(defaultCacheDir(bad), { recursive: true });
     ok(throwsEngine(() => pullBank(bad, bank)), 'pull: non-git cache dir refused (fail-closed)');
     ok(throwsEngine(() => pullBank(bad, '')), 'pull: empty URL refused');
     ok(throwsEngine(() => pullBank(bad, bank, bad)), 'pull: cache dir = repo root refused');
+    ok(throwsEngine(() => pullBank(bad, bank, path.join(bad, 'genes', 'sub'))), 'pull: cache dir inside genes/ subtree refused');
     const bin = path.join(__dirname, 'bin.js');
     ok(spawnCode([bin, 'pull'], bad) === 2, 'bin: pull without URL -> exit 2 (usage)');
+    ok(spawnCode([bin, 'pull', 'x', '--cache'], bad) === 2, 'bin: --cache without value -> exit 2 (usage)');
+    ok(spawnCode([bin, 'pull', '--cache', 'a', '--cache', 'b', 'url'], bad) === 2, 'bin: duplicate --cache -> exit 2 (usage)');
+
+    // CLI 级：缓存-only ref 不可 evaluate（exit 2 gene not found）且缓存坏 JSON 不打红 select
+    const out2 = execFileSync('node', [bin, 'select', 'bank2'], { cwd: td, encoding: 'utf8', stdio: 'pipe' });
+    ok(out2.includes('gates/bank-gene-2'), 'bin: select still hits good cache gene with broken sibling present');
+    ok(spawnCode([bin, 'evaluate', 'gates/bank-gene-2'], td) === 2,
+      'bin: evaluate refuses cache-only ref (D6 read/write isolation)');
 
     // 默认离线：无缓存目录 → 扫描与 0.1.1 行为一致
     const clean = mkTemp();

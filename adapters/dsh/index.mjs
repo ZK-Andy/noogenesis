@@ -14,7 +14,7 @@ import { defineTool } from "@deepseek-ai/dsh-tools";
 import { runEngine, runEngineSync, resolveRepoRoot, sessionWorkspaceOf } from "./engine-bridge.mjs";
 import { registerNooTools } from "./tools.mjs";
 import { BASE_SECTION, hitsSectionText } from "./section.mjs";
-import { runSolidifyTrigger, listStagingCandidates, createSolidifyGate, ASK_TIMEOUT_MS } from "./solidify-trigger.mjs";
+import { runSolidifyTrigger, listStagingCandidates, createInFlightGate, ASK_TIMEOUT_MS } from "./solidify-trigger.mjs";
 import { pullBankOnce } from "./bank-pull.mjs";
 import { validateConfig } from "./config.mjs";
 
@@ -77,9 +77,8 @@ export function apply(ctx, config = {}) {
 
 	ctx.provide("noogenesis", { repoRoot, runEngine });
 
-	// P2 只读消费（bank-pull.mjs 头注）：geneBankUrl 在场 → 装载时惰性 pull 一次。
-	// fire-and-forget：失败仅 warn 降级离线（缓存缺席 = select/propose 与无 P2
-	// 一致），绝不阻塞会话；每个插件实例至多一次（刷新 = 人重跑 pull 或重启）。
+	// P2 只读消费（D7 + bank-pull.mjs 头注）：geneBankUrl 在场 → 装载时惰性
+	// pull 一次，失败仅 warn 降级离线，绝不阻塞会话。
 	if (cfg.geneBankUrl) {
 		pullBankOnce({ repoRoot, url: cfg.geneBankUrl, runEngine, logger }).catch((cause) => {
 			logger.warn(`noogenesis bank pull crashed: ${cause instanceof Error ? cause.message : String(cause)}`);
@@ -102,7 +101,7 @@ export function apply(ctx, config = {}) {
 	// 各仓；in-flight 去重逐仓隔离：同仓近同时 dispose 不重复弹问/重复入档
 	// （重复跑会把已入档候选撞成 exit 2 假失败），异仓互不阻塞（ask 窗口可达
 	// 5 分钟，全局旗标会把异仓提示静默丢掉）。
-	const solidifyGate = createSolidifyGate();
+	const solidifyGate = createInFlightGate();
 	ctx.on("agent/disposed", (payload) => {
 		const disposalRepoRoot = resolveRepoRoot(cfg, sessionWorkspaceOf(payload));
 		if (!solidifyGate.acquire(disposalRepoRoot)) return;

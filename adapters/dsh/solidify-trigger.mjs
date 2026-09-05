@@ -8,21 +8,19 @@ import fs from "node:fs";
 import path from "node:path";
 
 /**
- * 逐仓去重闸（部署收口 ADR）：solidify 触发的 in-flight 去重按 repoRoot 隔离
- * ——同仓近同时 dispose 不重复弹问/重复入档（重复跑会把已入档候选撞成
- * exit 2 假失败，该理由只在同仓成立）；异仓互不阻塞（ask 窗口可达 5 分钟，
- * 全局旗标会把异仓的写路径提示静默丢掉）。纯函数面，selftest 直测。
+ * 逐仓 in-flight 闸工厂（简化收口 R1-S1 单源：solidify 与 bank-pull 各自实例化
+ * ——生命周期不同故不共享实例，形状相同故共用工厂）：
+ * acquire = 该仓无 in-flight 时占用并放行；release = settle 后释放。
+ * 纯函数面，selftest 直测。
  */
-export function createSolidifyGate() {
+export function createInFlightGate() {
 	const inFlight = new Set();
 	return {
-		/** 该仓当前无 in-flight solidify 时占用并放行；已占用返回 false。 */
 		acquire(repoRoot) {
 			if (inFlight.has(repoRoot)) return false;
 			inFlight.add(repoRoot);
 			return true;
 		},
-		/** 释放该仓占用（触发体 settle 后调用，成功/失败/无候选同口径）。 */
 		release(repoRoot) {
 			inFlight.delete(repoRoot);
 		},

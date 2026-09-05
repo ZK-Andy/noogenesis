@@ -33,9 +33,9 @@ node engine/bin.js self-test                           # 元评测夹具（临�
 
 ## 共享消费（P2，只读）
 
-- `pull <bank-url>` 把基因库 clone/pull 进仓内缓存 `<repoRoot>/.noogenesis/genes-cache/`（shallow clone，更新走 `--ff-only`）。**默认离线**：不跑 pull 就没有缓存目录，select/propose 行为与无 P2 时完全一致。
-- **合并扫描**：缓存在场时并入 `select` / `propose` 的扫描根；同名 ref（`domain/id`）**本仓基因优先**（缓存副本被遮蔽，不报错）——本仓是策展活体，库是分发副本。`evaluate` / `solidify` 恒以本仓 `genes/` 为对象，缓存基因**只读不可入档**。
-- 缓存目录不进 git（`.gitignore` `/.noogenesis/`）；安全边界：缓存绝不指向仓根本体或 `genes/` 本身。
+- `pull <bank-url> [--cache DIR]` 把基因库 clone/pull 进仓内缓存 `<repoRoot>/.noogenesis/genes-cache/`（shallow clone，更新走 `--ff-only`）。**默认离线**：不跑 pull 就没有缓存目录，select/propose 行为与无 P2 时完全一致。已有缓存的 origin 与本次 URL 不一致 → fail-closed（换库须显式删缓存或换 `--cache`）；`--cache` 缺值/重复 → exit 2。
+- **合并扫描**：缓存在场时并入 `select` / `propose` 的扫描根；同名 ref（`domain/id`）**本仓基因优先**（缓存副本被遮蔽，不报错）——本仓是策展活体，库是分发副本。缓存侧解析失败的基因 warn-skip（stderr 一行，读路径不红——分发副本降级姿态）；本仓 `genes/` 解析失败仍 fail-closed。`evaluate` / `solidify` 恒以本仓 `genes/` 为对象（`{cache: false}`），缓存基因**只读不可评估、不可入档**。
+- 缓存目录不进 git（`.gitignore` `/.noogenesis/`）；安全边界：缓存绝不指向仓根本体、`genes/` 本身或其子树。
 - 基因库侧的检索索引 = 仓根 `manifest.json`（`scripts/gen-manifest.py` 生成，确定性输出；`scripts/verify-manifest.py` 门禁防漂移，已入 `gates.json` 白名单）。
 
 ## 安全模型（五条，schema ADR S3）
