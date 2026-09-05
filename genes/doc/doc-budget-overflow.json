@@ -1,0 +1,20 @@
+{
+  "id": "doc-budget-overflow",
+  "domain": "doc",
+  "summary": "字数超限的处理序：迁移 → 精简 → 才允许提额度",
+  "signals": [
+    "字数超限",
+    "超预算",
+    "verify-doc-budgets 失败",
+    "word budget"
+  ],
+  "strategy": [
+    "先把可迁内容迁到其他层（在原处留一行链接）",
+    "再精简：删冗余、并小节、压缩长段（单段 ≤120 词）",
+    "以上仍超才提额度：manifest _justify_bump 留理由"
+  ],
+  "avoid": [
+    "跳过迁移与精简直接改大上限数字",
+    "为塞内容牺牲结构（超密长段教训）"
+  ]
+}

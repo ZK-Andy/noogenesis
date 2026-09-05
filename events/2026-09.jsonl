@@ -1,3 +1,4 @@
 {"ts":"2026-09-05T15:53:54.038Z","actor":"noo-session","kind":"gene.added","gene":"git-reconcile-extra-commits","gene_sha":"e862ec2820aef5f58233b5953053da89729976f9700f53fa99d35115cca80842","outcome":"ok","evidence":"evaluate ok: all 9 gates green"}
 {"ts":"2026-09-05T15:53:55.176Z","actor":"noo-session","kind":"gene.added","gene":"history-rewrite-lease","gene_sha":"57bcbf70b77c34da3007d33934c2927cd6b035462cfe4d8a0dd360d6331875ea","outcome":"ok","evidence":"evaluate ok: all 9 gates green"}
 {"ts":"2026-09-05T15:54:08.556Z","actor":"noo-session","kind":"gene.added","gene":"doc-single-home","gene_sha":"136d9a603f287ef5d53931f98484f1a8c42256318b0894d0ae12d2813c65c55a","outcome":"ok","evidence":"evaluate ok: all 9 gates green"}
+{"ts":"2026-09-05T15:54:09.764Z","actor":"noo-session","kind":"gene.added","gene":"doc-budget-overflow","gene_sha":"5f2fe9f0d776277074a878c4164670654da40cf00024936fe5179f0f48ee59db","outcome":"ok","evidence":"evaluate ok: all 9 gates green"}
