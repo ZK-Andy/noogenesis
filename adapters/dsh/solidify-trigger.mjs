@@ -7,6 +7,28 @@
 import fs from "node:fs";
 import path from "node:path";
 
+/**
+ * 逐仓去重闸（部署收口 ADR）：solidify 触发的 in-flight 去重按 repoRoot 隔离
+ * ——同仓近同时 dispose 不重复弹问/重复入档（重复跑会把已入档候选撞成
+ * exit 2 假失败，该理由只在同仓成立）；异仓互不阻塞（ask 窗口可达 5 分钟，
+ * 全局旗标会把异仓的写路径提示静默丢掉）。纯函数面，selftest 直测。
+ */
+export function createSolidifyGate() {
+	const inFlight = new Set();
+	return {
+		/** 该仓当前无 in-flight solidify 时占用并放行；已占用返回 false。 */
+		acquire(repoRoot) {
+			if (inFlight.has(repoRoot)) return false;
+			inFlight.add(repoRoot);
+			return true;
+		},
+		/** 释放该仓占用（触发体 settle 后调用，成功/失败/无候选同口径）。 */
+		release(repoRoot) {
+			inFlight.delete(repoRoot);
+		},
+	};
+}
+
 /** staging 目录下待入档候选（*.json，字典序稳定）。目录不存在 = 无候选。 */
 export function listStagingCandidates(repoRoot, stagingDir) {
 	const dir = path.resolve(repoRoot, stagingDir);

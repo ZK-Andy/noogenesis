@@ -41,7 +41,7 @@ config.repoRoot → NOGENESIS_REPO_ROOT → 会话工作区 → process.cwd()
 
 ## Consequences
 
-- **采用面**：`adapters/dsh/tools.mjs`（单参注册 + repoRoot 解析器注入）、`engine-bridge.mjs`（`resolveRepoRoot` 增会话工作区参）、`index.mjs`（工具体与 disposal 面逐次解析）、`package.json` / `cordis.patch.yml` / `adapters/dsh/README.md` 改名与部署节改写、`selftest.mjs` 扩合同夹具、裸名 npm deprecate。引擎零改动。
+- **采用面**：`adapters/dsh/tools.mjs`（单参注册 + repoRoot 解析器注入，函数单形态）、`engine-bridge.mjs`（`resolveRepoRoot` 增会话工作区参 + `sessionWorkspaceOf` 提取）、`index.mjs`（工具体与 disposal 面逐次解析 + solidify 去重闸逐仓化 `createSolidifyGate`——同仓去重防 exit 2 假失败，异仓互不阻塞）、`package.json` / `cordis.patch.yml` / `adapters/dsh/README.md` 改名与部署节改写、`selftest.mjs` 扩合同夹具、裸名 npm deprecate。引擎零改动。
 - **迁移面**：desktop 侧先卸 `noogenesis` 再装 `noogenesis-dsh`（同发布会话完成）；裸名 0.1.0 deprecate 文案指路新包。
 - **已验证**：adapter selftest 含新增夹具全绿（单参合同逐个注册、四级回退链、disposal 面会话 cwd 提取）；`dsh plugin add noogenesis-dsh` 实装 + 新会话三件事重验（安装成功 / 三工具在场 / 零配置命中基因）随发布收口。
 - **运行边界**：命中节动态索引仍依赖显式锚定（同步面无会话上下文，结构性约束非缺陷）；多宿主包版本对账靠同 commit 发布纪律，无跨包依赖锁。

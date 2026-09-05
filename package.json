@@ -1,7 +1,7 @@
 {
   "name": "noogenesis-dsh",
   "version": "0.1.1",
-  "description": "Noogenesis (心源) DSH adapter — swarm evolution framework on DeepSeek Harness: zero-dependency evolution engine (P1) wired into the session lifecycle. Host packages follow noogenesis-<host>; bare noogenesis is reserved for the framework engine.",
+  "description": "Noogenesis (心源) DSH adapter — swarm evolution framework on DeepSeek Harness: zero-dependency evolution engine (P1) wired into the session lifecycle.",
   "license": "AGPL-3.0-only",
   "repository": {
     "type": "git",

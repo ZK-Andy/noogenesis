@@ -43,17 +43,18 @@ function failClosed(tool, result) {
 }
 
 /**
- * repoRoot 解析（部署收口 ADR 2026-09-06-adapter-deploy-hardening）：
- * 字符串 = 静态锚定（config/env/cwd 已在入口解析完）；函数 = 逐次解析——吃
- * execute(args, exec) 的 exec，走四级回退链（config → env → 会话工作区 → cwd）
- * 取本次调用的目标仓根。逐次解析是正确性要求：多 agent 异仓的工具体各归各仓，
- * 装载时固化会互相污染。
+ * repoRoot 逐次解析（部署收口 ADR 2026-09-06-adapter-deploy-hardening）：
+ * repoRootFor 是单形态函数——吃 execute(args, exec) 的 exec，走四级回退链
+ * （config → env → 会话工作区 → cwd）返回本次调用的目标仓根。逐次解析是
+ * 正确性要求：多 agent 异仓的工具体各归各仓，装载时固化会互相污染。
+ * （评审收口 R1-S1/R2-S1：静态字符串形态零消费者，已折叠——调用方要静态
+ * 锚定就传 `(exec) => "path"`。）
  */
-function repoRootOf(repoRoot, exec) {
-	return typeof repoRoot === "function" ? repoRoot(exec) : repoRoot;
+function repoRootOf(repoRootFor, exec) {
+	return repoRootFor(exec);
 }
 
-export function registerNooTools(ctx, { defineTool, runEngine, repoRoot }) {
+export function registerNooTools(ctx, { defineTool, runEngine, repoRoot: repoRootFor }) {
 	// DSH 合同：ctx.tools.register(definition) 单参——一次传多个定义时多余实参
 	// 被静默忽略（0.1.0 首发实测：三工具只上了一个）。逐个注册，绝不合并传参。
 	const register = (definition) => ctx.tools.register(definition);
@@ -72,7 +73,7 @@ export function registerNooTools(ctx, { defineTool, runEngine, repoRoot }) {
 		output: textOutput(),
 		execute: async (args, exec) => {
 			const signals = requireStringArray(args.signals, "noo_select");
-			const result = await runEngine(["select", ...signals], { repoRoot: repoRootOf(repoRoot, exec) });
+			const result = await runEngine(["select", ...signals], { repoRoot: repoRootOf(repoRootFor, exec) });
 			if (result.code === 2) failClosed("noo_select", result);
 			return textResult(result.code === 0 ? result.stdout : `${result.stdout}${result.stderr}`);
 		},
@@ -87,7 +88,7 @@ export function registerNooTools(ctx, { defineTool, runEngine, repoRoot }) {
 		output: textOutput(),
 		execute: async (args, exec) => {
 			const gene = requireGeneRef(args.gene, "noo_propose");
-			const result = await runEngine(["propose", gene], { repoRoot: repoRootOf(repoRoot, exec) });
+			const result = await runEngine(["propose", gene], { repoRoot: repoRootOf(repoRootFor, exec) });
 			if (result.code === 2) failClosed("noo_propose", result);
 			return textResult(result.code === 0 ? result.stdout : `${result.stdout}${result.stderr}`);
 		},
@@ -102,7 +103,7 @@ export function registerNooTools(ctx, { defineTool, runEngine, repoRoot }) {
 		output: textOutput(),
 		execute: async (args, exec) => {
 			const gene = requireGeneRef(args.gene, "noo_evaluate");
-			const result = await runEngine(["evaluate", gene], { repoRoot: repoRootOf(repoRoot, exec) });
+			const result = await runEngine(["evaluate", gene], { repoRoot: repoRootOf(repoRootFor, exec) });
 			if (result.code === 2) failClosed("noo_evaluate", result);
 			// exit 1 + 空 stdout ≠ 红档结论：引擎对非 EngineError 的内部异常走
 			// `throw e`（Node 崩溃退出码同为 1，无报告输出）——当红档放行会把

@@ -14,7 +14,7 @@ import { defineTool } from "@deepseek-ai/dsh-tools";
 import { runEngine, runEngineSync, resolveRepoRoot, sessionWorkspaceOf } from "./engine-bridge.mjs";
 import { registerNooTools } from "./tools.mjs";
 import { BASE_SECTION, hitsSectionText } from "./section.mjs";
-import { runSolidifyTrigger, listStagingCandidates, ASK_TIMEOUT_MS } from "./solidify-trigger.mjs";
+import { runSolidifyTrigger, listStagingCandidates, createSolidifyGate, ASK_TIMEOUT_MS } from "./solidify-trigger.mjs";
 import { validateConfig } from "./config.mjs";
 
 export const name = "noogenesis";
@@ -87,17 +87,20 @@ export function apply(ctx, config = {}) {
 
 	registerNooTools(ctx, { defineTool, runEngine, repoRoot: repoRootFor });
 
-	// 写路径唯一触发点：agent/disposed。in-flight 去重——多 agent 近同时
-	// dispose 时不重复弹问、不重复跑 solidify（重复跑会把已入档候选撞成
-	// exit 2 假失败）。repoRoot 按 dispose 的那个 agent 逐次解析（payload
-	// 携带 { agent }，与 auto 触发面同款实证）——异仓会话各归各仓。
-	let solidifyInFlight = false;
+	// 写路径唯一触发点：agent/disposed。repoRoot 按 dispose 的那个 agent 逐次
+	// 解析（payload 携带 { agent }，与 auto 触发面同款实证）——异仓会话各归
+	// 各仓；in-flight 去重逐仓隔离（R2-B1，部署收口 ADR）：同仓近同时 dispose
+	// 不重复弹问/重复入档（重复跑会把已入档候选撞成 exit 2 假失败），异仓
+	// 互不阻塞（ask 窗口可达 5 分钟，全局旗标会把异仓提示静默丢掉）。
+	const solidifyGate = createSolidifyGate();
 	ctx.on("agent/disposed", (payload) => {
-		if (solidifyInFlight) return;
 		const disposalRepoRoot = resolveRepoRoot(cfg, sessionWorkspaceOf(payload));
+		if (!solidifyGate.acquire(disposalRepoRoot)) return;
 		const candidates = listStagingCandidates(disposalRepoRoot, cfg.stagingDir);
-		if (!candidates.length) return;
-		solidifyInFlight = true;
+		if (!candidates.length) {
+			solidifyGate.release(disposalRepoRoot);
+			return;
+		}
 		runSolidifyTrigger({
 			repoRoot: disposalRepoRoot,
 			stagingDir: cfg.stagingDir,
@@ -109,7 +112,7 @@ export function apply(ctx, config = {}) {
 		}).catch((cause) => {
 			logger.warn(`noogenesis solidify trigger failed: ${cause instanceof Error ? cause.message : String(cause)}`);
 		}).finally(() => {
-			solidifyInFlight = false;
+			solidifyGate.release(disposalRepoRoot);
 		});
 	});
 

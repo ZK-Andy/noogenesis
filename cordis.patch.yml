@@ -3,9 +3,8 @@
 # Installed via `dsh plugin --profile <name> add noogenesis-dsh`; this patch
 # inserts the plugin row so it activates without manual profile editing.
 # The engine runs against the target repo (spawn CLI, single contract;
-# repoRoot resolves per call: config → NOGENESIS_REPO_ROOT → session
-# workspace → cwd); nothing here writes without explicit human approval
-# (solidify trigger).
+# repoRoot resolves per call — see adapters/dsh/README.md); nothing here
+# writes without explicit human approval (solidify trigger).
 - insert:
     - id: noogenesis
       name: 'noogenesis-dsh'

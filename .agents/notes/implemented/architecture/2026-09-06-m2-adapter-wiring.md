@@ -37,7 +37,7 @@ Noogenesis/                  ← npm 包根（真包首发时替换占位 0.0.0�
 
 1. **system-prompt 双节**：基座节（固定极小，陈述工具面 + 写路径纪律）+ 命中节（`injectSignals` 显式声明的信号喂引擎 select，命中基因逐行注入、行数封顶、单行截断）；空命中渲染 `""` → 宿主 prompt 渲染器丢弃 → 零 token（`injectSignals` 为空时短路，不 spawn 引擎）。引擎 stdout 进宿主 prompt 前对 `{{` 做零宽中性化——宿主 interpolate 对未知 `{{name}}` 抛错且 renderPrompt 每模型步无包裹调用（R2-B1），模板语法的基因 summary 不得原样透传。信号只来自显式声明（配置 / 模型调工具），Detect 禁区（骨架 D2）不解除。
 2. **`defineTool` 三件**：`noo_select` / `noo_propose` / `noo_evaluate`——模型面只读路径。退出码映射：0=结果文本；1=闸红（红是有效评测结论，以 `RED (exit 1)` 文本返回，不抛错）——但 **exit 1 + 空 stdout = 引擎内部故障**（非 EngineError 走 `throw e`，崩溃退出码同为 1 且无报告），按 fail-closed 抛错不放行；2=fail-closed（抛错，重试无益）。
-3. **solidify 触发**：挂 `agent/disposed`（带 in-flight 去重——多 agent 近同时 dispose 不重复弹问/重复入档）。发现 staging 目录（默认 `genes-staging/`，相对目标仓根）下的 `<id>.json` 候选 → 提问人工确认（`userQuestions` **不在 inject 声明**，disposal 时懒取用——cordis 对缺席注入服务会推迟整个插件装载，声明注入会让降级不可达；ask 兜底超时 300s，超时/缺席/拒绝 → 只输出带精确命令的提醒）；批准才逐候选实跑 solidify。绝不自动写。
+3. **solidify 触发**：挂 `agent/disposed`（in-flight 去重逐仓隔离——同仓近同时 dispose 不重复弹问/重复入档，异仓互不阻塞；部署收口后口径见 [2026-09-06-adapter-deploy-hardening](2026-09-06-adapter-deploy-hardening.md)）。发现 staging 目录（默认 `genes-staging/`，相对目标仓根）下的 `<id>.json` 候选 → 提问人工确认（`userQuestions` **不在 inject 声明**，disposal 时懒取用——cordis 对缺席注入服务会推迟整个插件装载，声明注入会让降级不可达；ask 兜底超时 300s，超时/缺席/拒绝 → 只输出带精确命令的提醒）；批准才逐候选实跑 solidify。绝不自动写。
 4. **`/noo` 人面命令**：后补，不在本层。
 
 **M3 调用方式 = spawn CLI 单合同**。适配层每次调用 `node <包根>/engine/bin.js <命令>`（结构化参数数组直传、最小 env 透传 PATH/HOME/LANG）；异步面（工具执行）120s 超时 kill，同步面（system-prompt 命中节，宿主 text provider 是同步面）60s 超时 kill——两侧都有强制界，超时按 FAIL_CLOSED 映射。

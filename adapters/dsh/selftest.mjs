@@ -21,7 +21,7 @@ import { fileURLToPath } from "node:url";
 import { runEngineSync, resolveRepoRoot, sessionWorkspaceOf, EXIT } from "./engine-bridge.mjs";
 import { hitsSectionText } from "./section.mjs";
 import { registerNooTools } from "./tools.mjs";
-import { listStagingCandidates, buildSolidifyArgs, solidifyNotice, runSolidifyTrigger, ASK_TIMEOUT_MS } from "./solidify-trigger.mjs";
+import { listStagingCandidates, buildSolidifyArgs, solidifyNotice, runSolidifyTrigger, createSolidifyGate, ASK_TIMEOUT_MS } from "./solidify-trigger.mjs";
 import { validateConfig } from "./config.mjs";
 
 const ADAPTER_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -172,6 +172,18 @@ function writeFixtureGene(repoRoot) {
 
 // ── 4) solidify 触发体：发现 / 提醒 / 确认 / 失败清单 ─────────────────────
 {
+	// 逐仓去重闸（R2-B1 修复钉子）：同仓 in-flight 丢弃，异仓互不阻塞，
+	// release 后同仓恢复放行——多 agent 异仓近同时 dispose 各归各仓。
+	const gate = createSolidifyGate();
+	assert.equal(gate.acquire("/repo-a"), true);
+	assert.equal(gate.acquire("/repo-a"), false);
+	assert.equal(gate.acquire("/repo-b"), true);
+	gate.release("/repo-a");
+	assert.equal(gate.acquire("/repo-a"), true);
+	gate.release("/repo-b");
+	gate.release("/repo-a");
+	ok("solidify: per-repo in-flight gate — same repo dropped, other repo unblocked, release restores");
+
 	const repo = tempRepo("solidify");
 	const staging = "genes-staging";
 	fs.mkdirSync(path.join(repo, staging));
@@ -259,7 +271,6 @@ function writeFixtureGene(repoRoot) {
 		try {
 			delete process.env.NOGENESIS_REPO_ROOT;
 			assert.equal(resolveRepoRoot({}, "/tmp/session-repo"), "/tmp/session-repo");
-			assert.equal(resolveRepoRoot({}, "/tmp/session-repo"), path.resolve("/tmp/session-repo"));
 			assert.equal(resolveRepoRoot({}), process.cwd());
 			process.env.NOGENESIS_REPO_ROOT = "/tmp/env-repo";
 			assert.equal(resolveRepoRoot({}, "/tmp/session-repo"), "/tmp/env-repo");
