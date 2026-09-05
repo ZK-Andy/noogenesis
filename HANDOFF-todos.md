@@ -11,4 +11,5 @@
 - [x] （C）cookbook 第二批原子蒸馏 2026-09-05：desktop 通用 4 条（跨平台 shell 五连坑/YAML≠CI 接受/CI 缓存 ref 隔离/沙箱只验降级分支）+ dsh-continual-evolve FAQ 2 条（推理模型空正文/遍历键当数据键），共 21 条全绿。
 - [x] （A）整仓许可切换 AGPL-3.0 2026-09-05：LICENSE/README/共享层设计稿/.agents AGENTS 出处声明同步，上游 MIT 版权与许可文本集中于 THIRD-PARTY-NOTICES.md，ADR [2026-09-05-license-agpl-3](.agents/notes/implemented/process/2026-09-05-license-agpl-3.md)。
 - [x] （B）许可切换批 FULL 三审 2026-09-05（R1 0B/2S、R2 1B/2S、R3 0B/4S，全采纳收口）：证据行落 license ADR 头部，tier `--since 2b45531 --enforce` 转绿。
+- [ ] **（B）CI validate.yml 首跑复验**——建仓后首次远程触发（push 事件 `--since event.before --enforce` 真强制步），去 [Actions](https://github.com/ZK-Andy/noogenesis/actions) 核对九门禁 + 4 self-test 矩阵是否绿；失败按门禁名定位。
 - [ ] **（D）P1 演化引擎立项准备**——发动机骨架待拍板：Gene schema 六字段 + 四接口签名（select/propose/evaluate/solidify）+ `engine/` 目录 + Gene/Event 最小闭环，底座 = ADR [2026-09-05-evomap-evox-engine-anatomy](.agents/notes/proposed/architecture/2026-09-05-evomap-evox-engine-anatomy.md)（码级实证）；对标 dsh-continual-evolve 治理四件套（融合在架构定稿后）；P2 基因库命名/taxonomy 随立项拍板。
