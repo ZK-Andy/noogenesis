@@ -23,7 +23,7 @@ jobs:
         with:
           fetch-depth: 0   # change-scope.sh 需要 fork-point 历史；浅克隆会退化为空集 no-op
 
-      - name: 门禁第一梯队（七件 + 评审档位强制）
+      - name: 门禁第一梯队（十件 + 评审档位强制）
         run: |
           python3 scripts/verify-adr-format.py
           python3 scripts/verify-doc-budgets.py --manifest scripts/doc-budgets.manifest.json
@@ -31,6 +31,7 @@ jobs:
           python3 scripts/verify-cookbook.py
           python3 scripts/verify-skill-format.py
           python3 scripts/verify-handoff-structure.py
+          python3 scripts/verify-gene-format.py
           bash scripts/change-scope.sh
 
       # 评审档位真强制层（push 事件才有 outgoing base；PR 的 tier 判定由
@@ -47,3 +48,8 @@ jobs:
           python3 scripts/verify-handoff-structure.py --self-test
           python3 scripts/verify-review-tier.py --self-test
           python3 scripts/verify-review-brief.py --self-test
+          python3 scripts/verify-gene-format.py --self-test
+
+      # 引擎元评测（schema ADR S3）：与 verify-* self-test 平级，不占门禁编号
+      - name: engine self-test
+        run: node engine/bin.js self-test

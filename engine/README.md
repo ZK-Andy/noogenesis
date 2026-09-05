@@ -1,0 +1,55 @@
+# engine — P1 演化发动机
+
+心源 P1 演化引擎：Node.js 标准库 only、零第三方依赖、零网络、零 LLM——"发动机不插电也能转"。骨架选型（D1–D4）与协议（S1–S3）的单一事实源：
+
+- 骨架：[.agents/notes/implemented/architecture/2026-09-05-p1-engine-skeleton.md](../.agents/notes/implemented/architecture/2026-09-05-p1-engine-skeleton.md)
+- 协议：[.agents/notes/implemented/architecture/2026-09-05-gene-event-schema.md](../.agents/notes/implemented/architecture/2026-09-05-gene-event-schema.md)
+
+## 合同面（唯一 CLI）
+
+```sh
+node engine/bin.js select <signal>... [--stdin]        # 信号 → 基因（归一化字面匹配，多键并集）
+node engine/bin.js propose <domain>/<id> [--out FILE]  # gene → 注入文本（确定性，同输入必同输出）
+node engine/bin.js evaluate <domain>/<id>              # gates.json 全集 + 约束；红即拒，无豁免
+node engine/bin.js solidify <candidate.json> --actor N # 入档：全绿 → genes/ + events/ 同一 commit
+node engine/bin.js solidify --retire <domain>/<id> --actor N
+node engine/bin.js self-test                           # 元评测夹具（临时沙箱，不触碰真实仓）
+```
+
+退出码：`0` 成功；`1` 红（评估不绿 / 拒入档）；`2` 用法错误或 fail-closed 拒跑。
+
+## 目录
+
+| 文件 | 职责 |
+|---|---|
+| `bin.js` | CLI 分发 + 用法 |
+| `util.js` | 归一化 / SHA-256 / 结构化 spawn / git 封装 / 槽值推导 |
+| `gates.js` + `gates.json` | 验证白名单（fail-closed 装载） |
+| `gene.js` | Gene 八字段封闭 schema / 目录扫描 |
+| `select.js` / `propose.js` / `evaluate.js` / `solidify.js` | 四命令各一 |
+| `selftest.js` | 元评测夹具 |
+
+## 安全模型（五条，schema ADR S3）
+
+1. **白名单封闭**：`gates.json` 是唯一可执行命令来源；字面匹配；结构化 spawn 参数数组直传，永不 shell 拼接。白名单缺失 / 格式坏 / 条目脚本不存在 → evaluate 拒跑，不静默退化。
+2. **引擎零网络**：不发请求、不开端口（骨架 ADR D1/D3 一脉）。
+3. **基因不含可执行内容**：`strategy` / `avoid` 是渲染文本，永不 eval；`propose` 只做字符串拼接。
+4. **子进程最小 env**：只透传 `PATH` / `HOME` / `LANG`；工作目录锁死仓根。
+5. **fail-closed**：任何解析失败（git 事实、白名单、基因 JSON）都是错误而非空集。
+
+## 协议要点（实现层口径，协议单源在 schema ADR）
+
+- **参数槽**：白名单条目可含 `{{outgoing_base}}` / `{{head}}`，取值仅由引擎从 git 事实推导（上游 merge-base，无上游回退根提交；HEAD 解析 oid）。基因只引用不填值。
+- **信号归一化**（骨架 ADR D2）：trim → 小写化 → 内部连续空白折叠为单空格；精确匹配，多键取并集。
+- **入档语义**：候选文件须以 `<id>.json` 命名（ID=文件名锚点对候选同样生效）；目录锚点（`domain` == 父目录）只约束 `genes/` 内的落盘位置。`gene_sha` = 基因文件字节内容的 SHA-256。
+- **原子证据**：`genes/` 变更与 `events/` 追加行放同一 commit；拒绝时只提交事件行（候选不入档），`outcome` 携带拒因。
+- **retire 无需 evaluate**：退役不引入前沿内容，入档闸只守新增/更新；删除文件 + `gene.retired` 事件（`gene_sha` = 最后内容 SHA），git 历史仍可溯。
+- **constraints 对照面**：当前出账变更面（`outgoing_base...HEAD` 已提交 + 未暂存 + 未跟踪，与 `scripts/change-scope.sh` 同口径）。
+- **事件 kind 封闭集**：`gene.added` / `gene.updated` / `gene.retired`；select/propose 运行不记（演化事件 ≠ 运行日志）。
+
+## 消费方
+
+- 引擎自身：`evaluate` 跑白名单全集作为入档门槛。
+- `scripts/verify-gene-format.py`（第十门禁）：校验 `genes/` + `events/`，含白名单条目脚本存在性与 `gene_sha` 工作树复算。
+- CI：`node engine/bin.js self-test`（与 verify-* self-test 平级，不占门禁编号）。
+- hooks/CI 改引 `gates.json` 为唯一命令清单：M2 归口（open）。

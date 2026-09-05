@@ -22,6 +22,8 @@ python3 scripts/verify-md-links.py
 python3 scripts/verify-cookbook.py
 python3 scripts/verify-skill-format.py
 python3 scripts/verify-handoff-structure.py
+python3 scripts/verify-gene-format.py
+node engine/bin.js self-test
 
 # 评审档位强制：git 从 stdin 逐行传 "<local_ref> <local_sha> <remote_ref> <remote_sha>"。
 # 每个被推 ref 独立 enforce：base = merge-base(remote, local)（收口收窄 outgoing）；

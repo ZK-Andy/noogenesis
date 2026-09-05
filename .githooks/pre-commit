@@ -44,6 +44,10 @@ fi
 echo "-> verify-handoff-structure.py"
 python3 scripts/verify-handoff-structure.py
 
+# 7.5) Gene/Event 协议（第十门禁，结构快检；复算含在扫描内）
+echo "-> verify-gene-format.py"
+python3 scripts/verify-gene-format.py
+
 # 8) 评审档位（报告态：FULL 触发时提示证据缺口，不阻断批内中间提交）
 echo "-> verify-review-tier.py --staged（报告态）"
 python3 scripts/verify-review-tier.py --staged

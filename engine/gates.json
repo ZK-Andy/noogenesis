@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "gates": [
+    { "name": "adr-format", "cmd": "python3", "args": ["scripts/verify-adr-format.py"] },
+    { "name": "doc-budgets", "cmd": "python3", "args": ["scripts/verify-doc-budgets.py", "--manifest", "scripts/doc-budgets.manifest.json"] },
+    { "name": "md-links", "cmd": "python3", "args": ["scripts/verify-md-links.py"] },
+    { "name": "cookbook", "cmd": "python3", "args": ["scripts/verify-cookbook.py"] },
+    { "name": "skill-format", "cmd": "python3", "args": ["scripts/verify-skill-format.py"] },
+    { "name": "handoff-structure", "cmd": "python3", "args": ["scripts/verify-handoff-structure.py"] },
+    { "name": "review-tier", "cmd": "python3", "args": ["scripts/verify-review-tier.py", "--since", "{{outgoing_base}}", "--enforce"] },
+    { "name": "review-brief", "cmd": "python3", "args": ["scripts/verify-review-brief.py", "--lanes", "R1,R2,R3"] },
+    { "name": "change-scope", "cmd": "bash", "args": ["scripts/change-scope.sh", "{{outgoing_base}}", "{{head}}"] }
+  ]
+}
