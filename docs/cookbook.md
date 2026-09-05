@@ -37,6 +37,7 @@
 
 - **[环境] 日期相关常量写死会跨月失效（2026-09-05 来源：dsh-frecency verify-handoff-structure 卷名）**：症状——journal 卷名硬编码 `2026-08-session-journal.md`，九月起校验对象失焦。根因——把"当前月"物化成常量。规避——日期常量按当前日期推导 + self-test 覆盖跨月场景（本仓修复版已含当月卷宽容与跨月夹具）。
 - **[环境] 跨平台 shell 语义差五连坑（2026-08-27 来源：desktop CI 三平台实机/评审沉淀）**：症状——同一脚本在 Linux/macOS/Git Bash 行为分裂：`sed -i` 的 GNU/BSD 语法不同；`xargs -r` 是 GNU 专属；Git Bash 命令行上限 32K，批量处理超限 `CreateProcess` 失败；`set -euo pipefail` 下 `grep -rl` 零命中非零退出炸管道；`grep -rlZ` 输出 NUL 分隔使 `wc -l` 恒 0、`for` 循环吞整串。根因——GNU/BSD 语义差 + Windows 32K 限制。规避——跨平台脚本：`sed -i` 改 `perl -i`（三平台一致）；空输入守卫用 `[[ -s "$list" ]]` 不用 `-r`；批量显式 `-n 64` 级分批；`grep -rl` 补 `|| true`；NUL 输出先 `tr '\0' '\n'` 再数。
+- **[环境] pnpm minimumReleaseAge 拦新包，且更新会静默 no-op（2026-09-06 来源：noogenesis npm 首发 + dsh-market install.ts #39/#13/#22）**：症状——`pnpm add` 刚发布的包报 `[ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION]`（包发布时间早于 cutoff = now − 窗口即拒），且 add 会重验 lockfile 全集，把早已安装的 too-young 条目（如 dshmarket@1.44.0）一起连坐拦下；更新场景更隐蔽——pnpm 对 too-young 新版本**静默保持旧版并 exit 0**，干净退出不等于真更新。根因——供应链新鲜度闸作用于 lockfile 全集且对更新路径静默失败。规避——单命令一次性豁免 `--config.minimumReleaseAge=0`（不改持久配置，dsh-market 的 RELEASE_AGE_OVERRIDE 同款）；更新后必须比对版本号而非看退出码；自发包等不满窗口期再分发或文档明示豁免命令。
 
 ## 上游
 

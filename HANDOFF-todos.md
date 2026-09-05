@@ -17,4 +17,4 @@
 - [x] （C）change-scope.sh quotePath 修复 + selftest e2e 夹具 2026-09-05（FULL 三审全采纳 R1 1B/5S、R2 0B/5S、R3 2B/5S）；ADR [2026-09-05-change-scope-quotepath](.agents/notes/implemented/bug-fix/2026-09-05-change-scope-quotepath.md)。
 - [x] （D）M2 适配层立项讨论轮 2026-09-06 四题拍板（插件壳/最小接线/spawn 单合同/技能分发随 P2），ADR [2026-09-06-m2-adapter-wiring](.agents/notes/implemented/architecture/2026-09-06-m2-adapter-wiring.md)。
 - [x] （D）M2 适配层实现轮 2026-09-06（插件壳 + 最小接线 + spawn 单合同 + gates.json 单源；FULL 三审 R1 0B/4S、R2 1B/8S、R3 3B/4S 全采纳），ADR [2026-09-06-m2-adapter-wiring](.agents/notes/implemented/architecture/2026-09-06-m2-adapter-wiring.md)。
-- [ ] （D）npm 真包首发（release-flow）：npm publish 替换占位包 noogenesis@0.0.0（repository 字段与宿主名一致性，账号 openorbit）+ `dsh plugin add noogenesis` 真安装验证（装上即转 + 空 genes/ 优雅退化）——M2 ADR「待首发收口」项随之清账；本地已有证据 = patch 形状机器比对 + selftest 25 组。
+- [x] （D）npm 真包首发 2026-09-06（release-flow）：`noogenesis@0.1.0` = latest（repository 对齐，commit `cecc815`；tag `v0.1.0`）；desktop 实装 + 空仓退化/真仓命中验证；minimumReleaseAge 单命令豁免（cookbook [环境]）；M2 ADR 发布 gate 清账。
