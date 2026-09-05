@@ -68,7 +68,8 @@ def load_gates(repo_root: Path):
 
 
 def instantiate(gate: dict, slots: dict):
-	"""槽位替换，与 engine/gates.js instantiate 同口径；残留槽位 = fail-closed。"""
+	"""槽位替换：任意 {{key}}（含 cmd），缺值 fail-closed——**形似而非同口径**
+	于 engine/gates.js instantiate（彼只认双键、缺键静默留字面量），见头注。"""
 
 	def substitute(text: str) -> str:
 		def replace(match: "re.Match[str]") -> str:

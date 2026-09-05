@@ -40,7 +40,7 @@ Review: FULL/2026-09-05/R1=ok R2=ok R3=ok
 
 ### S3（2026-09-05，已拍板）：验证白名单、安全模型、元评测夹具
 
-- **白名单载体 = `engine/gates.json` 版本化机器清单**：v0 内容 = 九门禁（无参门禁直接实例化；带上下文参数的 review-tier/review-brief/change-scope 以参数槽收录，取值仅由引擎从 git 事实注入，见骨架 ADR D4）。**P1 消费者 = 引擎 evaluate + `verify-gene-format.py` 的条目脚本存在性校验**（防漂移）；hooks/CI 改引同一清单为目标形态，M2 归口（open）。与 AGENTS 质量门（[根 AGENTS.md](../../../../AGENTS.md) 人读面）的漂移由上述双机械闸兜底。
+- **白名单载体 = `engine/gates.json` 版本化机器清单**：v0 内容 = 九门禁（无参门禁直接实例化；带上下文参数的 review-tier/review-brief/change-scope 以参数槽收录，取值仅由引擎从 git 事实注入，见骨架 ADR D4）。**P1 消费者 = 引擎 evaluate + `verify-gene-format.py` 的条目脚本存在性校验**（防漂移）；hooks/CI 经 `scripts/gates.py` 改引同一清单（2026-09-06 收口，[M2 ADR](2026-09-06-m2-adapter-wiring.md)；结构性例外见该脚本头注）。与 AGENTS 质量门（[根 AGENTS.md](../../../../AGENTS.md) 人读面）的漂移由上述双机械闸兜底。
 - **安全模型五条**（实现轮落 engine README + 夹具验证）：①白名单封闭，字面匹配，结构化 spawn 不走 shell 拼接；②引擎零网络（骨架 D1/D3 一脉）；③基因不含可执行内容——`strategy`/`avoid` 是渲染文本，永不 eval；④子进程最小 env、工作目录锁仓根；⑤fail-closed：白名单缺失/格式坏/条目不存在 → evaluate 拒跑不静默退化。
 - **元评测 = engine 自带 `self-test` 子命令**（对齐 verify-* self-test 惯例，违约样例必须 FAIL）：select 命中/未命中/多信号并集/归一化规则（D2 钉死的 trim→小写→空白折叠）；propose 金样渲染精确匹配（D3 可测性兑现）；evaluate 白名单外命令必须拒、约束违约必须 FAIL；solidify 在临时 git 仓验证原子提交（genes/ + events/ 同 commit）与 gene_sha 可复算。CI 加一步 `node engine/bin.js self-test`，与 verify-* self-test 平级、不占门禁编号。
 - **自托管纪律**：self-test 全程临时目录/沙箱，不触碰真实仓（引擎测试自己不污染被演化对象）。

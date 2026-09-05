@@ -60,6 +60,6 @@ Review: FULL/2026-09-05/R1=ok R2=ok R3=ok
 ## Consequences
 
 - **采用面**：`engine/` 目录与四命令按 D1–D4 实现；协议细节按 [schema ADR](2026-09-05-gene-event-schema.md) S1–S3；首批基因人工策展翻译（不自动生成）。
-- **遗留面（显式 open，逐条归口）**：严格改进文档域度量（M2，D4 单源）；dsh-token-meter 接入（M2）；js-yaml 例外权与基因格式 YAML 化迁移器（M2，单源在本条）；canary 进程隔离（M2 常驻形态）；流程卡"谁来喂信号"可选增强（实现轮）；hooks/CI 引 `gates.json` 完整合一（M2，schema ADR S3 记 open）。
+- **遗留面（显式 open，逐条归口）**：严格改进文档域度量（M2，D4 单源）；dsh-token-meter 接入（M2）；js-yaml 例外权与基因格式 YAML 化迁移器（M2，单源在本条）；canary 进程隔离（M2 常驻形态）；流程卡"谁来喂信号"可选增强（实现轮）。hooks/CI 引 `gates.json` 完整合一已收口（2026-09-06，`scripts/gates.py` 单源发射，见 [M2 ADR](2026-09-06-m2-adapter-wiring.md)），不再是 open 项。
 - **依赖姿态是门禁级约束**：engine 引入任何第三方依赖须先修订本 ADR D1（或其例外条款）。
 - **运行时假设**：Node 单运行时——若未来引擎要进无 Node 环境（边缘/容器最小镜像），CLI 合同面保证可换 Go/Rust 内核而不动接口。

@@ -6,7 +6,7 @@ noogenesis＝心智的发生与持续生长（德日进谱系下集体知识演�
 
 ## 当前状态
 
-**胶囊 01「AI 协作编码方法论」**（本仓即其第一个宿主，self-hosting）：由四个来源项目提炼搬迁而成——常驻基座（双层 AGENTS）+ 流程卡 + ADR 生命周期 + 机器门禁（十件，含评审档位/简报两闸）+ 原子踩坑库 + 交接家庭。胶囊 v0.2 评审机械闸已落地（ADR 见 [.agents/notes/](.agents/notes/README.md)）。搬迁计划见 [capsule-01-migration-plan.md](capsule-01-migration-plan.md)。P1 演化发动机已落地：`engine/` 四命令（select/propose/evaluate/solidify，Node 零依赖）+ 验证白名单 + 第十门禁 + 首批 6 基因（process/doc/gates 三域）经 solidify 原子入档（ADR 同见 [.agents/notes/](.agents/notes/README.md)）。M2 适配层已落地：本仓即 npm 包 `noogenesis`（`dsh plugin add` 可装的 DSH 插件），`adapters/dsh/` 经 spawn CLI 单合同把引擎接进会话生命周期（ADR 同见）。
+**胶囊 01「AI 协作编码方法论」**（本仓即其第一个宿主，self-hosting）：由四个来源项目提炼搬迁而成——常驻基座（双层 AGENTS）+ 流程卡 + ADR 生命周期 + 机器门禁（十件，含评审档位/简报两闸）+ 原子踩坑库 + 交接家庭。胶囊 v0.2 评审机械闸已落地（ADR 见 [.agents/notes/](.agents/notes/README.md)）。搬迁计划见 [capsule-01-migration-plan.md](capsule-01-migration-plan.md)。P1 演化发动机已落地：`engine/` 四命令（select/propose/evaluate/solidify，Node 零依赖）+ 验证白名单 + 第十门禁 + 首批 6 基因（process/doc/gates 三域）经 solidify 原子入档（ADR 同见 [.agents/notes/](.agents/notes/README.md)）。M2 适配层已落地：本仓已具备 DSH 插件包形态（npm 名 `noogenesis`），`adapters/dsh/` 经 spawn CLI 单合同把引擎接进会话生命周期（ADR 同见）；`dsh plugin add` 真安装验证随 npm 真包首发收口（当前 npm 上为占位包 0.0.0）。
 
 ## 结构
 

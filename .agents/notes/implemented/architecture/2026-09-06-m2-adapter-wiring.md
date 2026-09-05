@@ -1,6 +1,7 @@
 # Agent Note: M2 适配层立项拍板（插件壳 + 最小接线 + spawn 单合同）
 
 Status: implemented
+Review: FULL/2026-09-06/R1=ok R2=ok R3=ok
 
 > Provenance：本仓原创（2026-09-06 M2 适配层立项讨论轮，用户逐题拍板；同会话实现轮落地）。前置：P1 引擎已落地（骨架 D1–D4 / schema S1–S3 / 实现轮 D1–D6，见 [2026-09-05-p1-engine-skeleton](2026-09-05-p1-engine-skeleton.md) · [2026-09-05-gene-event-schema](2026-09-05-gene-event-schema.md) · [2026-09-05-p1-engine-implementation](2026-09-05-p1-engine-implementation.md)）；插件安装机制与技能发现根为 2026-09-06 源码实测（`dsh-continual-evolve@0.6.0` + DSH `dsh-skill-filesystem` / `cordis-plugin-loader`）。
 
@@ -49,7 +50,7 @@ Noogenesis/                  ← npm 包根（真包首发时替换占位 0.0.0�
 
 **M4 技能分发 = M2 保持 repo-local，分发随 P2**。noo-* 留本仓 `.agents/skills`；跨仓分发走 P2 基因库的 gene→skill 渲染语义，不在 M2 提前背。
 
-**范围附带：gates.json 单源收口**。`scripts/gates.py` 为 hooks/CI 的门禁清单唯一发射器（清单 = engine/gates.json，槽位替换与 engine/gates.js instantiate 同口径，残留槽位 fail-closed）；结构性例外（tier 的 per-ref/事件条件形态、change-scope 的缺省推导、review-brief 仅本地预发射、第十门禁 gene-format 为白名单外独立件——它消费引擎产物，进白名单会让 solidify 入档中途复算自身）逐一记录在 gates.py 头注与 engine README。
+**范围附带：gates.json 单源收口**。`scripts/gates.py` 为 hooks/CI 的门禁清单唯一发射器（清单 = engine/gates.json）。槽位替换与 engine/gates.js instantiate **形似而非同口径**（勿照抄互通）：本脚本替换任意 `{{key}}`（含 cmd）且缺值 fail-closed；engine 侧只认 outgoing_base/head 双键、缺键静默留字面量（无害的前提是引擎 deriveSlots 保证两键齐全）——今日两侧行为等价纯因白名单只有这两键且都在 args。结构性例外（tier 的 per-ref/事件条件形态、change-scope 的缺省推导、review-brief 仅本地预发射、第十门禁 gene-format 为白名单外独立件——它消费引擎产物，进白名单会让 solidify 入档中途复算自身）逐一记录在 gates.py 头注与 engine README。
 
 **发布 gate**：`dsh plugin add noogenesis` 可装，且装上即转——空 `genes/` 项目优雅退化（select 无命中 → system-prompt 命中节零 token；四命令可跑但产出空/红）。
 
@@ -66,11 +67,13 @@ Noogenesis/                  ← npm 包根（真包首发时替换占位 0.0.0�
 - **materialize 到 `<dshHome>/skills`**（dsh-continual-evolve 先例路径）：落败——写宿主全局目录，侵入性大于打包注册，且同样属 P2 归期。
 - **schemastery Config schema**（参照件路径）：落败——多一个宿主运行时依赖；配置面 7 字段手工校验足够且 selftest 可直测。
 - **目录名 `plugin/` 单层**：落败——`adapters/dsh/` 为 P4 多 harness 留位（每宿主一薄目录），避免届时改名 churn。
+- **solidify 触发点挂 `session/flush`**：落败——flush 是压缩边界，可在会话中途发生且不保证对齐会话结束，弹问时机突兀且可能多次打扰；`agent/disposed` 是宿主保证的单次终态边界，与"会话结束盘点待入档候选"语义精确对齐。
+- **userQuestions 声明式注入（进 `inject` 清单，参照件写法）**：落败（R2-S2 实测证）——cordis 对缺席的注入服务把插件置 INACTIVE 推迟装载，声明注入反而使「提问面缺席 → 只提醒」降级不可达；改为 disposal 时对 `ctx.userQuestions` 懒取用，缺席/抛错/超时都走降级。
 
 ## Consequences
 
 - **采用面**：`package.json`（裸名 noogenesis@0.1.0，AGPL-3.0-only，`type: commonjs`，files 白名单，`dsh.bundle.patch`）、`cordis.patch.yml`（plugin row insert）、`adapters/dsh/` 八件（index / engine-bridge / section / tools / solidify-trigger / config / selftest / README）、`scripts/gates.py`、`.githooks/pre-push` 与 `.github/workflows/validate.yml` 改引单源、engine README（open 项收口 + 消费方补 adapters/dsh）。引擎本体零改动。
 - **已验证**（2026-09-06）：adapter selftest 25 组夹具全绿（bridge 合同实跑 / cwd 锚定 / section 空渲染 + `{{` 中性化 / 工具退出码映射含 exit1-空报告故障分型 / solidify 全路径含 ask 兜底超时 / 配置 fail-closed / 防火墙机器检查 / 包结构契约）；`gates.py --self-test` 3 组全绿；gates.py 单源发射实跑七门禁全绿；engine self-test 全绿。
-- **评审收口（2026-09-06，FULL 三审）**：R1（简化路）0B/4S、R2（代码路）1B/8S **全部采纳**——B1（命中节 `{{` 未转义，宿主 interpolate 每模型步抛错，会话级破坏）+ R1 头注/README 单源、gates.py「同口径」措辞失实（实为形似而非等价：本脚本任意槽位 fail-closed vs engine 硬编码双键）、BASE_SECTION 措辞断言删除、提醒命令自 buildSolidifyArgs 派生、sync spawn 加 60s 界、空 injectSignals 短路、noo_select required、userQuestions 懒取用、disposal in-flight 去重 + ask 兜底超时、gates.py 头注补 gene-format 例外归口；R3（ADR 路）结论见 Review 行。
+- **评审收口（2026-09-06，FULL 三审）**：R1（简化路）0B/4S、R2（代码路）1B/8S、R3（ADR 路）3B/4S **全部采纳**——B1（命中节 `{{` 未转义，宿主 interpolate 每模型步抛错，会话级破坏）+ R1 头注/README 单源、BASE_SECTION 措辞断言删除、提醒命令自 buildSolidifyArgs 派生、sync spawn 加 60s 界、空 injectSignals 短路、noo_select required、userQuestions 懒取用、disposal in-flight 去重 + ask 兜底超时、gates.py 头注补 gene-format 例外归口；R3 收「同口径」措辞残留面（gates.py 函数注 + 本 ADR Decision）、P1 两 ADR open 项单源更新、Alternatives 补 session/flush 与声明式注入两条落败、README 待首发措辞。
 - **待首发收口**：`dsh plugin add noogenesis` 的真安装验证需 npm 真包（release-flow 发布时做）；本地证据 = patch 形状对 cordis-plugin-loader 方言的机器比对 + 装载契约（name/inject/apply）与参照件同构。
 - **运行边界**：spawn 每调用一子进程——调用频次若随接线面扩大（Detect 轮）抬升，是重开 M3 拍板的信号，不是默默改进程内；DSH 插件面仍在 rc 期，peerDependencies 版本锚定（`^0.1.0-rc.6`）随 DSH 发版对齐；npm 占位包首发替换涉及账号 openorbit 与 repository 字段一致性（占位包不可下架只可 deprecate）；solidify 提问发生在 agent disposal 时，无应答方环境（headless → NO_PROVIDER）或 ask 超时（兜底 300s）都降级为只提醒——降级路径有 warn 留痕，迟到回答被丢弃但提醒文案带可手跑的精确命令。
