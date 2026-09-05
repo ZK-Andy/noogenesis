@@ -6,7 +6,7 @@ noogenesis＝心智的发生与持续生长（德日进谱系下集体知识演�
 
 ## 当前状态
 
-**胶囊 01「AI 协作编码方法论」**（本仓即其第一个宿主，self-hosting）：由四个来源项目提炼搬迁而成——常驻基座（双层 AGENTS）+ 流程卡 + ADR 生命周期 + 机器门禁（十一件，含评审档位/简报两闸）+ 原子踩坑库 + 交接家庭。胶囊 v0.2 评审机械闸已落地（ADR 见 [.agents/notes/](.agents/notes/README.md)）。搬迁计划见 [capsule-01-migration-plan.md](capsule-01-migration-plan.md)。P1 演化发动机已落地：`engine/` 五命令（select/propose/evaluate/solidify/pull，Node 零依赖）+ 验证白名单 + 第十门禁 + 首批 6 基因（process/doc/gates 三域）经 solidify 原子入档（ADR 同见 [.agents/notes/](.agents/notes/README.md)）。M2 适配层已落地：本仓即 DSH 插件包（npm 包 [`noogenesis-dsh`](https://www.npmjs.com/package/noogenesis-dsh)@0.1.1，AGPL-3.0），`adapters/dsh/` 经 spawn CLI 单合同把引擎接进会话生命周期（ADR 同见；包名规则见 [adapters/dsh/README.md](adapters/dsh/README.md)）；安装方式 `dsh plugin --profile <name> -- add noogenesis-dsh`（新发版本满 pnpm minimumReleaseAge 窗口前需单命令豁免，见 [docs/cookbook.md](docs/cookbook.md) [环境] 条目）。P2 只读共享消费已落地（本仓即基因库）：`engine pull <bank-url>` + `manifest.json` 检索索引（[verify-manifest](scripts/verify-manifest.py) 门禁）+ 缓存合并扫描（本仓基因优先）；适配层 `geneBankUrl` 配置惰性拉取（ADR 同见）。
+**胶囊 01「AI 协作编码方法论」**（本仓即其第一个宿主，self-hosting）：由四个来源项目提炼搬迁而成——常驻基座（双层 AGENTS）+ 流程卡 + ADR 生命周期 + 机器门禁（十一件，含评审档位/简报两闸）+ 原子踩坑库 + 交接家庭。胶囊 v0.2 评审机械闸已落地（ADR 见 [.agents/notes/](.agents/notes/README.md)）。搬迁计划见 [capsule-01-migration-plan.md](capsule-01-migration-plan.md)。P1 演化发动机已落地：`engine/` 五命令（select/propose/evaluate/solidify/pull，Node 零依赖）+ 验证白名单 + 第十门禁 + 首批 6 基因（process/doc/gates 三域）经 solidify 原子入档（ADR 同见 [.agents/notes/](.agents/notes/README.md)）。M2 适配层已落地：本仓即 DSH 插件包（npm 包 [`noogenesis-dsh`](https://www.npmjs.com/package/noogenesis-dsh)@0.1.2，AGPL-3.0），`adapters/dsh/` 经 spawn CLI 单合同把引擎接进会话生命周期（ADR 同见；包名规则见 [adapters/dsh/README.md](adapters/dsh/README.md)）；安装方式 `dsh plugin --profile <name> -- add noogenesis-dsh`（新发版本满 pnpm minimumReleaseAge 窗口前需单命令豁免，见 [docs/cookbook.md](docs/cookbook.md) [环境] 条目）。P2 只读共享消费已落地（本仓即基因库）：`engine pull <bank-url>` + `manifest.json` 检索索引（[verify-manifest](scripts/verify-manifest.py) 门禁）+ 缓存合并扫描（本仓基因优先）；适配层 `geneBankUrl` 配置惰性拉取（ADR 同见）。技能随库分发已落地（`noogenesis-bank` provider，rank 600）：7 个 `noo-*` 技能经基因库缓存进 DSH 技能面，装包 → pull 即得（ADR 同见）。
 
 ## 结构
 
@@ -19,7 +19,7 @@ noogenesis＝心智的发生与持续生长（德日进谱系下集体知识演�
 │   └── research/           # 设计文档（蜂群框架设计 / 共享层设计 / JIT-Agent 研究）+ 参考引擎调研解剖
 ├── scripts/                # verify-* 机器门禁（零依赖 Python）+ gates.py 门禁清单单源发射器
 ├── engine/                 # 演化发动机（Node 零依赖五命令 + gates.json 白名单；pull = P2 只读消费）
-├── adapters/dsh/           # M2 DSH 适配层（插件壳接线：system-prompt 节 / noo_* 工具 / solidify 人工确认触发 / geneBankUrl 惰性 pull）
+├── adapters/dsh/           # M2 DSH 适配层（插件壳接线：system-prompt 节 / noo_* 工具 / solidify 人工确认触发 / geneBankUrl 惰性 pull / 技能随库分发）
 ├── genes/                  # 基因库（<domain>/<id>.json，经 solidify 入档；本仓即库）
 ├── manifest.json           # 基因库检索索引（gen-manifest 生成，verify-manifest 门禁）
 ├── events/                 # 演化事件月卷（JSONL 审计面，入 git）
