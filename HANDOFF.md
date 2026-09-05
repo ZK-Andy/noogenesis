@@ -12,6 +12,7 @@
 - 2026-09-05｜**评审机械闸落地（胶囊 v0.2 收口件；ADR `2026-09-05-review-mechanical-gate`；commits `0b3a501`→收口）**：R1/R2/R3 = 1/7、2/6、2/2 全采纳（fail-closed 双修、lane 推导修复、CI 真强制）；门禁 7→9；Review 证据行首签、tier 全链路转绿。**节点：体系 v0.2 收口，下一步（D）立项讨论轮。**
 - 2026-09-05｜**P1 立项讨论轮·参考引擎考古（ADR `evomap-evox-engine-anatomy` proposed + 演化史解剖；commits `725b272`/`0f3b7b4`）**：官方清痕后 fork 考古得 MIT 时代全源码；四接口实战印证、记忆图 ~200 行、Genesis 记 P2；发动机骨架（独立 CLI 零 DSH + 四命令 + Gene/Event 最小闭环）待拍板。README 核对：修正门禁 7→9 与 research 目录表述。
 - 2026-09-05｜**许可切换 AGPL-3.0 + npm 双名注册 + 建仓首推（ADR `2026-09-05-license-agpl-3`；commits `f53d4c6`→`45f736c`）**：FULL 三审（0B/2S、1B/2S、0B/4S）全采纳；THIRD-PARTY-NOTICES 承接上游 MIT 义务；npm 裸名+org 占位；公开仓 ZK-Andy/noogenesis（首推豁免记 journal）。README 核对无漂移。
+- 2026-09-05｜**P1 立项拍板收口（骨架 D1–D4 + schema S1–S3 两 ADR implemented；FULL 三审 R1 0B/7S、R2 3B/10S、R3 6B/4S 全采纳）**：Node.js 零依赖 CLI + 显式信号 + 确定性 propose + 保守入档；genes/ 八字段 + Event 三 kind 月卷 + gates.json 白名单。**节点：下一轮 = 实现轮。**
 
 ## 背景
 
@@ -30,6 +31,7 @@ Noogenesis（心源）：DeepSeek Harness 之上的"蜂群进化框架"；终极
 ## 当前状态
 
 - **胶囊 01 搬迁已收口**（S1–S7 全过：骨架/基座/门禁/流程卡/知识层/交接/CI+dogfood，FULL 三审全过）；**胶囊 v0.2 评审机械闸已落地**（tier + brief 两闸，门禁 7→9；ADR `2026-09-05-review-mechanical-gate`）。
+- **P1 发动机骨架与 schema 已拍板收口**（D1–D4 + S1–S3；ADR [p1-engine-skeleton](.agents/notes/implemented/architecture/2026-09-05-p1-engine-skeleton.md) + [gene-event-schema](.agents/notes/implemented/architecture/2026-09-05-gene-event-schema.md) implemented，FULL 三审全采纳）：Node.js 零依赖 + 显式信号 + 确定性 propose + 保守入档；下一步 = 实现轮。
 - 门禁第一梯队 7 件全绿（含 self-test）：adr-format / doc-budgets / md-links（含 skills/）/ cookbook / skill-format / handoff-structure（修复版）/ change-scope。
 - 技能 noo-* 7 个已被 DSH 自动发现；评审机械闸已落地（verify-review-tier + verify-review-brief，ADR [2026-09-05-review-mechanical-gate](.agents/notes/implemented/process/2026-09-05-review-mechanical-gate.md)），门禁 7→9。
 - 四项拍板：评审闸延后 v0.2 ✅ / journal 入 git ✅ / 技能前缀 noo-* ✅ / cookbook 首批 15 条 ✅。

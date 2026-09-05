@@ -12,4 +12,5 @@
 - [x] （A）整仓许可切换 AGPL-3.0 2026-09-05：LICENSE/README/共享层设计稿/.agents AGENTS 出处声明同步，上游 MIT 版权与许可文本集中于 THIRD-PARTY-NOTICES.md，ADR [2026-09-05-license-agpl-3](.agents/notes/implemented/process/2026-09-05-license-agpl-3.md)。
 - [x] （B）许可切换批 FULL 三审 2026-09-05（R1 0B/2S、R2 1B/2S、R3 0B/4S，全采纳收口）：证据行落 license ADR 头部，tier `--since 2b45531 --enforce` 转绿。
 - [x] （B）CI validate.yml 首跑复验 2026-09-05：push 三触发（2 绿 + 1 concurrency 取消），run 33970832391@74661d4 全绿——七门禁 + review-tier `--since event.before --enforce` 真强制 + 6 self-test；brief 闸按设计仅本地预发射，不入 CI。
-- [ ] **（D）P1 演化引擎立项准备**——发动机骨架待拍板：Gene schema 六字段 + 四接口签名（select/propose/evaluate/solidify）+ `engine/` 目录 + Gene/Event 最小闭环，底座 = ADR [2026-09-05-evomap-evox-engine-anatomy](.agents/notes/proposed/architecture/2026-09-05-evomap-evox-engine-anatomy.md)（码级实证）；对标 dsh-continual-evolve 治理四件套（融合在架构定稿后）；P2 基因库命名/taxonomy 随立项拍板。
+- [x] （D）P1 立项收口（三审全采纳）：ADR [p1-engine-skeleton](.agents/notes/implemented/architecture/2026-09-05-p1-engine-skeleton.md)、[gene-event-schema](.agents/notes/implemented/architecture/2026-09-05-gene-event-schema.md)。
+- [ ] **（D）P1 演化引擎实现轮**——骨架/schema 已拍板：`engine/` 目录 + 四命令（select/propose/evaluate/solidify）+ `gates.json` 白名单 + `verify-gene-format.py` 第十门禁 + engine self-test 夹具 + 首批基因人工策展翻译（AGENTS/流程卡/门禁 → `genes/`，首批 ≤3 域）。
