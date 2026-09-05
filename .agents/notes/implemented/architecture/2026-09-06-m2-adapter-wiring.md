@@ -48,7 +48,7 @@ Noogenesis/                  ← npm 包根（真包首发时替换占位 0.0.0�
 2. **宿主依赖收敛在适配层**：peerDependencies 只有 `@deepseek-ai/dsh-tools`，且只在 `index.mjs` import；其余模块零宿主依赖、可脱离 DSH 自测。
 3. **运行仓锚定**：`resolveRepoRoot` 回退链 = config `repoRoot` → `NOGENESIS_REPO_ROOT` → 会话工作区 → `process.cwd()`（四级链与逐次解析口径以 [2026-09-06-adapter-deploy-hardening](2026-09-06-adapter-deploy-hardening.md) 为准）；spawn cwd 显式指向目标仓根（装在 DSH 侧的插件 ≠ 运行仓）。selftest 以"process.cwd 停在别处仍命中夹具仓基因"实证锚定。
 
-**M4 技能分发 = M2 保持 repo-local，分发随 P2**。noo-* 留本仓 `.agents/skills`；跨仓分发走 P2 基因库的 gene→skill 渲染语义，不在 M2 提前背。
+**M4 技能分发 = M2 保持 repo-local，分发随 P2**。noo-* 留本仓 `.agents/skills`；跨仓分发走 P2 基因库的 gene→skill 渲染语义，不在 M2 提前背。（2026-09-06 更新：技能**随库分发**已提前收口——技能经基因库缓存进 DSH 技能面，见 [2026-09-06-skills-ride-bank](2026-09-06-skills-ride-bank.md)；gene→skill 渲染语义不在其取代面，仍随贡献开放轮。）
 
 **范围附带：gates.json 单源收口**。`scripts/gates.py` 为 hooks/CI 的门禁清单唯一发射器（清单 = engine/gates.json）。槽位替换与 engine/gates.js instantiate **形似而非同口径**（勿照抄互通）：本脚本替换任意 `{{key}}`（含 cmd）且缺值 fail-closed；engine 侧只认 outgoing_base/head 双键、缺键静默留字面量（无害的前提是引擎 deriveSlots 保证两键齐全）——今日两侧行为等价纯因白名单只有这两键且都在 args。结构性例外（tier 的 per-ref/事件条件形态、change-scope 的缺省推导、review-brief 仅本地预发射、第十门禁 gene-format 为白名单外独立件——它消费引擎产物，进白名单会让 solidify 入档中途复算自身）逐一记录在 gates.py 头注与 engine README。
 
