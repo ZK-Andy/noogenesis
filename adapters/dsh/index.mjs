@@ -16,6 +16,7 @@ import { registerNooTools } from "./tools.mjs";
 import { BASE_SECTION, hitsSectionText } from "./section.mjs";
 import { runSolidifyTrigger, listStagingCandidates, createInFlightGate, ASK_TIMEOUT_MS } from "./solidify-trigger.mjs";
 import { pullBankOnce } from "./bank-pull.mjs";
+import { registerBankSkills } from "./skill-provider.mjs";
 import { validateConfig } from "./config.mjs";
 
 export const name = "noogenesis";
@@ -95,6 +96,11 @@ export function apply(ctx, config = {}) {
 	});
 
 	registerNooTools(ctx, { defineTool, runEngine, repoRoot: repoRootFor });
+
+	// 技能随库分发（skills-ride-bank ADR）：provider 读 genes-cache/.agents/skills，
+	// rank 600（用户/项目同名可遮蔽）；宿主 skills 面缺席/注册失败 → 内部 warn
+	// 降级不阻塞装载（registerBankSkills 的「缺席降级」纪律，inject 不声明 skills）。
+	registerBankSkills(ctx, { config: cfg, logger });
 
 	// 写路径唯一触发点：agent/disposed。repoRoot 按 dispose 的那个 agent 逐次
 	// 解析（payload 携带 { agent }，与 auto 触发面同款实证）——异仓会话各归

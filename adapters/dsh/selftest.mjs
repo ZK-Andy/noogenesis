@@ -23,6 +23,7 @@ import { hitsSectionText } from "./section.mjs";
 import { registerNooTools } from "./tools.mjs";
 import { listStagingCandidates, buildSolidifyArgs, solidifyNotice, runSolidifyTrigger, createInFlightGate, ASK_TIMEOUT_MS } from "./solidify-trigger.mjs";
 import { buildPullArgs, pullBankOnce } from "./bank-pull.mjs";
+import { BUNDLED_SKILL_RANK, PROVIDER_NAME, createBankSkillProvider, parseSkillFile, registerBankSkills } from "./skill-provider.mjs";
 import { validateConfig } from "./config.mjs";
 
 const ADAPTER_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -378,6 +379,97 @@ function writeFixtureGene(repoRoot) {
 	assert.match(shadowed.stdout, /demo\/bank-only\s+local wins/);
 	assert.doesNotMatch(shadowed.stdout, /bank-only gene/);
 	ok("bank-pull: e2e — repo gene shadows same-ref cache copy (repo-first)");
+}
+
+// ── 5.6) 技能随库分发：provider 动态 list/get + 降级 + 逐仓解析 ───────────
+{
+	// frontmatter 解析：合规 / 缺 description / 非法名 / 引号剥除
+	const good = parseSkillFile("---\nname: alpha-skill\ndescription: \"Alpha does things\"\nwhenToUse: when alpha\n---\n\n# Alpha\nbody\n");
+	assert.deepEqual(good.meta, { name: "alpha-skill", description: "Alpha does things", whenToUse: "when alpha" });
+	assert.match(good.content, /^# Alpha/);
+	assert.equal(parseSkillFile("---\nname: alpha-skill\n---\nbody\n"), null); // 缺 description
+	assert.equal(parseSkillFile("---\nname: Bad Name\ndescription: x\n---\nbody\n"), null); // 非 kebab-case
+	assert.equal(parseSkillFile("no frontmatter\n"), null);
+	assert.equal(parseSkillFile("---\nname: x\ndescription: y\n"), null); // 围栏未闭合
+	ok("skills: frontmatter — kebab name + required description, quotes stripped, malformed → null");
+
+	// 夹具仓：缓存镜像内 1 合规技能 + 1 坏 frontmatter 技能
+	const repo = tempRepo("bank-skills");
+	const skillsDir = path.join(repo, ".noogenesis", "genes-cache", ".agents", "skills");
+	const alphaDir = path.join(skillsDir, "alpha-skill");
+	fs.mkdirSync(alphaDir, { recursive: true });
+	fs.writeFileSync(path.join(alphaDir, "SKILL.md"), '---\nname: alpha-skill\ndescription: Alpha does things\nwhenToUse: when alpha\n---\n\n# Alpha\nbody line\n');
+	const badDir = path.join(skillsDir, "bad-skill");
+	fs.mkdirSync(badDir, { recursive: true });
+	fs.writeFileSync(path.join(badDir, "SKILL.md"), "---\nname: alpha-skill\n---\nno description\n");
+	const warns = [];
+	const provider = createBankSkillProvider({ config: { repoRoot: repo }, logger: { warn: (m) => warns.push(m) } });
+
+	const candidates = await provider.list({ cwd: "/tmp/elsewhere" });
+	assert.equal(candidates.length, 1);
+	assert.equal(candidates[0].name, "alpha-skill");
+	assert.equal(candidates[0].description, "Alpha does things");
+	assert.equal(candidates[0].whenToUse, "when alpha");
+	assert.equal(candidates[0].rank, BUNDLED_SKILL_RANK);
+	assert.equal(candidates[0].provider, PROVIDER_NAME);
+	assert.equal(candidates[0].source, "bundled");
+	assert.equal(candidates[0].resourceBase.path, alphaDir);
+	assert.match(warns.join("\n"), /bad-skill\/SKILL\.md/);
+	ok("skills: cache dir lists curated skill at rank 600; bad frontmatter skipped with warn");
+
+	// get：全文定义 + 合同防线（外来 candidate / 文件消失 → undefined）
+	const def = await provider.get(candidates[0]);
+	assert.equal(def.name, "alpha-skill");
+	assert.match(def.content, /# Alpha/);
+	assert.equal(def.invocation.modelInvocable, true);
+	assert.equal(def.invocation.userInvocable, true);
+	assert.equal(def.resourceBase.kind, "directory");
+	assert.equal(def.resourceBase.path, alphaDir);
+	assert.equal(await provider.get({ provider: "other", locator: {} }), undefined);
+	assert.equal(await provider.get({ provider: PROVIDER_NAME, name: "alpha-skill", locator: { path: "/no/such/SKILL.md", directory: "/no/such" } }), undefined);
+	ok("skills: get returns full definition; foreign/missing candidates → undefined (registry contract)");
+
+	// 逐次解析：无 config 锚定时按 cwd 各归各仓（部署收口 ADR 的正确性面）
+	const repoB = tempRepo("bank-skills-b");
+	const skillsB = path.join(repoB, ".noogenesis", "genes-cache", ".agents", "skills", "beta-skill");
+	fs.mkdirSync(skillsB, { recursive: true });
+	fs.writeFileSync(path.join(skillsB, "SKILL.md"), "---\nname: beta-skill\ndescription: Beta only in repo B\n---\nbody\n");
+	const dyn = createBankSkillProvider({});
+	assert.equal((await dyn.list({ cwd: repo }))[0].name, "alpha-skill");
+	assert.equal((await dyn.list({ cwd: repoB }))[0].name, "beta-skill");
+	ok("skills: per-lookup cwd resolution — two repos each see their own cached skills");
+
+	// 降级：无缓存目录 → 空数组，绝不抛（selftest 进程 cwd 在真实仓根，无缓存）
+	assert.deepEqual(await dyn.list({}), []);
+	ok("skills: missing cache → empty skill surface (degrade, never throw)");
+
+	// 接线：宿主 skills 面缺席 → 降级 false；在场 → 注册成功且 provider 动态可用
+	assert.equal(registerBankSkills({}, { logger: { warn() {} } }), false);
+	const captured = [];
+	const fakeSkillsCtx = {
+		skills: {
+			registerProvider: (create) => captured.push(create({ signal: new AbortController().signal, invalidate() {} })),
+		},
+	};
+	assert.equal(registerBankSkills(fakeSkillsCtx, { config: { repoRoot: repo }, logger: { warn() {} } }), true);
+	assert.equal(captured[0].name, PROVIDER_NAME);
+	assert.equal((await captured[0].list({}))[0].name, "alpha-skill");
+	ok("skills: registerBankSkills — absent host service degrades; present service gets dynamic provider");
+
+	// e2e：真实引擎 pull（bank 仓带 .agents/skills）→ provider 从缓存命中技能
+	const bankWithSkills = tempRepo("bank-skills-e2e");
+	const bankSkill = path.join(bankWithSkills, ".agents", "skills", "e2e-skill");
+	fs.mkdirSync(bankSkill, { recursive: true });
+	fs.writeFileSync(path.join(bankSkill, "SKILL.md"), "---\nname: e2e-skill\ndescription: Rides the bank\n---\nbody from bank\n");
+	execFileSync("git", ["-C", bankWithSkills, "add", "-A"], { stdio: "pipe" });
+	execFileSync("git", ["-C", bankWithSkills, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "bank skill"], { stdio: "pipe" });
+	const consumer = tempRepo("skills-consumer");
+	assert.equal(runEngineSync(["pull", bankWithSkills], { repoRoot: consumer }).code, EXIT.OK);
+	const e2eProvider = createBankSkillProvider({});
+	const e2eList = await e2eProvider.list({ cwd: consumer });
+	assert.equal(e2eList.length, 1);
+	assert.equal((await e2eProvider.get(e2eList[0])).content, "body from bank\n");
+	ok("skills: e2e — real engine pull carries .agents/skills into cache; provider serves them");
 }
 
 // ── 6) 防火墙机器检查：import 面 / 引擎零依赖 / 包结构契约 ────────────────
