@@ -1,0 +1,20 @@
+{
+  "id": "git-reconcile-extra-commits",
+  "domain": "process",
+  "summary": "HEAD 比 HANDOFF 多出提交时，先逐条查明再继续",
+  "signals": [
+    "git 对账",
+    "HEAD 多出提交",
+    "未记录的提交",
+    "session open 对账"
+  ],
+  "strategy": [
+    "git log --oneline -8 && git status，与 HANDOFF 最新记录比对",
+    "HEAD 多出的提交逐条查明内容（git show <sha>），不得当噪音跳过",
+    "查明结论落 durable 家（ADR/cookbook/README）或 journal，不留悬空提交"
+  ],
+  "avoid": [
+    "跳过未记录提交继续干活——曾导致决策误读",
+    "把查明结果只留在会话里不落档"
+  ]
+}
