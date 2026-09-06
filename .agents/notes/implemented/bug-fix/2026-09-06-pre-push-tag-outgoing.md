@@ -10,11 +10,11 @@ Status: implemented
 
 ## Decision
 
-- 评审档位循环加 tag 分支：`local_ref` 以 `refs/tags/` 开头时，`git rev-parse <local_sha>^{commit}` 解析目标 commit（轻量/附注 tag 同口径）；对 `refs/remotes/<remote>/**` 逐 ref 跑 `git merge-base --is-ancestor`——任一可达 = 零 outgoing，跳过档位强制（打印理由）；全部不可达 = tag 携带未推 commit，无法定 base，保持 fail-closed（报错文案与分支首推同口径：先实跑 `verify-review-tier.py --since <base> --enforce` 让证据随变更）。
+- 评审档位循环加 tag 分支：`local_ref` 以 `refs/tags/` 开头时，`git rev-parse <local_sha>^{commit}` 解析目标 commit（轻量/附注 tag 同口径）；可达性 = `git rev-list <tgt> --not --remotes=<remote>/` 空集测试（被任一 tracking ref 包含 ⇔ 零行，R1 评审收敛：单命令替代逐 ref `merge-base --is-ancestor` 循环）——先判 rc 再判空集，rc≠0（坏对象/远端名不存在）与非空输出同落不可达；零行 = 零 outgoing，跳过档位强制（打印理由）；否则 = tag 携带未推 commit，无法定 base，保持 fail-closed（报错文案与分支首推同口径：先实跑 `verify-review-tier.py --since <base> --enforce` 让证据随变更）。
 - 目标 commit 解析失败（悬空对象等）同样 fail-closed。
-- `<remote>` 取 pre-push 参数 `$1`（缺省 `origin`），只查该远端的 tracking refs。
+- `<remote>` 取 pre-push 参数 `$1`（缺省 `origin`），只查该远端的 tracking refs；URL 直推形态（`git push <url> <tag>`，$1=URL）tracking 集恒空 → 可达 tag 也被拦，属保守误伤（钩子头注注明，用远端名推送即可避免）。
 - 分支三态逻辑零改动；删除行（local 全零）仍跳过。
-- 证据：`scripts/pre-push-selftest.sh` e2e 四态（新分支首推拒 / tag 达远端过 / tag 携带未推 commit 拒 / tag 删除跳过），临时 bare 远端 + 克隆实跑。
+- 证据：`scripts/pre-push-selftest.sh` e2e 四态（新分支首推拒 / tag 达远端过 / tag 携带未推 commit 拒 / tag 删除跳过），临时 bare 远端 + 克隆实跑；脚本强制 stdin 非 tty（hook 档位段在 tty 下整体跳过，tty 运行会使四态断言失真），B 态断言用「零 outgoing」唯一子串钉死通过来自 tag 分支。
 
 ## Alternatives considered
 

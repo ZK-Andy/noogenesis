@@ -31,6 +31,9 @@ node adapters/dsh/selftest.mjs
 # （R1/R2 评审 2026-09-05：退化工作树态 = outgoing FULL 零拦截的旁路）；
 # tag 推送（refs/tags/*）：目标 commit 可达该远端 tracking refs = 零 outgoing，
 # 跳过档位强制；不可达 = tag 携带未推 commit，保持 fail-closed
+# （可达性 = `git rev-list $tgt --not --remotes=<remote>/` 空集，先判 rc 再判空集
+# 保 fail-closed 方向；URL 直推时 $1=URL、tracking 集恒空 → 可达 tag 也被拦，
+# 属保守误伤，用远端名推送即可避免）
 # （ADR 2026-09-06-pre-push-tag-outgoing；e2e 四态见 scripts/pre-push-selftest.sh）；
 # 分支删除行（local 全零）无 outgoing，跳过；非 push 调用（stdin 为终端）跳过并注明。
 echo "-> 评审档位（--enforce）"
@@ -49,16 +52,14 @@ else
         rc=1
         continue
       fi
-      reachable=0
-      while IFS= read -r track_ref; do
-        if git merge-base --is-ancestor "$tgt" "$track_ref" 2>/dev/null; then
-          reachable=1
-          break
+      # 可达性 = rev-list 空集测试（tag 目标 commit 被任一 tracking ref 包含
+      # ⇔ `rev-list $tgt --not --remotes=<remote>/` 零行）。先判 rc 再判空集：
+      # rc≠0（坏对象/远端名不存在）与非空输出同落 fail-closed，不吞失败方向。
+      if out="$(git rev-list "$tgt" --not --remotes="${remote}/" 2>/dev/null)"; then
+        if [[ -z "$out" ]]; then
+          echo "review-tier: tag $lref 目标 commit 已可达 ${remote} 远端 refs（零 outgoing），跳过档位强制"
+          continue
         fi
-      done < <(git for-each-ref "refs/remotes/${remote}/" --format='%(refname)')
-      if [[ $reachable -eq 1 ]]; then
-        echo "review-tier: tag $lref 目标 commit 已可达 ${remote} 远端 refs（零 outgoing），跳过档位强制"
-        continue
       fi
       echo "review-tier: FAIL — tag $lref 目标 commit 未被 ${remote} 远端 refs 包含（携带未推 commit），无法定 outgoing base，fail-closed；先实跑 scripts/verify-review-tier.py --since <base> --enforce 并让证据随变更后再推" >&2
       rc=1

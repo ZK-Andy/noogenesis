@@ -22,6 +22,12 @@ cp "$ROOT/.githooks/pre-push" .githooks/pre-push
 
 fail() { echo "pre-push-selftest: FAIL — $*" >&2; exit 1; }
 
+# hook 档位段在 tty stdin 下整体跳过（非 push 调用豁免）——本脚本必须非 tty
+# 运行（CI / `</dev/null`），否则四态断言失真（R2 评审 2026-09-06）。
+if [ -t 0 ]; then
+  fail "需要 stdin 非 tty 运行（如 ./scripts/pre-push-selftest.sh </dev/null）"
+fi
+
 echo "-> 态 A：新分支首推（无豁免）应被拒"
 if git push origin main >/dev/null 2>&1; then
   fail "A: 新分支首推未被 fail-closed 拦截"
@@ -36,7 +42,9 @@ git push origin vTEST >"$TMP/B.out" 2>"$TMP/B.err" || {
   cat "$TMP/B.out" "$TMP/B.err" >&2
   fail "B: 达远端 tag 被误拦"
 }
-grep -qs "跳过档位强制" "$TMP/B.out" "$TMP/B.err" || {
+# 「零 outgoing」是 tag 跳过分支输出里的唯一子串（终端跳过消息不含它），
+# 把「通过来自 tag 分支」钉死（R2 评审 2026-09-06）。
+grep -qs "零 outgoing" "$TMP/B.out" "$TMP/B.err" || {
   cat "$TMP/B.out" "$TMP/B.err" >&2
   fail "B: 推送成功但未走 tag 跳过分支（行为来源存疑）"
 }
