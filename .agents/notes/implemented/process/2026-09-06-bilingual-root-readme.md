@@ -12,8 +12,8 @@ Status: implemented
 
 - 结构对齐上游产品优先纪律：根 README = 短的产品与贡献者入口——双语切换行（`English | 中文`，互指 README.md / README.zh.md）→ 一至两段定位 → Status（胶囊 self-hosting + 两个运行层 + git 前置条件）→ Install（npm 装法）→ Run from source（clone + 接钩子 + 跑门禁 + 引擎自检）→ Structure → Gates → Documentation → Contributing → License。
 - `README.md` 转英文主文件，`README.zh.md` 中文镜像；两文件保持相同技术结构（上游纪律），双语切换行互相指认。
-- 原单段「当前状态」拆为定位段 + 两个运行层条目 + 前置条件段——每个事实子句保留，超密段落形态废除；细节（设计文档、方法论、cookbook、ADR 家、评审契约）以链接提供，不在入口页复制。
-- 原文重复的「（ADR 同见 …）」归一为 Status 首段一次指向；「技能随库分发」「pull 触发点随会话工作区」并入运行层与安装两节的对应事实位。
+- 原单段「当前状态」拆为定位段 + 两个运行层条目 + 前置条件段——过时/细节子句裁剪（「首批 6 基因三域入档」计数、「pull 触发点随会话工作区」触发细节，写当前状态纪律），其余事实保留；超密段落形态废除；细节（设计文档、方法论、cookbook、ADR 家、评审契约）以链接提供，不在入口页复制。
+- 原文重复的「（ADR 同见 …）」归一为 Status 首段一次指向；「技能随库分发」并入运行层条目；「pull 触发点随会话工作区」为触发细节不进入口页（细节家 = ADR 与设计稿），安装节只保留「零配置即拉库」的消费者契约。
 
 ## Alternatives considered
 

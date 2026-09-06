@@ -1,8 +1,10 @@
 # Agent Note: pre-push tag 首推误拦修复
 
 Status: implemented
+Review: FULL/2026-09-06/R1=ok R2=ok R3=ok
 
 > Provenance：本仓原创修复（2026-09-06，C 类随手候选批）。候选出处：HANDOFF-todos（C 类）2026-09-06 条目；豁免先例留痕：journal 2026-09 卷 v0.1.0/v0.1.2/v0.1.3 三次 `--no-verify`。
+> Related：per-ref 档位循环机制的既定家 = [2026-09-05-review-mechanical-gate](../process/2026-09-05-review-mechanical-gate.md)（本批加 tag 分支 = 扩展非取代）。
 
 ## Problem
 

@@ -21,8 +21,9 @@
 - [x] （B）`noogenesis-dsh@0.1.1` 新会话重验 2026-09-06：三工具在工具面 + `noo_select(["git 对账"])` 零配置命中本仓基因 + system-prompt 基座节在场，三件全绿。
 - [x] （D）M2 部署收口 2026-09-06（FULL 三审全采纳），ADR [2026-09-06-adapter-deploy-hardening](.agents/notes/implemented/architecture/2026-09-06-adapter-deploy-hardening.md)；`noogenesis-dsh@0.1.1` 发布 + 裸名 deprecate；desktop 实装完成。
 - [x] （C）0.1.3 重装重验通过（2026-09-06）：genes-cache 落会话仓 + remote=官方库 + HEAD `a81c3a0` + 缓存基因并入扫描（liveproof 实证）；技能面 7 件在位，rank 600 遮蔽关系符合验收口径；ADR `2026-09-06-bank-pull-session-trigger`。
-- [ ] （C）pre-push 钩子 tag 缺口：tag 首推 rsha 全零被「新分支首推」fail-closed 误拦（tag 目标 commit 已达远端时 outgoing 实为零）；v0.1.0/v0.1.2/v0.1.3 三先例按「main 批 tier --enforce 已绿」前提 `--no-verify` 豁免留痕（journal 2026-09 同卷）。修法 = 钩子加 tag 分支（tag 目标 commit 可达远端 refs 即跳过档位强制）；scripts/** 属 FULL 档，修时走独立批次评审。
-- [ ] （C）main 领先包体待随批出包（2026-09-06 用户拍板不单开发版轮）：git 前置条件 + ENOENT 诊断分流已落 main（`b5fcb2e`→`10745e2`），npm 包仍 0.1.3；下一有发版需求的批次 chore(release) bump 0.1.4 一并带出（tag 推送按先例豁免）。
+- [x] （C）pre-push 钩子 tag 缺口修复 2026-09-06（FULL 三审 0B，建议全采纳）：可达 tag 跳过档位强制（rev-list 空集），发版豁免前提消失；ADR [2026-09-06-pre-push-tag-outgoing](.agents/notes/implemented/bug-fix/2026-09-06-pre-push-tag-outgoing.md)。
+- [ ] （C）main 领先包体待随批出包（2026-09-06 用户拍板不单开发版轮）：git 前置条件 + ENOENT 诊断分流已落 main（`b5fcb2e`→`10745e2`），npm 包仍 0.1.3；下一有发版需求的批次 chore(release) bump 0.1.4 一并带出（tag 推送随钩子修复直接放行）。
+- [ ] （C）根 AGENTS.md 缺「评审检查项」节（2026-09-06 R2 评审发现）：[review.md](docs/method/review.md) §5 要求 AI 兜底清单列于根 AGENTS.md，实际单存在于 review.md §5——补位或修正指针；触碰根 AGENTS.md 属行为契约面（FULL 档），走独立批次。
 - [ ] （D）非 git 运行仓支持立项（2026-09-06 记录不急）：北极星场景（非程序员/非 git 仓）真实需求；前置 = P1 D4 边界重议（slot 推导/solidify git-commit 绑 git）+ select cwd 锚定替代面；现行为 = 引擎 fail-closed 退出 2（诊断已分流，ADR `2026-09-06-git-prerequisite-and-diagnosis` Alternatives）。随胶囊 01 优化轮后评估。
 - [ ] （D）护栏延后拍板待收口（ADR [2026-09-06-guardrail-defer-trigger](.agents/notes/proposed/architecture/2026-09-06-guardrail-defer-trigger.md) proposed）：护栏三件（token-meter 真测量 / 严格改进度量 / canary 隔离）需要但延后至首个胶囊优化完成后触发；收口时转 implemented + 修正骨架 ADR 遗留面归口 + 设计稿 §6/§11 API 名以实测修正。对账余项：js-yaml + YAML 迁移器归口、Detect 信号源轮立项（D2 禁区逐源解除，连带 M3 频次重议）。
 - [x] （D）P2 实现轮 2026-09-06（FULL 三审 R1 1B/5S、R2 1B/8S、R3 0B/6S 全采纳），ADR [2026-09-06-p2-shared-consumer](.agents/notes/implemented/architecture/2026-09-06-p2-shared-consumer.md) implemented。
