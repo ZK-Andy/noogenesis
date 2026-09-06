@@ -1,12 +1,12 @@
 # 框架重建蓝图：七层蒸馏设计
 
-> 状态：设计定稿（2026-09-06 用户拍板通过）· 依据 ADR [2026-09-06-framework-rebuild-charter](../../.agents/notes/proposed/architecture/2026-09-06-framework-rebuild-charter.md)（推倒重建 / 本仓原地重建 / 先框架后协作层），随收口评审批与协作层实现轮更新。
+> 状态：设计定稿（2026-09-06 用户拍板通过）· 依据 ADR [2026-09-06-framework-rebuild-charter](../../.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md)（推倒重建 / 本仓原地重建 / 先框架后协作层），随协作层实现轮更新。
 > 事实源：[capsule-01-optimization-round.md](capsule-01-optimization-round.md)（下称「调研」，引用其 § 节号）；协议兼容面单源 = [dsh-swarm-evolution-framework-design.md](dsh-swarm-evolution-framework-design.md)（下称「主设计」）；文档纪律 = [doc-standards](../method/doc-standards.md)。
 > 血统：蒸馏自 deepseek-ai/deepseek-harness（MIT，本地缓存 `.cache/deepseek-harness`）——**提炼后搬迁，非逐字节搬运**；文中上游件以缓存内路径标注（缓存零损失整仓保留，调研 §3.10），不设跨仓链接。
 
 ## 0. 范围与冻结深度
 
-- 定位：给拍板用的设计草案。拍板对象 = 七层蓝图 + 挂载面全清单 + 协议定案（charter Proposal 1）。
+- 定位：给拍板用的设计草案。拍板对象 = 七层蓝图 + 挂载面全清单 + 协议定案（charter Decision 1）。
 - 冻结深度 = **足以钉死协作层需求**：每层写到「协作层实现轮能直接按图施工」为止。不写实现细节代码，不写迁移步骤时间表（迁移是协作层轮的事，charter 单批切换口径见 §8）。
 - 结构约定：每层三段式——上游形态 → 本仓蒸馏形态 → 取舍与边界。数值断言标来源（调研 § 节号 / 实测），推断标【推断 · 未证】。
 - 阅读顺序：§1–§7 七层，§8–§10 三横切（协议对接 / 不做清单 / 协作层需求清单）。§10 是协作层重建轮的验收对账表。
@@ -91,7 +91,7 @@
 
 ### 本仓蒸馏形态
 
-全 TS 化既定约束（charter Proposal 3，调研 §2.2-6 定调）下的逐件对照：
+全 TS 化既定约束（charter Decision 3，调研 §2.2-6 定调）下的逐件对照：
 
 | 件 | 上游形态 | 本仓蒸馏形态 |
 |---|---|---|
@@ -161,7 +161,7 @@
 
 ### 本仓蒸馏形态：挂载面全清单
 
-能力层全接、策略层逐件增挂（charter Proposal 2 口径）。能力层 = 适配层接线需求；策略层 = 每个挂载物逐件过 HERO 判据。
+能力层全接、策略层逐件增挂（charter Decision 2 口径）。能力层 = 适配层接线需求；策略层 = 每个挂载物逐件过 HERO 判据。
 
 **能力层全接清单**（适配层把宿主全部机器触发点接上；现状 = 仅 A1/A7/A8 现状栏如实标注，接线面缺口 = A2–A6 + A8，调研 §3.4 与 adapters/dsh 源码实证）：
 
