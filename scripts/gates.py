@@ -16,7 +16,7 @@ hooks/CI 不再手抄 verify-* 清单：清单（名 + 命令）从 engine/gates
   发射前检查，非 push 前提）。
 - change-scope：hooks/CI 用脚本自身的缺省推导（fork-point）；gates.json 内的
   槽位形态供引擎 evaluate 使用。同一脚本、两种推导口径，见 P1 实现 ADR D4。
-- gene-format（第十门禁）：白名单外独立件——它消费引擎产物（genes/ + events/
+- gene-format：白名单外独立件——它消费引擎产物（genes/ + events/
   复算），进白名单会让 solidify 入档中途复算自身（语义循环）；hooks/CI 保留
   显式行，不在本脚本跳过清单里表达。
 

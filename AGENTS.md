@@ -40,7 +40,7 @@
 
 ## 质量门
 
-可执行门禁清单**单源**于 `engine/gates.json`：`python3 scripts/gates.py --list` 发射、`--run` 运行，hooks/CI 消费同一清单；gene-format 为白名单外独立件（机制见 gates.py 头注）。清单明细不在此手抄。
+可执行门禁清单**单源**于 `engine/gates.json`：`python3 scripts/gates.py --list` 发射、`--run` 运行，hooks/CI 消费同一清单；结构性例外四件（review-tier / review-brief / change-scope / gene-format）非平跑，机制见 gates.py 头注。清单明细不在此手抄。
 
 ## 字数预算
 

@@ -13,7 +13,7 @@
 | docs/cookbook.md | 带域标签的踩坑原子（procedure） | 设计理由（→ 所链接的 ADR） |
 | ADR | 活跃决策：为什么、放弃了什么、需要什么验证 | 迁移计划、验收清单、spec 用语 |
 | README | 项目契约：是什么、怎么用、当前计数 | JSDoc/目录复述、他处事项 |
-| journal/ + HANDOFF | 过程叙事与交接（有界） | durable 结论（只落上面六层） |
+| journal/ + HANDOFF | 过程叙事与交接（有界） | durable 结论（只落上表各层） |
 
 放置口诀：**bugs → cookbook；rationale → ADR；procedures → cookbook/method；contracts → README；standing orders → AGENTS.md + 链接。**
 

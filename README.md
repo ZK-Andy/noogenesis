@@ -61,7 +61,7 @@ node engine/bin.js self-test      # engine self-test
 
 ## Gates
 
-The executable gate list is **single-sourced in `engine/gates.json`**: `python3 scripts/gates.py --list` emits it and `--run` executes it — hooks and CI consume the same source (the `gene-format` gate is a deliberate standalone exception; see the gates.py header).
+The executable gate list is **single-sourced in `engine/gates.json`**: `python3 scripts/gates.py --list` emits it and `--run` executes it — hooks and CI consume the same source. Four gates are structural exceptions that do not run flat (review-tier / review-brief / change-scope / gene-format); the mechanism lives in the gates.py header.
 
 Hooks run fast checks only (`bash scripts/setup-hooks.sh` wires them); CI owns the exhaustive matrix (`.github/workflows/validate.yml`).
 
