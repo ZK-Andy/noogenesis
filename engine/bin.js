@@ -31,6 +31,11 @@ function gitRoot(start) {
   try {
     return execFileSync('git', ['-C', start, 'rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
   } catch (e) {
+    // 诊断分流（bug-fix ADR 2026-09-06-git-prerequisite-and-diagnosis）：
+    // git 二进制缺失（spawn ENOENT）≠ cwd 不在 git 仓——两者曾共用同一句
+    // 「not inside a git repository」，git 没装时误导诊断。exit 2 fail-closed
+    // 与退出码三档不变，仅 stderr 文案指名失败主体。
+    if (e && e.code === 'ENOENT') fail('git binary not found — install git (the engine requires a git repository and the git CLI)');
     return null;
   }
 }

@@ -323,6 +323,23 @@ function selfTest() {
       'bin: malformed gene + select -> exit 2 (fail-closed, no stack)');
     ok(spawnCode([bin, 'propose', 'process/missing'], td) === 2,
       'bin: propose missing gene -> exit 2');
+
+    // 诊断分流（bug-fix ADR 2026-09-06-git-prerequisite-and-diagnosis）：
+    // git 二进制缺失（PATH 清空 → spawn ENOENT）必须指名 git，不得误报
+    // 「not inside a git repository」；exit 2 fail-closed 与非 git 仓同档。
+    const tdNoGit = mkTemp();
+    mkRepo(tdNoGit);
+    let gitMissingMsg = '';
+    try {
+      execFileSync('node', [bin, 'select', 'anything'], {
+        cwd: tdNoGit, encoding: 'utf8', stdio: 'pipe',
+        env: { ...process.env, PATH: '' },
+      });
+    } catch (e) {
+      gitMissingMsg = `${e.stderr || ''}${e.stdout || ''}`;
+    }
+    ok(gitMissingMsg.includes('git binary not found') && !gitMissingMsg.includes('not inside a git repository'),
+      'bin: git missing -> exit 2 with git-not-found diagnosis (not misread as non-repo)');
   }
 
   // --- 5.6) bin.js e2e 装配夹具（CLI 参数分派 + 真实 spawn 路径；直调函数盖不到的面）---
