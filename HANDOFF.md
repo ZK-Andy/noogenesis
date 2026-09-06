@@ -9,6 +9,8 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-06｜**协作层实现轮立项落档（无实现；ADR `2026-09-06-collab-rebuild-impl` proposed）**：用户三拍板（B1→B5 按序/lefthook/0.2.0 断点）；mdref 归宿实证迁 TS；排序自查推荐插入 B0 框架结构面批（**待拍板 = 下会话首题**）。README 无变更。
+
 - 2026-09-06｜**框架重建立项收口（FULL 三审 R1 0B/5S、R2 2B/6S、R3 1B/3S 全采纳；ADR `2026-09-06-framework-rebuild-charter` implemented；commits `025b822`→`94d0259`）**：拍板推倒重建 + 先框架后协作层 + 本仓原地重建；蓝图定稿（A1–A8 + M1–M3 + C1–C15）。**节点：设计轮闭环，下一轮 = 协作层实现轮。** README 无漂移。
 
 - 2026-09-06｜**优化轮启动：问题池落账 + 上游 DSH 调研 + 语言统一定调（调研轮，无 ADR；行动区 = `docs/research/capsule-01-optimization-round.md`，头部门针）**：清账批三审收口（ADR `2026-09-06-doc-single-sourcing`）；上游克隆+索引缓存（SOP 全图/作用域规则/零损失实验/HERO 实证）；定调全栈 TS 统一；收尾信号：框架可能参考 DSH 推倒重建。README 核对无变更。
