@@ -1,6 +1,6 @@
 # 框架重建蓝图：七层蒸馏设计
 
-> 状态：设计草案（proposed）· 依据 ADR [2026-09-06-framework-rebuild-charter](../../.agents/notes/proposed/architecture/2026-09-06-framework-rebuild-charter.md)（推倒重建 / 本仓原地重建 / 先框架后协作层），拍板后随收口更新。
+> 状态：设计定稿（2026-09-06 用户拍板通过）· 依据 ADR [2026-09-06-framework-rebuild-charter](../../.agents/notes/proposed/architecture/2026-09-06-framework-rebuild-charter.md)（推倒重建 / 本仓原地重建 / 先框架后协作层），随收口评审批与协作层实现轮更新。
 > 事实源：[capsule-01-optimization-round.md](capsule-01-optimization-round.md)（下称「调研」，引用其 § 节号）；协议兼容面单源 = [dsh-swarm-evolution-framework-design.md](dsh-swarm-evolution-framework-design.md)（下称「主设计」）；文档纪律 = [doc-standards](../method/doc-standards.md)。
 > 血统：蒸馏自 deepseek-ai/deepseek-harness（MIT，本地缓存 `.cache/deepseek-harness`）——**提炼后搬迁，非逐字节搬运**；文中上游件以缓存内路径标注（缓存零损失整仓保留，调研 §3.10），不设跨仓链接。
 
@@ -98,7 +98,7 @@
 | 钩子框架 | lefthook glob job 调 `tsx scripts/` | lefthook glob job 直接调 `node dist/…`——**钩子永远跑预构建 dist（零转译），tsx 只属开发态** |
 | 钩子安装 | postinstall 自动装 + 手动补跑路径 | postinstall 自动安装器接位（`setup-hooks.sh` 退役） |
 | 门禁清单 | 散在 runner 内联定义 | **gates.json 单源不变**（`engine/gates.json`，消费方契约见 §8），TS runner 消费同一清单 |
-| 门禁实现 | 60+ TS verify 脚本 | 13 Python verify + gates.py + mdref.py + gen-manifest.py 全部 TS 化 |
+| 门禁实现 | verify-*.ts 52 件（.cache 实测） | Python 13 件（verify-* ×10 + gates.py + gen-manifest.py + mdref.py）全部 TS 化 |
 | bash 件 | 仅零星 shell 检查 | bash 三件退役：change-scope → change-scope TS 件；pre-push-selftest → TS 重建；setup-hooks → postinstall 取代 |
 | self-test | 脚本内 spec | `--self-test` 夹具模式沿用（违约样例 FAIL / 合规样例 PASS），随 TS 化同迁 |
 | CI | 16 workflow 矩阵 | validate.yml 单 workflow 保持；穷尽矩阵由 workflow 内 job 划分 + 门禁 DAG 承载 |
@@ -148,7 +148,7 @@
 
 ### 取舍与边界
 
-- HERO 判据逐件过：cookbook 分篇（检测的具体失败 = 预算失守，行动 = 拆分——立形态）；postmortem（事故发生即有家可落，行动 = 叙事入库——立命名规则）；defensive-patterns（说不出本仓哪些并发/teardown 模式会重复踩，失败后行动 = 写 cookbook 条目即可——不立）。
+- HERO 判据逐件过：cookbook 分篇（检测的具体失败 = 预算失守，行动 = 拆分——立形态）；postmortem（事故发生即有家可落，行动 = 叙事入库——立命名规则）。
 - HERO 案例四字段贡献格式（被要求什么 / 做了什么 / 为何不成比例 / 成比例的样子，调研 §3.7）蒸馏为 postmortem 条目的叙事骨架候选【推断 · 未证：与上游 postmortem 的「时间线+根因+修复」骨架取一，实现轮按首条真实事故定】。
 
 ## 7. 运行时守卫层（挂载面核心）
@@ -162,7 +162,7 @@
 
 能力层全接、策略层逐件增挂（charter Proposal 2 口径）。能力层 = 适配层接线需求；策略层 = 每个挂载物逐件过 HERO 判据。
 
-**能力层全接清单**（适配层把宿主全部机器触发点接上；现状 = 仅 A1/A7/A8，调研 §3.4）：
+**能力层全接清单**（适配层把宿主全部机器触发点接上；现状 = 仅 A1/A7/A8 现状栏如实标注，接线面缺口 = A2–A6 + A8，调研 §3.4 与 adapters/dsh 源码实证）：
 
 | # | 挂载点 | 宿主事件 | 能接住的失败 | 现状 |
 |---|---|---|---|---|
@@ -172,8 +172,8 @@
 | A4 | 工具结果信号 | tool/result | 门禁红、循环重复等结果面信号 | **未接** |
 | A5 | hooks 桥 | packages/hooks 四类时刻（会话开始/prompt 提交/工具前后/停止前） | git 边界之外的宿主级强制 | **未接** |
 | A6 | 停止前 | agent/turn-stopping + hooks Stop | 收尾检查单漏跑 | **未接** |
-| A7 | agent 生命周期 | agent/created | 子代理委派守卫 | 已接 |
-| A8 | 会话事件轨 | session/event / session/flush | 状态投影与记录件落点 | 已接 |
+| A7 | agent 生命周期 | agent/created + agent/disposed | 子代理委派守卫 / solidify 唯一写路径触发 | 已接 |
+| A8 | 会话事件轨 | session/event / session/flush | 状态投影与记录件落点 | **未接** |
 
 **首批挂载物**（每件带 HERO 判据答案；charter 三件）：
 
@@ -181,7 +181,7 @@
 |---|---|---|---|
 | M1 技能使用守卫（调研问题池②该不该用 / ③用了没有） | A2/A3 | 应触发 noo-* 技能的会话（FULL 评审、文档写作类）在无技能使用痕迹下推进 | 记录件提示 + 下轮会话开场注入技能目录摘要；重复违约的升格策略由实现轮定 |
 | M2 规范事前接入落点（调研问题池：架构/编码/注释规范未接入协作体系） | A2（会话开场）/ A3（edit 前） | 写码会话在未读对应架构/规范面的情况下开始产出 | 一步前注入对应子树 AGENTS.md（§1）/规范面指针，agent 须读入后才推进 |
-| M3 评审实质执行记录件（调研问题池：评审实质执行在自觉区） | A6 + A4 | 评审声称完成但三路无记录 / 简报未发射 | 停止被拦一次并回模型可见消息；记录落事件轨（语言无关，§8） |
+| M3 评审实质执行记录件（调研问题池：评审实质执行在自觉区） | A6 + A4 + A8 | 评审声称完成但三路无记录 / 简报未发射 | 记录落事件轨（语言无关，§8）；阻断档（停止被拦一次并回模型可见消息）为升格候选，实现 ADR 另案过判据（§5） |
 
 - 提醒档（repeat-tool-reminder 类）**首批不含**，逐件评估再挂（charter 原口径）。
 
@@ -198,7 +198,7 @@
 - **6 基因零改动**：Gene JSON 协议单源 = 主设计 §5.1（蓝图不重抄字段）；`genes/`（doc/gates/process 6 件）零改动。
 - **语言无关口径**：CLI 命令面 / gates.json / Gene JSON / 事件轨四面语言无关，TS 化只换内核实现（主设计语言后门通道；调研 §2.2-6 血统考古）。
 - **gates.json 单源不变**：门禁清单仍单源于 `engine/gates.json`（结构性例外四件机制见 gates 脚本头注），TS runner 消费同一文件；清单不因语言迁移改名。
-- **事件轨语言无关**：事件轨（journal 月卷 + 会话事件）是 §5 状态投影与 §7 M1/M3 记录件的落点，格式定义归主设计。
+- **事件轨三段归属**：事件轨是 §5 状态投影与 §7 M1/M3 记录件的落点；格式单源拆开——会话事件 = 宿主原生事件面（session/event 等，格式随宿主）；journal 月卷格式单源 = 流程卡 [session-close](../../.agents/workflows/session-close.md)（月卷命名/追加纪律）；演化 Event 原语单源 = 主设计 §5.1。
 - **资产壳零搬迁**（charter 拍板）：docs / .agents / journal / genes / gates.json / 事件轨原地不动；重建只触机器层（engine / scripts / hooks / CI / npm 管线 / adapters）。
 - **并存期权威归属**：重建落地到单批切换的窗口内，本蓝图判据与现行门禁双轨并存——每个重建批次在事件轨标注「本批按蓝图判据」；切换批新机器自测对账后一次删除旧机器件，不长期双轨（charter 原口径；切换失败回退 = git 断点 revert，资产壳未动）。
 
@@ -214,12 +214,12 @@
 | 16 workflow CI 矩阵 | 单人单平台；穷尽矩阵单 workflow 内承载（§4） |
 | vendoring / rescope | 无 vendor 依赖 |
 | invariant 伴生件族 / guard 自挂守卫 | HERO-O 典型形态（为守卫再造守卫）；守卫只在 §7 清单内逐件立 |
-| repeat-tool-reminder 首批挂载 | 提醒噪声稀释真守卫信号（charter Alternatives 4）；逐件评估再挂 |
-| 栈式 PR / base retargeting 件 | 无多分支栈工作流（§5） |
-| 用户全局 AGENTS.md / CLAUDE.md 副本 | 宿主兼容面，非本仓职责（§1） |
+| repeat-tool-reminder 首批挂载 | §7 边界已裁（提醒档逐件评估再挂，charter Alternatives 4） |
+| 栈式 PR / base retargeting 件 | §5 边界已裁（单人 + 本地评审，无多分支栈） |
+| 用户全局 AGENTS.md / CLAUDE.md 副本 | §1 边界已裁（宿主兼容面，非本仓职责） |
 | plan/todo/goal/jobs/schedule 包层 | 宿主自带能力，胶囊直接消费不自建 |
 | token 基线不变量（dsh-token-meter 面） | 归口主设计 §7（演化护栏），非协作层七层事 |
-| defensive-patterns 第三家 | §6 已裁；失败后行动 = 写 cookbook 条目 |
+| defensive-patterns 第三家 | §6 已裁（本仓体量不支持第三家，失败后行动 = 写 cookbook 条目） |
 
 ## 10. 横切：协作层需求清单（验收需求）
 
@@ -233,13 +233,13 @@
 | C4 | postinstall 自动装钩子 | install 后钩子路径生效，无手动安装步骤；安装器带缺失诊断与补跑路径 |
 | C5 | 门禁 DAG | runner 支持 needs / after + 有界并行 + fail-fast；图校验拒绝重 id / 未知依赖 / 环 |
 | C6 | 钩子速度约束 | 钩子跑预构建 dist；pre-push 并行化后墙钟快于现行串行 11 件（调研 §2.2-6；基线数值实现轮实测后钉死） |
-| C7 | 挂载点覆盖 | §7 A2–A6 全部接线且各带最小 smoke；接线 ≠ 策略（策略逐件 M 增挂） |
+| C7 | 挂载点覆盖 | §7 A2–A6 + A8 全部接线且各带最小 smoke；接线 ≠ 策略（策略逐件 M 增挂） |
 | C8 | 首批挂载物 | M1/M2/M3 各自的实现 ADR 带 HERO 判据答案（检测的失败 + 下一步不同的事） |
-| C9 | 协议零改动 | 6 基因 + gates.json + 事件轨文件 diff 为零；engine self-test 与 adapter self-test 绿 |
+| C9 | 协议零改动 | 6 基因 + 事件轨文件 diff 为零；gates.json 条目集与门禁名不变（cmd 随 TS 化重指，不要求文件零 diff）；engine self-test 与 adapter self-test 绿 |
 | C10 | 发布形态 | npm 包 = tsc dist 产物（files 白名单 → dist），消费者不背工具链 |
 | C11 | 子树布点 | §1 布点表五件落地，逐件 ≤300 词，纳入 doc-budgets manifest |
 | C12 | 教训层形态 | postmortem 命名规则入 verify 门禁（目录空时零约束）；cookbook 拆分规则并入 doc-budgets 超限处理序 |
 | C13 | bash 退役 | bash 三件的 TS 等价物过 self-test 后同批删除 bash 件 |
 | C14 | 并存期标注 | 重建批次在事件轨带「按蓝图判据」标注；切换批后旧机器件全量删除、无长期双轨 |
 
-验收方式：C1–C3/C10/C13/C14 为文件面与链路面，机器可查；C4–C8/C11/C12 以实现轮 ADR + self-test / smoke 承载；C6 基线数值由实现轮首次实测后回填（门禁阈值先实测分布的教训，cookbook「门禁」域）。
+验收方式：C1–C3/C9/C10/C13/C14 为文件面与链路面，机器可查；C4–C8/C11/C12 以实现轮 ADR + self-test / smoke 承载；C6 基线数值由实现轮首次实测后回填（门禁阈值先实测分布的教训，cookbook「门禁」域）。
