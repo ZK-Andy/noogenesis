@@ -3,6 +3,8 @@
 > 项目交接主文档（**唯一入口**）：背景 / 位置 / 当前状态 / 待办 / 开始步骤 / 记录索引。
 > 文件架构（ADR [2026-09-05-journal-in-git](.agents/notes/implemented/process/2026-09-05-journal-in-git.md)）：**稳定区 + 更新摘要**在本文件；**行动区（待办）**在 [HANDOFF-todos.md](HANDOFF-todos.md)；**叙事全文**在 `journal/`（**入 git**——过程即资产）。
 
+> **⚡ 最高优先级（胶囊 01 优化轮）：问题池与调研全图 → [docs/research/capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)**——用户原版问题记录 + 相关待办（该轮行动区，已自 HANDOFF-todos 迁入）+ 调研报告（上游 SOP 全图 / 命名考据 / 挂载面对照 / 外部生态 / HERO 细读）+ 待拍板清单；逐项解决与勾账以该文档为主线。
+
 ## 交接更新记录（摘要滚动窗）
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
