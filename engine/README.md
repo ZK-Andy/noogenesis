@@ -59,7 +59,7 @@ node engine/bin.js self-test                           # 元评测夹具（临�
 ## 消费方
 
 - 引擎自身：`evaluate` 跑白名单全集作为入档门槛。
-- `scripts/verify-gene-format.py`（第十门禁）：校验 `genes/` + `events/`，含白名单条目脚本存在性与 `gene_sha` 工作树复算。白名单外的独立件——它消费引擎产物，进白名单会让 solidify 入档中途复算自身（语义循环），故 hooks/CI 保留显式行。
-- `scripts/gates.py`（M2 起单一发射器）：hooks/CI 的门禁清单单源 = 本白名单；tier 的 per-ref/事件条件形态、change-scope 的缺省推导、review-brief 的仅本地语义是结构性例外（见该脚本头注）。
+- `scripts/verify-gene-format.py`（白名单外独立件）：校验 `genes/` + `events/`，含白名单条目脚本存在性与 `gene_sha` 工作树复算（例外机制单家见 gates.py 头注）。
+- `scripts/gates.py`（M2 起单一发射器）：hooks/CI 的门禁清单单源 = 本白名单（结构性例外四件见该脚本头注）。
 - `adapters/dsh/`（M2 适配层）：spawn CLI 单合同的第一个进程外消费者；引擎与 `gates.json` 对适配层零新增要求。
 - CI：`node engine/bin.js self-test`（与 verify-* self-test 平级，不占门禁编号）。

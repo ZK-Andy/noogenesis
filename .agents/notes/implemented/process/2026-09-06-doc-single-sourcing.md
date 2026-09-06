@@ -33,6 +33,11 @@ Status: implemented
 - **capsule 计划下沉 .agents/notes/archived/**。落败：archived 是 ADR 生命周期的终态，非 ADR 资产入内污染决策树语义；journal/ 是 tier 表明载的过程资产家。
 - **capsule 计划原地保留**。落败：审计判定为散乱信号（tier 无家、不在预算、211 行冻结历史占仓库根），与「每个事实只有一个家」冲突。
 
+## Related
+
+- D7 细化 [2026-09-06-m2-adapter-wiring](../architecture/2026-09-06-m2-adapter-wiring.md)「范围附带：gates.json 单源收口」的槽位语义：彼处「缺值 fail-closed」限定为执行面（`--run`）；`--list` 信息面缺槽位占位不 fail。
+- D2 以单源化方式落实 [2026-09-05-review-mechanical-gate](2026-09-05-review-mechanical-gate.md) 的「AGENTS/流程卡计数同步」实现项（收口方式从逐项补数改为清单单源 + 散文去计数）。
+
 ## Consequences
 
 - 门禁增删从此只改 gates.json 与 gates.py 头注（例外机制），散文面不再跟改——清单漂移面收窄到单点。
