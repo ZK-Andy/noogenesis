@@ -325,20 +325,24 @@ function selfTest() {
       'bin: propose missing gene -> exit 2');
 
     // 诊断分流（bug-fix ADR 2026-09-06-git-prerequisite-and-diagnosis）：
-    // git 二进制缺失（PATH 清空 → spawn ENOENT）必须指名 git，不得误报
-    // 「not inside a git repository」；exit 2 fail-closed 与非 git 仓同档。
+    // git 二进制缺失（PATH 清空 → 子进程内 spawn 'git' ENOENT）必须指名 git，
+    // 不得误报「not inside a git repository」；exit 2 fail-closed 与非 git 仓
+    // 同档。node 必须以 process.execPath 绝对路径 spawn——裸名 'node' 也按被
+    // 清空的 PATH 解析，引擎根本不会启动（R2-B1 实证）。
     const tdNoGit = mkTemp();
     mkRepo(tdNoGit);
     let gitMissingMsg = '';
+    let gitMissingStatus = null;
     try {
-      execFileSync('node', [bin, 'select', 'anything'], {
+      execFileSync(process.execPath, [bin, 'select', 'anything'], {
         cwd: tdNoGit, encoding: 'utf8', stdio: 'pipe',
         env: { ...process.env, PATH: '' },
       });
     } catch (e) {
+      gitMissingStatus = e.status;
       gitMissingMsg = `${e.stderr || ''}${e.stdout || ''}`;
     }
-    ok(gitMissingMsg.includes('git binary not found') && !gitMissingMsg.includes('not inside a git repository'),
+    ok(gitMissingStatus === 2 && gitMissingMsg.includes('git binary not found') && !gitMissingMsg.includes('not inside a git repository'),
       'bin: git missing -> exit 2 with git-not-found diagnosis (not misread as non-repo)');
   }
 
