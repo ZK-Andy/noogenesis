@@ -29,15 +29,41 @@ node adapters/dsh/selftest.mjs
 # 每个被推 ref 独立 enforce：base = merge-base(remote, local)（收口收窄 outgoing）；
 # 新分支首推（remote 全零）无法定 base —— fail-closed 显式报错，不静默豁免
 # （R1/R2 评审 2026-09-05：退化工作树态 = outgoing FULL 零拦截的旁路）；
+# tag 推送（refs/tags/*）：目标 commit 可达该远端 tracking refs = 零 outgoing，
+# 跳过档位强制；不可达 = tag 携带未推 commit，保持 fail-closed
+# （ADR 2026-09-06-pre-push-tag-outgoing；e2e 四态见 scripts/pre-push-selftest.sh）；
 # 分支删除行（local 全零）无 outgoing，跳过；非 push 调用（stdin 为终端）跳过并注明。
 echo "-> 评审档位（--enforce）"
 if [ -t 0 ]; then
   echo "review-tier: 非 push 调用（stdin 为终端），跳过档位强制"
 else
+  remote="${1:-origin}"
   rc=0
   while read -r lref lsha rref rsha; do
     [[ -n "${lsha:-}" ]] || continue
     [[ "$lsha" =~ ^0+$ ]] && continue
+    if [[ "$lref" == refs/tags/* ]]; then
+      tgt="$(git rev-parse --verify --quiet "${lsha}^{commit}" 2>/dev/null || true)"
+      if [[ -z "$tgt" ]]; then
+        echo "review-tier: FAIL — tag $lref 目标 commit 解析失败，fail-closed" >&2
+        rc=1
+        continue
+      fi
+      reachable=0
+      while IFS= read -r track_ref; do
+        if git merge-base --is-ancestor "$tgt" "$track_ref" 2>/dev/null; then
+          reachable=1
+          break
+        fi
+      done < <(git for-each-ref "refs/remotes/${remote}/" --format='%(refname)')
+      if [[ $reachable -eq 1 ]]; then
+        echo "review-tier: tag $lref 目标 commit 已可达 ${remote} 远端 refs（零 outgoing），跳过档位强制"
+        continue
+      fi
+      echo "review-tier: FAIL — tag $lref 目标 commit 未被 ${remote} 远端 refs 包含（携带未推 commit），无法定 outgoing base，fail-closed；先实跑 scripts/verify-review-tier.py --since <base> --enforce 并让证据随变更后再推" >&2
+      rc=1
+      continue
+    fi
     if [[ "$rsha" =~ ^0+$ ]]; then
       echo "review-tier: FAIL — 新分支首推 $lref 无法定 outgoing base；先实跑 scripts/verify-review-tier.py --since <base> --enforce 并让证据随变更后再推" >&2
       rc=1
