@@ -25,6 +25,8 @@
 - [x] （C）pre-push 钩子 tag 缺口修复 2026-09-06（FULL 三审 0B，建议全采纳）：可达 tag 跳过档位强制（rev-list 空集），发版豁免前提消失；ADR [2026-09-06-pre-push-tag-outgoing](.agents/notes/implemented/bug-fix/2026-09-06-pre-push-tag-outgoing.md)。
 - [x] （A）胶囊 01 优化轮拍板落账（2026-09-06 用户逐题）：范围 = 先文档漂移清账批，随后问题池逐项解决（验收口径批次收口制不变）；记忆库线用户定调「处理完文档漂移再说」；护栏三件触发点仍 = 优化轮完成。前置全清账（0.1.3 重验 ✅ / 技能进胶囊可运行 ✅ / 环境定调解除 ✅）。
 - [x] （A）文档漂移清账批 2026-09-06（FULL 三审 R1 0B/1S、R2 0B/4S、R3 1B/3S 全采纳收口；搬迁计划下沉 journal/ 非 archived，口径以 ADR 为准），ADR [2026-09-06-doc-single-sourcing](.agents/notes/implemented/process/2026-09-06-doc-single-sourcing.md)。
+- [ ] （D）协作层重建实现轮（charter [2026-09-06-framework-rebuild-charter](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md)；蓝图 [framework-rebuild-blueprint](docs/research/framework-rebuild-blueprint.md)）：按蓝图 C1–C15 逐条对账——全栈 TS、挂载面 A2–A6+A8 接线、M1–M3 首批挂载物、gates.json cmd 重指、bash 三件退役、postinstall 装钩子；候选门禁过判据再立；单批切换删旧机器件。
+- [x] （A）框架重建立项收口 2026-09-06（推倒重建/先框架后协作层/原地重建；FULL 三审 R1 0B/5S、R2 2B/6S、R3 1B/3S 全采纳），ADR [2026-09-06-framework-rebuild-charter](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md)。
 - [ ] （C）main 领先包体待随批出包（2026-09-06 用户拍板不单开发版轮）：git 前置条件 + ENOENT 诊断分流已落 main（`b5fcb2e`→`10745e2`），npm 包仍 0.1.3；下一有发版需求的批次 chore(release) bump 0.1.4 一并带出（tag 推送随钩子修复直接放行）。
 - [ ] （C）gates.py self-test 夹具脚手架折叠（2026-09-06 R1 建议采纳归后续）：四份 gates_dir/mkdir/write_text 同型脚手架提取助手收敛为一家，行为不变；随下次触碰 gates.py 顺带做，不单开批。
 - [ ] （D）护栏延后拍板待收口（ADR [2026-09-06-guardrail-defer-trigger](.agents/notes/proposed/architecture/2026-09-06-guardrail-defer-trigger.md) proposed）：护栏三件（token-meter 真测量 / 严格改进度量 / canary 隔离）需要但延后至首个胶囊优化完成后触发；收口时转 implemented + 修正骨架 ADR 遗留面归口 + 设计稿 §6/§11 API 名以实测修正。对账余项：js-yaml + YAML 迁移器归口、Detect 信号源轮立项（D2 禁区逐源解除，连带 M3 频次重议）。

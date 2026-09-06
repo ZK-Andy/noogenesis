@@ -19,7 +19,7 @@
 
 ## 格式
 
-模板骨架：[templates/adr-proposed.md](../../templates/adr-proposed.md) · [templates/adr-implemented.md](../../templates/adr-implemented.md)。
+模板骨架：本节「骨架」行即模板（implemented 禁 `## Proposal` / `## Plan` / `## Migration plan` / `## Acceptance criteria` 等 spec 用语；proposed 禁 `## Decision`）。
 
 - 头三行：`# Agent Note: <标题>` + `Status: <proposed|implemented|rejected — 理由>` + 空行；状态必须与所在目录一致。
 - 骨架：`## Problem` → `## Decision`（implemented，现在时）/ `## Proposal`（proposed）→ **`## Alternatives considered`（强制）** → `## Consequences`。
