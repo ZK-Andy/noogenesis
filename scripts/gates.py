@@ -21,7 +21,7 @@ hooks/CI 不再手抄 verify-* 清单：清单（名 + 命令）从 engine/gates
   显式行，不在本脚本跳过清单里表达。
 
 用法：
-  gates.py --list                                  # 打印 name<TAB>cmd...
+  gates.py --list                                  # 打印 name<TAB>cmd...（信息面：缺槽位以 <key> 占位，不 fail）
   gates.py --run [--skip a,b] [--slot k=v ...]     # 依次执行；非零即停（exit 1）
   gates.py --self-test                             # 离线夹具自测
 
@@ -67,14 +67,18 @@ def load_gates(repo_root: Path):
 	return gates
 
 
-def instantiate(gate: dict, slots: dict):
+def instantiate(gate: dict, slots: dict, missing: str = "fail"):
 	"""槽位替换：任意 {{key}}（含 cmd），缺值 fail-closed——**形似而非同口径**
-	于 engine/gates.js instantiate（彼只认双键、缺键静默留字面量），见头注。"""
+	于 engine/gates.js instantiate（彼只认双键、缺键静默留字面量），见头注。
+	missing="placeholder" 仅供 --list 信息面（缺槽位以 <key> 占位发射，不 fail）；
+	--run 恒走缺省 fail-closed。"""
 
 	def substitute(text: str) -> str:
 		def replace(match: "re.Match[str]") -> str:
 			key = match.group(1)
 			if key not in slots:
+				if missing == "placeholder":
+					return f"<{key}>"
 				fail_closed(f"gate {gate['name']}: slot '{{{{{key}}}}}' has no value (--slot {key}=<value>)")
 			return slots[key]
 
@@ -178,8 +182,35 @@ def self_test() -> int:
 		else:
 			raise AssertionError("missing gates.json must fail closed")
 	print("ok - missing slot / unknown skip / missing file fail closed (exit 2)")
-	print("gates.py self-test: 3 fixture groups passed")
+	# 夹具 4：--list 信息面缺槽位以 <key> 占位（不 fail），供值后替换
+	with tempfile.TemporaryDirectory() as tmp:
+		root = Path(tmp)
+		gates_dir = root / "engine"
+		gates_dir.mkdir()
+		(gates_dir / "gates.json").write_text(
+			json.dumps({"version": 1, "gates": [
+				{"name": "slotted", "cmd": "check", "args": ["--since", "{{outgoing_base}}"]},
+			]}),
+			encoding="utf-8",
+		)
+		gates = load_gates(root)
+		lines = emit_list_lines(gates, set(), {})
+		assert lines == ["slotted\tcheck --since <outgoing_base>"], lines
+		lines = emit_list_lines(gates, set(), {"outgoing_base": "abc"})
+		assert lines == ["slotted\tcheck --since abc"], lines
+	print("ok - --list emits <key> placeholder without slots, substitutes with slots")
+	print("gates.py self-test: 4 fixture groups passed")
 	return 0
+
+
+def emit_list_lines(gates, skip: set, slots: dict) -> list:
+	lines = []
+	for gate in gates:
+		if gate["name"] in skip:
+			continue
+		_name, command = instantiate(gate, slots, missing="placeholder")
+		lines.append(f"{gate['name']}\t{' '.join(command)}")
+	return lines
 
 
 def main(argv) -> int:
@@ -191,11 +222,8 @@ def main(argv) -> int:
 	skip = {name.strip() for name in args.skip.split(",") if name.strip()}
 	slots = parse_slots(args.slot)
 	if args.list:
-		for gate in gates:
-			if gate["name"] in skip:
-				continue
-			_name, command = instantiate(gate, slots)
-			print(f"{gate['name']}\t{' '.join(command)}")
+		for line in emit_list_lines(gates, skip, slots):
+			print(line)
 		return 0
 	return run_gates(repo_root, gates, skip, slots)
 

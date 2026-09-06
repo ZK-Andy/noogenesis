@@ -23,6 +23,7 @@ Status: implemented
 4. **HANDOFF「开始步骤」并入 session-open 卡**：HANDOFF 只留一行指针；session-open 步骤 1 同步去掉对「开始步骤」子节的引用，消除循环。
 5. **capsule-01-migration-plan.md 下沉 journal/**（tier 表明载的过程资产家、入 git；`git mv` 保留历史）：根 AGENTS「参考」、README 双语 Status、HANDOFF 背景共四处入站链接同变更改写；计划内 1 处相对链接随新位置修正。
 6. **doc-standards tier 表补 docs/research/ 行**（设计文档与调研：设计意图与外部解剖，非当下状态快照）；HANDOFF 位置表去「3 份」计数。
+7. **gates.py `--list` 信息面容忍缺槽位**（缺值以 `<key>` 占位发射，不 fail）——散文单源声明「`--list` 发射」必须真可裸跑（实施中实测发现：带槽位门禁使裸 `--list` exit 2，声明失实）；`--run` 执行面保持缺值 fail-closed 不变，两态分离由 self-test 夹具钉住。
 
 ## Alternatives considered
 
