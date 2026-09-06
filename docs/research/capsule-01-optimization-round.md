@@ -171,3 +171,13 @@
 - `.cache/hero-anti-overdefense`（5.7M，depth 1；纯 Markdown，codegraph 零符号，直读）。
 - 排除方式：`.git/info/exclude` 追加 `/.cache/`（本地排除，不进 git、不动 .gitignore）。
 - `/mnt/work` 本体只读（沙箱），故缓存落会话仓内。
+
+### 3.9 作用域化规则（agent-instructions 插件）——机制有（平台自带），实例薄（只有两层）
+
+源码实证（`.cache/deepseek-harness/packages/context/agent-instructions/`，五件 1824 行）：
+
+- **发现**：会话 cwd 向上走到项目根（`.git` 标记），构建 root→cwd 祖先链；链上每层目录的 `AGENTS.md`/`CLAUDE.md`（+ `.local` 变体）与用户全局 `~/.dsh/AGENTS.md` 进 baseline，**首请求前入 durable context**；字节预算（默认源 1MB）+ 内容去重 + resume baseline 校验。
+- **动态注入**：agent 以 fs 工具**触碰**文件时，计算 cwd→被触文件目录间的后代目录（`descendantDirsBetween`），链上新出现/变更/删除的子目录 AGENTS.md 经 `agent.inject` 合成消息入 inbox（session types.ts:284：file-change notices、**subdir AGENTS.md**、skill content 同族）。
+- **本会话两处活体实证**：①会话开场根 AGENTS.md 常驻在 system prompt；②清账批触碰 `.agents/**` 与修改根 AGENTS.md 时，宿主两次注入「Updated instructions from: AGENTS.md/.agents/AGENTS.md …」——作用域规则机制在心源仓**正在运行**。
+- **实例面对照**：心源 = 2 个（根 + `.agents/AGENTS.md`）；上游 = 4+ 层（根 / `packages/AGENTS.md` 子树所有权 / `docs/AGENTS.md` 文档规则 / `.agents/notes/AGENTS.md` + `implemented/AGENTS.md`——同步纪律下钻到生命周期子目录层）。心源的 engine/、adapters/dsh/、scripts/、docs/ 等深层无作用域规则，专属约束（零依赖 CommonJS、dispose 契约、gates.json 消费方、门禁判据面）散在 README/ADR/头注，agent 动这些目录时**不会自动被提醒**。
+- **与守卫方案设计的关联**：fs 触碰 → 目录作用域注入是一个**已在运行的工具边界挂载先例**（同宿主内零自觉注入的活体），§2.2-1 方案设计可直接引用其形态。
