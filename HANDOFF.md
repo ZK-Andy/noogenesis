@@ -7,9 +7,9 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-06｜**git 前置条件写明 + 引擎诊断分流（LIGHT 档 R2 单路；ADR `2026-09-06-git-prerequisite-and-diagnosis` implemented）**：前置条件入两 README；gitRoot ENOENT 分流（git 未装不再误报非 git 仓）；R2 抓出夹具裸名 spawn 误伤 + selftest.js 直跑 no-op 假绿（入 cookbook）。落 main，随下次发版出包（用户拍板不发版）。
+- 2026-09-06｜**桌面部署缺陷修复 + 0.1.3 发版（FULL 三审全采纳；ADR `2026-09-06-bank-pull-session-trigger` implemented；commits `ec360ab`→`528f2e8`）**：0.1.2 重验暴露装载期 pull 错位 → 触发点随会话工作区 + `geneBankUrl` 缺省官方库/`false` 禁用；npm latest + tag `v0.1.3`。**节点：重装重验通过；下一轮 = 胶囊 01 优化轮。**
 
-- 2026-09-06｜**桌面部署缺陷修复 + 0.1.3 发版（FULL 三审全采纳；ADR `2026-09-06-bank-pull-session-trigger` implemented）**：0.1.2 重验暴露装载期 pull 错位落地（技能面静默失效）→ 触发点随会话工作区 + `geneBankUrl` 缺省官方库/`false` 禁用；npm latest + tag `v0.1.3`。**节点：重装重验通过；下一轮 = 胶囊 01 优化轮。**
+- 2026-09-06｜**git 前置条件写明 + 引擎诊断分流（LIGHT 档 R2 单路；ADR `2026-09-06-git-prerequisite-and-diagnosis` implemented；commits `b5fcb2e`→`10745e2`）**：前置条件入两 README；gitRoot ENOENT 分流；R2 抓出夹具误伤 + selftest 直跑 no-op 假绿（入 cookbook）。落 main 未发包。
 
 - 2026-09-06｜**技能随库分发收口（skills-ride-bank；FULL 三审全采纳；ADR `2026-09-06-skills-ride-bank`；commits `8c99f4c`→`2a05764`）**：技能经 genes-cache 进 DSH 技能面（rank 600 + invalidate）；7 技能蒸馏通用层+参照层；`noogenesis-dsh@0.1.2` + tag 发布（hook tag 缺口入待办）；desktop 重验待用户。README 有变更已同步。
 
