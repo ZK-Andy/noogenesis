@@ -125,7 +125,7 @@
 
 上游同样存在语义面自觉缺口（技能使用无强制、评审实质无强制、守卫只到提醒档）——它的领先在**挂载面利用率**，不在全自动。我方评审体系同构缺口：verify-review-brief 仅本地预发射（gates.py 头注），Review 证据行只强制形式。
 
-### 3.5 小落差清单（待拍板记 C 类与否）
+### 3.5 小落差清单（求解阶段评估：是否纳入、何时纳入）
 
 钩子自动安装（postinstall vs 手动）/ 门禁 DAG 并行调度（run-gates.ts vs gates.py 串行）/ CI 文件名契约闸（expected-filenames.yml）/ archived-notes 校验件 / 技能 references/ 子目录形态。
 
