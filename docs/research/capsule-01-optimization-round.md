@@ -180,4 +180,27 @@
 - **动态注入**：agent 以 fs 工具**触碰**文件时，计算 cwd→被触文件目录间的后代目录（`descendantDirsBetween`），链上新出现/变更/删除的子目录 AGENTS.md 经 `agent.inject` 合成消息入 inbox（session types.ts:284：file-change notices、**subdir AGENTS.md**、skill content 同族）。
 - **本会话两处活体实证**：①会话开场根 AGENTS.md 常驻在 system prompt；②清账批触碰 `.agents/**` 与修改根 AGENTS.md 时，宿主两次注入「Updated instructions from: AGENTS.md/.agents/AGENTS.md …」——作用域规则机制在心源仓**正在运行**。
 - **实例面对照**：心源 = 2 个（根 + `.agents/AGENTS.md`）；上游 = 4+ 层（根 / `packages/AGENTS.md` 子树所有权 / `docs/AGENTS.md` 文档规则 / `.agents/notes/AGENTS.md` + `implemented/AGENTS.md`——同步纪律下钻到生命周期子目录层）。心源的 engine/、adapters/dsh/、scripts/、docs/ 等深层无作用域规则，专属约束（零依赖 CommonJS、dispose 契约、gates.json 消费方、门禁判据面）散在 README/ADR/头注，agent 动这些目录时**不会自动被提醒**。
-- **与守卫方案设计的关联**：fs 触碰 → 目录作用域注入是一个**已在运行的工具边界挂载先例**（同宿主内零自觉注入的活体），§2.2-1 方案设计可直接引用其形态。
+### 3.10 规则/协作机制全集 + 零损失搬迁实验（2026-09-06）
+
+**机制全集盘点**（packages/ 50 包 + 源码/文档实读；规则与上下文治理相关件）：
+
+- `context/` 注入族 6 件：**agent-instructions**（作用域规则，§3.9）、**file-reference / file-reference-local**（文件引用注入）、**session-reference**、**time-context**（持久时间上下文）、**tmux-context**。
+- **compaction**：上下文压缩（HERO「长会话衰减」的 compaction 削薄即此）；**spill**：溢出面。
+- **guard/**：repeat-tool-reminder（advice-never-block 循环提醒）、timeout-policy——运行时守卫档实例。
+- **hooks/**：Claude Code/Codex 桥 + wire 协议（会话开始/prompt 提交/工具前后/停止前可触发，可阻断并回消息）。
+- **skill/**：注册表 + 分层 + rank 遮蔽 + catalog 懒加载；**preset/**：per-session 预设组合（cordis.yml）；**plan/**（计划模式即日志状态）、**todo/**（todo_write）、**goal/**（目标续跑）、**jobs/schedule**（cron）。
+- **subagent**（委派）、**workflow**（workflow 能力 + worker 线程 + 工具消费）、**interaction/approval**（许可/问询）、**sandbox/landlock**、**self-modification**（agent 自检/自挂载插件）、**session/session-query**（持久会话与投影）。
+
+**零损失搬迁实验**：拷出七层体系至 `.cache/dsh-sop-extract`（20M / 2688 文件：AGENTS 四件 + `.agents/` 全量 + lefthook.yml + run-gates.ts + development/architecture/defensive-patterns + postmortem + cookbook）后审计：
+
+| 层 | 断链数 | 断损性质 |
+|---|---|---|
+| `.agents/notes`（决策记忆层） | **1129** | notes 密集回指 docs/packages/tests——**决策记忆是代码的影子**，抽离即失明 |
+| docs/cookbook + docs + postmortem | 112 | 同上，叙述层引用代码层 |
+| AGENTS 层（常驻规则） | 43 | 28 处指涉 packages//vendor//pnpm——**规则描述的是本仓结构现实** |
+| `.agents/skills` | 40 | 技能引用仓内 scripts/标准面 |
+| 合计 | **1324** | |
+
+门禁层不可执行：run-gates.ts 依赖兄弟模块与 node_modules；lefthook 6 个 job 调 `tsx scripts/…`，需完整 pnpm 工作区。
+
+**结论：原封不动零损失搬迁 = 不可能。** 三重缠结——①决策记忆与代码共生（notes 是代码的长影）；②门禁依赖完整工程栈；③常驻规则指涉结构现实。「零损失」只在**整仓保留**意义上成立（`.cache/deepseek-harness` 即零损失缓存）；可搬迁的是**方法论本身**（判据/纪律/形态），搬迁形态 = 蒸馏 + 适配 + 门禁重建——这正是胶囊 01 已经验证过的路径（我们用零依赖 Python 重建了它们的 tsx 门禁族，本仓就是这套 SOP 的可搬迁性活体证明）。
