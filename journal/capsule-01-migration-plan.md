@@ -120,7 +120,7 @@ Noogenesis/
 | verify-handoff-structure.py | desktop（300 行） | 搬+修 | 修跨月卷名 bug（journal 卷按月推导，不写死 `2026-09`）；阈值按本仓现实校准，**避免"阈值形同虚设"（frecency 教训）** |
 | verify-cookbook.py | desktop | 搬 | 阶段标签封闭集按本仓内容域重定（脚本/打包/调试/环境/上游/产品 → 本仓等价域） |
 | verify-skill-format.py | desktop | 搬 | 无 |
-| change-scope.sh + setup-hooks.sh | desktop | 搬+修 | change-scope 三条 path 输出命令 `quotePath=off`（非 ASCII 原样；[bug-fix ADR](.agents/notes/implemented/bug-fix/2026-09-05-change-scope-quotepath.md)） |
+| change-scope.sh + setup-hooks.sh | desktop | 搬+修 | change-scope 三条 path 输出命令 `quotePath=off`（非 ASCII 原样；[bug-fix ADR](../.agents/notes/implemented/bug-fix/2026-09-05-change-scope-quotepath.md)） |
 | verify-review-tier.py / verify-review-brief.py（17KB/21KB） | desktop | **延后（v0.2）** | 机器定档的 FULL 路径模式与 desktop 评审面强耦合，需按本仓评审面重写；先以流程卡 + 评审清单承载契约，机械化后补（见 §10-1） |
 
 ### 5.5 技能（自研 7 个）

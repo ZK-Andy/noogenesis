@@ -6,7 +6,7 @@
 
 1. **版本基线**：确定胶囊/插件版本号，单一来源 bump + `chore(release)` 提交。
 2. **打 tag**：annotated `vX.Y.Z` 推送 origin——触发 Release 流水线。
-3. **门禁前置**：`pre-push` 九门禁全绿（含评审档位 `--enforce`）；`release-preflight` 类总检（资产矩阵/体积/校验和，随发布形态建立后接入）。
+3. **门禁前置**：`pre-push` 门禁全绿（清单见根 AGENTS「质量门」；含评审档位 `--enforce`）；`release-preflight` 类总检（资产矩阵/体积/校验和，随发布形态建立后接入）。
 4. **Release 核验**：标记 Latest、非 draft；正文为结构化输出（conventional commits 分节；**类型映射必须覆盖全部类型并带 self-test**——上游 v0.4.1 教训：漏一类正文就静默少一节）。
 5. **实机验收转交**：只有真机/真实环境能验的项列清单给用户。
 6. **收尾**：README 核对同步（版本、清单）；HANDOFF 记录版本号与 run 号；遗留项进待办区。

@@ -8,7 +8,7 @@ Noogenesis is a **swarm evolution framework** built on the [DeepSeek Harness](ht
 
 ## Status
 
-Capsule 01, the "AI collaboration coding methodology", **self-hosts in this repository**: a dual-layer AGENTS base, process cards, an ADR lifecycle, machine gates (eleven, including the review tier and review brief pair), an atomic pitfalls cookbook, and a handoff family. The migration plan lives in [capsule-01-migration-plan.md](capsule-01-migration-plan.md); the ADR home is [.agents/notes/README.md](.agents/notes/README.md).
+Capsule 01, the "AI collaboration coding methodology", **self-hosts in this repository**: a dual-layer AGENTS base, process cards, an ADR lifecycle, machine gates (single-sourced in `engine/gates.json`, including the review tier and review brief pair), an atomic pitfalls cookbook, and a handoff family. The frozen migration plan lives in [journal/capsule-01-migration-plan.md](journal/capsule-01-migration-plan.md); the ADR home is [.agents/notes/README.md](.agents/notes/README.md).
 
 Two runtime layers are live:
 
@@ -61,19 +61,7 @@ node engine/bin.js self-test      # engine self-test
 
 ## Gates
 
-```sh
-python3 scripts/verify-adr-format.py
-python3 scripts/verify-doc-budgets.py --manifest scripts/doc-budgets.manifest.json
-python3 scripts/verify-md-links.py
-python3 scripts/verify-cookbook.py
-python3 scripts/verify-skill-format.py
-python3 scripts/verify-handoff-structure.py
-python3 scripts/verify-gene-format.py
-python3 scripts/verify-manifest.py
-python3 scripts/verify-review-tier.py [--staged|--since <base>] [--enforce]
-python3 scripts/verify-review-brief.py [--lanes R1,R2,R3] [--enforce]
-scripts/change-scope.sh [<base> <head>]
-```
+The executable gate list is **single-sourced in `engine/gates.json`**: `python3 scripts/gates.py --list` emits it and `--run` executes it — hooks and CI consume the same source (the `gene-format` gate is a deliberate standalone exception; see the gates.py header).
 
 Hooks run fast checks only (`bash scripts/setup-hooks.sh` wires them); CI owns the exhaustive matrix (`.github/workflows/validate.yml`).
 

@@ -30,21 +30,17 @@
 - hooks 只做快检查，CI 拥有穷尽矩阵。
 - **过程资产入 git**：`journal/` 月卷与 HANDOFF 家庭均提交——过程即资产，会话轨迹是未来演化原料；durable 结论仍只落四家，交接只留指针。
 
-## 质量门（当前可执行）
+## 评审检查项（AI 兜底）
 
-```sh
-python3 scripts/verify-adr-format.py
-python3 scripts/verify-doc-budgets.py --manifest scripts/doc-budgets.manifest.json
-python3 scripts/verify-md-links.py
-python3 scripts/verify-cookbook.py
-python3 scripts/verify-skill-format.py
-python3 scripts/verify-handoff-structure.py
-python3 scripts/verify-gene-format.py
-python3 scripts/verify-manifest.py
-python3 scripts/verify-review-tier.py [--staged|--since <base>] [--enforce]
-python3 scripts/verify-review-brief.py [--lanes R1,R2,R3] [--enforce]
-scripts/change-scope.sh [<base> <head>]
-```
+评审代理按此清单显式核对机器门禁盖不住的语义面（契约与机制见 [review.md](docs/method/review.md) §5）；新增兜底项时同变更更新本节：
+
+1. **文档纪律语义面**：单源（同一事实一个家）、写当前状态不写变更史 — [doc-standards](docs/method/doc-standards.md)。
+2. **ADR 口径一致性**：决策与实现/README/头注对同一事实的表述一致；证据严肃性三件套（现象/机制分离 · 数值标强度 · 勘误通道）— [.agents/notes/README.md](.agents/notes/README.md)。
+3. **胶囊内容域与门禁判据口径一致** — [doc-standards](docs/method/doc-standards.md) tier 表 + [standard-authoring](docs/method/standard-authoring.md)。
+
+## 质量门
+
+可执行门禁清单**单源**于 `engine/gates.json`：`python3 scripts/gates.py --list` 发射、`--run` 运行，hooks/CI 消费同一清单；gene-format 为白名单外独立件（机制见 gates.py 头注）。清单明细不在此手抄。
 
 ## 字数预算
 
@@ -61,5 +57,5 @@ scripts/change-scope.sh [<base> <head>]
 ## 参考
 
 - 蜂群框架设计（主设计）：[docs/research/dsh-swarm-evolution-framework-design.md](docs/research/dsh-swarm-evolution-framework-design.md)
-- 胶囊 01 搬迁计划（评审定稿）：[capsule-01-migration-plan.md](capsule-01-migration-plan.md)
+- 胶囊 01 搬迁计划（评审定稿，已实施冻结）：[journal/capsule-01-migration-plan.md](journal/capsule-01-migration-plan.md)
 - 技能 / ADR / 门禁细则：[.agents/AGENTS.md](.agents/AGENTS.md)

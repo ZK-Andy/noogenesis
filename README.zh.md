@@ -8,7 +8,7 @@ noogenesis＝心智的发生与持续生长（德日进谱系下集体知识演�
 
 ## 当前状态
 
-**胶囊 01「AI 协作编码方法论」**（本仓即其第一个宿主，self-hosting）：常驻基座（双层 AGENTS）+ 流程卡 + ADR 生命周期 + 机器门禁（十一件，含评审档位/简报两闸）+ 原子踩坑库 + 交接家庭。搬迁计划见 [capsule-01-migration-plan.md](capsule-01-migration-plan.md)；ADR 家在 [.agents/notes/README.md](.agents/notes/README.md)。
+**胶囊 01「AI 协作编码方法论」**（本仓即其第一个宿主，self-hosting）：常驻基座（双层 AGENTS）+ 流程卡 + ADR 生命周期 + 机器门禁（清单单源 `engine/gates.json`，含评审档位/简报两闸）+ 原子踩坑库 + 交接家庭。搬迁计划（已实施冻结）见 [journal/capsule-01-migration-plan.md](journal/capsule-01-migration-plan.md)；ADR 家在 [.agents/notes/README.md](.agents/notes/README.md)。
 
 两个运行层已就位：
 
@@ -61,19 +61,7 @@ node engine/bin.js self-test      # 引擎自检
 
 ## 门禁
 
-```sh
-python3 scripts/verify-adr-format.py
-python3 scripts/verify-doc-budgets.py --manifest scripts/doc-budgets.manifest.json
-python3 scripts/verify-md-links.py
-python3 scripts/verify-cookbook.py
-python3 scripts/verify-skill-format.py
-python3 scripts/verify-handoff-structure.py
-python3 scripts/verify-gene-format.py
-python3 scripts/verify-manifest.py
-python3 scripts/verify-review-tier.py [--staged|--since <base>] [--enforce]
-python3 scripts/verify-review-brief.py [--lanes R1,R2,R3] [--enforce]
-scripts/change-scope.sh [<base> <head>]
-```
+可执行门禁清单**单源**于 `engine/gates.json`：`python3 scripts/gates.py --list` 发射、`--run` 运行，hooks/CI 消费同一清单（gene-format 为白名单外独立件，机制见 gates.py 头注）。
 
 hooks 只做快检查（`bash scripts/setup-hooks.sh` 接线），CI 拥有穷尽矩阵（`.github/workflows/validate.yml`）。
 

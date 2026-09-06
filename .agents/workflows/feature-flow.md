@@ -14,7 +14,7 @@
 
 ## 3. 测试与门禁
 
-- 本仓可执行门禁见根 AGENTS「质量门」七脚本；提交时 `pre-commit` 自动快检，push 前 `pre-push` 全跑。
+- 本仓可执行门禁清单见根 AGENTS「质量门」（单源 `engine/gates.json`）；提交时 `pre-commit` 自动快检，push 前 `pre-push` 全跑。
 - 新建/修改 ADR、技能、cookbook、HANDOFF 各自即跑对应门禁（新建即校验）。
 - 行为级变更必须配套可复现证据（脚本/用例/门禁输出）；证据随变更提交。
 

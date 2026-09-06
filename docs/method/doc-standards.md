@@ -9,6 +9,7 @@
 | 根 AGENTS.md | 常驻命令，每条 1-3 行 + 链接 | 故事、示例、情境流程、重复他处内容 |
 | .agents/AGENTS.md | 协作层专属规则 | 根文件已承载的仓库级规则 |
 | docs/method/ | 方法论正文（被演化的内容域） | 项目当下的状态快照（→README/ADR） |
+| docs/research/ | 设计文档与调研（设计意图与外部解剖，非当下状态） | 当前状态快照（→README/ADR）、方法论正文（→method） |
 | docs/cookbook.md | 带域标签的踩坑原子（procedure） | 设计理由（→ 所链接的 ADR） |
 | ADR | 活跃决策：为什么、放弃了什么、需要什么验证 | 迁移计划、验收清单、spec 用语 |
 | README | 项目契约：是什么、怎么用、当前计数 | JSDoc/目录复述、他处事项 |
