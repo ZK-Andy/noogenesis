@@ -84,6 +84,7 @@
    - **实施形态**：仓库源码全栈 TS（engine / adapters / gates / 未来宿主工具）；开发与门禁运行用 tsx；**发布 npm 包 = tsc 构建产物 dist JS**（消费者不背工具链）；钩子依赖随 install 在场——**postinstall 自动装钩子**从「小落差候选」升级为本方案的必要件（上游 install-lefthook 模式照搬）。语义门禁（§2.2-6 前述候选场景：宿主 API 签名核对 / 契约一致性 / 双实现镜像比对）随 TS 统一成为可建能力，走 CI 穷尽矩阵。
    - **Python 退役**：10+ verify 脚本 + change-scope + gates.py + self-test 全量 TS 迁移（上游 change-scope.ts / run-gates.ts 均有先例可蒸馏），FULL 档批次，逐脚本带 self-test 兜底；hooks/CI/gates.json/文档同步。
    - **收益面**：语言统一消灭双实现镜像类脆弱面（gene_sha 式）、语义门禁能力解锁、门禁与产品共享模块（上游 2026-07-14 模式可蒸馏）。
+   - **血统考古补证（2026-09-06）**：desktop 源仓门禁 = Python + bash，头注释无任何选型理由（仅 shebang）——混合态是两次独立事件的叠加（desktop 的 Python 门禁 + 我方 P1 的 Node 引擎），**从未经过语言设计决策**；「不是选择了 Python，是没人问过语言该是什么」。用户补充定调：「我讨厌厌恶混合开发，除非逼不得已，我不会选择混合开发的。」
 
 ## 3. 调研报告
 
