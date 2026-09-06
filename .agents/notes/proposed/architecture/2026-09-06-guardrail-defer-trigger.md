@@ -15,6 +15,8 @@ P1 骨架 ADR（[2026-09-05-p1-engine-skeleton](../../implemented/architecture/2
 
 **用户拍板（2026-09-06）：护栏三件（dsh-token-meter 真测量层 / 严格改进正向度量 / canary 进程隔离）确认需要，但延后建设；触发条件 = 第一个胶囊优化完成后。**
 
+- **触发参照交叉链接（2026-09-06）**：charter [2026-09-06-framework-rebuild-charter](2026-09-06-framework-rebuild-charter.md) 把优化路线升格为推倒重建（先框架、后协作层）——本 ADR 触发点语义 = 重建路线下的首个胶囊优化完成，护栏建设排在协作层重建收口之后；对齐随本 ADR 收口批落定。
+
 - 本 ADR 收口转 implemented 时，同步把骨架 ADR「遗留面」三项的归口「M2」修正为「首个胶囊优化完成后触发」（本 ADR 为该归口的修正单源，骨架 ADR 处只留指针）。
 - 遗留面其余项**不在本拍板内**（非护栏）：js-yaml 例外权 + YAML 迁移器（书写卫生）、Detect 信号源（D2 禁区，行为面）——维持各自归口，对账余项见 HANDOFF-todos；流程卡「谁来喂信号」增强已落地（session-open 卡喂信号条，2026-09-06，不再是对账余项）。
 - 设计稿 §6/§11 三处 API 名修正随护栏建设轮执行（以实测导出 `measure` / `estimateMessage` 为准）。

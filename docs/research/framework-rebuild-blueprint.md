@@ -103,6 +103,7 @@
 | self-test | 脚本内 spec | `--self-test` 夹具模式沿用（违约样例 FAIL / 合规样例 PASS），随 TS 化同迁 |
 | CI | 16 workflow 矩阵 | validate.yml 单 workflow 保持；穷尽矩阵由 workflow 内 job 划分 + 门禁 DAG 承载 |
 | 契约闸 | expected-filenames（golden 文件名禁令） | 文件名契约闸候选（禁构建产物/缓存文件入库），过 HERO 判据再立 |
+| 上帝类预防闸 | 上游无对应件（本仓调研自产，问题池⑤） | 单文件行数/依赖扇出上限候选——静态可计算、挂载即零自觉（§3.4 谱系）；对应主设计 §10「机械校验」面；engine 现状健康属预防非治病，阈值先实测分布（cookbook「门禁」域教训），过 HERO 判据再立 |
 | DAG 能力 | needs（硬依赖，失败即跳过）/ after（排序不传染）/ fail-fast | 同三能力蒸馏进 TS runner；图校验同三拒绝项 |
 
 - DAG 设计约束（蒸馏骨架不搬实现）：`needs` 依赖失败则下游 skipped；`after` 只排先后不传染失败；并行度默认 CPU 数、本地文档档设 cap（防 ts.Program 类内存峰值——上游实测教训，调研 §2.2-6 串行 11 件的并行化收益）。
@@ -227,7 +228,7 @@
 
 | # | 需求 | 验收判据 |
 |---|---|---|
-| C1 | 语言统一全栈 TS | engine / adapters / scripts 无 .py / .sh 残留（含 `scripts/__pycache__`）；门禁经 node 运行 |
+| C1 | 语言统一全栈 TS | engine / adapters / scripts 无 .py / .sh 残留（含 `scripts/__pycache__`）；engine/adapters 源码无 .js 残留（构建产物 dist 除外）；门禁经 node 运行 |
 | C2 | 钩子零转译 | lefthook job 全部调 `node dist/…`；钩子链路无 tsx 调用 |
 | C3 | 开发态 tsx 边界 | tsx 只出现在 dev 脚本与测试 launcher；发布链路零 tsx |
 | C4 | postinstall 自动装钩子 | install 后钩子路径生效，无手动安装步骤；安装器带缺失诊断与补跑路径 |
@@ -241,5 +242,6 @@
 | C12 | 教训层形态 | postmortem 命名规则入 verify 门禁（目录空时零约束）；cookbook 拆分规则并入 doc-budgets 超限处理序 |
 | C13 | bash 退役 | bash 三件的 TS 等价物过 self-test 后同批删除 bash 件 |
 | C14 | 并存期标注 | 重建批次在事件轨带「按蓝图判据」标注；切换批后旧机器件全量删除、无长期双轨 |
+| C15 | 候选门禁评估面 | 文件名契约闸（§4）与上帝类预防闸（§4）各带 HERO 判据答案与实测阈值依据——过判据者立为门禁，不过者记录不做理由 |
 
-验收方式：C1–C3/C9/C10/C13/C14 为文件面与链路面，机器可查；C4–C8/C11/C12 以实现轮 ADR + self-test / smoke 承载；C6 基线数值由实现轮首次实测后回填（门禁阈值先实测分布的教训，cookbook「门禁」域）。
+验收方式：C1–C3/C9/C10/C13/C14 为文件面与链路面，机器可查；C4–C8/C11/C12/C15 以实现轮 ADR + self-test / smoke 承载；C6 基线数值由实现轮首次实测后回填（门禁阈值先实测分布的教训，cookbook「门禁」域）。
