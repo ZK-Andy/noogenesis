@@ -78,7 +78,10 @@
 3. **小落差评估**：钩子自动安装 / 门禁 DAG 并行 / CI 文件名契约闸 / archived-notes 校验件 / 技能 references/ 形态——逐项评估要不要纳入及何时纳入。
 4. **技能清单补全**：第一题的「等等」项——架构/编码/注释算不算技能、还缺什么，与用户继续收集归纳（先例参照 = HERO）。
 5. **记忆库线开题**：漂移清账已完成，记忆系统连接（含 EvoMap memory-graph 未建面）如何开题，随方案设计阶段排期。
-6. **门禁运行时语言评估**（2026-09-06 用户提出）：Python 门禁是 desktop 血统的搬迁遗产，**非既定原则**；用户原话「如果ts能完全解决问题，我反而不太喜欢用python。执行速度上感觉ts更快一点」。求解面 = TS/JS 全量替代 Python 门禁的可行性——①零依赖路线：纯 Node JS（.mjs/.cjs，无 tsx、无 node_modules，engine 本身已是该形态的活体先例）；②上游路线：TS + tsx + postinstall 自动装钩子（依赖 node_modules 在场）；③维持 Python。评估维度 = 钩子快检在未装依赖 checkout 的可用性、启动开销、语言统一度、重写面（10+ verify 脚本 + change-scope + gates.py + self-test 的 FULL 档批次成本）。
+6. **门禁运行时语言评估**（2026-09-06 用户提出并定调方向）：Python 门禁是 desktop 血统的搬迁遗产，**非既定原则**；用户原话「如果ts能完全解决问题，我反而不太喜欢用python。执行速度上感觉ts更快一点」「这一次我们要在优化胶囊的时机，彻底解决问题。我们npm发包，都有node，直接跑nodejs 看来是最好的路径」。
+   - **上游选 tsx 的原因（源码实证，2026-07-14 ADR）**：①语义门禁需要 `ts.Program`+`TypeChecker` 提取强类型事实（判别 Cordis Context/事件名流转/声明合并）——检查 TS 代码时最权威的解析器就是 TS 编译器；②门禁与产品共享模块消灭双实现漂移；③工具链锚定（packageManager+engines+postinstall 自动装钩子）使 node_modules 弱点结构性不存在。跨平台是顺带收益非主因。
+   - **我方推论**：我方门禁检查对象 = JSON/Markdown/正则/git，无一处需要 TS 语义 → tsx 核心收益吃不到、纯付转译税；node 在我方形态必在（npm 发包 + engine）→ **零依赖纯 Node JS（.mjs/.cjs）为最优**：零转译、语言统一（engine+gates 同栈）、裸 checkout 钩子照跑。用户已定调：优化轮内彻底解决（Python 退役）。
+   - **实施面（待方案细化）**：10+ verify 脚本 + change-scope（上游有 change-scope.ts 先例）+ gates.py 发射器 + self-test 全量迁移，FULL 档批次，逐脚本带 self-test 迁移兜底；hooks/CI/gates.json/文档同步。
 
 ## 3. 调研报告
 
