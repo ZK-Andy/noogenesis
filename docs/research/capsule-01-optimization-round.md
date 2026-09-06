@@ -78,6 +78,7 @@
 3. **小落差评估**：钩子自动安装 / 门禁 DAG 并行 / CI 文件名契约闸 / archived-notes 校验件 / 技能 references/ 形态——逐项评估要不要纳入及何时纳入。
 4. **技能清单补全**：第一题的「等等」项——架构/编码/注释算不算技能、还缺什么，与用户继续收集归纳（先例参照 = HERO）。
 5. **记忆库线开题**：漂移清账已完成，记忆系统连接（含 EvoMap memory-graph 未建面）如何开题，随方案设计阶段排期。
+6. **门禁运行时语言评估**（2026-09-06 用户提出）：Python 门禁是 desktop 血统的搬迁遗产，**非既定原则**；用户原话「如果ts能完全解决问题，我反而不太喜欢用python。执行速度上感觉ts更快一点」。求解面 = TS/JS 全量替代 Python 门禁的可行性——①零依赖路线：纯 Node JS（.mjs/.cjs，无 tsx、无 node_modules，engine 本身已是该形态的活体先例）；②上游路线：TS + tsx + postinstall 自动装钩子（依赖 node_modules 在场）；③维持 Python。评估维度 = 钩子快检在未装依赖 checkout 的可用性、启动开销、语言统一度、重写面（10+ verify 脚本 + change-scope + gates.py + self-test 的 FULL 档批次成本）。
 
 ## 3. 调研报告
 
