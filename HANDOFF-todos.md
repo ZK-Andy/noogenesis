@@ -22,14 +22,15 @@
 - [x] （D）M2 部署收口 2026-09-06（FULL 三审全采纳），ADR [2026-09-06-adapter-deploy-hardening](.agents/notes/implemented/architecture/2026-09-06-adapter-deploy-hardening.md)；`noogenesis-dsh@0.1.1` 发布 + 裸名 deprecate；desktop 实装完成。
 - [x] （C）0.1.3 重装重验通过（2026-09-06）：genes-cache 落会话仓 + remote=官方库 + HEAD `a81c3a0` + 缓存基因并入扫描（liveproof 实证）；技能面 7 件在位，rank 600 遮蔽关系符合验收口径；ADR `2026-09-06-bank-pull-session-trigger`。
 - [x] （C）pre-push 钩子 tag 缺口修复 2026-09-06（FULL 三审 0B，建议全采纳）：可达 tag 跳过档位强制（rev-list 空集），发版豁免前提消失；ADR [2026-09-06-pre-push-tag-outgoing](.agents/notes/implemented/bug-fix/2026-09-06-pre-push-tag-outgoing.md)。
-- [ ] （A）胶囊 01 优化轮拍板落账（2026-09-06 用户逐题）：范围 = 先文档漂移清账批，随后问题池逐项解决（验收口径批次收口制不变）；记忆库线用户定调「处理完文档漂移再说」；护栏三件触发点仍 = 优化轮完成。前置全清账（0.1.3 重验 ✅ / 技能进胶囊可运行 ✅ / 环境定调解除 ✅）。
+- [x] （A）胶囊 01 优化轮拍板落账（2026-09-06 用户逐题）：范围 = 先文档漂移清账批，随后问题池逐项解决（验收口径批次收口制不变）；记忆库线用户定调「处理完文档漂移再说」；护栏三件触发点仍 = 优化轮完成。前置全清账（0.1.3 重验 ✅ / 技能进胶囊可运行 ✅ / 环境定调解除 ✅）。
 - [ ] （A）问题池·事实面定案（免行动留档）：①懒加载已实证——技能目录只发 ≤500 字摘要、正文经 skill 工具按名注入（设计稿 §8 as-needed 生效），rank 600 = 最弱 bundled 层、同名静默遮蔽，兜底位设计安全非缺陷；②技能脱离本仓可运行性分级实证——2 纯方法论 / 3 半绑定 / 2 实质绑定，「正文可带走、机器检查带不走」，SKILL.md 宿主口径行已自认，免行动。
-- [ ] （A）清账批·文档漂移（优化轮第一簇，用户拍板先做）：①质量门清单 AGENTS.md≡README.md 11 行手抄重复收敛单源（README 自称单源 gates.json 与实际 10 条口径对齐）；②门禁计数四家四个数（七/九/十/十一件）单源化；③「评审检查项」三处悬空指针补位或修指（原独立批次条目归并本批，同触根 AGENTS.md 走 FULL 档）；④HANDOFF「开始步骤」并入 session-open 卡一家；⑤capsule-01-migration-plan.md 下沉 archived + 根留指针；⑥tier 表补 research 行 + HANDOFF「设计文档 3 份」实为 4 份。
+- [x] （A）文档漂移清账批 2026-09-06（FULL 三审 R1 0B/1S、R2 0B/4S、R3 1B/3S 全采纳收口；搬迁计划下沉 journal/ 非 archived，口径以 ADR 为准），ADR [2026-09-06-doc-single-sourcing](.agents/notes/implemented/process/2026-09-06-doc-single-sourcing.md)。
 - [ ] （A）问题池·流程卡技能化：6 张流程卡零技能化（session-open/close/modes、feature-flow、release-flow、github-research），会话生命周期无 whenToUse 兜底，技能面偏「写作与审查」侧；方向 = 至少 session-open/close/modes 三张技能化，其余逐项拍板。
 - [ ] （A）问题池·新内容域三篇（设计稿 §10 规划未建）：代码规范篇（lint/typecheck 机械校验）；架构规范篇（分层约束/依赖边界/blast-radius）；优雅实现域是否本轮建待拍板；注释规范补 docs/method 正文家（prose-standard 技能已有哲学面）。
 - [ ] （A）问题池·上帝类预防闸：单文件行数/依赖扇出上限类机械门禁（engine 现状健康——最大 selftest.js 486 行、核心命令 ≤170，属预防非治病）；对应设计稿 §10「机械校验（scope/blast-radius）」面。
 - [ ] （D）问题池·记忆库/记忆系统连接（用户定调：文档漂移清账后再议）：零前案新议题（durable 全域 grep 零命中）；相邻线 = EvoMap memory-graph 精华未建（P1 只落 Gene/Event）+ 痕迹提炼面（见下）；方向选项 = 本地记忆库立项 / memory-graph 原语 / 融合轮前半场，未拍板。
 - [ ] （C）main 领先包体待随批出包（2026-09-06 用户拍板不单开发版轮）：git 前置条件 + ENOENT 诊断分流已落 main（`b5fcb2e`→`10745e2`），npm 包仍 0.1.3；下一有发版需求的批次 chore(release) bump 0.1.4 一并带出（tag 推送随钩子修复直接放行）。
+- [ ] （C）gates.py self-test 夹具脚手架折叠（2026-09-06 R1 建议采纳归后续）：四份 gates_dir/mkdir/write_text 同型脚手架提取助手收敛为一家，行为不变；随下次触碰 gates.py 顺带做，不单开批。
 - [ ] （D）护栏延后拍板待收口（ADR [2026-09-06-guardrail-defer-trigger](.agents/notes/proposed/architecture/2026-09-06-guardrail-defer-trigger.md) proposed）：护栏三件（token-meter 真测量 / 严格改进度量 / canary 隔离）需要但延后至首个胶囊优化完成后触发；收口时转 implemented + 修正骨架 ADR 遗留面归口 + 设计稿 §6/§11 API 名以实测修正。对账余项：js-yaml + YAML 迁移器归口、Detect 信号源轮立项（D2 禁区逐源解除，连带 M3 频次重议）。
 - [x] （D）P2 实现轮 2026-09-06（FULL 三审 R1 1B/5S、R2 1B/8S、R3 0B/6S 全采纳），ADR [2026-09-06-p2-shared-consumer](.agents/notes/implemented/architecture/2026-09-06-p2-shared-consumer.md) implemented。
 - [ ] （D）痕迹提炼面归融合轮（2026-09-06 用户拍板：记录但不急）：「纪律留痕→无人提炼→下会话考古」缺口在案，解法随 dsh-continual-evolve 融合轮再议（触发 = 架构定稿，设计稿 §13.5）；旧项目 OBSERVATION 观察生命周期协议为实物参照（work 区）。边界：非自动沉淀复刻（#18 负面清单有效）、不让引擎扫会话，只议 session-close 摩擦点落点是否可寻址。

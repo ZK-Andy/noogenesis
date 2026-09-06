@@ -7,6 +7,8 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-06｜**优化轮清账批（FULL 三审 R1 0B/1S、R2 0B/4S、R3 1B/3S 全采纳；ADR `2026-09-06-doc-single-sourcing`；`376e868`→`133d2d2`）**：问题池十条落账；门禁清单/计数单源化 gates.json、评审检查项补位根 AGENTS、开始步骤并入 session-open、搬迁计划下沉 journal、gates.py `--list` 占位两态。**节点：清账批闭环；下批 = 问题池逐项。**
+
 - 2026-09-06｜**pre-push tag 缺口修复 + 根 README 双语化（FULL 三审 0B 全采纳；ADR `2026-09-06-pre-push-tag-outgoing` + `2026-09-06-bilingual-root-readme`；commits `fb155c0`→`fea1714`）**：可达 tag 跳过档位强制，发版豁免前提消失；README 转英文主文件 + 中文镜像（对齐上游 harness）。README 核对无漂移。
 
 - 2026-09-06｜**桌面部署缺陷修复 + 0.1.3 发版（FULL 三审全采纳；ADR `2026-09-06-bank-pull-session-trigger` implemented；commits `ec360ab`→`528f2e8`）**：0.1.2 重验暴露装载期 pull 错位 → 触发点随会话工作区 + `geneBankUrl` 缺省官方库/`false` 禁用；npm latest + tag `v0.1.3`。**节点：重装重验通过；下一轮 = 胶囊 01 优化轮。**
