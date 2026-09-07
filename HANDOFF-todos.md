@@ -26,6 +26,8 @@
 - [x] （A）胶囊 01 优化轮拍板落账（2026-09-06 用户逐题）：范围 = 先文档漂移清账批，随后问题池逐项解决（验收口径批次收口制不变）；记忆库线用户定调「处理完文档漂移再说」；护栏三件触发点仍 = 优化轮完成。前置全清账（0.1.3 重验 ✅ / 技能进胶囊可运行 ✅ / 环境定调解除 ✅）。
 - [x] （A）文档漂移清账批 2026-09-06（FULL 三审 R1 0B/1S、R2 0B/4S、R3 1B/3S 全采纳收口；搬迁计划下沉 journal/ 非 archived，口径以 ADR 为准），ADR [2026-09-06-doc-single-sourcing](.agents/notes/implemented/process/2026-09-06-doc-single-sourcing.md)。
 - [x] （D）B1 门禁族 TS 化批 2026-09-08（FULL 三审全采纳收口；C5 转绿），ADR [2026-09-08-collab-rebuild-b1-gates-ts](.agents/notes/implemented/architecture/2026-09-08-collab-rebuild-b1-gates-ts.md)。
+- [x] （D）B2 引擎+适配层 TS 化批 2026-09-08（FULL 三审 0B 全采纳收口；双跑对账零 diff；npm 发布面切 dist；C3/C10 转绿 + C9 逐批核过），ADR [2026-09-08-b2-engine-adapter-ts](.agents/notes/implemented/architecture/2026-09-08-b2-engine-adapter-ts.md)。
+- [ ] （C）engine/bin.ts pull 循环不可达窄化 guard 合并（B2 R1 建议，行为零变化）：`139-141` 合并为单条 undefined 检查、`146-147` 提局部消不可达 continue；随下次触碰 bin.ts 顺带做（R2 同判纯风格项）。
 - [x] （A）框架重建立项收口 2026-09-06（推倒重建/先框架后协作层/原地重建；FULL 三审 R1 0B/5S、R2 2B/6S、R3 1B/3S 全采纳），ADR [2026-09-06-framework-rebuild-charter](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md)。
 - [ ] （C）main 领先包体待随批出包（2026-09-06 用户拍板不单开发版轮）：git 前置条件 + ENOENT 诊断分流已落 main（`b5fcb2e`→`10745e2`），npm 包仍 0.1.3；下一有发版需求的批次 chore(release) bump 0.1.4 一并带出（tag 推送随钩子修复直接放行）。
 - [ ] （D）护栏延后拍板待收口（ADR [2026-09-06-guardrail-defer-trigger](.agents/notes/proposed/architecture/2026-09-06-guardrail-defer-trigger.md) proposed）：护栏三件（token-meter 真测量 / 严格改进度量 / canary 隔离）需要但延后至首个胶囊优化完成后触发；收口时转 implemented + 修正骨架 ADR 遗留面归口 + 设计稿 §6/§11 API 名以实测修正。对账余项：js-yaml + YAML 迁移器归口、Detect 信号源轮立项（D2 禁区逐源解除，连带 M3 频次重议）。

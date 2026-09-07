@@ -49,8 +49,8 @@ node engine/bin.js self-test      # 引擎自检
 │   ├── cookbook.md         # 踩坑单一事实源（原子条目）
 │   └── research/           # 设计文档（蜂群框架设计 / 共享层设计 / JIT-Agent 研究）+ 参考引擎调研解剖
 ├── scripts/                # verify-* 机器门禁（Python 存量族随 B1 迁 TS；新门禁为零依赖 .mts，node ≥22.18 原生直跑）+ gates.py 门禁清单单源发射器
-├── engine/                 # 演化发动机（Node 零依赖五命令 + gates.json 白名单；pull = 基因库只读消费）
-├── adapters/dsh/           # DSH 适配层（插件壳接线：system-prompt 节 / noo_* 工具 / solidify 人工确认 / geneBankUrl 惰性 pull / 技能随库分发）
+├── engine/                 # 演化发动机（Node 零依赖五命令 + gates.json 白名单；pull = 基因库只读消费；B2 起源码 TS——js 源并存期权威至 B5，npm 包 = tsc dist）
+├── adapters/dsh/           # DSH 适配层（插件壳接线：system-prompt 节 / noo_* 工具 / solidify 人工确认 / geneBankUrl 惰性 pull / 技能随库分发；B2 起源码 TS，npm 包 = tsc dist）
 ├── genes/                  # 基因库（<domain>/<id>.json，经 solidify 入档；本仓即库）
 ├── manifest.json           # 基因库检索索引（gen-manifest 生成，verify-manifest 门禁）
 ├── events/                 # 演化事件月卷（JSONL 审计面，入 git）
