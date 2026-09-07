@@ -9,7 +9,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-08｜**B2 引擎+适配层 TS 化批收口（FULL 三审 0B 全采纳；ADR `2026-09-08-b2-engine-adapter-ts` implemented）**：engine 10 件 .ts + adapters 9 件 .mts 双跑对账零 diff；npm 发布面切 dist（build 含 gates.json 资产拷贝）；js/mjs 权威并存至 B5。**节点：C3/C10 转绿 + C9 逐批核过，下一批 = B3。**
+- 2026-09-08｜**B2 引擎+适配层 TS 化批收口（FULL 三审 0B 全采纳；ADR `2026-09-08-b2-engine-adapter-ts` implemented；`f0bddfa`→`181b752`）**：engine 10 件 .ts + adapters 9 件 .mts 双跑对账零 diff；npm 发布面切 dist；js/mjs 权威并存至 B5。**节点：C3/C10 转绿 + C9 过，下一批 = B3。** README 核对有变更已同步（结构树）。
 
 - 2026-09-08｜**B1 门禁族 TS 化批收口（FULL 三审全采纳；ADR `2026-09-08-collab-rebuild-b1-gates-ts` implemented）**：13 件 .mts（verify-*×10 + DAG runner + gen-manifest + mdref）+ 对账 12 件零 diff + tsc 工具链 + ts-typecheck 入白名单；py 权威并存、B5 切换。**节点：C5 转绿 + C6 基线回填，下一批 = B2。**
 
