@@ -77,7 +77,7 @@ function checkTree(archivedDir: string): { violations: Violation[]; files: strin
       const lines = text.split("\n");
       // 与 verify-adr-format 同口径：Status = 标题后第一个非空行；Archived 行紧随其下。
       const statusIdx = lines.slice(1).findIndex((l) => l.trim() !== "");
-      const statusLine = statusIdx === -1 ? "" : lines[statusIdx + 1];
+      const statusLine = statusIdx === -1 ? "" : (lines[statusIdx + 1] ?? "");
       if (!STATUS_RE.test(statusLine)) {
         violations.push({ entry: rel, reason: "标题后须有 `Status: implemented|rejected` 行（归档保留原状态，允许 ` — <理由>` 尾注）" });
         continue;
