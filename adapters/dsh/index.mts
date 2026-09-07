@@ -2,7 +2,7 @@
  * index.mts — 插件入口（cordis 装载契约：name / inject / apply）。
  * 宿主运行时依赖收敛：@deepseek-ai/dsh-tools（defineTool，经依赖注入进
  * tools.mts）+ @deepseek-ai/dsh-llm（createUserMessage——注入消息的冻结/id/
- * source 形态是宿主合同，B4 ADR Proposal 2），其余模块零宿主依赖，
+ * source 形态是宿主合同，B4 ADR Decision 2），其余模块零宿主依赖，
  * adapters/dsh/selftest.mts 可脱离 DSH 直测（防火墙规则 2；selftest 机器
  * 扫描本目录 import 面强制）。
  * inject 不含 userQuestions——提问是可选能力，disposal 时对 ctx.userQuestions
@@ -160,7 +160,7 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 
 	registerNooTools(ctx, { defineTool, runEngine, repoRoot: repoRootFor });
 
-	// ── 挂载面接线（B4 ADR Proposal 1–5：能力层 mount.mts 合并器 + 策略层
+	// ── 挂载面接线（B4 ADR Decision 1–5：能力层 mount.mts 合并器 + 策略层
 	// mount-policies.mts；全部建议/记录档，零阻断路径——A3/A4 的 deny/block
 	// 能力由合并器单源承载，首批策略件不使用）。每挂载点恰一个 ctx.on
 	// listener，策略件增挂只动 mount-policies.mts，不复制宿主接线。 ──
@@ -179,19 +179,32 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 
 	// A2 一步前（agent/pre-step waterfall）：透传 → 合并策略决策；reject 档
 	// 由合并器单源承载（首批不用）；建议行合一条消息追加到 enter messages。
+	// 合并/消息构造异常 → warn 降级返回 downstream（降级纪律：绝不阻塞一步）。
 	ctx.on("agent/pre-step", async (payload: PreStepPayload, next: () => Promise<{ kind: string; messages?: unknown[] }>) => {
 		const downstream = await next();
 		if (downstream.kind === "reject") return downstream;
-		const merged = mergePreStep(mounts.preStep, payload);
-		if (merged.reject !== undefined) return { kind: "reject" };
-		if (downstream.kind !== "enter" || merged.advice.length === 0) return downstream;
-		return { ...downstream, messages: [...(downstream.messages ?? []), adviceMessage(merged.advice)] };
+		try {
+			const merged = mergePreStep(mounts.preStep, payload);
+			if (merged.reject !== undefined) return { kind: "reject" };
+			if (downstream.kind !== "enter" || merged.advice.length === 0) return downstream;
+			return { ...downstream, messages: [...(downstream.messages ?? []), adviceMessage(merged.advice)] };
+		} catch (cause) {
+			logger.warn(`noogenesis pre-step mount failed: ${cause instanceof Error ? cause.message : String(cause)}`);
+			return downstream;
+		}
 	});
 
 	// A3 工具前（tools/pre-execute waterfall）：deny/ask 决策由合并器单源承载
-	// （首批策略件零使用）；无策略决策 → next() 透传。
+	// （首批策略件零使用）；无策略决策 → next() 透传。合并异常 → warn 降级
+	// 仍达 next()（降级纪律：合并失败不得意外阻断工具调用）。
 	ctx.on("tools/pre-execute", async (exec: ToolExecLike, next: () => Promise<unknown>) => {
-		const merged = mergeToolPre(mounts.toolPre, exec);
+		let merged;
+		try {
+			merged = mergeToolPre(mounts.toolPre, exec);
+		} catch (cause) {
+			logger.warn(`noogenesis tool-pre mount failed: ${cause instanceof Error ? cause.message : String(cause)}`);
+			return next();
+		}
 		if (merged.deny !== undefined) return { kind: "deny", reason: merged.deny };
 		if (merged.ask !== undefined) return { kind: "ask", ...(merged.ask ? { reason: merged.ask } : {}) };
 		return next();
@@ -199,8 +212,15 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 
 	// A4 工具后（tools/post-execute waterfall）：block/附加上下文由合并器单源
 	// 承载（首批只有 M3 观测策略，零决策输出）；上下文行合一条消息前置。
+	// 合并异常 → warn 降级返回下游结果（观测失败不吞工具结果）。
 	ctx.on("tools/post-execute", async (exec: ToolExecLike, result: ToolResultLike, next: () => Promise<{ kind: string; additionalContexts?: unknown[] }>) => {
-		const merged = mergeToolPost(mounts.toolPost, exec, result);
+		let merged;
+		try {
+			merged = mergeToolPost(mounts.toolPost, exec, result);
+		} catch (cause) {
+			logger.warn(`noogenesis tool-post mount failed: ${cause instanceof Error ? cause.message : String(cause)}`);
+			return next();
+		}
 		if (merged.block !== undefined) return { kind: "block", feedback: [{ type: "text", text: merged.block }] };
 		const downstream = await next();
 		if (merged.context.length === 0) return downstream;

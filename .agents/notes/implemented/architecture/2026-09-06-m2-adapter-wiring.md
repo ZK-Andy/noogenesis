@@ -31,7 +31,7 @@ Noogenesis/                  ← npm 包根（真包首发时替换占位 0.0.0�
 
 - 目录名 `adapters/dsh/` 为 P4 多 harness 留位（届时每宿主一个薄目录 `adapters/<host>/`，互不渗透）。
 - **ESM/CJS 分叉**：根 `package.json` 的 `"type"` 钉 `commonjs`（引擎 `.js` 保持 CJS 零改动），适配层用显式 `.mjs` 写 ESM——零构建链（无 tsc）。退路（若 DSH 装载器要求包级 ESM）= `engine/*.js` 机械改名 `.cjs`，行为零变。
-- **Config 校验**：手工校验（`config.mjs`，类型违约 fail-closed 抛错），不引 schemastery——宿主运行时依赖收敛为唯一一项 `@deepseek-ai/dsh-tools`（defineTool，经依赖注入进 tools.mjs）。
+- **Config 校验**：手工校验（`config.mjs`，类型违约 fail-closed 抛错），不引 schemastery——宿主运行时依赖收敛为 `@deepseek-ai/dsh-tools`（defineTool，经依赖注入进 tools.mjs）+ `@deepseek-ai/dsh-llm`（createUserMessage，注入消息构造——允许集扩第二件随 [2026-09-08-b4-mount-wiring](2026-09-08-b4-mount-wiring.md)）。
 
 **M2 接线点 = 最小四件**（Detect 信号源全表不做）：
 
@@ -45,7 +45,7 @@ Noogenesis/                  ← npm 包根（真包首发时替换占位 0.0.0�
 **耦合防火墙（三条硬规则，机器检查落位）**：
 
 1. **依赖方向单向，只过合同面**：适配层只允许 spawn `node <包根>/engine/bin.js <命令>`，禁止 import 引擎模块；引擎不 import 任何宿主层代码。合同 = stdout 文本 + 退出码三档——适配层是 CLI 合同面的第一个进程外消费者，零共享代码、零共享 schema 解析。机器检查：adapter selftest 扫描 `adapters/dsh/*.mjs`（index.mjs 除外）无 `@deepseek-ai/*` import、扫描 `engine/*.js` 零第三方 require。
-2. **宿主依赖收敛在适配层**：peerDependencies 只有 `@deepseek-ai/dsh-tools`，且只在 `index.mjs` import；其余模块零宿主依赖、可脱离 DSH 自测。
+2. **宿主依赖收敛在适配层**：peerDependencies = `@deepseek-ai/dsh-tools` + `@deepseek-ai/dsh-llm`（允许集封底，扩集须同变更拍板——第二件随 [2026-09-08-b4-mount-wiring](2026-09-08-b4-mount-wiring.md) Proposal 2），且只在 `index.mjs` import；其余模块零宿主依赖、可脱离 DSH 自测。
 3. **运行仓锚定**：`resolveRepoRoot` 回退链 = config `repoRoot` → `NOGENESIS_REPO_ROOT` → 会话工作区 → `process.cwd()`（四级链与逐次解析口径以 [2026-09-06-adapter-deploy-hardening](2026-09-06-adapter-deploy-hardening.md) 为准）；spawn cwd 显式指向目标仓根（装在 DSH 侧的插件 ≠ 运行仓）。selftest 以"process.cwd 停在别处仍命中夹具仓基因"实证锚定。
 
 **M4 技能分发 = M2 保持 repo-local，分发随 P2**。noo-* 留本仓 `.agents/skills`；跨仓分发走 P2 基因库的 gene→skill 渲染语义，不在 M2 提前背。（2026-09-06 更新：技能**随库分发**已提前收口——技能经基因库缓存进 DSH 技能面，见 [2026-09-06-skills-ride-bank](2026-09-06-skills-ride-bank.md)；gene→skill 渲染语义不在其取代面，仍随贡献开放轮。）

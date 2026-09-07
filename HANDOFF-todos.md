@@ -28,6 +28,8 @@
 - [x] （D）B1 门禁族 TS 化批 2026-09-08（FULL 三审全采纳收口；C5 转绿），ADR [2026-09-08-collab-rebuild-b1-gates-ts](.agents/notes/implemented/architecture/2026-09-08-collab-rebuild-b1-gates-ts.md)。
 - [x] （D）B2 引擎+适配层 TS 化批 2026-09-08（FULL 三审 0B 全采纳收口；双跑对账零 diff；npm 发布面切 dist；C3/C10 转绿 + C9 逐批核过），ADR [2026-09-08-b2-engine-adapter-ts](.agents/notes/implemented/architecture/2026-09-08-b2-engine-adapter-ts.md)。
 - [x] （D）B3 钩子与安装面批 2026-09-08（FULL 三审全采纳收口；tier 触发集对账；C2 部分/C4/C6 部分/C13 部分），ADR [2026-09-08-b3-hooks-install](.agents/notes/implemented/architecture/2026-09-08-b3-hooks-install.md)。
+- [x] （D）B4 挂载面接线批 2026-09-08（FULL 三审全采纳收口；C7/C8/C15 落账 + C9 逐批核过；实机重验 = todos B 条），ADR [2026-09-08-b4-mount-wiring](.agents/notes/implemented/architecture/2026-09-08-b4-mount-wiring.md)。
+- [ ] （B）B4 挂载面实机重验（2026-09-08 ADR Risks 在案）：session.append 自定义 kind `noogenesis/*` 宿主持久化容忍度 + 六点真机接线冒烟（A2 地图/A6 记录/A8 drain）——随下次桌面重验批一并核。
 - [ ] （C）engine/bin.ts pull 循环不可达窄化 guard 合并（B2 R1 建议，行为零变化）：`139-141` 合并为单条 undefined 检查、`146-147` 提局部消不可达 continue；随下次触碰 bin.ts 顺带做（R2 同判纯风格项）。
 - [x] （A）框架重建立项收口 2026-09-06（推倒重建/先框架后协作层/原地重建；FULL 三审 R1 0B/5S、R2 2B/6S、R3 1B/3S 全采纳），ADR [2026-09-06-framework-rebuild-charter](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md)。
 - [ ] （C）main 领先包体待随批出包（2026-09-06 用户拍板不单开发版轮）：git 前置条件 + ENOENT 诊断分流已落 main（`b5fcb2e`→`10745e2`），npm 包仍 0.1.3；下一有发版需求的批次 chore(release) bump 0.1.4 一并带出（tag 推送随钩子修复直接放行）。

@@ -1,6 +1,6 @@
 # adapters/ — 宿主适配层
 
-> 全局纪律见根 [AGENTS.md](../AGENTS.md)。拍板与防火墙单源：[adapters/dsh/README.md](dsh/README.md) + ADR 2026-09-06-m2-adapter-wiring / adapter-deploy-hardening（README 头部链接）。本件只写动本目录会踩的具体失败。
+> 全局纪律见根 [AGENTS.md](../AGENTS.md)。拍板与防火墙单源：[adapters/dsh/README.md](dsh/README.md) + ADR 2026-09-06-m2-adapter-wiring / adapter-deploy-hardening / 2026-09-08-b4-mount-wiring（挂载面与允许集扩集拍板；README 头部链接）。本件只写动本目录会踩的具体失败。
 
 - **依赖方向单向，只过合同面**：只能 spawn `node <包根>/engine/bin.js <命令>`，**禁止 import 引擎模块**；引擎不 import 本层。引入 `@deepseek-ai/*` 之外的任何宿主依赖 = 违防火墙；`@deepseek-ai/*` 允许集封底 = dsh-tools + dsh-llm 两件（selftest 机器断言，扩集须同变更拍板）。
 - **宿主依赖收敛在 `index.mjs`**：`@deepseek-ai/dsh-tools` 与 `@deepseek-ai/dsh-llm` 只许在 `index.mjs` import；其余模块必须零宿主依赖、可脱离 DSH 自测。

@@ -894,7 +894,7 @@ function writeFixtureGene(repoRoot: string): void {
 	}
 	ok("firewall: only index.mjs imports @deepseek-ai/* (dependency injection at entry)");
 
-	// index.mjs 宿主 import 允许集封底（B4 ADR Proposal 2：dsh-tools + dsh-llm；
+	// index.mjs 宿主 import 允许集封底（B4 ADR Decision 2：dsh-tools + dsh-llm；
 	// 新增宿主依赖必须同变更扩本断言 + ADR 拍板）。
 	{
 		const indexText = fs.readFileSync(path.join(ADAPTER_DIR, "index.mjs"), "utf8");
@@ -924,7 +924,7 @@ function writeFixtureGene(repoRoot: string): void {
 	// 包结构契约（js 与 .mts 两份同改）：白名单已切 dist 发布形态（B2 ADR 点 4）。
 	assert.equal(pkg.main, "dist/adapters/dsh/index.mjs");
 	assert.equal(pkg.dsh?.bundle?.patch, "./cordis.patch.yml");
-	assert.ok(pkg.peerDependencies?.["@deepseek-ai/dsh-llm"], "peer dep dsh-llm declared (B4 ADR Proposal 2)");
+	assert.ok(pkg.peerDependencies?.["@deepseek-ai/dsh-llm"], "peer dep dsh-llm declared (B4 ADR Decision 2)");
 	for (const needle of ["dist/", "engine/gates.json", "engine/README.md", "adapters/dsh/README.md", "cordis.patch.yml", "LICENSE"]) {
 		assert.ok(pkg.files.some((f) => f === needle || f.startsWith(needle.replace("/**", ""))), `files whitelist must ship ${needle}`);
 	}

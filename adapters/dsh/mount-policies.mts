@@ -1,12 +1,12 @@
 /**
- * mount-policies.mts — B4 首批挂载物（B4 ADR Proposal 3–5：M1/M2/M3）。
+ * mount-policies.mts — B4 首批挂载物（B4 ADR Decision 3–5：M1/M2/M3）。
  *
  * 全部建议/记录档，零阻断路径（档位纪律）；降级 = 异常由 index.mts 胶水
  * catch → warn，记录缺席不阻塞会话。状态按会话 WeakMap 隔离（GC 自清；
  * session/disposed 显式清态由 dropSessionState 汇出）。零宿主依赖（防火墙
  * 规则 2）；fs 只读（M2 布点件存在性检查）。
  *
- * HERO 答案与降级/升格边界单源 = B4 ADR Proposal 3–5（M1 降级纯记录件、
+ * HERO 答案与降级/升格边界单源 = B4 ADR Decision 3–5（M1 降级纯记录件、
  * M2 拦截升格候选不落地、M3 阻断另案）；本文不重抄判据，只落实现。
  */
 import fs from "node:fs";
@@ -49,7 +49,7 @@ function subtreeOf(repoRoot: string, filePath: string): string | undefined {
 /**
  * M1 技能使用守卫（纯记录件，蓝图降级路径采纳）：A3 观测 noo-* 技能调用
  * 痕迹，A6 在有新痕迹的 turn 投影增量记录。「该不该用」判定不建（prose
- * 分类 = 硬造不可判定信号，B4 ADR Proposal 3）。
+ * 分类 = 硬造不可判定信号，B4 ADR Decision 3）。
  */
 export function createSkillUsagePolicy(): { toolPre: ToolPrePolicy; turnStopping: TurnStoppingPolicy; drop(session: unknown): void } {
 	const store = createSessionStore();
@@ -79,7 +79,7 @@ export function createSkillUsagePolicy(): { toolPre: ToolPrePolicy; turnStopping
  * （每会话首个 pre-step，mapShown 单门；subagent 跳过；残余边界 = 首步即被
  * 其他策略拒绝则地图缺席——B4 ADR Consequences 在案）；A3 edit/write 命中
  * 布点子树归因观测（滚动窗口封顶，投影游标随平移同步）；A6 投影触摸记录。
- * 「须读入后才推进」拦截 = 升格候选不落地（B4 ADR Proposal 4）。
+ * 「须读入后才推进」拦截 = 升格候选不落地（B4 ADR Decision 4）。
  */
 export function createSubtreeRulesPolicies(config: RepoRootConfig): { preStep: PreStepPolicy; toolPre: ToolPrePolicy; turnStopping: TurnStoppingPolicy; drop(session: unknown): void } {
 	const store = createSessionStore();
@@ -134,7 +134,7 @@ export function createSubtreeRulesPolicies(config: RepoRootConfig): { preStep: P
 /**
  * M3 评审实质执行记录件（纯记录件）：A4 观测评审机器面运行痕迹（工具结果
  * 文本闭集标记），A6 在计数有变化的 turn 投影累计记录。声称完成的 prose
- * 检测与阻断档不建（B4 ADR Proposal 5；升格判据另案 review.md §5）。
+ * 检测与阻断档不建（B4 ADR Decision 5；升格判据另案 review.md §5）。
  */
 export function createReviewSurfacePolicy(): { toolPost: ToolPostPolicy; turnStopping: TurnStoppingPolicy; drop(session: unknown): void } {
 	const store = createSessionStore();

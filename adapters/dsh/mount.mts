@@ -1,5 +1,5 @@
 /**
- * mount.mts — 挂载面能力层（B4 ADR Proposal 1）：六点合并语义单源。
+ * mount.mts — 挂载面能力层（B4 ADR Decision 1）：六点合并语义单源。
  *
  * 六挂载点（A2–A6 + A8）各一组策略接口 + 一个合并器——hook-protocol 判定
  * 语义的本地蒸馏（蓝图 §7 边界：不建两方言桥，deny→A3 阻断并回消息 /
@@ -8,7 +8,7 @@
  * index.mts。本模块零宿主依赖（防火墙规则 2，selftest 机器扫描）——宿主
  * payload 只取本地窄结构面（同 engine-bridge AgentCarrier 口径）。
  *
- * 档位纪律（B4 ADR Proposal 7）：合并器提供 deny/block 能力（A3/A4 的阻断
+ * 档位纪律（B4 ADR Decision 7）：合并器提供 deny/block 能力（A3/A4 的阻断
  * 语义单源在案），但首批策略件全部建议/记录档，不使用阻断路径；升格逐件
  * 过 HERO 另案。宿主事件与决策形态实证记录见 B4 ADR Problem 节。
  */
