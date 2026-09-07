@@ -27,7 +27,7 @@ description: Use before pushing, force-pushing, marking ready for review, or cla
 没有超越 hooks 的通用本地基线。每个行为变更需要**能对它的回归失败**的最窄测试或专用检查；更宽的检查只加给 diff 真正触达的表面。
 
 - **文档/ADR/技能/cookbook/HANDOFF 变更**：跑受触达的 `verify-*.py`（adr-format / doc-budgets / md-links / cookbook / skill-format / handoff-structure）+ `git diff --check`。
-- **门禁脚本自身变更**（`scripts/**`、`.githooks/**`）：跑其自带 `--self-test`（有则）+ 冒烟（对夹具样例实跑）。
+- **门禁脚本自身变更**（`scripts/**`、`lefthook.yml`）：跑其自带 `--self-test`（有则）+ 冒烟（对夹具样例实跑）。
 - **CI workflow 变更**（`.github/workflows/**`）：必须 dispatch 实跑验证——表达式错误只有真 runner 能暴露，ci.yml 绿不代表该流水线绿。
 - **代码/行为变更**：跑所属模块的测试与受影响门禁；仓级覆盖留给 CI，除非变更真的横切。
 

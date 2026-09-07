@@ -34,7 +34,8 @@ To work on the framework itself:
 ```sh
 git clone https://github.com/ZK-Andy/noogenesis.git
 cd noogenesis
-bash scripts/setup-hooks.sh       # wire pre-commit / pre-push gates
+npm install                       # lefthook's built-in postinstall wires pre-commit / pre-push gates (hooks single source: lefthook.yml)
+npm run build                     # tsc -> dist/ (pre-push gates run the prebuilt dist)
 python3 scripts/gates.py --run    # machine gates, list single-sourced in engine/gates.json
 node engine/bin.js self-test      # engine self-test
 ```
@@ -63,7 +64,7 @@ node engine/bin.js self-test      # engine self-test
 
 The executable gate list is **single-sourced in `engine/gates.json`**: `python3 scripts/gates.py --list` emits it and `--run` executes it — hooks and CI consume the same source. Four gates are structural exceptions that do not run flat (review-tier / review-brief / change-scope / gene-format); the mechanism lives in the gates.py header.
 
-Hooks run fast checks only (`bash scripts/setup-hooks.sh` wires them); CI owns the exhaustive matrix (`.github/workflows/validate.yml`).
+Hooks run fast checks only (lefthook's built-in postinstall wires them; hooks single source: `lefthook.yml`); CI owns the exhaustive matrix (`.github/workflows/validate.yml`).
 
 ## Documentation
 

@@ -34,7 +34,8 @@ dsh plugin --profile <name> -- add noogenesis-dsh
 ```sh
 git clone https://github.com/ZK-Andy/noogenesis.git
 cd noogenesis
-bash scripts/setup-hooks.sh       # 接线 pre-commit / pre-push 门禁
+npm install                       # lefthook 内建 postinstall 接线 pre-commit / pre-push 门禁（钩子单源 lefthook.yml）
+npm run build                     # tsc → dist/（pre-push 门禁跑预构建 dist）
 python3 scripts/gates.py --run    # 机器门禁（清单单源 engine/gates.json）
 node engine/bin.js self-test      # 引擎自检
 ```
@@ -63,7 +64,7 @@ node engine/bin.js self-test      # 引擎自检
 
 可执行门禁清单**单源**于 `engine/gates.json`：`python3 scripts/gates.py --list` 发射、`--run` 运行，hooks/CI 消费同一清单；结构性例外四件（review-tier / review-brief / change-scope / gene-format）非平跑，机制见 gates.py 头注。
 
-hooks 只做快检查（`bash scripts/setup-hooks.sh` 接线），CI 拥有穷尽矩阵（`.github/workflows/validate.yml`）。
+hooks 只做快检查（lefthook 内建 postinstall 接线，钩子单源 `lefthook.yml`），CI 拥有穷尽矩阵（`.github/workflows/validate.yml`）。
 
 ## 文档与出处
 
