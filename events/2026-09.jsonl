@@ -5,3 +5,4 @@
 {"ts":"2026-09-05T15:54:10.910Z","actor":"noo-session","kind":"gene.added","gene":"push-precheck-order","gene_sha":"dc6f4fe3306971b12ab40e5cb5619548d65a669170b8f003fb2e59596894ce7c","outcome":"ok","evidence":"evaluate ok: all 9 gates green"}
 {"ts":"2026-09-05T15:54:12.089Z","actor":"noo-session","kind":"gene.added","gene":"new-gene-curation","gene_sha":"6a6de14f7671fef2df5dc4dea03a813fc39330341caa068448667955fb4237a2","outcome":"ok","evidence":"evaluate ok: all 9 gates green"}
 {"ts":"2026-09-07T23:36:21.188Z","actor":"noo-session","kind":"gene.updated","gene":"push-precheck-order","gene_sha":"7cf87382e4d676ec7ab2846ce1246653abf3143e6c57d207bdd779481aba240d","outcome":"ok","evidence":"evaluate ok: all 13 gates green"}
+{"ts":"2026-09-07T23:36:26.159Z","actor":"noo-session","kind":"gene.updated","gene":"new-gene-curation","gene_sha":"52bc26c1670f3d5145dea181eb6f7a6b3db5c991c27af01dc97ab104642e4aa4","outcome":"ok","evidence":"evaluate ok: all 13 gates green"}

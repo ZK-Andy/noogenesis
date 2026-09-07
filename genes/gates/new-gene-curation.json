@@ -10,8 +10,8 @@
   ],
   "strategy": [
     "人工把方法论/流程卡/门禁翻译为 gene 八字段 JSON（候选文件以 <id>.json 命名）",
-    "node engine/bin.js evaluate <domain>/<id>——gates.json 全集必须绿",
-    "node engine/bin.js solidify <candidate> --actor <name>——genes/ 与 events/ 同一 commit 原子入档"
+    "node dist/engine/bin.js evaluate <domain>/<id>——gates.json 全集必须绿",
+    "node dist/engine/bin.js solidify <candidate> --actor <name>——genes/ 与 events/ 同一 commit 原子入档"
   ],
   "avoid": [
     "让 propose 产生新基因（propose 只渲染，永不生成）",
