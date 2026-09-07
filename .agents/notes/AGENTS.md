@@ -6,4 +6,4 @@
 - **路径即元数据**：`{lifecycle}/{class}/yyyy-mm-dd-<topic>.md`，lifecycle 与 Status 行一致，迁移不改日期；class 六类封闭集，树外路径 = 门禁 FAIL。
 - **archived/ 永久冻结**：归档时只允许在 Status 下插一行 `Archived: YYYY-MM-DD`，之后禁改禁删——机器强制见 `verify-archived-agent-notes`（冻结清单 append-only，改写已有条目即拦截）。
 - **implemented 笔记与上线现实同步**：文件移动/改名/改默认值时同变更改写（只改事实，不改决定）。
-- 新建/修改笔记即跑 `python3 scripts/verify-adr-format.py`。
+- 新建/修改笔记即跑 `node scripts/verify-adr-format.mts`。

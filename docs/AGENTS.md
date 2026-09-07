@@ -4,4 +4,4 @@
 
 - **落位先查 tier 表**：新文档不知放哪层时查 [doc-standards](method/doc-standards.md) 的 tier 表，不凭感觉建文件；`docs/research/` 只放调研稿（非 durable 结论的家）。
 - 超限处理序单源：[doc-standards](method/doc-standards.md)（机器提示见 verify-doc-budgets 超限文案）。
-- cookbook 条目带域标签（封闭集）+ 日期，格式由 `verify-cookbook.py` 强制；事故叙事不进 cookbook（归 `docs/postmortem/`，命名规则由 verify-postmortem-naming 强制）。
+- cookbook 条目带域标签（封闭集）+ 日期，格式由 `verify-cookbook.mts` 强制；事故叙事不进 cookbook（归 `docs/postmortem/`，命名规则由 verify-postmortem-naming 强制）。

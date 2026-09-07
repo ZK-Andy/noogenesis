@@ -18,6 +18,14 @@
  *   base 推导与引擎 changedPaths 同源——两条推导口径的有意分工，见 P1 实现
  *   ADR D4 与 gates.mts 头注（例外机制单家）。
  *
+ * stderr 口径（R1 评审对齐）：与 bash 原版一致——bash 以 `2>/dev/null` 显式
+ * 压制的调用（rev-parse --short / merge-base / 三点 diff）此处同样丢弃，
+ * 其余（rev-list 回退 / log / 未暂存 diff / ls-files）透传；stdout 是对账面，
+ * 诊断面不静默。
+ * 排序口径：changed paths 用码点序（等价 `LC_ALL=C sort`，确定性）；bash 原版
+ * 裸 `sort -u` 随环境 locale 漂移（含 `_` 的文件名两种排序不同）——TS 面钉死
+ * 为确定性序，与 engine changedPaths 同序。
+ *
  * Provenance：蒸馏自 dotnet-deepseek-harness-desktop/scripts/change-scope.sh（MIT，
  * 2026-09-05），经本仓 bash 件（quotePath=off 修复，ADR
  * .agents/notes/implemented/bug-fix/2026-09-05-change-scope-quotepath.md）行为恒等
@@ -27,15 +35,15 @@
 
 import { spawnSync } from "node:child_process";
 
-const PROGRAM = "change-scope.mts";
-
-function git(args: string[]): { status: number; stdout: string } {
+/** spawn git；quiet=true 时丢弃 stderr（对应 bash `2>/dev/null`），否则透传。 */
+function git(args: string[], quiet = false): { status: number; stdout: string } {
   const r = spawnSync("git", args, { encoding: "utf-8" });
+  if (!quiet && r.stderr && r.stderr.length > 0) process.stderr.write(r.stderr);
   return { status: r.status ?? -1, stdout: r.stdout ?? "" };
 }
 
 function revParseShort(ref: string): string {
-  const r = git(["rev-parse", "--short", ref]);
+  const r = git(["rev-parse", "--short", ref], true);
   const out = r.stdout.trim();
   return r.status === 0 && out.length > 0 ? out : "?";
 }
@@ -51,7 +59,7 @@ function main(): number {
     base = baseArg;
   } else {
     // 自动推导：fork-point → 根提交；两步都拿不到 = 仓库还没有历史 → exit 1。
-    const fp = git(["merge-base", "--fork-point", "HEAD"]);
+    const fp = git(["merge-base", "--fork-point", "HEAD"], true);
     const fpOut = fp.status === 0 ? fp.stdout.trim() : "";
     base =
       fpOut.length > 0
@@ -72,12 +80,12 @@ function main(): number {
   console.log("== changed paths:");
   // == quotePath=off：非 ASCII 文件名原样，与 engine changedPaths 同口径 ==
   const paths = new Set<string>();
-  for (const args of [
-    ["-c", "core.quotePath=off", "diff", "--name-only", `${base}...${head}`],
-    ["-c", "core.quotePath=off", "diff", "--name-only"],
-    ["-c", "core.quotePath=off", "ls-files", "--others", "--exclude-standard"],
-  ]) {
-    const r = git(args);
+  for (const [quiet, args] of [
+    [true, ["-c", "core.quotePath=off", "diff", "--name-only", `${base}...${head}`]],
+    [false, ["-c", "core.quotePath=off", "diff", "--name-only"]],
+    [false, ["-c", "core.quotePath=off", "ls-files", "--others", "--exclude-standard"]],
+  ] as const) {
+    const r = git([...args], quiet);
     for (const line of r.stdout.split("\n")) {
       const p = line.trim();
       if (p.length > 0) paths.add(p);

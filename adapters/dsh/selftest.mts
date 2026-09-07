@@ -888,9 +888,10 @@ function writeFixtureGene(repoRoot: string): void {
 // ── 6) 防火墙机器检查：import 面 / 引擎零依赖 / 包结构契约 ────────────────
 {
 	// 扫描面按运行形态自适应：dist 跑（权威形态）扫 .mjs，源跑扫 .mts——
-	// 两种形态下被扫集合都非空，扫描不因形态切换而空转（index.* 为宿主
-	// 依赖唯一入口，单独断言允许集）。
-	const adapterModules = fs.readdirSync(ADAPTER_DIR).filter((f) => /\.(m|mt)s$/.test(f) && !f.startsWith("index."));
+	// 两种形态下被扫集合都非空（下方非空守卫钉死，防形态切换后正则失配
+	// 静默空转；index.* 为宿主依赖唯一入口，单独断言允许集）。
+	const adapterModules = fs.readdirSync(ADAPTER_DIR).filter((f) => /\.(mjs|mts)$/.test(f) && !f.startsWith("index."));
+	assert.ok(adapterModules.length > 0, "firewall module scan must be non-empty (dist .mjs / source .mts)");
 	for (const file of adapterModules) {
 		const text = fs.readFileSync(path.join(ADAPTER_DIR, file), "utf8");
 		assert.doesNotMatch(text, /from ["']@deepseek-ai\//, `${file} must not import host packages (firewall rule 2)`);
