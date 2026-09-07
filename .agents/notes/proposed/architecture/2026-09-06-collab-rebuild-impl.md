@@ -11,7 +11,7 @@ charter（[2026-09-06-framework-rebuild-charter](../../implemented/architecture/
 - **门禁协作层**：Python 13 件（verify-* ×10 + `gates.py` 发射器 + `gen-manifest.py` + `mdref.py`）+ bash 3 件（`change-scope.sh` / `pre-push-selftest.sh` / `setup-hooks.sh`）；gates.json 十条 cmd 全为 `python3`/`bash`。
 - **引擎与适配层**：`engine/` 11 件 .js（CommonJS，1339 行）+ `adapters/dsh/` 9 件 .mjs（ESM）。
 - **钩子与 CI**：`.githooks/` pre-commit/pre-push 两件 bash；CI 单 workflow（validate.yml）。
-- **蓝图未定项三件**：`mdref.py` 归宿——实读已定：它是 `verify-md-links`/`verify-skill-format` 的共享链接原语库（import 消费，非独立工具），归宿 = 迁 TS 共享模块 `mdref.ts`，不淘汰；`setup-hooks.sh` 去向——拍板 = lefthook 内建 postinstall 取代（见 Decision）；`pre-push-selftest.sh` 四态 e2e——TS 重建为独立 e2e 件（运行形态随 B0 拍板：node 原生 type stripping 直跑，tsx 落败，见 [2026-09-08-b0-framework-structure](../../implemented/architecture/2026-09-08-b0-framework-structure.md)）。
+- **蓝图未定项三件**：`mdref.py` 归宿——实读已定：它是 `verify-md-links`/`verify-skill-format` 的共享链接原语库（import 消费，非独立工具），归宿 = 迁 TS 共享模块 `mdref.mts`（B1 钉形修正：type:commonjs 下裸 .ts 为 CJS 分类装不下 import），不淘汰；`setup-hooks.sh` 去向——拍板 = lefthook 内建 postinstall 取代（见 Decision）；`pre-push-selftest.sh` 四态 e2e——TS 重建为独立 e2e 件（运行形态随 B0 拍板：node 原生 type stripping 直跑，tsx 落败，见 [2026-09-08-b0-framework-structure](../../implemented/architecture/2026-09-08-b0-framework-structure.md)）。
 
 ## Proposal
 
@@ -20,7 +20,7 @@ charter（[2026-09-06-framework-rebuild-charter](../../implemented/architecture/
 | 批 | 内容 | 蓝图对账 |
 |---|---|---|
 | **B0 框架结构面批（已拍板插入，2026-09-08）** | 四件框架结构件：子树 AGENTS.md 五件布点（C11）/ 教训层形态（postmortem 规则入门禁，C12）/ archived-notes 校验件（决策记忆层增量）/ 技能 references/ 形态规则（不实拆——noo-doc-standards 377 词（verify-doc-budgets 口径实测），无携带需求）；新门禁直接 TS——node ≥22.18 原生 type stripping 直跑 .mts（tsx 落败，零 devDependency；tsc/tsconfig 归 B1），最小切片 = CI 钉 node 22 | C11 / C12 / §2 增量 / §3 形态 |
-| B1 门禁族 TS 化 | verify-* ×10 + gates runner（TS + DAG：needs/after + 有界并行 + fail-fast + 图校验）+ `mdref.ts` + `gen-manifest`；新旧双跑对账（py 与 TS 逐件输出一致） | C1 部分 / C5 / C6 基线 / C15 评估 |
+| B1 门禁族 TS 化 | verify-* ×10 + gates runner（TS + DAG：needs/after + 有界并行 + fail-fast + 图校验）+ `mdref.mts` + `gen-manifest`；新旧双跑对账（py 与 TS 逐件输出一致） | C1 部分 / C5 / C6 基线 |
 | B2 引擎+适配层 TS 化 | engine 11 件 + adapters 9 件 → TS；npm 管线 files→tsc dist | C1 / C3 / C9 / C10 |
 | B3 钩子与安装面 | lefthook 分域 job 直接调 `node dist/…`（零转译）；postinstall 自动安装器；`pre-push-selftest` 四态 e2e TS 重建；`setup-hooks.sh` 退役 | C2 / C4 / C6 / C13 部分 |
 | B4 挂载面接线 | A2–A6 + A8 接线（各带最小 smoke）；M1–M3 实现件（各带 HERO 判据答案）；候选门禁评估（文件名契约闸 / 上帝类预防闸） | C7 / C8 / C15 |
@@ -51,4 +51,4 @@ charter（[2026-09-06-framework-rebuild-charter](../../implemented/architecture/
 - 并存期长（五批）：双机器并存窗口内权威归属漂移——缓解：旧件保持权威 + 每批 journal 月卷标注 + B5 一次收口。
 - lefthook 引入第三方 devDependency：与 engine 零依赖纪律的边界须在实现 ADR 中保持显式（D1 约束 engine 运行时面，工具链面已由 TS 拍板豁免）。
 - TS 对账工作量：py→TS 行为恒等逐件实证（含 self-test 夹具同迁），对账脚本为临时代码不入门禁，B5 删除。
-- mdref.ts 迁移面：链接/锚点正则与 slugify 语义须逐条对齐（两消费方 self-test 同迁覆盖）。
+- mdref.mts 迁移面：链接/锚点正则与 slugify 语义须逐条对齐（两消费方 self-test 同迁覆盖）。
