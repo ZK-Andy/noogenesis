@@ -28,7 +28,6 @@
 - [x] （D）B1 门禁族 TS 化批 2026-09-08（FULL 三审全采纳收口；C5 转绿），ADR [2026-09-08-collab-rebuild-b1-gates-ts](.agents/notes/implemented/architecture/2026-09-08-collab-rebuild-b1-gates-ts.md)。
 - [x] （A）框架重建立项收口 2026-09-06（推倒重建/先框架后协作层/原地重建；FULL 三审 R1 0B/5S、R2 2B/6S、R3 1B/3S 全采纳），ADR [2026-09-06-framework-rebuild-charter](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md)。
 - [ ] （C）main 领先包体待随批出包（2026-09-06 用户拍板不单开发版轮）：git 前置条件 + ENOENT 诊断分流已落 main（`b5fcb2e`→`10745e2`），npm 包仍 0.1.3；下一有发版需求的批次 chore(release) bump 0.1.4 一并带出（tag 推送随钩子修复直接放行）。
-- [ ] （C）gates.py self-test 夹具脚手架折叠（2026-09-06 R1 建议采纳归后续）：四份 gates_dir/mkdir/write_text 同型脚手架提取助手收敛为一家，行为不变；随下次触碰 gates.py 顺带做，不单开批。
 - [ ] （D）护栏延后拍板待收口（ADR [2026-09-06-guardrail-defer-trigger](.agents/notes/proposed/architecture/2026-09-06-guardrail-defer-trigger.md) proposed）：护栏三件（token-meter 真测量 / 严格改进度量 / canary 隔离）需要但延后至首个胶囊优化完成后触发；收口时转 implemented + 修正骨架 ADR 遗留面归口 + 设计稿 §6/§11 API 名以实测修正。对账余项：js-yaml + YAML 迁移器归口、Detect 信号源轮立项（D2 禁区逐源解除，连带 M3 频次重议）。
 - [x] （D）P2 实现轮 2026-09-06（FULL 三审 R1 1B/5S、R2 1B/8S、R3 0B/6S 全采纳），ADR [2026-09-06-p2-shared-consumer](.agents/notes/implemented/architecture/2026-09-06-p2-shared-consumer.md) implemented。
 - [ ] （D）痕迹提炼面归融合轮（2026-09-06 用户拍板：记录但不急）：「纪律留痕→无人提炼→下会话考古」缺口在案，解法随 dsh-continual-evolve 融合轮再议（触发 = 架构定稿，设计稿 §13.5）；旧项目 OBSERVATION 观察生命周期协议为实物参照（work 区）。边界：非自动沉淀复刻（#18 负面清单有效）、不让引擎扫会话，只议 session-close 摩擦点落点是否可寻址。
