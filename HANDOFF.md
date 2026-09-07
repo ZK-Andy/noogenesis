@@ -9,7 +9,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-08｜**B4 挂载面接线批收口（FULL 三审全采纳；ADR `2026-09-08-b4-mount-wiring` implemented；`610fe7e`→`0d00bb6`）**：六点接线合并语义单源 + M1/M2/M3 记录/建议件零阻断 + peer dep dsh-llm；R2 两 Blocker（A8 drain 死接线/M2 游标错位）全修；C15 双候选均不立。**节点：C7/C8/C15 落账，下一批 = B5。** README 核对已同步。
+- 2026-09-08｜**B4 挂载面接线批收口（FULL 三审全采纳；ADR `2026-09-08-b4-mount-wiring` implemented；`610fe7e`→`13440a0`）**：六点接线合并语义单源 + M1/M2/M3 记录/建议件零阻断 + peer dep dsh-llm；R2 两 Blocker（A8 drain 死接线/M2 游标错位）全修；C15 双候选均不立。**节点：C7/C8/C15 落账，下一批 = B5。** README 核对已同步。
 - 2026-09-08｜**B3 钩子面批收口（FULL 三审全采纳；ADR `2026-09-08-b3-hooks-install` implemented；`61d074b`→`d2527a6`）**：pre-commit lefthook 分域 + pre-push 单编排器 TS（tier 循环同构 + 并行组 + dist 自测）+ e2e 四态 TS 重建；bash 三件退役；tier 触发集改指 `lefthook.yml`；C6 实测 3.83s vs 6.3s。**节点：下一批 = B4。**
 
 - 2026-09-08｜**B2 引擎+适配层 TS 化批收口（FULL 三审 0B 全采纳；ADR `2026-09-08-b2-engine-adapter-ts` implemented；`f0bddfa`→`181b752`）**：engine 10 件 .ts + adapters 9 件 .mts 双跑对账零 diff；npm 发布面切 dist；js/mjs 权威并存至 B5。**节点：C3/C10 转绿 + C9 过，下一批 = B3。** README 核对有变更已同步（结构树）。
