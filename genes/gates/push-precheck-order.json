@@ -9,7 +9,7 @@
     "最小证据"
   ],
   "strategy": [
-    "先跑 scripts/change-scope.sh 拿到本次出账 diff 面",
+    "先跑 scripts/change-scope.mts 拿到本次出账 diff 面",
     "按 diff 面选最窄检查子集，先窄后宽逐层补",
     "覆盖不全时补跑，禁止为掩盖未覆盖文件收窄范围"
   ],
