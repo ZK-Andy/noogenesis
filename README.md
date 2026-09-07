@@ -48,7 +48,7 @@ node engine/bin.js self-test      # engine self-test
 │   ├── method/             # methodology body (the content domain being evolved)
 │   ├── cookbook.md         # pitfalls single source of truth (atomic entries)
 │   └── research/           # design docs (swarm framework / shared layer / JIT-Agent research) + reference engine teardowns
-├── scripts/                # verify-* machine gates (Python legacy family, migrating to TS in B1; new gates are zero-dependency .mts run by node ≥22.18) + gates.py manifest emitter
+├── scripts/                # verify-* machine gates (dual-track since B1: Python family stays authoritative until the B5 switch, full TS family *.mts runs on node ≥22.18 native type stripping) + gates.py manifest emitter
 ├── engine/                 # evolution engine (zero-dependency five commands + gates.json whitelist; pull = read-only bank consumption)
 ├── adapters/dsh/           # DSH adapter layer (plugin shell wiring: system-prompt section / noo_* tools / solidify confirmation / geneBankUrl lazy pull / bank-distributed skills)
 ├── genes/                  # gene bank (<domain>/<id>.json, archived via solidify; this repo is the bank)
