@@ -52,6 +52,7 @@ import * as path from "node:path";
 import * as os from "node:os";
 import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
+import { splitLines as pySplitlines } from "./mdref.mts";
 
 const NOTES_DIR = ".agents/notes";
 // FULL/<date>/R1=ok R2=ok R3=ok — 值严格校验（fail/abort 不算数）。
@@ -80,13 +81,6 @@ const FULL_TIER_WORDS = ["三重审核"];
 /** py print 的 stdout 直写（避免 console.log 的 % 格式化面）。 */
 function out(s: string): void { process.stdout.write(s + "\n"); }
 function errOut(s: string): void { process.stderr.write(s + "\n"); }
-
-/** py str.splitlines：全集行边界（含 \v\f\x1c-\x1e\x85\u2028\u2029），去尾部单个换行。 */
-function pySplitlines(text: string): string[] {
-  const lines = text.split(/\r\n|[\n\r\v\f\x1c\x1d\x1e\x85\u2028\u2029]/);
-  if (lines.length > 0 && lines[lines.length - 1] === "") lines.pop();
-  return lines;
-}
 
 /** py read_text 的 universal-newlines 语义：\r\n 与 \r 归一为 \n。 */
 function pyUniversalNewlines(text: string): string {
@@ -510,6 +504,7 @@ function main(argv: string[]): number {
 }
 
 // 入口守卫：直接运行时才分发 main；被 verify-review-brief.mts import 时不执行。
+// argv[1] 先 realpath 再比对——符号链接调用面 import.meta.url 已是真身（R2 评审收口）。
 const invokedAsEntry = process.argv[1] !== undefined
-  && import.meta.url === pathToFileURL(process.argv[1]).href;
+  && import.meta.url === pathToFileURL(fs.realpathSync(process.argv[1])).href;
 if (invokedAsEntry) process.exit(main(process.argv.slice(2)));

@@ -15,9 +15,12 @@
  * - fail-fast：任一门禁非零即停止调度新门禁，等在飞件收尾后 exit 1；jobs=1 时
  *   与 py 逐行等价（不打印 skip 行）；jobs>1 时对未调度件补 skip 理由行。
  * - 有界并行：默认并行度 = min(CPU 数, 8)，--jobs 可调（1 = 串行等价档）。
- * - 图校验（fail-closed exit 2）：重 id / needs∪after 未知依赖（含自环）/ 环。
- *   图无环 + 依赖全存在 ⇒ 无调度死锁态（任一 pending 的依赖要么绿、要么已触发
- *   fail-fast 全跳、要么在飞/前序 pending——推进恒有保证），运行期不再设死锁分支。
+ * - 图校验（fail-closed exit 2）：重 id / needs∪after 未知依赖（含自环）/ 环，
+ *   另加运行前校验：needs/after 不得指向 `--skip` 剔除的门禁（py 串行无 DAG
+ *   语义、同场景照跑下游；TS 按 DAG 语义 fail-closed，报错指向 `--skip X`）。
+ *   图无环 + 依赖全存在且全在 plan 内 ⇒ 无调度死锁态（任一 pending 的依赖
+ *   要么绿、要么已触发 fail-fast 全跳、要么在飞/前序 pending——推进恒有保证），
+ *   运行期不再设死锁分支。
  *
  * 结构性例外（与 py 同，勿"修复"）：review-tier per-ref 循环、review-brief 仅本地、
  * change-scope 双推导口径、gene-format 白名单外独立件——语义见 gates.py 头注。
@@ -162,6 +165,12 @@ function runGates(repoRoot: string, gates: Gate[], opts: RunOptions): Promise<nu
     if (!gates.some((g) => g.name === name)) failClosed(`--skip names unknown gate: ${name}`);
   }
   const plan = gates.filter((g) => !opts.skip.has(g.name));
+  for (const g of plan) {
+    const depSkipped = [...g.needs, ...g.after].find((d) => opts.skip.has(d));
+    if (depSkipped !== undefined) {
+      failClosed(`gate ${g.name}: depends on skipped gate ${depSkipped} (--skip ${depSkipped})`);
+    }
+  }
   const jobs = Math.max(1, Math.min(opts.jobs || defaultJobs(), MAX_JOBS_CAP, plan.length || 1));
   const exitOf = new Map<string, number>();   // 已完成件的退出码
   const skipped = new Map<string, string>();  // fail-fast 后未调度件的 skip 理由
@@ -194,7 +203,7 @@ function runGates(repoRoot: string, gates: Gate[], opts: RunOptions): Promise<nu
         resolve(0);
         return;
       }
-      // 不可达（图校验已排除环；理论不可达，防御性 fail-closed）。
+      // 不可达（图校验 + plan 期 skip 依赖校验后无死锁态；防御性 fail-closed）。
       console.error(`${PROGRAM}: FAIL-CLOSED — scheduling stuck: ${[...pending].join(", ")}`);
       resolve(2);
     };
@@ -452,6 +461,18 @@ async function selfTest(): Promise<number> {
       check(rc === 0, "组9: 串行全绿应 exit 0");
       check(JSON.stringify(launched) === JSON.stringify(["b-slow", "a-fast"]), `组9: 串行发射序应为清单序，实测 ${launched.join(",")}`);
     }
+    // 组 10：--skip 剔除被依赖门禁 → plan 期 fail-closed（R1/R2 评审收口）
+    {
+      const root = makeRoot({ version: 1, gates: [
+        evalGate("a", "process.exit(0)"),
+        evalGate("b", "process.exit(0)", { needs: ["a"] }),
+        evalGate("c", "process.exit(0)", { after: ["a"] }),
+        evalGate("free", "process.exit(0)"),
+      ] });
+      const gates = loadGates(root);
+      check(throwsFailClosed(() => runGates(root, gates, { jobs: 1, skip: new Set(["a"]), slots: {} })), "组10: skip 被依赖门禁（needs）应 fail-closed");
+      check(throwsFailClosed(() => runGates(root, gates, { jobs: 1, skip: new Set(["a"]), slots: {} })), "组10: skip 被依赖门禁（after）应 fail-closed");
+    }
   } finally {
     for (const root of tmpRoots) fs.rmSync(root, { recursive: true, force: true });
   }
@@ -459,7 +480,7 @@ async function selfTest(): Promise<number> {
     for (const f of failures) console.log(`SELF-TEST FAIL: ${f}`);
     return 1;
   }
-  console.log(`${PROGRAM} self-test: 9 fixture groups passed`);
+  console.log(`${PROGRAM} self-test: 10 fixture groups passed`);
   return 0;
 }
 

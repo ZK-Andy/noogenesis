@@ -42,6 +42,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 import { spawnSync } from "node:child_process";
+import { pathToFileURL } from "node:url";
+import { splitLines } from "./mdref.mts";
 import { classify } from "./verify-review-tier.mts";
 
 const BRIEFS_DIR = ".review-briefs";
@@ -72,17 +74,6 @@ const SELFASSERT_RE = /门禁自证[^\n]*?[:：]/u;
 // 的 `<token>:1`（文件:行引用）不会误报。尾部 (?![\p{L}\p{N}_]) 等价 Python \b
 // 的 Unicode 边界语义（数字后跟字母 = 非边界，不得成项）。
 const SELFASSERT_ITEM_RE = /([A-Za-z0-9._\-]+)[:：](\d+)(?![\p{L}\p{N}_])/gu;
-
-// ---- Python 语义等价原语 ----------------------------------------------------
-
-/** str.splitlines() 等价：除 \n 外还切 \r \v \f \x1c-\x1e \x85 \u2028 \u2029；
- *  尾部终结符不产生空尾元素。 */
-function splitLines(s: string): string[] {
-  if (s === "") return [];
-  const parts = s.split(/\r\n|\n|\r|\v|\f|\x1c|\x1d|\x1e|\x85|\u2028|\u2029/u);
-  if (parts.length > 0 && parts[parts.length - 1] === "") parts.pop();
-  return parts;
-}
 
 /** Python str.isspace 的字符集（JS \s 差 \x1c-\x1f、多 \ufeff——按 Python 口径）。 */
 const PY_SPACE_RE =
@@ -729,4 +720,7 @@ function main(): number {
   return 0;
 }
 
-process.exit(main());
+// 入口守卫：直接运行时才分发 main；被同族 import 时不执行（scripts/AGENTS 规则）。
+const invokedAsEntry = process.argv[1] !== undefined
+  && import.meta.url === pathToFileURL(fs.realpathSync(process.argv[1])).href;
+if (invokedAsEntry) process.exit(main());

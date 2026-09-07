@@ -4,7 +4,7 @@
  *
  * 单源（ADR 2026-09-05-consolidate-r1-simplification-candidates）：链接/锚点定义与
  * 相对链接解析循环，供 verify-md-links.mts 与 verify-skill-format.mts 共用；本库
- * 无 CLI，行为由两个消费方的 --self-test 覆盖（verify-skill-format --self-test 经
+ * 无 CLI，行为由消费方的 --self-test 覆盖（verify-skill-format --self-test 经
  * check_skill 走死链路径）。
  *
  * checkRelativeLinks 合同：
@@ -33,9 +33,9 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-export const LINK_RE = /\[[^\]]*\]\(([^)]+)\)/g;
-export const HEADING_RE = /^(#{1,6})\s+(.+?)\s*#*\s*$/u;
-export const ANCHOR_RE = /<a\s+id="([^"]+)"/;
+const LINK_RE = /\[[^\]]*\]\(([^)]+)\)/g;
+const HEADING_RE = /^(#{1,6})\s+(.+?)\s*#*\s*$/u;
+const ANCHOR_RE = /<a\s+id="([^"]+)"/;
 
 /** Python str.splitlines() 等价：按行拆分，结尾终结符不产生空尾行。 */
 export function splitLines(text: string): string[] {
@@ -55,7 +55,7 @@ export function slugify(text: string): string {
 }
 
 /** 收集文件内全部标题 slug 与显式 `<a id="...">` 锚；文件不可读（如目标不存在）返回空集。 */
-export function headingSlugs(p: string): Set<string> {
+function headingSlugs(p: string): Set<string> {
   const slugs = new Set<string>();
   let text: string;
   try {

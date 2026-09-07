@@ -84,9 +84,18 @@ function unifiedSuffix(a: string, b: string): string {
 
 function main(): number {
   const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-  const only = new Set(
-    (process.argv[process.argv.indexOf("--only") + 1] ?? "").split(",").map((s) => s.trim()).filter(Boolean),
-  );
+  const argv = process.argv.slice(2);
+  const i = argv.indexOf("--only");
+  if (i !== -1 && (argv[i + 1] === undefined || argv[i + 1] === "")) {
+    console.error("reconcile-b1: FAIL-CLOSED — --only needs a comma-separated case list");
+    return 2;
+  }
+  const only = i === -1 ? new Set<string>() : new Set((argv[i + 1] ?? "").split(",").map((s) => s.trim()).filter(Boolean));
+  const unknown = [...only].filter((n) => !CASES.some((c) => c.name === n));
+  if (unknown.length > 0) {
+    console.error(`reconcile-b1: FAIL-CLOSED — --only names unknown case: ${unknown.join(", ")}`);
+    return 2;
+  }
   let failed = 0;
   let ran = 0;
   for (const c of CASES) {
