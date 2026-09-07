@@ -9,7 +9,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-08｜**B0 框架结构面批收口（FULL 三审全采纳；ADR `2026-09-08-b0-framework-structure` implemented）**：五件子树 AGENTS.md + archived/postmortem 两件 TS 门禁（node 原生 stripping 零依赖）+ references/ 形态规则。**节点：C11/C12 转绿，下一批 = B1 TS 化。**
+- 2026-09-08｜**B0 框架结构面批收口（FULL 三审全采纳；ADR `2026-09-08-b0-framework-structure` implemented）**：五件子树 AGENTS.md + archived/postmortem 两件 TS 门禁（node 原生 stripping 零依赖）+ references/ 形态规则。**节点：C11/C12 转绿，下一批 = B1 TS 化。** README 有变更已同步（AGENTS 分层/scripts 语言栈表述）。
 
 - 2026-09-06｜**协作层实现轮立项落档（无实现；ADR `2026-09-06-collab-rebuild-impl` proposed）**：用户三拍板（B1→B5 按序/lefthook/0.2.0 断点）；mdref 归宿实证迁 TS；排序自查推荐插入 B0 框架结构面批（**待拍板 = 下会话首题**）。README 无变更。
 

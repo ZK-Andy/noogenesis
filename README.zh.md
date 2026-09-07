@@ -8,7 +8,7 @@ noogenesis＝心智的发生与持续生长（德日进谱系下集体知识演�
 
 ## 当前状态
 
-**胶囊 01「AI 协作编码方法论」**（本仓即其第一个宿主，self-hosting）：常驻基座（双层 AGENTS）+ 流程卡 + ADR 生命周期 + 机器门禁（清单单源 `engine/gates.json`，含评审档位/简报两闸）+ 原子踩坑库 + 交接家庭。搬迁计划（已实施冻结）见 [journal/capsule-01-migration-plan.md](journal/capsule-01-migration-plan.md)；ADR 家在 [.agents/notes/README.md](.agents/notes/README.md)。
+**胶囊 01「AI 协作编码方法论」**（本仓即其第一个宿主，self-hosting）：常驻基座（分层 AGENTS：根 + `.agents/` + 五件子树）+ 流程卡 + ADR 生命周期 + 机器门禁（清单单源 `engine/gates.json`，含评审档位/简报两闸）+ 原子踩坑库 + 交接家庭。搬迁计划（已实施冻结）见 [journal/capsule-01-migration-plan.md](journal/capsule-01-migration-plan.md)；ADR 家在 [.agents/notes/README.md](.agents/notes/README.md)。
 
 两个运行层已就位：
 
@@ -42,13 +42,13 @@ node engine/bin.js self-test      # 引擎自检
 ## 结构
 
 ```
-├── AGENTS.md               # 常驻基座（agent 自动加载，≤800 词）
+├── AGENTS.md               # 常驻基座（agent 自动加载，≤800 词；子树件 engine/ adapters/ scripts/ docs/ .agents/notes/ 各 ≤300 词）
 ├── .agents/                # AI 协作层：技能 noo-* / 流程卡 / ADR
 ├── docs/
 │   ├── method/             # 方法论正文（被演化的内容域）
 │   ├── cookbook.md         # 踩坑单一事实源（原子条目）
 │   └── research/           # 设计文档（蜂群框架设计 / 共享层设计 / JIT-Agent 研究）+ 参考引擎调研解剖
-├── scripts/                # verify-* 机器门禁（零依赖 Python）+ gates.py 门禁清单单源发射器
+├── scripts/                # verify-* 机器门禁（Python 存量族随 B1 迁 TS；新门禁为零依赖 .mts，node ≥22.18 原生直跑）+ gates.py 门禁清单单源发射器
 ├── engine/                 # 演化发动机（Node 零依赖五命令 + gates.json 白名单；pull = 基因库只读消费）
 ├── adapters/dsh/           # DSH 适配层（插件壳接线：system-prompt 节 / noo_* 工具 / solidify 人工确认 / geneBankUrl 惰性 pull / 技能随库分发）
 ├── genes/                  # 基因库（<domain>/<id>.json，经 solidify 入档；本仓即库）

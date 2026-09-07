@@ -8,7 +8,7 @@ Noogenesis is a **swarm evolution framework** built on the [DeepSeek Harness](ht
 
 ## Status
 
-Capsule 01, the "AI collaboration coding methodology", **self-hosts in this repository**: a dual-layer AGENTS base, process cards, an ADR lifecycle, machine gates (single-sourced in `engine/gates.json`, including the review tier and review brief pair), an atomic pitfalls cookbook, and a handoff family. The frozen migration plan lives in [journal/capsule-01-migration-plan.md](journal/capsule-01-migration-plan.md); the ADR home is [.agents/notes/README.md](.agents/notes/README.md).
+Capsule 01, the "AI collaboration coding methodology", **self-hosts in this repository**: a layered AGENTS base (root + `.agents/` + five subtrees), process cards, an ADR lifecycle, machine gates (single-sourced in `engine/gates.json`, including the review tier and review brief pair), an atomic pitfalls cookbook, and a handoff family. The frozen migration plan lives in [journal/capsule-01-migration-plan.md](journal/capsule-01-migration-plan.md); the ADR home is [.agents/notes/README.md](.agents/notes/README.md).
 
 Two runtime layers are live:
 
@@ -42,13 +42,13 @@ node engine/bin.js self-test      # engine self-test
 ## Structure
 
 ```
-├── AGENTS.md               # standing base (auto-loaded by agents, ≤800 words)
+├── AGENTS.md               # standing base (auto-loaded, ≤800 words; subtree AGENTS.md in engine/ adapters/ scripts/ docs/ .agents/notes/, ≤300 words each)
 ├── .agents/                # AI collaboration layer: noo-* skills / process cards / ADRs
 ├── docs/
 │   ├── method/             # methodology body (the content domain being evolved)
 │   ├── cookbook.md         # pitfalls single source of truth (atomic entries)
 │   └── research/           # design docs (swarm framework / shared layer / JIT-Agent research) + reference engine teardowns
-├── scripts/                # verify-* machine gates (zero-dependency Python) + gates.py manifest emitter
+├── scripts/                # verify-* machine gates (Python legacy family, migrating to TS in B1; new gates are zero-dependency .mts run by node ≥22.18) + gates.py manifest emitter
 ├── engine/                 # evolution engine (zero-dependency five commands + gates.json whitelist; pull = read-only bank consumption)
 ├── adapters/dsh/           # DSH adapter layer (plugin shell wiring: system-prompt section / noo_* tools / solidify confirmation / geneBankUrl lazy pull / bank-distributed skills)
 ├── genes/                  # gene bank (<domain>/<id>.json, archived via solidify; this repo is the bank)
