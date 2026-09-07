@@ -29,7 +29,7 @@
 - [x] （D）B2 引擎+适配层 TS 化批 2026-09-08（FULL 三审 0B 全采纳收口；双跑对账零 diff；npm 发布面切 dist；C3/C10 转绿 + C9 逐批核过），ADR [2026-09-08-b2-engine-adapter-ts](.agents/notes/implemented/architecture/2026-09-08-b2-engine-adapter-ts.md)。
 - [x] （D）B3 钩子与安装面批 2026-09-08（FULL 三审全采纳收口；tier 触发集对账；C2 部分/C4/C6 部分/C13 部分），ADR [2026-09-08-b3-hooks-install](.agents/notes/implemented/architecture/2026-09-08-b3-hooks-install.md)。
 - [x] （D）B4 挂载面接线批 2026-09-08（FULL 三审全采纳收口；C7/C8/C15 落账 + C9 逐批核过；实机重验 = todos B 条），ADR [2026-09-08-b4-mount-wiring](.agents/notes/implemented/architecture/2026-09-08-b4-mount-wiring.md)。
-- [ ] （B）B4 挂载面实机重验（2026-09-08 ADR Risks 在案）：session.append 自定义 kind `noogenesis/*` 宿主持久化容忍度 + 六点真机接线冒烟（A2 地图/A6 记录/A8 drain）——随下次桌面重验批一并核。
+- [ ] （B）B4 挂载面实机重验（2026-09-08 ADR Risks 在案）：session.append 自定义 kind `noogenesis/*` 宿主持久化容忍度 + 六点真机接线冒烟（A2 地图/A6 记录/A8 drain）——随下次桌面重验批一并核；B5 后连带核 0.2.0 消费面（npm 包 dist 装载 + pull 触发）。
 - [x] （C）engine/bin.ts pull guard 合并 2026-09-08 随 B5 兑现（B2 R1 延后项，同文案 fail 合一 + 不可达 continue 消除，行为零变化）；B5 ADR Decision 6。
 - [x] （A）框架重建立项收口 2026-09-06（推倒重建/先框架后协作层/原地重建；FULL 三审 R1 0B/5S、R2 2B/6S、R3 1B/3S 全采纳），ADR [2026-09-06-framework-rebuild-charter](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md)。
 - [x] （C）main 领先包体出包 2026-09-08 随 B5 0.2.0 断点销账（git 前置条件 + ENOENT 诊断 `b5fcb2e`→`10745e2` 已带出；tag `v0.2.0` + npm latest 在案）。

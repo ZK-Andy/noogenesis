@@ -12,6 +12,7 @@
 - **[演化] 推理模型把输出预算烧在可见思考上，最终文本块为空（2026-09-05 来源：dsh-continual-evolve FAQ #7）**：症状——推理模型做门禁判定/结构化提取时报 `produced no text`，而 maxTokens 预算充足。根因——输出预算被可见思考整段耗尽，最终 text 块为零。规避——提取类 LLM 调用显式关 reasoning（DeepSeek 适配器 `reasoningEffort: "off"`），并显式处理 max-tokens 截断，不要假设"预算够就有正文"。
 - **[演化] flag 值解析用单下标排除法，缺省哨兵误伤首参（2026-09-06 来源：noogenesis engine pull 参数解析两轮 bug，adapter selftest e2e 抓出）**：症状——`rest.find((a,i) => a !== flag && i !== flagIdx + 1)` 在 flag 缺席时 `flagIdx = -1`，`flagIdx + 1 = 0` 恰把第一个位置参数排除，URL 恒 undefined 报「缺参数」；重复 flag 时也只排除首个的值。根因——用"下标 + 哨兵"做排除，缺省值 -1 参与了算术。规避——flag 解析用线性扫描收集（遇 flag 取下一 token、其余即位置参数）+ 位置参数数量断言；解析夹具必须覆盖「flag 在/不在/缺值/重复」四排列——只断言退出码不断言原因的夹具会漏检（本例 engine selftest 过、adapter e2e 红）。
 
+- **[演化] 双基因同树待更新时 solidify 提交互拦（2026-09-08 来源：noogenesis B5 基因指针刷新）**：症状——两个基因文件同时在工作树更新后 solidify 第一件：evaluate 全绿但提交被 pre-commit 钩子的 gene-format 拦（全库复算发现第二件 gene_sha 与事件轨漂移），提交失败回滚事件行、索引残留半应用态。根因——gene-format 复算面是全库而非 staged 子集，solidify 的引擎提交跑在同一工作树上。规避——逐件顺序化：暂存后者内容 → solidify 前者 → 恢复后者 → solidify；失败后先 `git reset` 清半应用索引再重跑。
 ## 门禁
 
 - **[门禁] 门禁阈值与现实脱节即失效（2026-09-05 来源：dsh-frecency verify-handoff-structure）**：症状——260 字上限形同虚设，实测条目普遍 400+ 字。根因——立阈值时未实测现有分布，之后默默改宽无痕。规避——立阈值先实测样本分布；阈值失守必须触发 ADR（改宽要留痕），禁止静默调整。
@@ -47,6 +48,7 @@
 - **[环境] DSH 插件工具注册面单参合同：一次传多定义静默丢失（2026-09-06 来源：noogenesis 0.1.0 首发实机）**：症状——`ctx.tools.register(t1, t2, t3)` 一次传三个 defineTool 定义，模型工具面只有第一个，无任何报错。根因——宿主合同是 `ctx.tools.register(definition: ToolDefinition)` 单参，多余实参被静默忽略。规避——逐个调用 register；自测假面必须复刻单参合同（register 收到多实参即断言失败），宽容假面会让测试照绿漏检。
 - **[环境] lefthook v2 钩子三坑：push-files 门控 / wrapper fail-open / npm12 脚本守卫（2026-09-08 来源：noogenesis B3 实探）**：症状——① pre-push job 在 tag 推送与新分支首推被静默全跳（"no matching push files"，推送文件集为空），fail-closed 档位强制被旁路；② node_modules 缺失时 lefthook wrapper 末行 `echo "Can't find lefthook in PATH"` 以 exit 0 收场，钩子整体静默不跑；③ 本地 npm ≥12 install-scripts 守卫默认拦 lefthook 的 postinstall，钩子没装也以为装了。根因——v2 把 pre-push 语义绑在推送文件集上（上游 discussion #504 无官方恒跑出口）；wrapper 二进制寻路失败不 fail-closed；npm12 新守卫只管依赖脚本，CI（npm10）无感。规避——① job 级 `files: echo lefthook.yml` + run 串引用 `{files}` 恒跑逃生口（files 必须输出真实存在的路径，`echo .` 会被过滤；e2e 四态把「tag/新分支必跑」钉死为回归判据）；② e2e 拷贝 wrapper 并以 node_modules symlink 供其相对寻路（wrapper 经 `node_modules/lefthook-<平台>/bin/lefthook` 解析，依赖 `npm install` 后的 node_modules；`LEFTHOOK_BIN` 为显式替代）；③ `npm install-scripts approve lefthook` 一次性放行；旧 clone 迁移 = `git config --unset core.hooksPath` 后 `npx lefthook install`（hooksPath 已设时 lefthook 拒装并自带 `--reset-hooks-path` 补跑路径）。
 
+- **[环境] 版本 bump 漏连动 package-lock（2026-09-08 来源：noogenesis 0.2.0 发版）**：症状——`chore(release)` 手改 package.json version 后 npm publish 成功，但 package-lock.json 根节点 version 仍为旧版（lock 入 git 钉版纪律下即漂移，需补笔）。根因——sed bump 只改 package.json；锁文件同步靠 `npm install --package-lock-only`，发版提交漏了这步。规避——bump 与 lock 同一提交：改 version 后即跑 `npm install --package-lock-only` 再提交；只读缓存沙箱加 `--cache <临时目录>`。
 ## 上游
 
 - **[上游] 发版正文类型映射漏 bucket 静默少一节（2026-09-05 来源：desktop v0.4.1 教训）**：症状——某 conventional commit 类型（refactor）未映射，发行说明静默缺节。根因——映射表不全且无断言。规避——类型映射集中一处 + `--self-test` 断言全类型有归属。
