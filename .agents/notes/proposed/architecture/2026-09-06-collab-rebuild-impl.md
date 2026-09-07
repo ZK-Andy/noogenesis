@@ -15,18 +15,18 @@ charter（[2026-09-06-framework-rebuild-charter](../../implemented/architecture/
 
 ## Proposal
 
-**用户拍板（2026-09-06）：五批按序 B1→B5；钩子框架 = lefthook；切换批发版断点 = 0.2.0。**
+**用户拍板（2026-09-06）：五批按序 B1→B5；钩子框架 = lefthook；切换批发版断点 = 0.2.0。B0 拍板（2026-09-08）：插入 B1 之前，新门禁直接 TS——批内拆解与拍板依据见 [2026-09-08-b0-framework-structure](2026-09-08-b0-framework-structure.md)。**
 
 | 批 | 内容 | 蓝图对账 |
 |---|---|---|
-| **B0 框架结构面批（拍板待定，推荐插入）** | 四件框架结构件：子树 AGENTS.md 五件布点（C11）/ 教训层形态（postmortem 规则入门禁，C12）/ archived-notes 校验件（决策记忆层增量）/ 技能 references/ 形态首拆（noo-doc-standards）；其中两件新门禁按现行 Python 栈建，B1 随族迁 TS | C11 / C12 / §2 增量 / §3 形态 |
+| **B0 框架结构面批（已拍板插入，2026-09-08）** | 四件框架结构件：子树 AGENTS.md 五件布点（C11）/ 教训层形态（postmortem 规则入门禁，C12）/ archived-notes 校验件（决策记忆层增量）/ 技能 references/ 形态规则（不实拆——noo-doc-standards 实测 198 词，无拆分需求）；新门禁直接 TS（修正原「Python 栈建」表述），最小 TS 切片（tsx + tsconfig 骨架）随本批拉前，DAG runner 仍归 B1 | C11 / C12 / §2 增量 / §3 形态 |
 | B1 门禁族 TS 化 | verify-* ×10 + gates runner（TS + DAG：needs/after + 有界并行 + fail-fast + 图校验）+ `mdref.ts` + `gen-manifest`；新旧双跑对账（py 与 TS 逐件输出一致） | C1 部分 / C5 / C6 基线 / C15 评估 |
 | B2 引擎+适配层 TS 化 | engine 11 件 + adapters 9 件 → TS；npm 管线 files→tsc dist | C1 / C3 / C9 / C10 |
 | B3 钩子与安装面 | lefthook 分域 job 直接调 `node dist/…`（零转译）；postinstall 自动安装器；`pre-push-selftest` 四态 e2e TS 重建；`setup-hooks.sh` 退役 | C2 / C4 / C6 / C13 部分 |
 | B4 挂载面接线 | A2–A6 + A8 接线（各带最小 smoke）；M1–M3 实现件（各带 HERO 判据答案）；候选门禁评估（文件名契约闸 / 上帝类预防闸） | C7 / C8 / C15 |
 | B5 切换批 | gates.json cmd 重指（条目集与门禁名不变）、删 py/sh/旧 js 源、CI 面更新、发版 0.2.0（C11/C12 若 B0 未立则随本批） | C1 / C11 / C12 / C13 / C14 / C10 |
 
-**框架结构面排序（2026-09-06 讨论，未终拍）**：主线自查——四件框架结构件原散排 B4/B5 顺带，削弱「先框架」语义；推荐插入 B0（先于 B1）。依赖挂载面的两件（流程层评审状态机化 / M1–M3 策略件）**不得先行**（A8/A6 接线先在才有落点）。**用户指示本会话不做任何实现、落盘计划即收尾；B0 是否插入 = 下会话首题拍板。**
+**框架结构面排序（2026-09-08 拍板）**：主线自查指认四件框架结构件原散排 B4/B5 顺带削弱「先框架」语义，用户拍板插入 B0（先于 B1），随批新门禁直接 TS；依赖挂载面的两件（流程层评审状态机化 / M1–M3 策略件）**不得先行**（A8/A6 接线先在才有落点）——该禁令不变。
 
 **批次纪律**：每批触碰 `scripts/**` 门禁判据 = FULL 三审（tier 机械触发）；并存期（B1–B4）旧机器件保持权威执行面，TS 件以双跑对账自证，各批在事件轨标注「本批按蓝图判据」；B5 单批切换后旧机器件全量删除（charter 口径）。
 

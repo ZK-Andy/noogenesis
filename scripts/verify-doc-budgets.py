@@ -2,7 +2,9 @@
 """Verify word budgets for standing docs, driven by a manifest JSON.
 
 Provenance: distilled from dotnet-deepseek-harness-desktop/scripts/verify-doc-budgets.py
-(MIT, 2026-09-05); verbatim port, no logic changes for Noogenesis.
+(MIT, 2026-09-05); verbatim port, no logic changes for Noogenesis
+(B0 2026-09-08: over-limit message carries the ordered procedure + cookbook
+distill hint, per C12 / ADR 2026-09-08-b0-framework-structure).
 
 Manifest format (doc-budgets.manifest.json at repo root or passed via --manifest):
 {
@@ -57,8 +59,10 @@ def main() -> int:
         words = count_words(doc.read_text(encoding="utf-8"))
         status = "OK" if words <= limit else "FAIL"
         if status == "FAIL":
+            # 超限处理序单源 docs/method/doc-standards.md；C12：cookbook 超限首选蒸馏/合并条目
             errors.append(f"{doc}: {words} words > budget {limit} "
-                          f"(relocate, condense, or raise ceiling with justification)")
+                          f"(procedure: relocate -> condense -> raise ceiling with justification; "
+                          f"cookbook: distill/merge entries first; see docs/method/doc-standards.md)")
         else:
             print(f"OK   {doc}: {words}/{limit}")
 

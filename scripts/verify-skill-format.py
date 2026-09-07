@@ -95,6 +95,15 @@ def check_skill(path: Path, errors: list[str]) -> None:
     if not re.search(r"^## .*Workflow|^## .*工作流|^## .*工作流程", body, re.MULTILINE):
         errors.append(f"{path}: missing '## Workflow' section")
 
+    # references/ 形态规则（蓝图 §3 扩展位；B0 拍板 2026-09-08）：拆了就必须非空
+    # 且被 SKILL.md 链接——防预铺空目录（.agents「用不上不写」纪律在技能层的投影）
+    refs_dir = path.parent / "references"
+    if refs_dir.is_dir():
+        if not any(refs_dir.iterdir()):
+            errors.append(f"{path}: references/ 目录为空（预铺空目录；用不上不写）")
+        elif "references/" not in body:
+            errors.append(f"{path}: 存在 references/ 但 SKILL.md 未链接其中任何件")
+
 
 def scan(errors: list[str]) -> int:
     if not SKILLS_DIR.is_dir():
@@ -158,6 +167,30 @@ def self_test() -> int:
         errs = []
         check_skill(bad2file, errs)
         assert any("missing target" in e for e in errs), f"should flag dead link: {errs}"
+
+        # references/ 形态规则：空目录违约、已链接合规
+        empty_refs = td / "empty-refs"
+        empty_refs.mkdir()
+        (empty_refs / "SKILL.md").write_text(
+            "---\nname: empty-refs\ndescription: Use when testing.\n---\n\n"
+            "# Title\n\n**This skill is guidance, not a script.**\n\n## Workflow\n\n1. Do.\n",
+            encoding="utf-8")
+        (empty_refs / "references").mkdir()
+        errs = []
+        check_skill(empty_refs / "SKILL.md", errs)
+        assert any("references/ 目录为空" in e for e in errs), f"should flag empty references/: {errs}"
+
+        linked_refs = td / "linked-refs"
+        linked_refs.mkdir()
+        (linked_refs / "references").mkdir()
+        (linked_refs / "references" / "detail.md").write_text("# Detail\n", encoding="utf-8")
+        (linked_refs / "SKILL.md").write_text(
+            "---\nname: linked-refs\ndescription: Use when testing.\n---\n\n"
+            "# Title\n\n**This skill is guidance, not a script.**\n\n## Workflow\n\n1. Do; detail in [detail](references/detail.md).\n",
+            encoding="utf-8")
+        errs = []
+        check_skill(linked_refs / "SKILL.md", errs)
+        assert not errs, f"linked references sample should pass, got {errs}"
 
     # --- real-scan smoke: the actual skills dir must be green ---
     errs = []

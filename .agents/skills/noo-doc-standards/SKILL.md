@@ -48,6 +48,10 @@ description: Use when writing, moving, reviewing, or auditing documentation in t
 
 按根 AGENTS「字数预算」的**有序策略**：迁移到其他层（留一行链接）→ 精简 → 才提额度（manifest `_justify_bump` 留理由）——不许静默超限。预算过低本身是 bug，提额必须说清净增量。
 
+## 技能附属资源形态（references/）
+
+技能正文超预算或需携带模板/清单时，拆 `references/` 子目录（SKILL.md 只留操作流 + 相对链接；`verify-skill-format` 强制：拆了必须非空且被链接）。无需求不预铺空目录（用不上不写）。
+
 ## 验证与 PR 卫生
 
 跑 `verify-doc-budgets` / `verify-md-links` / `verify-cookbook` + `git diff --check`。PR 正文给词数增减、解释任何有意的长文例外、列出跑过的核对。

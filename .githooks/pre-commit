@@ -48,6 +48,13 @@ python3 scripts/verify-handoff-structure.py
 echo "-> verify-gene-format.py"
 python3 scripts/verify-gene-format.py
 
+# 7.6) archived ADR 冻结（仅当 .agents/notes/** 有暂存变更时；B0 新 TS 门禁，
+# node ≥22.18 原生 type stripping 直跑——冻结改写在此被拦，最便宜的拦截位）
+if git diff --cached --name-only --no-renames | grep -q "^\.agents/notes/"; then
+  echo "-> verify-archived-agent-notes.mts"
+  node scripts/verify-archived-agent-notes.mts
+fi
+
 # 8) 评审档位（报告态：FULL 触发时提示证据缺口，不阻断批内中间提交）
 echo "-> verify-review-tier.py --staged（报告态）"
 python3 scripts/verify-review-tier.py --staged

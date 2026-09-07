@@ -23,6 +23,13 @@ jobs:
         with:
           fetch-depth: 0   # change-scope.sh 需要 fork-point 历史；浅克隆会退化为空集 no-op
 
+      # node 22 钉版：TS 门禁（archived-notes / postmortem-naming）依赖 node ≥22.18
+      # 原生 type stripping（B0 拍板 2026-09-08，零 devDependency）；引擎与适配层
+      # self-test 同面消费（package.json engines: node >=22）
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
       # 门禁清单单源：engine/gates.json（经 scripts/gates.py 发射；tier 的
       # 事件条件步、change-scope 的缺省推导、review-brief 的仅本地语义是
       # 结构性例外，见该脚本头注；第十门禁是白名单外独立件——消费引擎产物，
@@ -50,6 +57,8 @@ jobs:
           python3 scripts/verify-gene-format.py --self-test
           python3 scripts/verify-manifest.py --self-test
           python3 scripts/gates.py --self-test
+          node scripts/verify-archived-agent-notes.mts --self-test
+          node scripts/verify-postmortem-naming.mts --self-test
 
       # 引擎元评测（schema ADR S3）：与 verify-* self-test 平级，不占门禁编号
       - name: engine self-test

@@ -2,6 +2,11 @@
   "budgets": [
     { "path": "AGENTS.md", "max_words": 800 },
     { "path": ".agents/AGENTS.md", "max_words": 300 },
+    { "path": "engine/AGENTS.md", "max_words": 300 },
+    { "path": "adapters/AGENTS.md", "max_words": 300 },
+    { "path": "scripts/AGENTS.md", "max_words": 300 },
+    { "path": "docs/AGENTS.md", "max_words": 300 },
+    { "path": ".agents/notes/AGENTS.md", "max_words": 300 },
     { "path": ".agents/notes/README.md", "max_words": 800 },
     { "path": "docs/cookbook.md", "max_words": 2700 },
     { "path": "docs/method/ai-collaboration-method.md", "max_words": 2000 },
