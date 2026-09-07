@@ -34,6 +34,11 @@ jobs:
       - name: 安装依赖（ts-typecheck 前置）
         run: npm ci --no-audit --no-fund
 
+      # B2 起 engine/adapters 源 = TS（.ts/.mts）；自测与发布面消费预构建 dist
+      # （node dist/…，零转译，tsx 只属开发态——蓝图 C3/C10）
+      - name: 构建（tsc → dist）
+        run: npm run build
+
       # 门禁清单单源：engine/gates.json（经 scripts/gates.py 发射；tier 的
       # 事件条件步、change-scope 的缺省推导、review-brief 的仅本地语义是
       # 结构性例外，见该脚本头注；第十门禁是白名单外独立件——消费引擎产物，
@@ -77,11 +82,16 @@ jobs:
           node scripts/verify-review-brief.mts --self-test
           node scripts/verify-gene-format.mts --self-test
 
-      # 引擎元评测（schema ADR S3）：与 verify-* self-test 平级，不占门禁编号
+      # 引擎元评测（schema ADR S3）：与 verify-* self-test 平级，不占门禁编号。
+      # 双列：js 源（并存期权威，B5 清旧行）+ dist（B2 TS 面）
       - name: engine self-test
-        run: node engine/bin.js self-test
+        run: |
+          node engine/bin.js self-test
+          node dist/engine/bin.js self-test
 
       # 适配层元评测（M2 ADR）：零宿主依赖 + 防火墙机器检查（import 面 / 引擎
-      # 零第三方依赖 / 插件包结构契约），与 engine self-test 平级
+      # 零第三方依赖 / 插件包结构契约），与 engine self-test 平级。双列同上。
       - name: adapter self-test
-        run: node adapters/dsh/selftest.mjs
+        run: |
+          node adapters/dsh/selftest.mjs
+          node dist/adapters/dsh/selftest.mjs

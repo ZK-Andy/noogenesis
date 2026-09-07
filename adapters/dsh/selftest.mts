@@ -1,5 +1,5 @@
 /**
- * selftest.mjs — 适配层元评测（零宿主依赖，可在无 DSH 环境跑；CI 与 pre-push
+ * selftest.mts — 适配层元评测（零宿主依赖，可在无 DSH 环境跑；CI 与 pre-push
  * 与 engine self-test 平级，不占门禁编号）。
  *
  * 覆盖面：bridge 合同（stdout + 退出码三档实跑）、cwd 锚定（repoRoot 显式
@@ -9,7 +9,15 @@
  * 结构契约）。
  *
  * 引擎夹具纪律（同 engine selftest 教训）：全部在 os.tmpdir 临时 git 仓内
- * 实跑真实 engine/bin.js，不触碰真实仓。
+ * 实跑真实 dist/engine/bin.js，不触碰真实仓。
+ *
+ * 运行形态（B2 ADR）：本件是 dist 面——经 tsc 发射为
+ * `dist/adapters/dsh/selftest.mjs` 运行（`npm run build` 后
+ * `node dist/adapters/dsh/selftest.mjs`）；源 .mts 不是运行形态。因此
+ * REPO_ROOT 需三级上溯到真仓根（js 权威面 selftest.mjs 为两级），防火墙
+ * engine 扫描与包结构契约仍判真仓文件；solidify 提醒命令断言同款指
+ * dist/engine/bin.js（与 solidify-trigger.mts 的 dist 形态提示串对齐）。
+ * 判据面（防火墙扫描 + 包结构 needles）与 js 面两份同改、逐字一致。
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -18,6 +26,7 @@ import path from "node:path";
 import { execFileSync } from "node:child_process";
 import { isBuiltin } from "node:module";
 import { fileURLToPath } from "node:url";
+import type { defineTool, ToolDefinition } from "@deepseek-ai/dsh-tools";
 import { runEngineSync, resolveRepoRoot, sessionWorkspaceOf, explicitRepoRootOf, EXIT } from "./engine-bridge.mjs";
 import { hitsSectionText } from "./section.mjs";
 import { registerNooTools } from "./tools.mjs";
@@ -27,15 +36,15 @@ import { BUNDLED_SKILL_RANK, PROVIDER_NAME, createBankSkillProvider, parseSkillF
 import { validateConfig, DEFAULT_GENE_BANK_URL } from "./config.mjs";
 
 const ADAPTER_DIR = path.dirname(fileURLToPath(import.meta.url));
-const REPO_ROOT = path.join(ADAPTER_DIR, "..", "..");
-const PASSED = [];
+const REPO_ROOT = path.join(ADAPTER_DIR, "..", "..", "..");
+const PASSED: string[] = [];
 
-function ok(name) {
+function ok(name: string): void {
 	PASSED.push(name);
 	console.log(`ok - ${name}`);
 }
 
-function tempRepo(label) {
+function tempRepo(label: string): string {
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), `noo-adapter-${label}-`));
 	execFileSync("git", ["init", "-q"], { cwd: dir });
 	return dir;
@@ -49,7 +58,7 @@ const FIXTURE_GENE = {
 	strategy: ["step one", "step two"],
 };
 
-function writeFixtureGene(repoRoot) {
+function writeFixtureGene(repoRoot: string): void {
 	const dir = path.join(repoRoot, "genes", "demo");
 	fs.mkdirSync(dir, { recursive: true });
 	fs.writeFileSync(path.join(dir, `${FIXTURE_GENE.id}.json`), JSON.stringify(FIXTURE_GENE, null, 2) + "\n");
@@ -105,20 +114,32 @@ function writeFixtureGene(repoRoot) {
 
 // ── 3) tools：依赖注入面（假 defineTool + 假引擎，退出码映射全路径） ──────
 {
-	const registered = [];
-	const fakeDefineTool = (def) => def;
+	// selftest 消费的已注册工具窄面（exec 参数用 any——宿主 exec 合同不在本层类型面）。
+	interface RegisteredTool {
+		name: string;
+		description: string;
+		execute(args: unknown, exec?: any): Promise<any>;
+	}
+
+	const registered: ToolDefinition[] = [];
+	// 假 defineTool 复刻依赖注入形状：identity 回传定义对象；与真 defineTool
+	// 的泛型签名对接需要一次测试脚手架侧的显式 cast（ToolDefinition 编译面
+	// 比原始定义面宽，运行时形状即定义本身）。
+	const fakeDefineTool = ((options: unknown) => options) as unknown as typeof defineTool;
 	// 单参合同（部署收口 ADR）：DSH 的 ctx.tools.register(definition) 一次只收
 	// 一个定义，多余实参被静默忽略——假面必须复刻该形状，多实参照收即漏检
 	// （0.1.0 首发实测教训：三工具只上了一个）。
 	const fakeCtx = {
 		tools: {
-			register: (...tools) => {
+			register: (...tools: ToolDefinition[]) => {
 				assert.equal(tools.length, 1, "register must be called with exactly one definition (DSH single-arg contract)");
-				registered.push(tools[0]);
+				const definition = tools[0];
+				assert.ok(definition);
+				registered.push(definition);
 			},
 		},
 	};
-	const byName = {};
+	const byName: Record<string, RegisteredTool> = {};
 	const responses = {
 		select: { code: 0, stdout: "signals: demo signal\ndemo/demo-hit  demo gene\n", stderr: "" },
 		propose: { code: 0, stdout: "## demo-hit\nstep one\n", stderr: "" },
@@ -126,8 +147,8 @@ function writeFixtureGene(repoRoot) {
 		evaluateCrash: { code: 1, stdout: "", stderr: "engine: internal fault\n" },
 		evaluateBad: { code: 2, stdout: "", stderr: "engine: gene not found: demo/x\n" },
 	};
-	const rootsSeen = [];
-	const fakeRunEngine = async (args, { repoRoot } = {}) => {
+	const rootsSeen: Array<string | undefined> = [];
+	const fakeRunEngine = async (args: string[], { repoRoot }: { repoRoot?: string } = {}) => {
 		rootsSeen.push(repoRoot);
 		if (args[0] === "select") return responses.select;
 		if (args[0] === "propose") return responses.propose;
@@ -145,30 +166,36 @@ function writeFixtureGene(repoRoot) {
 	registerNooTools(fakeCtx, { defineTool: fakeDefineTool, runEngine: fakeRunEngine, repoRoot: (exec) => exec?.agent?.session?.header?.cwd ?? "/tmp/fallback" });
 	assert.equal(registered.length, 3);
 	for (const tool of registered) byName[tool.name] = tool;
+	const selectTool = byName.noo_select;
+	const proposeTool = byName.noo_propose;
+	const evaluateTool = byName.noo_evaluate;
+	assert.ok(selectTool);
+	assert.ok(proposeTool);
+	assert.ok(evaluateTool);
 	assert.deepEqual(Object.keys(byName).sort(), ["noo_evaluate", "noo_propose", "noo_select"]);
-	assert.match(byName.noo_select.description, /literal normalized match/);
+	assert.match(selectTool.description, /literal normalized match/);
 	ok("tools: three read-only tools registered one-per-register call (no solidify tool)");
 
-	assert.match((await byName.noo_select.execute({ signals: ["demo signal"] }, execA)).text, /demo\/demo-hit/);
-	assert.match((await byName.noo_propose.execute({ gene: "demo/demo-hit" }, execB)).text, /step one/);
+	assert.match((await selectTool.execute({ signals: ["demo signal"] }, execA)).text, /demo\/demo-hit/);
+	assert.match((await proposeTool.execute({ gene: "demo/demo-hit" }, execB)).text, /step one/);
 	assert.deepEqual(rootsSeen.slice(0, 2), ["/tmp/repo-a", "/tmp/repo-b"]);
 	ok("tools: function repoRoot resolved per call from exec (per-agent anchoring)");
 
 	// exec 缺席（静态注入面）→ 解析器自己的兜底分支，工具体不得因此崩。
-	assert.match((await byName.noo_select.execute({ signals: ["demo signal"] })).text, /demo\/demo-hit/);
+	assert.match((await selectTool.execute({ signals: ["demo signal"] })).text, /demo\/demo-hit/);
 	assert.equal(rootsSeen[2], "/tmp/fallback");
 	ok("tools: exec-less execute still resolves (function repoRoot handles undefined exec)");
 
-	const red = await byName.noo_evaluate.execute({ gene: "demo/red" }, execA);
+	const red = await evaluateTool.execute({ gene: "demo/red" }, execA);
 	assert.match(red.text, /^RED \(exit 1\)\n/);
 	// exit 1 + 空 stdout = 引擎内部故障（非 EngineError 走 throw e，退出码同为 1
 	// 且无报告输出）——不得当红档结论放行。
-	await assert.rejects(() => byName.noo_evaluate.execute({ gene: "demo/crash" }), /fail-closed \(exit 2\)/);
+	await assert.rejects(() => evaluateTool.execute({ gene: "demo/crash" }), /fail-closed \(exit 2\)/);
 	ok("tools: exit 0 → text; exit 1+report → RED verdict; exit 1+empty report → throw; exit 2 → throw");
 
-	await assert.rejects(() => byName.noo_evaluate.execute({ gene: "demo/missing" }), /fail-closed \(exit 2\)/);
-	await assert.rejects(() => byName.noo_select.execute({ signals: [] }), /non-empty array/);
-	await assert.rejects(() => byName.noo_propose.execute({ gene: "BAD REF" }), /<domain>\/<id>/);
+	await assert.rejects(() => evaluateTool.execute({ gene: "demo/missing" }), /fail-closed \(exit 2\)/);
+	await assert.rejects(() => selectTool.execute({ signals: [] }), /non-empty array/);
+	await assert.rejects(() => proposeTool.execute({ gene: "BAD REF" }), /<domain>\/<id>/);
 	ok("tools: exit 2 → throw; malformed args → throw with field diagnosis");
 }
 
@@ -197,20 +224,24 @@ function writeFixtureGene(repoRoot) {
 	ok("solidify: staging discovery picks *.json only; missing dir → []");
 
 	const candidates = listStagingCandidates(repo, staging);
-	assert.match(solidifyNotice(repo, staging, "t-actor", candidates), /node engine\/bin\.js solidify genes-staging\/alpha\.json --actor t-actor/);
-	assert.deepEqual(buildSolidifyArgs(candidates[0], "t-actor", repo), ["solidify", "genes-staging/alpha.json", "--actor", "t-actor"]);
+	const alpha = candidates[0];
+	assert.ok(alpha);
+	assert.match(solidifyNotice(repo, staging, "t-actor", candidates), /node dist\/engine\/bin\.js solidify genes-staging\/alpha\.json --actor t-actor/);
+	assert.deepEqual(buildSolidifyArgs(alpha, "t-actor", repo), ["solidify", "genes-staging/alpha.json", "--actor", "t-actor"]);
 	ok("solidify: notice carries exact reproducible command; args are structured");
 
-	const infos = [];
-	const warns = [];
-	const logger = { info: (m) => infos.push(m), warn: (m) => warns.push(m) };
+	const infos: string[] = [];
+	const warns: string[] = [];
+	const logger = { info: (m: string) => infos.push(m), warn: (m: string) => warns.push(m) };
 	const nothing = await runSolidifyTrigger({ repoRoot: repo, stagingDir: staging, actor: "t", candidates: [], logger, ask: async () => "archive", runEngine: async () => ({ code: 0, stdout: "", stderr: "" }) });
 	assert.deepEqual(nothing, { asked: false, approved: false, archived: [], failed: [] });
 	ok("solidify: no candidates → no-op");
 
 	const later = await runSolidifyTrigger({ repoRoot: repo, stagingDir: staging, actor: "t", candidates, logger, ask: async () => "later", runEngine: async () => assert.fail("must not run engine on decline") });
 	assert.equal(later.approved, false);
-	assert.match(infos.at(-1), /genes-staging\/alpha\.json/);
+	const declinedInfo = infos.at(-1);
+	assert.ok(declinedInfo);
+	assert.match(declinedInfo, /genes-staging\/alpha\.json/);
 	ok("solidify: declined → notice only, engine never runs");
 
 	const archived = await runSolidifyTrigger({ repoRoot: repo, stagingDir: staging, actor: "t", candidates, logger, ask: async () => "archive", runEngine: async () => ({ code: 0, stdout: "ok\n", stderr: "" }) });
@@ -219,7 +250,9 @@ function writeFixtureGene(repoRoot) {
 
 	const failed = await runSolidifyTrigger({ repoRoot: repo, stagingDir: staging, actor: "t", candidates, logger, ask: async () => "archive", runEngine: async () => ({ code: 1, stdout: "", stderr: "red: gate\n" }) });
 	assert.equal(failed.failed.length, 1);
-	assert.match(warns.at(-1), /solidify failed for 1 candidate/);
+	const failedWarn = warns.at(-1);
+	assert.ok(failedWarn);
+	assert.match(failedWarn, /solidify failed for 1 candidate/);
 	ok("solidify: gate red → failed list via warn (write refused, engine semantics)");
 
 	// ask 兜底超时（R2-S9）：answerer 永久挂起 → 超时按"仅提醒"降级，不挂死触发体。
@@ -238,7 +271,9 @@ function writeFixtureGene(repoRoot) {
 	});
 	clearTimeout(keepAlive);
 	assert.equal(hung.approved, false);
-	assert.match(infos.at(-1), /genes-staging\/alpha\.json/);
+	const hungInfo = infos.at(-1);
+	assert.ok(hungInfo);
+	assert.match(hungInfo, /genes-staging\/alpha\.json/);
 	ok(`solidify: hung ask times out (default ${ASK_TIMEOUT_MS}ms) → notice-only fallback`);
 }
 
@@ -253,14 +288,15 @@ function writeFixtureGene(repoRoot) {
 	assert.equal(cfg.maxIndexGenes, 12);
 	ok("config: defaults complete");
 
-	for (const [bad, pattern] of [
+	const badConfigs: Array<[unknown, RegExp]> = [
 		[{ repoRoot: "" }, /repoRoot/],
 		[{ sectionOrder: 0 }, /sectionOrder/],
 		[{ injectSignals: "x" }, /injectSignals/],
 		[{ askOnDispose: "yes" }, /askOnDispose/],
 		[{ maxIndexGenes: 1.5 }, /maxIndexGenes/],
 		[[1, 2], /must be an object/],
-	]) {
+	];
+	for (const [bad, pattern] of badConfigs) {
 		assert.throws(() => validateConfig(bad), pattern);
 	}
 	ok("config: type violations throw naming the field");
@@ -310,10 +346,10 @@ function writeFixtureGene(repoRoot) {
 	gate.release("/repo-b");
 	ok("bank-pull: per-repo in-flight gate — same repo dropped, other repo unblocked");
 
-	const infos = [];
-	const warns = [];
-	const logger = { info: (m) => infos.push(m), warn: (m) => warns.push(m) };
-	const pulls = [];
+	const infos: string[] = [];
+	const warns: string[] = [];
+	const logger = { info: (m: string) => infos.push(m), warn: (m: string) => warns.push(m) };
+	const pulls: Array<{ args: string[]; opts?: { repoRoot?: string; timeoutMs?: number } }> = [];
 	const pulled = await pullBankOnce({
 		repoRoot: "/repo-a",
 		url: "https://example.com/bank.git",
@@ -324,8 +360,10 @@ function writeFixtureGene(repoRoot) {
 		logger,
 		gate,
 	});
-	assert.deepEqual(pulls[0].args, ["pull", "https://example.com/bank.git"]);
-	assert.match(pulled.pulled ? infos[0] : "", /bank pulled/);
+	const firstPull = pulls[0];
+	assert.ok(firstPull);
+	assert.deepEqual(firstPull.args, ["pull", "https://example.com/bank.git"]);
+	assert.match(pulled.pulled ? (infos[0] ?? "") : "", /bank pulled/);
 	const again = await pullBankOnce({ repoRoot: "/repo-a", url: "x", runEngine: async () => assert.fail("gate held — must not re-pull"), logger, gate });
 	assert.equal(again.pulled, false);
 	assert.equal(again.reason, "in-flight");
@@ -338,7 +376,9 @@ function writeFixtureGene(repoRoot) {
 		logger,
 	});
 	assert.equal(failedPull.pulled, false);
-	assert.match(warns.at(-1), /continuing offline/);
+	const offlineWarn = warns.at(-1);
+	assert.ok(offlineWarn);
+	assert.match(offlineWarn, /continuing offline/);
 	ok("bank-pull: engine failure → warn, degraded offline, never throws");
 
 	// config: geneBankUrl 缺省官方库（装完即部署，bug-fix ADR D2）/ false 显式禁用 / 自定义串 / 违约抛
@@ -387,10 +427,10 @@ function writeFixtureGene(repoRoot) {
 	// 两路径共享闸（每实例每仓至多一次）；成功回调 onPulled（技能面 invalidate）。
 	{
 		const schedCfg = { geneBankUrl: "https://example.com/bank.git" };
-		const pulls = [];
-		const pulledCallbacks = [];
+		const pulls: Array<string | undefined> = [];
+		const pulledCallbacks: number[] = [];
 		const logger = { info: () => {}, warn: () => {} };
-		const runEngine = async (args, { repoRoot } = {}) => {
+		const runEngine = async (args: string[], { repoRoot }: { repoRoot?: string } = {}) => {
 			pulls.push(repoRoot);
 			return { code: EXIT.OK, stdout: "pull: cloned bank\n", stderr: "" };
 		};
@@ -441,7 +481,7 @@ function writeFixtureGene(repoRoot) {
 		ok("bank-pull: scheduler — geneBankUrl false disables both paths with zero engine spawns");
 
 		// 失败面：引擎红档 → 降级离线，onPulled 不触发（warn 文本已在 5.5 夹具钉过）
-		const failCallbacks = [];
+		const failCallbacks: number[] = [];
 		const failing = createBankPullScheduler({
 			config: schedCfg,
 			runEngine: async () => ({ code: EXIT.FAIL_CLOSED, stdout: "", stderr: "engine: git clone failed: network down\n" }),
@@ -475,6 +515,7 @@ function writeFixtureGene(repoRoot) {
 {
 	// frontmatter 解析：合规 / 缺 description / 非法名 / 引号剥除
 	const good = parseSkillFile("---\nname: alpha-skill\ndescription: \"Alpha does things\"\nwhenToUse: when alpha\n---\n\n# Alpha\nbody\n");
+	assert.ok(good);
 	assert.deepEqual(good.meta, { name: "alpha-skill", description: "Alpha does things", whenToUse: "when alpha" });
 	assert.match(good.content, /^# Alpha/);
 	assert.equal(parseSkillFile("---\nname: alpha-skill\n---\nbody\n"), null); // 缺 description
@@ -492,18 +533,20 @@ function writeFixtureGene(repoRoot) {
 	const badDir = path.join(skillsDir, "bad-skill");
 	fs.mkdirSync(badDir, { recursive: true });
 	fs.writeFileSync(path.join(badDir, "SKILL.md"), "---\nname: alpha-skill\n---\nno description\n");
-	const warns = [];
+	const warns: string[] = [];
 	const provider = createBankSkillProvider({ config: { repoRoot: repo }, logger: { warn: (m) => warns.push(m) } });
 
 	const candidates = await provider.list({ cwd: "/tmp/elsewhere" });
+	const first = candidates[0];
+	assert.ok(first);
 	assert.equal(candidates.length, 1);
-	assert.equal(candidates[0].name, "alpha-skill");
-	assert.equal(candidates[0].description, "Alpha does things");
-	assert.equal(candidates[0].whenToUse, "when alpha");
-	assert.equal(candidates[0].rank, BUNDLED_SKILL_RANK);
-	assert.equal(candidates[0].provider, PROVIDER_NAME);
-	assert.equal(candidates[0].source, "bundled");
-	assert.equal(candidates[0].resourceBase.path, alphaDir);
+	assert.equal(first.name, "alpha-skill");
+	assert.equal(first.description, "Alpha does things");
+	assert.equal(first.whenToUse, "when alpha");
+	assert.equal(first.rank, BUNDLED_SKILL_RANK);
+	assert.equal(first.provider, PROVIDER_NAME);
+	assert.equal(first.source, "bundled");
+	assert.equal(first.resourceBase.path, alphaDir);
 	assert.match(warns.join("\n"), /bad-skill\/SKILL\.md/);
 	ok("skills: cache dir lists curated skill at rank 600; bad frontmatter skipped with warn");
 
@@ -516,8 +559,10 @@ function writeFixtureGene(repoRoot) {
 	ok("skills: CRLF skill served by list (no silent whole-surface wipe)");
 
 	// get：全文定义 + 合同防线（外来 candidate / 文件消失 → undefined）
-	const def = await provider.get(candidates[0]);
+	const def = await provider.get(first);
+	assert.ok(def);
 	assert.equal(def.name, "alpha-skill");
+	assert.ok(def.content);
 	assert.match(def.content, /# Alpha/);
 	assert.equal(def.invocation.modelInvocable, true);
 	assert.equal(def.invocation.userInvocable, true);
@@ -533,11 +578,18 @@ function writeFixtureGene(repoRoot) {
 	fs.mkdirSync(skillsB, { recursive: true });
 	fs.writeFileSync(path.join(skillsB, "SKILL.md"), "---\nname: beta-skill\ndescription: Beta only in repo B\n---\nbody\n");
 	const dyn = createBankSkillProvider({});
-	assert.equal((await dyn.list({ cwd: repo }))[0].name, "alpha-skill");
-	assert.equal((await dyn.list({ cwd: repoB }))[0].name, "beta-skill");
+	const repoList = await dyn.list({ cwd: repo });
+	const repoFirst = repoList[0];
+	assert.ok(repoFirst);
+	assert.equal(repoFirst.name, "alpha-skill");
+	const repoBList = await dyn.list({ cwd: repoB });
+	const repoBFirst = repoBList[0];
+	assert.ok(repoBFirst);
+	assert.equal(repoBFirst.name, "beta-skill");
 	ok("skills: per-lookup cwd resolution — two repos each see their own cached skills");
 
 	const crlf = parseSkillFile("---\r\nname: crlf-skill\r\ndescription: survives CRLF\r\n---\r\n\r\n# Body\r\nline\r\n");
+	assert.ok(crlf);
 	assert.equal(crlf.meta.name, "crlf-skill");
 	assert.match(crlf.content, /^# Body\nline\n$/);
 	ok("skills: CRLF SKILL.md parses — entry normalization, body \\r stripped (R2-B1 regression)");
@@ -552,7 +604,7 @@ function writeFixtureGene(repoRoot) {
 	const blocker = tempRepo("bank-skills-block");
 	fs.mkdirSync(path.join(blocker, ".noogenesis", "genes-cache", ".agents"), { recursive: true });
 	fs.writeFileSync(path.join(blocker, ".noogenesis", "genes-cache", ".agents", "skills"), "not a directory");
-	const blockWarns = [];
+	const blockWarns: string[] = [];
 	const blocked = createBankSkillProvider({ config: { repoRoot: blocker }, logger: { warn: (m) => blockWarns.push(m) } });
 	assert.deepEqual(await blocked.list({}), []);
 	assert.match(blockWarns.join("\n"), /unreadable/);
@@ -560,19 +612,24 @@ function writeFixtureGene(repoRoot) {
 
 	// 接线：宿主 skills 面缺席 → 降级 {ok:false}；在场 → 注册成功 + invalidate 钩子
 	assert.equal(registerBankSkills({}, { logger: { warn() {} } }).ok, false);
-	const invalidated = [];
-	let created;
+	const invalidated: number[] = [];
+	let created: ReturnType<typeof createBankSkillProvider> | undefined;
 	const fakeSkillsCtx = {
 		skills: {
-			registerProvider: (create) => {
-				created = create({ signal: new AbortController().signal, invalidate: () => invalidated.push(1) });
+			registerProvider: (create: (control: { invalidate: () => void }) => ReturnType<typeof createBankSkillProvider>) => {
+				const control = { signal: new AbortController().signal, invalidate: () => invalidated.push(1) };
+				created = create(control);
 			},
 		},
 	};
 	const wired = registerBankSkills(fakeSkillsCtx, { config: { repoRoot: repo }, logger: { warn() {} } });
 	assert.equal(wired.ok, true);
+	assert.ok(created);
 	assert.equal(created.name, PROVIDER_NAME);
-	assert.equal((await created.list({}))[0].name, "alpha-skill");
+	const createdList = await created.list({});
+	const createdFirst = createdList[0];
+	assert.ok(createdFirst);
+	assert.equal(createdFirst.name, "alpha-skill");
 	wired.invalidate();
 	assert.equal(invalidated.length, 1);
 	ok("skills: registerBankSkills — absent host service degrades; invalidate hook bumps host catalog after pull");
@@ -589,7 +646,11 @@ function writeFixtureGene(repoRoot) {
 	const e2eProvider = createBankSkillProvider({});
 	const e2eList = await e2eProvider.list({ cwd: consumer });
 	assert.equal(e2eList.length, 1);
-	assert.equal((await e2eProvider.get(e2eList[0])).content, "body from bank\n");
+	const e2eFirst = e2eList[0];
+	assert.ok(e2eFirst);
+	const e2eDef = await e2eProvider.get(e2eFirst);
+	assert.ok(e2eDef);
+	assert.equal(e2eDef.content, "body from bank\n");
 	ok("skills: e2e — real engine pull carries .agents/skills into cache; provider serves them");
 }
 
@@ -616,7 +677,7 @@ function writeFixtureGene(repoRoot) {
 	}
 	ok("firewall: engine/*.js|*.ts has zero third-party requires/imports");
 
-	const pkg = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, "package.json"), "utf8"));
+	const pkg: { name: string; type: string; main: string; files: string[]; dsh?: { bundle?: { patch?: string } } } = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, "package.json"), "utf8"));
 	assert.equal(pkg.name, "noogenesis-dsh");
 	assert.notEqual(pkg.type, "module");
 	// 包结构契约（js 与 .mts 两份同改）：白名单已切 dist 发布形态（B2 ADR 点 4）。

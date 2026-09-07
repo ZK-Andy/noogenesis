@@ -5,12 +5,12 @@
     "module": "nodenext",
     "moduleResolution": "nodenext",
     "strict": true,
-    "noEmit": true,
-    "allowImportingTsExtensions": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "forceConsistentCasingInFileNames": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "rootDir": ".",
+    "outDir": "dist"
   },
-  "include": ["scripts/**/*.mts", "engine/**/*.ts", "adapters/dsh/**/*.mts"]
+  "include": ["engine/**/*.ts", "adapters/dsh/**/*.mts"]
 }

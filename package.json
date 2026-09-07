@@ -8,22 +8,24 @@
     "url": "git+https://github.com/ZK-Andy/noogenesis.git"
   },
   "type": "commonjs",
-  "main": "adapters/dsh/index.mjs",
+  "main": "dist/adapters/dsh/index.mjs",
   "exports": {
-    ".": "./adapters/dsh/index.mjs",
+    ".": "./dist/adapters/dsh/index.mjs",
     "./package.json": "./package.json"
   },
   "files": [
-    "adapters/dsh/**/*.mjs",
-    "adapters/dsh/README.md",
-    "engine/**/*.js",
+    "dist/",
     "engine/gates.json",
     "engine/README.md",
+    "adapters/dsh/README.md",
     "cordis.patch.yml",
     "README.md",
     "LICENSE",
     "THIRD-PARTY-NOTICES.md"
   ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && node -e \"require('fs').copyFileSync('engine/gates.json','dist/engine/gates.json')\""
+  },
   "dsh": {
     "bundle": {
       "patch": "./cordis.patch.yml"

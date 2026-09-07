@@ -2,6 +2,10 @@
 __pycache__/
 *.pyc
 
+# TS 构建产物（B2 起 engine/adapters 发布面；CI/发布时现建，不入库——
+# ADR 2026-09-08-b2-engine-adapter-ts：git 面只收 TS 源，dist 随包发布）
+/dist/
+
 # 本地工具缓存（pnpm store / 组件缓存等工作区态）
 /.cache/
 node_modules/
