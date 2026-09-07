@@ -1,8 +1,10 @@
 /**
  * index.mts — 插件入口（cordis 装载契约：name / inject / apply）。
- * 宿主运行时依赖收敛：唯一 import @deepseek-ai/dsh-tools（defineTool，经
- * 依赖注入进 tools.mts）；其余模块零宿主依赖，adapters/dsh/selftest.mts 可
- * 脱离 DSH 直测（防火墙规则 2；selftest 机器扫描本目录 import 面强制）。
+ * 宿主运行时依赖收敛：@deepseek-ai/dsh-tools（defineTool，经依赖注入进
+ * tools.mts）+ @deepseek-ai/dsh-llm（createUserMessage——注入消息的冻结/id/
+ * source 形态是宿主合同，B4 ADR Proposal 2），其余模块零宿主依赖，
+ * adapters/dsh/selftest.mts 可脱离 DSH 直测（防火墙规则 2；selftest 机器
+ * 扫描本目录 import 面强制）。
  * inject 不含 userQuestions——提问是可选能力，disposal 时对 ctx.userQuestions
  * 懒取用（cordis 对缺席的注入服务会推迟整个插件装载，声明注入反而让
  * 「提问面缺席 → 只提醒」降级不可达）。
@@ -12,6 +14,7 @@
  */
 import { defineTool } from "@deepseek-ai/dsh-tools";
 import type { ToolDefinition } from "@deepseek-ai/dsh-tools";
+import { createUserMessage } from "@deepseek-ai/dsh-llm";
 import { runEngine, runEngineSync, resolveRepoRoot, sessionWorkspaceOf } from "./engine-bridge.mjs";
 import type { AgentCarrier } from "./engine-bridge.mjs";
 import { registerNooTools } from "./tools.mjs";
@@ -21,6 +24,9 @@ import { runSolidifyTrigger, listStagingCandidates, createInFlightGate, ASK_TIME
 import { createBankPullScheduler } from "./bank-pull.mjs";
 import { registerBankSkills } from "./skill-provider.mjs";
 import { validateConfig } from "./config.mjs";
+import { mergePreStep, mergeSessionStart, mergeToolPost, mergeToolPre, runTurnStopping } from "./mount.mjs";
+import type { MountRecord, PreStepPayload, SessionStartPayload, ToolExecLike, ToolResultLike, TurnStoppingPayload } from "./mount.mjs";
+import { createMountPolicies } from "./mount-policies.mjs";
 
 export const name = "noogenesis";
 
@@ -30,13 +36,43 @@ export const inject = ["tools", "systemPrompt"];
 interface HostContext extends ToolHost {
 	logger(name: string): { info: (message: string) => void; warn: (message: string) => void };
 	provide(name: string, value: unknown): void;
-	on(event: string, listener: (payload: AgentCarrier) => void): void;
+	on(event: string, listener: (payload: any, ...rest: any[]) => unknown): void;
 	systemPrompt: { section(section: { name: string; order: number; text: string | (() => string) }): void };
 	userQuestions?: { ask(question: { questions: Array<{ id: string; question: string; options: Array<{ label: string }> }> }): Promise<any> };
 }
 
 /** solidify 问答宿主决策（archive = 入档；later/null = 只提醒）。 */
 type AskDecision = "archive" | "later" | null;
+
+/** 注入消息 source 标签（hooks-claude-code 同款形态：kind plugin + 插件名）。 */
+const PLUGIN_SOURCE = { kind: "plugin", plugin: "noogenesis" } as const;
+
+/**
+ * 建议档消息构造（A2 追加 / A4 附加上下文 / A5 会话开始注入共用）：
+ * createUserMessage（宿主工厂）+ 多行合一条消息（多行多消息会放大模型面
+ * 噪音；单条多 text part 与 hooks 桥 contextFrom 同形态）。
+ */
+function adviceMessage(lines: string[]): unknown {
+	return createUserMessage({
+		content: lines.map((text) => ({ type: "text" as const, text })),
+		source: PLUGIN_SOURCE,
+	});
+}
+
+/**
+ * A8 记录落点：挂载记录 → 宿主 session 事件面（session.append 自定义 kind，
+ * `noogenesis/` 前缀；feedback/record 先例支持自定义 kind——B4 ADR Risks 在
+ * 案，持久化插件对未知 kind 的容忍度随桌面重验实证）。append 异常 = 记录
+ * 缺席（降级纪律：warn 一次留痕，绝不阻塞会话）。
+ */
+function appendRecord(agent: unknown, record: MountRecord, logger: { warn(message: string): void }): void {
+	const session = (agent as { session?: { append?(kind: string, data: unknown): void } } | null | undefined)?.session;
+	try {
+		session?.append?.(record.kind, record.data);
+	} catch (cause) {
+		logger.warn(`noogenesis record ${record.kind} append failed: ${cause instanceof Error ? cause.message : String(cause)}`);
+	}
+}
 
 /**
  * userQuestions 封装：disposal 时懒取用（缺席/不可用 → null → 降级只提醒）。
@@ -123,6 +159,71 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 	});
 
 	registerNooTools(ctx, { defineTool, runEngine, repoRoot: repoRootFor });
+
+	// ── 挂载面接线（B4 ADR Proposal 1–5：能力层 mount.mts 合并器 + 策略层
+	// mount-policies.mts；全部建议/记录档，零阻断路径——A3/A4 的 deny/block
+	// 能力由合并器单源承载，首批策略件不使用）。每挂载点恰一个 ctx.on
+	// listener，策略件增挂只动 mount-policies.mts，不复制宿主接线。 ──
+	const mounts = createMountPolicies(cfg);
+
+	// A5 会话开始时刻（agent/session-start，hooks 桥四类时刻的会话开始位）：
+	// 非阻塞 inject 能力；异常 catch → warn 降级（hook-protocol 非阻断语义）。
+	ctx.on("agent/session-start", (payload: SessionStartPayload) => {
+		try {
+			const lines = mergeSessionStart(mounts.sessionStart, payload);
+			if (lines.length && payload.agent?.inject) payload.agent.inject(adviceMessage(lines));
+		} catch (cause) {
+			logger.warn(`noogenesis session-start mount failed: ${cause instanceof Error ? cause.message : String(cause)}`);
+		}
+	});
+
+	// A2 一步前（agent/pre-step waterfall）：透传 → 合并策略决策；reject 档
+	// 由合并器单源承载（首批不用）；建议行合一条消息追加到 enter messages。
+	ctx.on("agent/pre-step", async (payload: PreStepPayload, next: () => Promise<{ kind: string; messages?: unknown[] }>) => {
+		const downstream = await next();
+		if (downstream.kind === "reject") return downstream;
+		const merged = mergePreStep(mounts.preStep, payload);
+		if (merged.reject !== undefined) return { kind: "reject" };
+		if (downstream.kind !== "enter" || merged.advice.length === 0) return downstream;
+		return { ...downstream, messages: [...(downstream.messages ?? []), adviceMessage(merged.advice)] };
+	});
+
+	// A3 工具前（tools/pre-execute waterfall）：deny/ask 决策由合并器单源承载
+	// （首批策略件零使用）；无策略决策 → next() 透传。
+	ctx.on("tools/pre-execute", async (exec: ToolExecLike, next: () => Promise<unknown>) => {
+		const merged = mergeToolPre(mounts.toolPre, exec);
+		if (merged.deny !== undefined) return { kind: "deny", reason: merged.deny };
+		if (merged.ask !== undefined) return { kind: "ask", ...(merged.ask ? { reason: merged.ask } : {}) };
+		return next();
+	});
+
+	// A4 工具后（tools/post-execute waterfall）：block/附加上下文由合并器单源
+	// 承载（首批只有 M3 观测策略，零决策输出）；上下文行合一条消息前置。
+	ctx.on("tools/post-execute", async (exec: ToolExecLike, result: ToolResultLike, next: () => Promise<{ kind: string; additionalContexts?: unknown[] }>) => {
+		const merged = mergeToolPost(mounts.toolPost, exec, result);
+		if (merged.block !== undefined) return { kind: "block", feedback: [{ type: "text", text: merged.block }] };
+		const downstream = await next();
+		if (merged.context.length === 0) return downstream;
+		return { ...downstream, additionalContexts: [adviceMessage(merged.context), ...(downstream.additionalContexts ?? [])] };
+	});
+
+	// A6 停止前（agent/turn-stopping，serial 非阻断位）：记录载荷投影 → A8
+	// 落点（session.append）；异常 catch → warn 降级。
+	ctx.on("agent/turn-stopping", (payload: TurnStoppingPayload) => {
+		try {
+			for (const record of runTurnStopping(mounts.turnStopping, payload)) appendRecord(payload.agent, record, logger);
+		} catch (cause) {
+			logger.warn(`noogenesis turn-stopping mount failed: ${cause instanceof Error ? cause.message : String(cause)}`);
+		}
+	});
+
+	// A8 会话事件轨（session/event）：记录落点 = session.append 胶水（A6 面）；
+	// 本监听只承担 drain 面——session/disposed 显式清策略态（WeakMap 之外的
+	// 及时回收；session/flush 持久化由宿主持久化插件承担，本插件无持久态）。
+	ctx.on("session/event", (session: unknown, event: { type?: string }) => {
+		if (event?.type === "session/disposed") mounts.dropSessionState(session);
+	});
+
 
 	// 写路径唯一触发点：agent/disposed。repoRoot 按 dispose 的那个 agent 逐次
 	// 解析（payload 携带 { agent }，与 auto 触发面同款实证）——异仓会话各归

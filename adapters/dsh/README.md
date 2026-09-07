@@ -6,7 +6,7 @@ M2 适配层拍板与耦合防火墙的单一事实源：[ADR 2026-09-06-m2-adap
 
 - 安装：`dsh plugin --profile <name> add noogenesis-dsh`（bundle patch 插入 plugin row `{id: noogenesis, name: noogenesis-dsh}`）。宿主件包名规则 = 裸名 + 宿主后缀；裸名 `noogenesis` 保留给框架引擎。
 - 装载契约：ESM 入口 `index.mjs` 导出 `name` / `inject` / `apply`；Config 手工校验，违约 fail-closed 抛错。`inject = ["tools", "systemPrompt"]`——**不含 userQuestions**（提问是可选能力，disposal 时懒取用；cordis 对缺席的注入服务会推迟整个插件装载，声明注入会让降级不可达）。
-- 运行时依赖收敛：仅 `@deepseek-ai/dsh-tools`（defineTool，经依赖注入进 tools.mjs）；引擎零第三方依赖不受影响。
+- 运行时依赖收敛：`@deepseek-ai/dsh-tools`（defineTool，经依赖注入进 tools.mjs）+ `@deepseek-ai/dsh-llm`（createUserMessage，注入消息构造，B4 ADR Proposal 2）；两者只许 index.mjs import。引擎零第三方依赖不受影响。
 - **装上即转**：零配置安装即在三工具与 solidify 面生效——repoRoot 逐次调用解析（四级回退链，见下）；唯一例外是 system-prompt 命中节（同步面无会话上下文），动态索引需显式锚定（见 `repoRoot` 行）。
 - **前置条件**：目标仓 = git 仓且宿主机 git CLI 在场——引擎五命令第一步 `git rev-parse` 锚定仓根，solidify/pull 直接调用 git 子进程；git 缺失或非 git 仓 → 引擎 fail-closed 退出 2（诊断分流：git 缺失指名 git，非 git 仓报 not inside a git repository）。
 - **技能面**：插件注册 `noogenesis-bank` 技能 provider（rank 600），技能从 `<repoRoot>/.noogenesis/genes-cache/.agents/skills/` 读取——即 `geneBankUrl` 拉下来的库缓存；未 pull 过 → 技能面为空（正常降级，非错误）；pull 成功落地即触发宿主技能缓存失效刷新（`control.invalidate`），pull 前已被 list 过的会话无需重启即见技能面。self-hosting 仓的 `.agents/skills` 活副本（rank 200）恒遮蔽缓存副本。
@@ -26,6 +26,7 @@ M2 适配层拍板与耦合防火墙的单一事实源：[ADR 2026-09-06-m2-adap
 
 ## 语义与失败模式
 
+- **挂载面（B4）**：六挂载点接线——`agent/session-start`（A5，非阻塞 inject 能力位，首批零策略）、`agent/pre-step`（A2，会话首步子树规则地图建议消息）、`tools/pre-execute`（A3，M1 技能痕迹观测 + M2 编辑子树归因，零拦截）、`tools/post-execute`（A4，M3 评审机器面痕迹观测，零拦截）、`agent/turn-stopping`（A6，M1/M2/M3 记录投影位）、`session/event`（A8，记录落点 = `session.append` 自定义 kind `noogenesis/*` + `session/disposed` 清态）。策略件全部建议/记录档，**零阻断路径**（A3 deny / A4 block 能力由能力层合并器单源承载，升格逐件过 HERO 另案）；全部异常 catch → warn 降级，绝不阻塞会话。拍板单源 = [ADR 2026-09-08-b4-mount-wiring](../../.agents/notes/proposed/architecture/2026-09-08-b4-mount-wiring.md)。
 - **三工具只读**：`noo_select` / `noo_propose` / `noo_evaluate` 不写盘不提交；引擎退出码映射：0=结果文本、1=闸红（红是有效结论，以 `RED (exit 1)` 文本返回；**exit 1 + 空 stdout = 引擎内部故障**（非 EngineError 走 `throw e` 崩溃退出码同为 1 且无报告），按 fail-closed 抛错不放行）、2=fail-closed（抛错，重试无益）。
 - **写路径唯一**：solidify 只在 `agent/disposed` 触发体里经人工确认执行；确认缺席/拒绝/超时 → 只输出带精确命令的提醒；in-flight 去重逐仓隔离（同仓近同时 dispose 不重复弹问/重复入档，异仓互不阻塞）；solidify 红档候选不入档（引擎语义），失败清单以 warn 汇报。
 - **system-prompt 双节**：基座节固定极小；命中节空渲染 → 宿主丢弃 → 零 token（`injectSignals` 为空时直接短路，不 spawn 引擎）。引擎 stdout 进宿主 prompt 前对 `{{` 做零宽中性化——宿主 interpolate 对未知 `{{name}}` 抛错且 renderPrompt 每模型步无包裹调用，模板语法基因 summary 不得原样透传。信号只来自 `injectSignals` 显式声明与模型显式调 `noo_select`——Detect 禁区（骨架 D2）不在本层解除。

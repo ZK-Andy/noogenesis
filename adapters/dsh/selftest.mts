@@ -34,6 +34,9 @@ import { listStagingCandidates, buildSolidifyArgs, solidifyNotice, runSolidifyTr
 import { buildPullArgs, pullBankOnce, createBankPullScheduler } from "./bank-pull.mjs";
 import { BUNDLED_SKILL_RANK, PROVIDER_NAME, createBankSkillProvider, parseSkillFile, registerBankSkills } from "./skill-provider.mjs";
 import { validateConfig, DEFAULT_GENE_BANK_URL } from "./config.mjs";
+import { createSessionStore, mergePreStep, mergeSessionStart, mergeToolPost, mergeToolPre, runTurnStopping } from "./mount.mjs";
+import { createMountPolicies, createReviewSurfacePolicy, createSkillUsagePolicy, createSubtreeRulesPolicies } from "./mount-policies.mjs";
+import { apply } from "./index.mjs";
 
 const ADAPTER_DIR = path.dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = path.join(ADAPTER_DIR, "..", "..", "..");
@@ -654,6 +657,214 @@ function writeFixtureGene(repoRoot: string): void {
 	ok("skills: e2e — real engine pull carries .agents/skills into cache; provider serves them");
 }
 
+// ── 5.7) 挂载面（B4）：合并语义逐条 + M1/M2/M3 策略 + index 接线假 ctx 冒烟
+// （C7 最小 smoke；apply 全路径脱宿主——dsh-llm/dsh-tools 以 peer 形态在场，
+// geneBankUrl false 钉死零引擎 spawn）─────────────────────────────────────
+{
+	type PreStepDecision = { kind: string; messages?: unknown[] };
+
+	// A2 合并语义：advice 行累积；首个 reject 胜出且停止（后续策略不再问）。
+	const a2Policies = [
+		() => ({ kind: "advice" as const, lines: ["l1"] }),
+		() => ({ kind: "reject" as const, reason: "r1" }),
+		() => ({ kind: "advice" as const, lines: ["l2"] }),
+	];
+	assert.deepEqual(mergePreStep(a2Policies, {}), { reject: "r1", advice: ["l1"] });
+	assert.deepEqual(mergePreStep([], {}), { advice: [] });
+	ok("mounts: pre-step merge — advice accumulates, first reject wins and stops");
+
+	// A3 合并语义：deny 胜出停止；无 deny 取首个 ask；无策略 = 无决策（透传）。
+	const a3Policies = [
+		() => ({ kind: "ask" as const, reason: "need approval" }),
+		() => ({ kind: "deny" as const, reason: "blocked" }),
+	];
+	assert.deepEqual(mergeToolPre(a3Policies, {}), { deny: "blocked" });
+	assert.deepEqual(mergeToolPre([() => ({ kind: "ask" as const })], {}), { ask: "" });
+	assert.deepEqual(mergeToolPre([], {}), {});
+	ok("mounts: tool-pre merge — first deny wins; ask only when no deny; empty passthrough");
+
+	// A4 合并语义：block 胜出停止；context 行累积（含 block 之前的）。
+	const a4Policies = [
+		() => ({ kind: "context" as const, lines: ["c1"] }),
+		() => ({ kind: "block" as const, feedback: "no" }),
+		() => ({ kind: "context" as const, lines: ["c2"] }),
+	];
+	assert.deepEqual(mergeToolPost(a4Policies, {}, {}), { block: "no", context: ["c1"] });
+	assert.deepEqual(mergeToolPost([], {}, {}), { context: [] });
+	ok("mounts: tool-post merge — first block wins; context accumulates");
+
+	assert.deepEqual(mergeSessionStart([() => ({ kind: "inject" as const, lines: ["a", "b"] })], {}), ["a", "b"]);
+	ok("mounts: session-start merge — inject lines accumulate (non-blocking)");
+
+	const flattened = runTurnStopping(
+		[
+			() => [{ kind: "k1", data: {} }],
+			() => undefined,
+			() => [{ kind: "k2", data: { x: 1 } }],
+		],
+		{},
+	);
+	assert.deepEqual(flattened, [{ kind: "k1", data: {} }, { kind: "k2", data: { x: 1 } }]);
+	ok("mounts: turn-stopping merge — record payloads flatten in registration order");
+
+	// 会话键控存储：同键共享实例、异键隔离、drop 清态、无键降级为即席实例。
+	{
+		const store = createSessionStore();
+		const keyA = {};
+		const keyB = {};
+		store.of<{ n: number }>(keyA, () => ({ n: 1 })).n = 3;
+		assert.equal(store.of<{ n: number }>(keyA, () => ({ n: 2 })).n, 3);
+		assert.equal(store.of<{ n: number }>(keyB, () => ({ n: 9 })).n, 9);
+		assert.equal(store.drop(keyA), true);
+		assert.equal(store.of<{ n: number }>(keyA, () => ({ n: 7 })).n, 7);
+		assert.equal(store.drop(undefined), false);
+		ok("mounts: session store — per-key state, drop clears, keyless degrades to fresh");
+	}
+
+	// M1：noo-* 技能痕迹 → A6 增量记录；外来技能/非 skill 工具零痕迹。
+	{
+		const skill = createSkillUsagePolicy();
+		const agent = { session: { header: { cwd: "/tmp/m1" } } };
+		skill.toolPre({ name: "skill", args: { name: "noo-doc-standards" }, agent });
+		skill.toolPre({ name: "skill", args: { name: "other-skill" }, agent });
+		skill.toolPre({ name: "read", args: { file_path: "/x" }, agent });
+		const first = skill.turnStopping({ agent, turn: 3 }) ?? [];
+		assert.deepEqual(first, [{ kind: "noogenesis/skill-usage", data: { turn: 3, names: ["noo-doc-standards"] } }]);
+		assert.deepEqual(skill.turnStopping({ agent, turn: 4 }) ?? [], []);
+		skill.toolPre({ name: "skill", args: { name: "noo-evaluate" }, agent });
+		const second = skill.turnStopping({ agent, turn: 5 }) ?? [];
+		assert.deepEqual(second[0]?.data, { turn: 5, names: ["noo-evaluate"] });
+		ok("mounts: M1 — noo-* skill traces recorded incrementally; foreign skills ignored");
+	}
+
+	// M2：开场地图每会话一次（subagent / 零布点仓跳过）；edit/write 触摸归因。
+	{
+		const repo = tempRepo("mount-m2");
+		for (const subtree of ["engine", "scripts"]) {
+			fs.mkdirSync(path.join(repo, subtree), { recursive: true });
+			fs.writeFileSync(path.join(repo, subtree, "AGENTS.md"), `# ${subtree}\n`);
+		}
+		const subtreePolicies = createSubtreeRulesPolicies({ repoRoot: repo });
+		const agent = { session: { header: { cwd: repo } } };
+		const advice = subtreePolicies.preStep({ agent, turn: 1, step: 1 });
+		assert.ok(advice && advice.kind === "advice");
+		assert.deepEqual(advice.lines, [
+			"Noogenesis subtree rules map — read a subtree's AGENTS.md before working in it:",
+			"- engine/ → engine/AGENTS.md",
+			"- scripts/ → scripts/AGENTS.md",
+		]);
+		assert.equal(subtreePolicies.preStep({ agent, turn: 1, step: 2 }), undefined);
+		const subagent = { session: { header: { cwd: repo, origin: "subagent" } } };
+		assert.equal(subtreePolicies.preStep({ agent: subagent, turn: 1, step: 1 }), undefined);
+		const bare = createSubtreeRulesPolicies({ repoRoot: tempRepo("mount-m2-bare") });
+		assert.equal(bare.preStep({ agent: { session: { header: { cwd: path.join(os.tmpdir(), "mount-m2-bare-missing") } } }, turn: 1, step: 1 }), undefined);
+		subtreePolicies.toolPre({ name: "edit", args: { file_path: path.join(repo, "engine", "bin.ts") }, agent });
+		subtreePolicies.toolPre({ name: "read", args: { file_path: path.join(repo, "engine", "x.ts") }, agent });
+		subtreePolicies.toolPre({ name: "write", args: { file_path: "/elsewhere/out.ts" }, agent });
+		const touches = subtreePolicies.turnStopping({ agent, turn: 2 }) ?? [];
+		assert.deepEqual(touches, [{ kind: "noogenesis/subtree-touch", data: { turn: 2, touches: [{ subtree: "engine", path: path.join("engine", "bin.ts") }] } }]);
+		assert.deepEqual(subtreePolicies.turnStopping({ agent, turn: 3 }) ?? [], []);
+		ok("mounts: M2 — opening map once per session (subagent/zero-subtree skipped); edit/write touches attributed");
+	}
+
+	// M3：评审机器面标记闭集计数 → A6 累计记录（只在计数有变化的 turn 落）。
+	{
+		const review = createReviewSurfacePolicy();
+		const agent = { session: { header: { cwd: "/tmp/m3" } } };
+		const exec = { agent };
+		review.toolPost(exec, { content: [{ type: "text", text: "gates.mts --run\nFAIL review-brief" }] });
+		review.toolPost(exec, { content: [{ type: "text", text: "node scripts/verify-review-brief.mts --lanes R1,R2,R3" }] });
+		review.toolPost(exec, { content: [{ type: "text", text: "node scripts/verify-review-tier.mts --enforce" }] });
+		review.toolPost(exec, { content: [{ type: "text", text: "no markers here" }] });
+		const records = review.turnStopping({ agent, turn: 7 }) ?? [];
+		assert.deepEqual(records, [{ kind: "noogenesis/review-surface", data: { turn: 7, briefRuns: 1, tierRuns: 1, gateRuns: 1 } }]);
+		assert.deepEqual(review.turnStopping({ agent, turn: 8 }) ?? [], []);
+		ok("mounts: M3 — review machine-face markers counted, cumulative record on delta");
+	}
+
+	// 策略件组装：M1/M2/M3 五条 lane + A5 零策略能力位。
+	{
+		const set = createMountPolicies({ repoRoot: "/tmp/assembly" });
+		assert.equal(set.preStep.length, 1);
+		assert.equal(set.toolPre.length, 2);
+		assert.equal(set.toolPost.length, 1);
+		assert.deepEqual(set.sessionStart, []);
+		assert.equal(set.turnStopping.length, 3);
+		assert.equal(typeof set.dropSessionState, "function");
+		ok("mounts: policy set assembly — M1/M2/M3 in five lanes; A5 zero-policy capability");
+	}
+
+	// index 接线假 ctx 冒烟：六点各恰一个 listener + 行为逐条。
+	{
+		const repo = tempRepo("mount-wiring");
+		fs.mkdirSync(path.join(repo, "engine"), { recursive: true });
+		fs.writeFileSync(path.join(repo, "engine", "AGENTS.md"), "# engine subtree rules\n");
+		const listeners = new Map<string, Array<(...args: any[]) => unknown>>();
+		const warns: string[] = [];
+		const fakeMountCtx = {
+			tools: { register: () => {} },
+			systemPrompt: { section: () => {} },
+			provide: () => {},
+			logger: () => ({ info: () => {}, warn: (m: string) => warns.push(m) }),
+			on: (event: string, listener: (...args: any[]) => unknown) => {
+				const list = listeners.get(event) ?? [];
+				list.push(listener);
+				listeners.set(event, list);
+			},
+		};
+		apply(fakeMountCtx as never, { repoRoot: repo, geneBankUrl: false });
+		for (const event of ["agent/session-start", "agent/pre-step", "tools/pre-execute", "tools/post-execute", "agent/turn-stopping", "session/event"]) {
+			assert.equal(listeners.get(event)?.length, 1, `${event} must be wired exactly once`);
+		}
+		ok("mounts: index wiring — six mounting points registered one listener each");
+
+		const appended: Array<[string, unknown]> = [];
+		const agent = { session: { header: { cwd: repo }, append: (kind: string, data: unknown) => appended.push([kind, data]) } };
+		const preStep = listeners.get("agent/pre-step")![0]!;
+		const toolPre = listeners.get("tools/pre-execute")![0]!;
+		const toolPost = listeners.get("tools/post-execute")![0]!;
+		const turnStopping = listeners.get("agent/turn-stopping")![0]!;
+		const sessionEvent = listeners.get("session/event")![0]!;
+		const sessionStart = listeners.get("agent/session-start")![0]!;
+
+		// A2：首步地图追加一条建议消息；后续步零追加；reject 下游直通。
+		const decided = (await preStep({ agent, turn: 1, step: 1, messages: [] }, async () => ({ kind: "enter", messages: [{ existing: true }] }))) as { messages: Array<{ content: Array<{ text: string }> }> };
+		assert.equal(decided.messages.length, 2);
+		assert.match(decided.messages[1]!.content[0]!.text, /subtree rules map/);
+		const later = (await preStep({ agent, turn: 1, step: 2 }, async () => ({ kind: "enter", messages: [] }))) as PreStepDecision;
+		assert.deepEqual(later.messages, []);
+		const rejected = (await preStep({ agent, turn: 2, step: 1 }, async () => ({ kind: "reject" }))) as PreStepDecision;
+		assert.equal(rejected.kind, "reject");
+		ok("mounts: A2 wiring — opening map appended once; later steps and reject passthrough");
+
+		// A3：首批零 deny/ask → next 透传（M1 观测在 pre-execute 不拦）。
+		const passthroughMarker = { marker: true };
+		assert.equal(await toolPre({ name: "skill", args: { name: "noo-select" }, agent }, async () => passthroughMarker), passthroughMarker);
+		ok("mounts: A3 wiring — no first-batch denial; passthrough preserved");
+
+		// A4：观测零决策 → 透传（M3 只读结果面）。
+		const postDownstream = { kind: "accept" };
+		assert.equal(await toolPost({ agent }, { content: [{ type: "text", text: "node scripts/verify-review-brief.mts" }] }, async () => postDownstream), postDownstream);
+		ok("mounts: A4 wiring — observation-only policy passes result through");
+
+		// A6+A8：记录投影落 session 面（skill-usage + review-surface，subtree 零触摸）。
+		await turnStopping({ agent, turn: 4 });
+		assert.deepEqual(appended.map(([kind]) => kind), ["noogenesis/skill-usage", "noogenesis/review-surface"]);
+		await turnStopping({ agent, turn: 5 });
+		assert.equal(appended.length, 2, "zero-delta turn must project nothing");
+		ok("mounts: A6+A8 wiring — records land on session surface, deltas only");
+
+		// A5：零策略件 → 无注入不抛（能力位在场即冒烟）。
+		await sessionStart({ agent });
+		ok("mounts: A5 wiring — session-start capability wired, zero-policy no-op safe");
+
+		// A8 drain：session/disposed 清态；其余事件忽略。
+		sessionEvent({}, { type: "session/disposed" });
+		sessionEvent({}, { type: "tool/result" });
+		ok("mounts: A8 wiring — session/disposed drains policy state; other events ignored");
+	}
+}
+
 // ── 6) 防火墙机器检查：import 面 / 引擎零依赖 / 包结构契约 ────────────────
 {
 	for (const file of fs.readdirSync(ADAPTER_DIR).filter((f) => f.endsWith(".mjs") && f !== "index.mjs")) {
@@ -661,6 +872,15 @@ function writeFixtureGene(repoRoot: string): void {
 		assert.doesNotMatch(text, /from ["']@deepseek-ai\//, `${file} must not import host packages (firewall rule 2)`);
 	}
 	ok("firewall: only index.mjs imports @deepseek-ai/* (dependency injection at entry)");
+
+	// index.mjs 宿主 import 允许集封底（B4 ADR Proposal 2：dsh-tools + dsh-llm；
+	// 新增宿主依赖必须同变更扩本断言 + ADR 拍板）。
+	{
+		const indexText = fs.readFileSync(path.join(ADAPTER_DIR, "index.mjs"), "utf8");
+		const hostImports = [...new Set([...indexText.matchAll(/from ["'](@deepseek-ai\/[^"']+)["']/g)].map((m) => m[1]))].sort();
+		assert.deepEqual(hostImports, ["@deepseek-ai/dsh-llm", "@deepseek-ai/dsh-tools"], "index.mjs host import set is closed (firewall allowed set)");
+	}
+	ok("firewall: index.mjs host import set = dsh-tools + dsh-llm (B4 allowed set)");
 
 	// 引擎源零第三方依赖判据（js 与 .mts 两份同改）：.js 覆盖 require 形态；
 	// .ts 为 ESM import 语法——import / require 两种第三方引用形态都扫。
@@ -677,12 +897,13 @@ function writeFixtureGene(repoRoot: string): void {
 	}
 	ok("firewall: engine/*.js|*.ts has zero third-party requires/imports");
 
-	const pkg: { name: string; type: string; main: string; files: string[]; dsh?: { bundle?: { patch?: string } } } = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, "package.json"), "utf8"));
+	const pkg: { name: string; type: string; main: string; files: string[]; dsh?: { bundle?: { patch?: string } }; peerDependencies?: Record<string, string> } = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, "package.json"), "utf8"));
 	assert.equal(pkg.name, "noogenesis-dsh");
 	assert.notEqual(pkg.type, "module");
 	// 包结构契约（js 与 .mts 两份同改）：白名单已切 dist 发布形态（B2 ADR 点 4）。
 	assert.equal(pkg.main, "dist/adapters/dsh/index.mjs");
 	assert.equal(pkg.dsh?.bundle?.patch, "./cordis.patch.yml");
+	assert.ok(pkg.peerDependencies?.["@deepseek-ai/dsh-llm"], "peer dep dsh-llm declared (B4 ADR Proposal 2)");
 	for (const needle of ["dist/", "engine/gates.json", "engine/README.md", "adapters/dsh/README.md", "cordis.patch.yml", "LICENSE"]) {
 		assert.ok(pkg.files.some((f) => f === needle || f.startsWith(needle.replace("/**", ""))), `files whitelist must ship ${needle}`);
 	}
