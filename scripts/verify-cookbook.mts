@@ -26,7 +26,7 @@
  * Provenance: distilled from dotnet-deepseek-harness-desktop/scripts/verify-cookbook.py
  * (MIT, 2026-09-05)；阶段封闭集映射为 Noogenesis 域（演化/门禁/文档/协作/环境/上游/产品），
  * 校验逻辑未改。
- * B1 随族迁 TS（2026-09-08，.agents/notes/proposed/architecture/2026-09-08-collab-rebuild-b1-gates-ts.md）。
+ * B1 随族迁 TS（2026-09-08，.agents/notes/implemented/architecture/2026-09-08-collab-rebuild-b1-gates-ts.md）。
  */
 import * as fs from "node:fs";
 import * as os from "node:os";

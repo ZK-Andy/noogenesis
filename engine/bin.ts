@@ -9,13 +9,13 @@ const ENGINE_ROOT = __dirname;
 function usage(): string {
   return [
     'usage:',
-    '  node engine/bin.js select <signal>... [--stdin]        # 信号 → 基因匹配（归一化字面匹配，多键并集）',
-    '  node engine/bin.js propose <domain>/<id> [--out FILE]  # 确定性渲染注入文本（stdout 或文件）',
-    '  node engine/bin.js evaluate <domain>/<id>              # gates.json 全集 + 约束；红即拒',
-    '  node engine/bin.js solidify <candidate.json> --actor N # 入档：evaluate 全绿 → genes/ + events/ 同一 commit',
-    '  node engine/bin.js solidify --retire <domain>/<id> --actor N',
-    '  node engine/bin.js pull <bank-url> [--cache DIR]       # 只读消费：clone/pull 基因库进仓内缓存（P2）',
-    '  node engine/bin.js self-test                           # 元评测夹具（临时沙箱，不触碰真实仓）',
+    '  node dist/engine/bin.js select <signal>... [--stdin]        # 信号 → 基因匹配（归一化字面匹配，多键并集）',
+    '  node dist/engine/bin.js propose <domain>/<id> [--out FILE]  # 确定性渲染注入文本（stdout 或文件）',
+    '  node dist/engine/bin.js evaluate <domain>/<id>              # gates.json 全集 + 约束；红即拒',
+    '  node dist/engine/bin.js solidify <candidate.json> --actor N # 入档：evaluate 全绿 → genes/ + events/ 同一 commit',
+    '  node dist/engine/bin.js solidify --retire <domain>/<id> --actor N',
+    '  node dist/engine/bin.js pull <bank-url> [--cache DIR]       # 只读消费：clone/pull 基因库进仓内缓存（P2）',
+    '  node dist/engine/bin.js self-test                           # 元评测夹具（临时沙箱，不触碰真实仓）',
     '',
   ].join('\n');
 }
@@ -136,16 +136,13 @@ function main(argv: string[]): number {
     const rest2: string[] = [];
     for (let i = 0; i < rest.length; i++) {
       if (rest[i] === '--cache') {
-        if (i + 1 >= rest.length) fail('pull needs --cache <dir>');
         const val = rest[i + 1];
-        if (val === undefined) fail('pull needs --cache <dir>'); // 不可达窄化（上一行已保证在界）
+        if (val === undefined) fail('pull needs --cache <dir>');
         cacheVals.push(val);
         i++;
         continue;
       }
-      const tok = rest[i];
-      if (tok === undefined) continue; // 不可达窄化（i < rest.length）
-      rest2.push(tok);
+      rest2.push(rest[i]!);
     }
     if (cacheVals.length > 1) fail('pull accepts --cache at most once');
     if (rest2.length !== 1) fail('pull needs exactly one <bank-url>');

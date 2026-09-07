@@ -16,8 +16,8 @@ const ADAPTER_DIR = path.dirname(fileURLToPath(import.meta.url));
 
 /**
  * 引擎唯一合同面入口（包内相对锚定，与安装布局无关）。运行形态（B2 ADR）：
- * TS 件走 dist——本相对式在 dist/adapters/dsh 下自指 `dist/engine/bin.js`
- * （js 原件保持 engine/bin.js，B5 后删除）；防火墙规则 1 语义不变。
+ * TS 件走 dist——本相对式在 dist/adapters/dsh 下自指 `dist/engine/bin.js`（engine/adapters
+ * 族钉 dist 跑，B2 ADR 两族分野）；防火墙规则 1 语义不变。
  */
 export const ENGINE_ENTRY = path.join(ADAPTER_DIR, "..", "..", "engine", "bin.js");
 

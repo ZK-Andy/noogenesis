@@ -27,8 +27,8 @@
  *
  * Provenance: distilled from dotnet-deepseek-harness-desktop
  * scripts/verify-md-links.py + verify-skill-format.py (MIT, 2026-09-05)；
- * 共享件单源于 scripts/mdref.py（同上 ADR）。
- * B1 随族迁 TS（2026-09-08，.agents/notes/proposed/architecture/2026-09-08-collab-rebuild-b1-gates-ts.md）。
+ * 共享件单源 = 本件（原 py 版 scripts/mdref.py 随 B5 切换批退役）。
+ * B1 随族迁 TS（2026-09-08，.agents/notes/implemented/architecture/2026-09-08-collab-rebuild-b1-gates-ts.md）。
  */
 import * as fs from "node:fs";
 import * as path from "node:path";

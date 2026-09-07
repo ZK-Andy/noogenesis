@@ -1,14 +1,14 @@
-# lefthook.yml — 钩子分域配置（B3，ADR 2026-09-08-b3-hooks-install）
+# lefthook.yml — 钩子分域配置（B3 立，B5 切换批 cmd 单轨 TS）
 #
-# pre-commit：分域 job，命令与旧 .githooks/pre-commit bash 版逐一相同（py 权威面，
-#   快检零变化）；条件性三步由 glob 表达（仅当对应路径有暂存变更时执行）。
+# pre-commit：分域 job，命令与旧 .githooks/pre-commit bash 版逐一相同（快检零变化）；
+#   条件性三步由 glob 表达（仅当对应路径有暂存变更时执行）。
 #   lefthook 对 pre-commit 的 staged 门控（无暂存 → skip）与 bash「仅暂存区」同构。
 #
 # pre-push：单编排器 job 跑 scripts/pre-push.mts（tier 循环 TS 端口 + 并行门禁组）。
 #   - `files: echo lefthook.yml` + run 串引用 `{files}` = 恒跑逃生口：lefthook v2
 #     对 pre-push job 按推送文件集门控（git diff HEAD @{push}），tag 推送与新分支
 #     首推文件集为空 → 全部 job 被 skip——而 fail-closed 档位强制必须在每次推送
-#     运行（上游无官方恒跑出口，discussion #504；逃生口机制见 ADR Problem 节，
+#     运行（上游无官方恒跑出口，discussion #504；逃生口机制见 B3 ADR Problem 节，
 #     e2e 四态把它钉死为回归判据）。files 输出必须是真实存在的路径。
 #   - `use_stdin: true` 把 git 的 pre-push stdin ref 行转发给编排器（上游 #547）。
 #   - `{1}` = remote 名（URL 直推时为 URL）；编排器对缺失/字面残留回退 origin。
@@ -22,26 +22,26 @@ pre-commit:
 
     - name: adr-format
       glob: ".agents/notes/**"
-      run: python3 scripts/verify-adr-format.py
+      run: node scripts/verify-adr-format.mts
 
     - name: md-links
-      run: python3 scripts/verify-md-links.py
+      run: node scripts/verify-md-links.mts
 
     - name: cookbook
-      run: python3 scripts/verify-cookbook.py
+      run: node scripts/verify-cookbook.mts
 
     - name: doc-budgets
-      run: python3 scripts/verify-doc-budgets.py --manifest scripts/doc-budgets.manifest.json
+      run: node scripts/verify-doc-budgets.mts --manifest scripts/doc-budgets.manifest.json
 
     - name: skill-format
       glob: ".agents/skills/**"
-      run: python3 scripts/verify-skill-format.py
+      run: node scripts/verify-skill-format.mts
 
     - name: handoff-structure
-      run: python3 scripts/verify-handoff-structure.py
+      run: node scripts/verify-handoff-structure.mts
 
     - name: gene-format
-      run: python3 scripts/verify-gene-format.py
+      run: node scripts/verify-gene-format.mts
 
     - name: archived-notes
       glob:
@@ -50,7 +50,7 @@ pre-commit:
       run: node scripts/verify-archived-agent-notes.mts
 
     - name: review-tier-staged
-      run: python3 scripts/verify-review-tier.py --staged
+      run: node scripts/verify-review-tier.mts --staged
 
 pre-push:
   jobs:

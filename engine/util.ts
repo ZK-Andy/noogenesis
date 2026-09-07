@@ -64,7 +64,7 @@ function deriveSlots(repoRoot: string) {
   return { outgoing_base: base, head: head.stdout.trim() };
 }
 
-// 出账变更面（与 scripts/change-scope.sh 同口径）：已提交 diff + 未暂存 diff + 未跟踪，dedupe 排序。
+// 出账变更面（与 scripts/change-scope.mts 同口径）：已提交 diff + 未暂存 diff + 未跟踪，dedupe 排序。
 // -c core.quotePath=off：非 ASCII 文件名保持原样（默认八进制转义会让 forbidden_paths 前缀匹配失配）。
 function changedPaths(repoRoot: string, slots: { outgoing_base: string; head: string }) {
   const out = new Set<string>();

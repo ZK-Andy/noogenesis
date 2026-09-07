@@ -21,77 +21,64 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # change-scope.sh 需要 fork-point 历史；浅克隆会退化为空集 no-op
+          fetch-depth: 0   # change-scope.mts 需要 fork-point 历史；浅克隆会退化为空集 no-op
 
-      # node 22 钉版：TS 门禁（archived-notes / postmortem-naming）依赖 node ≥22.18
-      # 原生 type stripping（B0 拍板 2026-09-08，零 devDependency）；引擎与适配层
-      # self-test 同面消费（package.json engines: node >=22）
+      # node 22 钉版：TS 门禁与 engine/adapters 零依赖源跑面依赖 node ≥22.18
+      # 原生 type stripping（B0 拍板 2026-09-08，零 devDependency）；self-test
+      # 与发布面消费预构建 dist（package.json engines: node >=22）
       - uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      # B1 起白名单含 ts-typecheck（tsc 工具链，devDependency；lock 入 git 钉版）
-      - name: 安装依赖（ts-typecheck 前置）
+      # ts-typecheck（tsc 工具链，devDependency）与构建（dist）前置；lock 入 git 钉版
+      - name: 安装依赖
         run: npm ci --no-audit --no-fund
 
-      # B2 起 engine/adapters 源 = TS（.ts/.mts）；自测与发布面消费预构建 dist
+      # engine/adapters 源 = TS（.ts/.mts）；自测与发布面消费预构建 dist
       # （node dist/…，零转译，tsx 只属开发态——蓝图 C3/C10）
       - name: 构建（tsc → dist）
         run: npm run build
 
-      # 门禁清单单源：engine/gates.json（经 scripts/gates.py 发射；tier 的
+      # 门禁清单单源：engine/gates.json（经 scripts/gates.mts 发射；tier 的
       # 事件条件步、change-scope 的缺省推导、review-brief 的仅本地语义是
-      # 结构性例外，见该脚本头注；第十门禁是白名单外独立件——消费引擎产物，
+      # 结构性例外，见该脚本头注；gene-format 是白名单外独立件——消费引擎产物，
       # 进白名单会让 solidify 入档中途复算自身，故保留显式行）
       - name: 门禁第一梯队（gates.json 单源 + 白名单外独立件）
         run: |
-          python3 scripts/gates.py --run --skip review-tier,review-brief,change-scope
-          python3 scripts/verify-gene-format.py
-          bash scripts/change-scope.sh
+          node scripts/gates.mts --run --skip review-tier,review-brief,change-scope
+          node scripts/verify-gene-format.mts
+          node scripts/change-scope.mts
 
       # 评审档位真强制层（push 事件才有 outgoing base；PR 的 tier 判定由
       # required-review 流程承载——briefs 不入库，brief 闸是本地预发射检查）
       - name: 评审档位（outgoing --enforce）
         if: github.event_name == 'push' && github.event.before != '' && !startsWith(github.event.before, '00000000')
-        run: python3 scripts/verify-review-tier.py --enforce --since ${{ github.event.before }}
+        run: node scripts/verify-review-tier.mts --enforce --since ${{ github.event.before }}
 
-      # 自测抽查：py（并存期权威）与 TS（B1 迁移件）双列——B5 重指时清理 py 行
-      - name: self-test 抽查（违约样例必须 FAIL）
+      # self-test 抽查（违约样例必须 FAIL）；清单与 scripts/*.mts 一一对应
+      - name: self-test 抽查
         run: |
-          python3 scripts/verify-adr-format.py --self-test
-          python3 scripts/verify-cookbook.py --self-test
-          python3 scripts/verify-skill-format.py --self-test
-          python3 scripts/verify-handoff-structure.py --self-test
-          python3 scripts/verify-review-tier.py --self-test
-          python3 scripts/verify-review-brief.py --self-test
-          python3 scripts/verify-gene-format.py --self-test
-          python3 scripts/verify-manifest.py --self-test
-          python3 scripts/gates.py --self-test
-          node scripts/verify-archived-agent-notes.mts --self-test
-          node scripts/verify-postmortem-naming.mts --self-test
           node scripts/gates.mts --self-test
-          node scripts/verify-md-links.mts --self-test
-          node scripts/verify-doc-budgets.mts --self-test
-          node scripts/gen-manifest.mts --self-test
           node scripts/verify-adr-format.mts --self-test
           node scripts/verify-cookbook.mts --self-test
+          node scripts/verify-doc-budgets.mts --self-test
           node scripts/verify-skill-format.mts --self-test
           node scripts/verify-handoff-structure.mts --self-test
-          node scripts/verify-manifest.mts --self-test
           node scripts/verify-review-tier.mts --self-test
           node scripts/verify-review-brief.mts --self-test
           node scripts/verify-gene-format.mts --self-test
+          node scripts/verify-manifest.mts --self-test
+          node scripts/verify-md-links.mts --self-test
+          node scripts/gen-manifest.mts --self-test
+          node scripts/verify-archived-agent-notes.mts --self-test
+          node scripts/verify-postmortem-naming.mts --self-test
 
-      # 引擎元评测（schema ADR S3）：与 verify-* self-test 平级，不占门禁编号。
-      # 双列：js 源（并存期权威，B5 清旧行）+ dist（B2 TS 面）
+      # 引擎元评测（schema ADR S3）：与 verify-* self-test 平级，不占门禁编号；
+      # 消费预构建 dist（C10 发布形态）
       - name: engine self-test
-        run: |
-          node engine/bin.js self-test
-          node dist/engine/bin.js self-test
+        run: node dist/engine/bin.js self-test
 
       # 适配层元评测（M2 ADR）：零宿主依赖 + 防火墙机器检查（import 面 / 引擎
-      # 零第三方依赖 / 插件包结构契约），与 engine self-test 平级。双列同上。
+      # 零第三方依赖 / 插件包结构契约），与 engine self-test 平级；消费预构建 dist
       - name: adapter self-test
-        run: |
-          node adapters/dsh/selftest.mjs
-          node dist/adapters/dsh/selftest.mjs
+        run: node dist/adapters/dsh/selftest.mjs

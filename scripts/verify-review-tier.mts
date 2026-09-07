@@ -23,8 +23,8 @@
  *
  * 结构性例外：gates.json 中本件为非平跑例外——pre-push 以 per-ref merge-base 循环
  * 逐 ref enforce（新分支首推 fail-closed），CI 以 push 事件条件步承载，均非平面清单
- * 形态（见 gates.py 头注），本件不进 `gates.py --run` 平跑。消费契约：
- * verify-review-brief.py 经 importlib import _classify 派生 lane——该 import 安全的
+ * 形态（机制单家见 scripts/gates.mts 头注），本件不进 `gates.mts --run` 平跑。消费契约：
+ * verify-review-brief.mts 经同族 import `classify` 派生 lane——该 import 安全的
  * 前提是本模块除常量/正则定义外无顶层副作用（main 由入口 dispatch 把守），改判据时
  * 保持此形。任何对本件的改动按设计即 FULL-tier（scripts/** 触发）。
  *
@@ -45,7 +45,7 @@
  * 判据）per ADR 2026-09-05-review-mechanical-gate；argparse --self-test 分流与
  * assert-with-message 夹具 per ADR 2026-09-05-consolidate-r1-simplification-candidates
  * Decision 2。B1 随族迁 TS（2026-09-08，
- * .agents/notes/proposed/architecture/2026-09-08-collab-rebuild-b1-gates-ts.md）。
+ * .agents/notes/implemented/architecture/2026-09-08-collab-rebuild-b1-gates-ts.md）。
  */
 import * as fs from "node:fs";
 import * as path from "node:path";

@@ -1,18 +1,18 @@
 {
   "version": 1,
   "gates": [
-    { "name": "adr-format", "cmd": "python3", "args": ["scripts/verify-adr-format.py"] },
-    { "name": "doc-budgets", "cmd": "python3", "args": ["scripts/verify-doc-budgets.py", "--manifest", "scripts/doc-budgets.manifest.json"] },
-    { "name": "md-links", "cmd": "python3", "args": ["scripts/verify-md-links.py"] },
-    { "name": "cookbook", "cmd": "python3", "args": ["scripts/verify-cookbook.py"] },
-    { "name": "skill-format", "cmd": "python3", "args": ["scripts/verify-skill-format.py"] },
+    { "name": "adr-format", "cmd": "node", "args": ["scripts/verify-adr-format.mts"] },
+    { "name": "doc-budgets", "cmd": "node", "args": ["scripts/verify-doc-budgets.mts", "--manifest", "scripts/doc-budgets.manifest.json"] },
+    { "name": "md-links", "cmd": "node", "args": ["scripts/verify-md-links.mts"] },
+    { "name": "cookbook", "cmd": "node", "args": ["scripts/verify-cookbook.mts"] },
+    { "name": "skill-format", "cmd": "node", "args": ["scripts/verify-skill-format.mts"] },
     { "name": "archived-notes", "cmd": "node", "args": ["scripts/verify-archived-agent-notes.mts"] },
     { "name": "postmortem-naming", "cmd": "node", "args": ["scripts/verify-postmortem-naming.mts"] },
-    { "name": "handoff-structure", "cmd": "python3", "args": ["scripts/verify-handoff-structure.py"] },
-    { "name": "manifest", "cmd": "python3", "args": ["scripts/verify-manifest.py"] },
-    { "name": "review-tier", "cmd": "python3", "args": ["scripts/verify-review-tier.py", "--since", "{{outgoing_base}}", "--enforce"] },
-    { "name": "review-brief", "cmd": "python3", "args": ["scripts/verify-review-brief.py", "--lanes", "R1,R2,R3"] },
-    { "name": "change-scope", "cmd": "bash", "args": ["scripts/change-scope.sh", "{{outgoing_base}}", "{{head}}"] },
+    { "name": "handoff-structure", "cmd": "node", "args": ["scripts/verify-handoff-structure.mts"] },
+    { "name": "manifest", "cmd": "node", "args": ["scripts/verify-manifest.mts"] },
+    { "name": "review-tier", "cmd": "node", "args": ["scripts/verify-review-tier.mts", "--since", "{{outgoing_base}}", "--enforce"] },
+    { "name": "review-brief", "cmd": "node", "args": ["scripts/verify-review-brief.mts", "--lanes", "R1,R2,R3"] },
+    { "name": "change-scope", "cmd": "node", "args": ["scripts/change-scope.mts", "{{outgoing_base}}", "{{head}}"] },
     { "name": "ts-typecheck", "cmd": "node", "args": ["node_modules/typescript/bin/tsc", "--noEmit"] }
   ]
 }

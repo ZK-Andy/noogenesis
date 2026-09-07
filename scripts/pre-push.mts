@@ -15,12 +15,12 @@
  *
  * 组结构：change-scope 展示（串行信息面）+ allSettled 并行组（任一非零即
  * exit 1）：gates / gene-format / dist 自测 / review-tier（逐 ref 档位循环
- * TS 端口——与旧 .githooks/pre-push bash 版逐分支语义同构，仅 tier enforce
- * 调用面 .py→.mts 指向有意变更；子进程 stdin 以 ignore 隔离，防未来门禁读
- * stdin 与 tier 抢行造成 fail-open）。
+ * 端口——与旧 .githooks/pre-push bash 版逐分支语义同构；子进程 stdin 以
+ * ignore 隔离，防未来门禁读 stdin 与 tier 抢行造成 fail-open）。
  *
- * 权威面口径（批次纪律）：pre-push 执行面本批切 TS；py 权威由 CI 双列维持至
- * B5（gates.json cmd 重指批）；自证 = reconcile-b1 零 diff + 本循环 e2e 四态
+ * 执行面单轨 TS（B5 切换批，ADR
+ * .agents/notes/implemented/architecture/2026-09-08-b5-switch.md）：gates.json
+ * cmd 全 TS，展示面 change-scope.mts；循环语义自证 = 本循环 e2e 四态
  * （scripts/pre-push-selftest.mts）。
  */
 
@@ -52,7 +52,7 @@ function isAllZero(sha: string): boolean {
   return /^0+$/.test(sha);
 }
 
-/** 逐 ref 档位循环（旧 bash 版逐分支语义同构端口，仅 tier enforce 指向 .py→.mts 有意变更）；返回是否通过。 */
+/** 逐 ref 档位循环（旧 bash 版逐分支语义同构端口）；返回是否通过。 */
 function tierLoop(remote: string): boolean {
   console.log("-> 评审档位（--enforce）");
   if (process.stdin.isTTY) {
@@ -142,7 +142,7 @@ function main(): void {
   console.log("== pre-push: 文档与结构门禁（lefthook 单编排器，B3）==");
 
   // 变更范围展示（信息面；绝不臆测 base；失败不阻断——同旧 bash `|| true`）。
-  spawnSync("bash", ["scripts/change-scope.sh"], { stdio: "inherit" });
+  spawnSync("node", ["scripts/change-scope.mts"], { stdio: "inherit" });
   console.log("");
 
   const groups: Promise<GroupResult>[] = [

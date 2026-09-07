@@ -22,7 +22,7 @@
  * 模块形态：显式 .mts（ESM），node ≥22.18 原生 type stripping 直跑，零 devDependency。
  *
  * Provenance: original to Noogenesis (2026-09-06, P2 implementation round).
- * B1 随族迁 TS（2026-09-08，.agents/notes/proposed/architecture/2026-09-08-collab-rebuild-b1-gates-ts.md）。
+ * B1 随族迁 TS（2026-09-08，.agents/notes/implemented/architecture/2026-09-08-collab-rebuild-b1-gates-ts.md）。
  */
 import * as fs from "node:fs";
 import * as os from "node:os";
@@ -141,7 +141,7 @@ function verify(repo: string): [number, string[]] {
   const mpath = path.join(repo, "manifest.json");
   if (!isFile(mpath)) {
     const tree = scanTree(repo);
-    return [Object.keys(tree).length + 1, ["manifest.json missing at repo root (run scripts/gen-manifest.py)"]];
+    return [Object.keys(tree).length + 1, ["manifest.json missing at repo root (run scripts/gen-manifest.mts)"]];
   }
   let manifest: any;
   try {
@@ -226,7 +226,7 @@ function verify(repo: string): [number, string[]] {
   const treeKeys = Object.keys(tree);
   const rowKeys = Object.keys(rows);
   for (const ref of treeKeys.filter((r) => !rowKeys.includes(r)).sort(pyCmp)) {
-    errors.push(`manifest.json: missing gene ${ref} (run scripts/gen-manifest.py)`);
+    errors.push(`manifest.json: missing gene ${ref} (run scripts/gen-manifest.mts)`);
   }
   for (const ref of rowKeys.filter((r) => !treeKeys.includes(r)).sort(pyCmp)) {
     errors.push(`manifest.json: stale entry ${ref} (file absent from genes/)`);

@@ -24,9 +24,8 @@
  *
  * 结构性例外：brief 闸是评审发射前检查、仅本地预发射不入 CI（简报目录
  * gitignored；无简报在飞 = 空过，CI 侧保持绿且安静）。
- * 消费契约（同族单源）：py 经 importlib 导入 verify-review-tier 的 `_classify`
- * 做泳道推导；TS 同构 —— import 同族 scripts/verify-review-tier.mts 的 export
- * classify（其入口分发带守卫，被 import 不执行 main）。分类单源零副本。
+ * 消费契约（同族单源）：import 同族 scripts/verify-review-tier.mts 的 export
+ * classify 做泳道推导（其入口分发带守卫，被 import 不执行 main）。分类单源零副本。
  *
  * 用法（仓库根运行）：
  *     node scripts/verify-review-brief.mts [--repo ROOT] [--lanes R1,R2,R3] [--enforce]
@@ -36,7 +35,7 @@
  *
  * Provenance: distilled from dotnet-deepseek-harness-desktop
  * scripts/verify-review-brief.py (MIT, 2026-09-05)。
- * B1 随族迁 TS（2026-09-08，.agents/notes/proposed/architecture/2026-09-08-collab-rebuild-b1-gates-ts.md）
+ * B1 随族迁 TS（2026-09-08，.agents/notes/implemented/architecture/2026-09-08-collab-rebuild-b1-gates-ts.md）
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
@@ -233,8 +232,7 @@ function briefPaths(repo: string): { paths: Record<string, string>; duplicates: 
   return { paths, duplicates };
 }
 
-// ---- 泳道推导（单源 = verify-review-tier 的 classify，同族 import——对齐
-//      py 侧 importlib 导 _classify 的消费契约；分类单源零副本） ------------
+// ---- 泳道推导（单源 = verify-review-tier 的 classify，同族 import；分类单源零副本） ------------
 
 /** 由简报自报 base..head 范围的 tier 推导所需泳道。读第一份同时带两个 ref 的
  *  简报，用 tier 分类 base..head（适配先提交后评审的批次序）。简报/ref/分类

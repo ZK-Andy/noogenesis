@@ -21,7 +21,7 @@
  *
  * Provenance: original to Noogenesis（P2 实现轮，2026-09-06；与 verify-manifest 成对，
  * manifest 格式两件同变更——scripts/AGENTS.md）。
- * B1 随族迁 TS（2026-09-08，.agents/notes/proposed/architecture/2026-09-08-collab-rebuild-b1-gates-ts.md）。
+ * B1 随族迁 TS（2026-09-08，.agents/notes/implemented/architecture/2026-09-08-collab-rebuild-b1-gates-ts.md）。
  */
 import * as fs from "node:fs";
 import * as path from "node:path";

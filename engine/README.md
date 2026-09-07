@@ -8,14 +8,16 @@
 
 ## 合同面（唯一 CLI）
 
+运行形态：源码 TS，`npm run build` 后经 `dist/` 跑（engine/adapters 族钉 dist，零转译；两族分野见 B2 ADR）。
+
 ```sh
-node engine/bin.js select <signal>... [--stdin]        # 信号 → 基因（归一化字面匹配，多键并集）
-node engine/bin.js propose <domain>/<id> [--out FILE]  # gene → 注入文本（确定性，同输入必同输出）
-node engine/bin.js evaluate <domain>/<id>              # gates.json 全集 + 约束；红即拒，无豁免
-node engine/bin.js solidify <candidate.json> --actor N # 入档：全绿 → genes/ + events/ 同一 commit
-node engine/bin.js solidify --retire <domain>/<id> --actor N
-node engine/bin.js pull <bank-url> [--cache DIR]       # P2 只读消费：clone/pull 基因库进仓内缓存
-node engine/bin.js self-test                           # 元评测夹具（临时沙箱，不触碰真实仓）
+node dist/engine/bin.js select <signal>... [--stdin]        # 信号 → 基因（归一化字面匹配，多键并集）
+node dist/engine/bin.js propose <domain>/<id> [--out FILE]  # gene → 注入文本（确定性，同输入必同输出）
+node dist/engine/bin.js evaluate <domain>/<id>              # gates.json 全集 + 约束；红即拒，无豁免
+node dist/engine/bin.js solidify <candidate.json> --actor N # 入档：全绿 → genes/ + events/ 同一 commit
+node dist/engine/bin.js solidify --retire <domain>/<id> --actor N
+node dist/engine/bin.js pull <bank-url> [--cache DIR]       # P2 只读消费：clone/pull 基因库进仓内缓存
+node dist/engine/bin.js self-test                           # 元评测夹具（临时沙箱，不触碰真实仓）
 ```
 
 退出码：`0` 成功；`1` 红（评估不绿 / 拒入档）；`2` 用法错误或 fail-closed 拒跑。
@@ -24,19 +26,19 @@ node engine/bin.js self-test                           # 元评测夹具（临�
 
 | 文件 | 职责 |
 |---|---|
-| `bin.js` | CLI 分发 + 用法 |
-| `util.js` | 归一化 / SHA-256 / 结构化 spawn / git 封装 / 槽值推导 |
-| `gates.js` + `gates.json` | 验证白名单（fail-closed 装载） |
-| `gene.js` | Gene 八字段封闭 schema / 目录扫描（含缓存合并扫描） |
-| `select.js` / `propose.js` / `evaluate.js` / `solidify.js` / `pull.js` | 五命令各一 |
-| `selftest.js` | 元评测夹具 |
+| `bin.ts` | CLI 分发 + 用法 |
+| `util.ts` | 归一化 / SHA-256 / 结构化 spawn / git 封装 / 槽值推导 |
+| `gates.ts` + `gates.json` | 验证白名单（fail-closed 装载） |
+| `gene.ts` | Gene 八字段封闭 schema / 目录扫描（含缓存合并扫描） |
+| `select.ts` / `propose.ts` / `evaluate.ts` / `solidify.ts` / `pull.ts` | 五命令各一 |
+| `selftest.ts` | 元评测夹具 |
 
 ## 共享消费（P2，只读）
 
 - `pull <bank-url> [--cache DIR]` 把基因库 clone/pull 进仓内缓存 `<repoRoot>/.noogenesis/genes-cache/`（shallow clone，更新走 `--ff-only`）。**默认离线**：不跑 pull 就没有缓存目录，select/propose 行为与无 P2 时完全一致。已有缓存的 origin 与本次 URL 不一致 → fail-closed（换库须显式删缓存或换 `--cache`）；`--cache` 缺值/重复 → exit 2。
 - **合并扫描**：缓存在场时并入 `select` / `propose` 的扫描根；同名 ref（`domain/id`）**本仓基因优先**（缓存副本被遮蔽，不报错）——本仓是策展活体，库是分发副本。缓存侧解析失败的基因 warn-skip（stderr 一行，读路径不红——分发副本降级姿态）；本仓 `genes/` 解析失败仍 fail-closed。`evaluate` / `solidify` 恒以本仓 `genes/` 为对象（`{cache: false}`），缓存基因**只读不可评估、不可入档**。
 - 缓存目录不进 git（`.gitignore` `/.noogenesis/`）；安全边界：缓存绝不指向仓根本体、`genes/` 本身或其子树。
-- 基因库侧的检索索引 = 仓根 `manifest.json`（`scripts/gen-manifest.py` 生成，确定性输出；`scripts/verify-manifest.py` 门禁防漂移，已入 `gates.json` 白名单）。
+- 基因库侧的检索索引 = 仓根 `manifest.json`（`scripts/gen-manifest.mts` 生成，确定性输出；`scripts/verify-manifest.mts` 门禁防漂移，已入 `gates.json` 白名单）。
 
 ## 安全模型（五条，schema ADR S3）
 
@@ -53,13 +55,13 @@ node engine/bin.js self-test                           # 元评测夹具（临�
 - **入档语义**：候选文件须以 `<id>.json` 命名（ID=文件名锚点对候选同样生效）；目录锚点（`domain` == 父目录）只约束 `genes/` 内的落盘位置。`gene_sha` = 基因文件字节内容的 SHA-256。
 - **原子证据**：`genes/` 变更与 `events/` 追加行放同一 commit；拒绝时只提交事件行（候选不入档），`outcome` 携带拒因。
 - **retire 无需 evaluate**：退役不引入前沿内容，入档闸只守新增/更新；删除文件 + `gene.retired` 事件（`gene_sha` = 最后内容 SHA），git 历史仍可溯。
-- **constraints 对照面**：当前出账变更面（`outgoing_base...HEAD` 已提交 + 未暂存 + 未跟踪，与 `scripts/change-scope.sh` 同口径）。
+- **constraints 对照面**：当前出账变更面（`outgoing_base...HEAD` 已提交 + 未暂存 + 未跟踪，与 `scripts/change-scope.mts` 同口径）。
 - **事件 kind 封闭集**：`gene.added` / `gene.updated` / `gene.retired`；select/propose 运行不记（演化事件 ≠ 运行日志）。
 
 ## 消费方
 
 - 引擎自身：`evaluate` 跑白名单全集作为入档门槛。
-- `scripts/verify-gene-format.py`（白名单外独立件）：校验 `genes/` + `events/`，含白名单条目脚本存在性与 `gene_sha` 工作树复算（例外机制单家见 gates.py 头注）。
-- `scripts/gates.py`（M2 起单一发射器）：hooks/CI 的门禁清单单源 = 本白名单（结构性例外四件见该脚本头注）。
+- `scripts/verify-gene-format.mts`（白名单外独立件）：校验 `genes/` + `events/`，含白名单条目脚本存在性与 `gene_sha` 工作树复算（例外机制单家见 gates.mts 头注）。
+- `scripts/gates.mts`（门禁清单单源发射器）：hooks/CI 的门禁清单单源 = 本白名单（结构性例外四件见该脚本头注）。
 - `adapters/dsh/`（M2 适配层）：spawn CLI 单合同的第一个进程外消费者；引擎与 `gates.json` 对适配层零新增要求。
-- CI：`node engine/bin.js self-test`（与 verify-* self-test 平级，不占门禁编号）。
+- CI：`node dist/engine/bin.js self-test`（与 verify-* self-test 平级，不占门禁编号）。

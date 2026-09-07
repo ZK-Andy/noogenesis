@@ -29,7 +29,7 @@
  * Provenance: distilled from dotnet-deepseek-harness-desktop/scripts/verify-handoff-structure.py
  * (MIT, 2026-09-05)。与上游 diff：journal 在仓库根 `journal/`（非 .plan/journal/）；
  * 卷名取自当月而非硬编码（修上游跨月滚动 bug）。
- * B1 随族迁 TS（2026-09-08，.agents/notes/proposed/architecture/2026-09-08-collab-rebuild-b1-gates-ts.md）。
+ * B1 随族迁 TS（2026-09-08，.agents/notes/implemented/architecture/2026-09-08-collab-rebuild-b1-gates-ts.md）。
  */
 import * as fs from "node:fs";
 import * as path from "node:path";

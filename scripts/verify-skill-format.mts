@@ -26,7 +26,7 @@
  * (MIT, 2026-09-05)；diff vs source：最小技能数 8 -> 7（Noogenesis 7 技能，noo-* 前缀，
  * ADR 2026-09-05-skill-prefix-noo）；链接原语单源于 scripts/mdref（ADR
  * 2026-09-05-consolidate-r1-simplification-candidates）。
- * B1 随族迁 TS（2026-09-08，.agents/notes/proposed/architecture/2026-09-08-collab-rebuild-b1-gates-ts.md）。
+ * B1 随族迁 TS（2026-09-08，.agents/notes/implemented/architecture/2026-09-08-collab-rebuild-b1-gates-ts.md）。
  */
 import * as fs from "node:fs";
 import * as path from "node:path";

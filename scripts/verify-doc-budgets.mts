@@ -20,7 +20,7 @@
  * Provenance: distilled from dotnet-deepseek-harness-desktop/scripts/verify-doc-budgets.py
  * (MIT, 2026-09-05)；verbatim 移植，逻辑未改（B0 2026-09-08：超限文案带处理序三步 +
  * cookbook 蒸馏提示，per C12 / ADR 2026-09-08-b0-framework-structure）。
- * B1 随族迁 TS（2026-09-08，.agents/notes/proposed/architecture/2026-09-08-collab-rebuild-b1-gates-ts.md）。
+ * B1 随族迁 TS（2026-09-08，.agents/notes/implemented/architecture/2026-09-08-collab-rebuild-b1-gates-ts.md）。
  */
 import * as fs from "node:fs";
 import * as os from "node:os";

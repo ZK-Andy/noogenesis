@@ -22,7 +22,7 @@
  * (MIT, 2026-09-05)；skills/ 排除移除（默认校验）、.plan/ 排除移除（journal 入 git）、
  * 第三方/构建目录跳过表保留；链接原语单源于 scripts/mdref（同上源 ADR
  * 2026-09-05-consolidate-r1-simplification-candidates）。
- * B1 随族迁 TS（2026-09-08，.agents/notes/proposed/architecture/2026-09-08-collab-rebuild-b1-gates-ts.md）。
+ * B1 随族迁 TS（2026-09-08，.agents/notes/implemented/architecture/2026-09-08-collab-rebuild-b1-gates-ts.md）。
  */
 import * as fs from "node:fs";
 import * as path from "node:path";

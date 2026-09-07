@@ -1,13 +1,33 @@
 #!/usr/bin/env node
 /**
- * gates.mts — 门禁清单单源发射器（清单 = engine/gates.json）的 TS 实现，B1 随族迁。
+ * gates.mts — 门禁清单单源发射器（清单 = engine/gates.json），B1 随族迁 TS、
+ * B5 起唯一执行面（py 原件 scripts/gates.py 随切换批删除；行为恒等对账证据见
+ * ADR 2026-09-08-collab-rebuild-b1-gates-ts）。
  *
- * 与 scripts/gates.py（并存期权威执行面）的行为合同：
+ * 行为合同：
  * - `--list`：打印 `name<TAB>cmd...` 行；缺槽位以 `<key>` 占位（不 fail），未知 --skip 不报错。
- * - `--run`：按 DAG 调度执行；jobs=1 时输出与 py 逐行全等（`-> name` + 子进程透传 + 失败行）。
+ * - `--run`：按 DAG 调度执行；jobs=1 时输出为逐行确定性序列（`-> name` + 子进程透传 + 失败行）。
  * - 槽位替换任意 {{key}}（含 cmd），缺值 fail-closed exit 2（--run）/ `<key>` 占位（--list）。
  * - 退出码：0 全绿 / 1 有门禁红 / 2 fail-closed（清单缺失/坏条目/坏图/坏槽位/未知 skip）。
- * - --self-test：离线夹具自测（py 四组同迁 + DAG 组）。
+ * - --self-test：离线夹具自测（四组基础 + DAG 组）。
+ *
+ * 槽位替换**形似而非同口径**（勿照抄互通）：本发射器替换任意 {{key}}（含 cmd）
+ * 且缺值 fail-closed；引擎侧 engine/gates.ts instantiate 只认 outgoing_base/head
+ * 双键、缺键静默留字面量（无害的前提是引擎 deriveSlots 保证两键齐全）——两侧
+ * 今日等价纯因白名单只有这两键且都在 args，非机制等价。
+ *
+ * 清单单源的**结构性例外**（有意为之，勿"修复"；机制单家 = 本头注）：
+ * - review-tier：pre-push 以 per-ref merge-base 循环逐 ref enforce（新分支首推
+ *   fail-closed），CI 以 push 事件条件步承载——两者都不是平面清单能表达的形态，
+ *   故默认跳过、由专属步骤保留。
+ * - review-brief：按设计仅本地预发射，不入 CI；pre-push 亦不跑（简报闸是评审
+ *   发射前检查，非 push 前提）。
+ * - change-scope：hooks/CI/pre-push 展示面用脚本自身的缺省推导（fork-point）；
+ *   gates.json 内的槽位形态供引擎 evaluate 使用。同一脚本、两种推导口径，见
+ *   P1 实现 ADR D4。
+ * - gene-format：白名单外独立件——它消费引擎产物（genes/ + events/
+ *   复算），进白名单会让 solidify 入档中途复算自身（语义循环）；hooks/CI 保留
+ *   显式行，不在 --skip 清单里表达。
  *
  * DAG（蓝图 §2 蒸馏三能力，B1 ADR 2026-09-08-collab-rebuild-b1-gates-ts）：
  * - `needs`：硬依赖——依赖红/被 skip 则下游 skipped（skip 理由传染 needs 链）；
@@ -16,14 +36,11 @@
  *   与 py 逐行等价（不打印 skip 行）；jobs>1 时对未调度件补 skip 理由行。
  * - 有界并行：默认并行度 = min(CPU 数, 8)，--jobs 可调（1 = 串行等价档）。
  * - 图校验（fail-closed exit 2）：重 id / needs∪after 未知依赖（含自环）/ 环，
- *   另加运行前校验：needs/after 不得指向 `--skip` 剔除的门禁（py 串行无 DAG
+ *   另加运行前校验：needs/after 不得指向 `--skip` 剔除的门禁（平面串行无 DAG
  *   语义、同场景照跑下游；TS 按 DAG 语义 fail-closed，报错指向 `--skip X`）。
  *   图无环 + 依赖全存在且全在 plan 内 ⇒ 无调度死锁态（任一 pending 的依赖
  *   要么绿、要么已触发 fail-fast 全跳、要么在飞/前序 pending——推进恒有保证），
  *   运行期不再设死锁分支。
- *
- * 结构性例外（与 py 同，勿"修复"）：review-tier per-ref 循环、review-brief 仅本地、
- * change-scope 双推导口径、gene-format 白名单外独立件——语义见 gates.py 头注。
  *
  * 用法（仓库根运行）：node scripts/gates.mts --list | --run [--skip a,b] [--slot K=V]... [--jobs N] | --self-test
  */
@@ -136,7 +153,7 @@ function validateGraph(gates: Gate[]): void {
 }
 
 /** 槽位替换：任意 {{key}}（含 cmd）；缺值 fail-closed（--run）/ <key> 占位（--list）。
- *  与 py gates.py 同口径（形似而非同口径于 engine/gates.js，见该脚本头注）。 */
+ *  与引擎侧 engine/gates.ts instantiate 形似而非同口径（见头注，勿照抄互通）。 */
 function instantiate(gate: Gate, slots: Slots, missing: "fail" | "placeholder"): { name: string; command: string[] } {
   const substitute = (text: string): string => text.replace(SLOT_RE, (_all: string, key: string) => {
     if (key in slots) return slots[key]!;
@@ -158,7 +175,7 @@ interface RunOptions {
 let emitLine: (line: string) => void = (line) => fs.writeSync(1, line + "\n");
 
 /** DAG 调度：needs 全绿 + after 全完成才就绪；fail-fast 停调度、等在飞、exit 1。
- *  jobs=1：确定性串行，输出与 py 逐行全等（失败即止，不打印 skip 行）。
+ *  jobs=1：确定性串行（失败即止，不打印 skip 行）；
  *  jobs>1：有界并行；失败后对未调度件补 skip 理由行（needs 传染 / fail-fast）。 */
 function runGates(repoRoot: string, gates: Gate[], opts: RunOptions): Promise<number> {
   for (const name of opts.skip) {
@@ -315,7 +332,7 @@ function parseArgs(argv: string[]): Args {
   return { mode, skip, slots, jobsArg };
 }
 
-// ---------- self-test（py 四组同迁 + DAG 组；输出文本为 TS 件自有面，不入对账） ----------
+// ---------- self-test（离线夹具；输出文本为本件自有面） ----------
 
 async function selfTest(): Promise<number> {
   const failures: string[] = [];

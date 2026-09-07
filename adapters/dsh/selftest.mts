@@ -14,10 +14,9 @@
  * 运行形态（B2 ADR）：本件是 dist 面——经 tsc 发射为
  * `dist/adapters/dsh/selftest.mjs` 运行（`npm run build` 后
  * `node dist/adapters/dsh/selftest.mjs`）；源 .mts 不是运行形态。因此
- * REPO_ROOT 需三级上溯到真仓根（js 权威面 selftest.mjs 为两级），防火墙
- * engine 扫描与包结构契约仍判真仓文件；solidify 提醒命令断言同款指
- * dist/engine/bin.js（与 solidify-trigger.mts 的 dist 形态提示串对齐）。
- * 判据面（防火墙扫描 + 包结构 needles）与 js 面两份同改、逐字一致。
+ * REPO_ROOT 需三级上溯到真仓根，防火墙 engine 扫描与包结构契约仍判真仓
+ * 文件；solidify 提醒命令断言同款指 dist/engine/bin.js（与
+ * solidify-trigger.mts 的 dist 形态提示串对齐）。
  */
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -888,24 +887,29 @@ function writeFixtureGene(repoRoot: string): void {
 
 // ── 6) 防火墙机器检查：import 面 / 引擎零依赖 / 包结构契约 ────────────────
 {
-	for (const file of fs.readdirSync(ADAPTER_DIR).filter((f) => f.endsWith(".mjs") && f !== "index.mjs")) {
+	// 扫描面按运行形态自适应：dist 跑（权威形态）扫 .mjs，源跑扫 .mts——
+	// 两种形态下被扫集合都非空，扫描不因形态切换而空转（index.* 为宿主
+	// 依赖唯一入口，单独断言允许集）。
+	const adapterModules = fs.readdirSync(ADAPTER_DIR).filter((f) => /\.(m|mt)s$/.test(f) && !f.startsWith("index."));
+	for (const file of adapterModules) {
 		const text = fs.readFileSync(path.join(ADAPTER_DIR, file), "utf8");
 		assert.doesNotMatch(text, /from ["']@deepseek-ai\//, `${file} must not import host packages (firewall rule 2)`);
 	}
-	ok("firewall: only index.mjs imports @deepseek-ai/* (dependency injection at entry)");
+	ok("firewall: only index.* imports @deepseek-ai/* (dependency injection at entry)");
 
-	// index.mjs 宿主 import 允许集封底（B4 ADR Decision 2：dsh-tools + dsh-llm；
+	// index.* 宿主 import 允许集封底（B4 ADR Decision 2：dsh-tools + dsh-llm；
 	// 新增宿主依赖必须同变更扩本断言 + ADR 拍板）。
 	{
-		const indexText = fs.readFileSync(path.join(ADAPTER_DIR, "index.mjs"), "utf8");
+		const entryFile = fs.existsSync(path.join(ADAPTER_DIR, "index.mjs")) ? "index.mjs" : "index.mts";
+		const indexText = fs.readFileSync(path.join(ADAPTER_DIR, entryFile), "utf8");
 		const hostImports = [...new Set([...indexText.matchAll(/from ["'](@deepseek-ai\/[^"']+)["']/g)].map((m) => m[1]))].sort();
-		assert.deepEqual(hostImports, ["@deepseek-ai/dsh-llm", "@deepseek-ai/dsh-tools"], "index.mjs host import set is closed (firewall allowed set)");
+		assert.deepEqual(hostImports, ["@deepseek-ai/dsh-llm", "@deepseek-ai/dsh-tools"], "index.* host import set is closed (firewall allowed set)");
 	}
-	ok("firewall: index.mjs host import set = dsh-tools + dsh-llm (B4 allowed set)");
+	ok("firewall: index.* host import set = dsh-tools + dsh-llm (B4 allowed set)");
 
-	// 引擎源零第三方依赖判据（js 与 .mts 两份同改）：.js 覆盖 require 形态；
-	// .ts 为 ESM import 语法——import / require 两种第三方引用形态都扫。
-	for (const file of fs.readdirSync(path.join(REPO_ROOT, "engine")).filter((f) => f.endsWith(".js") || f.endsWith(".ts"))) {
+	// 引擎源零第三方依赖判据：import / require 两种第三方引用形态都扫
+	//（.ts 源内保留 lazy require 形态，正则双形态同扫）。
+	for (const file of fs.readdirSync(path.join(REPO_ROOT, "engine")).filter((f) => f.endsWith(".ts"))) {
 		const text = fs.readFileSync(path.join(REPO_ROOT, "engine", file), "utf8");
 		const thirdParty = [
 			...text.matchAll(/require\(['"]([^'"]+)['"]\)/g),
@@ -916,12 +920,12 @@ function writeFixtureGene(repoRoot: string): void {
 			.filter((spec) => spec !== undefined && !spec.startsWith(".") && !isBuiltin(spec));
 		assert.deepEqual(thirdParty, [], `engine/${file} must stay dependency-free, found ${thirdParty}`);
 	}
-	ok("firewall: engine/*.js|*.ts has zero third-party requires/imports");
+	ok("firewall: engine/*.ts has zero third-party requires/imports");
 
 	const pkg: { name: string; type: string; main: string; files: string[]; dsh?: { bundle?: { patch?: string } }; peerDependencies?: Record<string, string> } = JSON.parse(fs.readFileSync(path.join(REPO_ROOT, "package.json"), "utf8"));
 	assert.equal(pkg.name, "noogenesis-dsh");
 	assert.notEqual(pkg.type, "module");
-	// 包结构契约（js 与 .mts 两份同改）：白名单已切 dist 发布形态（B2 ADR 点 4）。
+	// 包结构契约：白名单已切 dist 发布形态（B2 ADR 点 4）。
 	assert.equal(pkg.main, "dist/adapters/dsh/index.mjs");
 	assert.equal(pkg.dsh?.bundle?.patch, "./cordis.patch.yml");
 	assert.ok(pkg.peerDependencies?.["@deepseek-ai/dsh-llm"], "peer dep dsh-llm declared (B4 ADR Decision 2)");
