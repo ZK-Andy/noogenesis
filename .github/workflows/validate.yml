@@ -30,6 +30,10 @@ jobs:
         with:
           node-version: 22
 
+      # B1 起白名单含 ts-typecheck（tsc 工具链，devDependency；lock 入 git 钉版）
+      - name: 安装依赖（ts-typecheck 前置）
+        run: npm ci --no-audit --no-fund
+
       # 门禁清单单源：engine/gates.json（经 scripts/gates.py 发射；tier 的
       # 事件条件步、change-scope 的缺省推导、review-brief 的仅本地语义是
       # 结构性例外，见该脚本头注；第十门禁是白名单外独立件——消费引擎产物，
@@ -46,6 +50,7 @@ jobs:
         if: github.event_name == 'push' && github.event.before != '' && !startsWith(github.event.before, '00000000')
         run: python3 scripts/verify-review-tier.py --enforce --since ${{ github.event.before }}
 
+      # 自测抽查：py（并存期权威）与 TS（B1 迁移件）双列——B5 重指时清理 py 行
       - name: self-test 抽查（违约样例必须 FAIL）
         run: |
           python3 scripts/verify-adr-format.py --self-test
@@ -59,6 +64,18 @@ jobs:
           python3 scripts/gates.py --self-test
           node scripts/verify-archived-agent-notes.mts --self-test
           node scripts/verify-postmortem-naming.mts --self-test
+          node scripts/gates.mts --self-test
+          node scripts/verify-md-links.mts --self-test
+          node scripts/verify-doc-budgets.mts --self-test
+          node scripts/gen-manifest.mts --self-test
+          node scripts/verify-adr-format.mts --self-test
+          node scripts/verify-cookbook.mts --self-test
+          node scripts/verify-skill-format.mts --self-test
+          node scripts/verify-handoff-structure.mts --self-test
+          node scripts/verify-manifest.mts --self-test
+          node scripts/verify-review-tier.mts --self-test
+          node scripts/verify-review-brief.mts --self-test
+          node scripts/verify-gene-format.mts --self-test
 
       # 引擎元评测（schema ADR S3）：与 verify-* self-test 平级，不占门禁编号
       - name: engine self-test
