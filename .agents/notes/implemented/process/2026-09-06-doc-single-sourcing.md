@@ -18,13 +18,13 @@ Review: FULL/2026-09-06/R1=ok R2=ok R3=ok
 
 ## Decision
 
-1. **可执行门禁清单单一事实源 = `engine/gates.json`（`scripts/gates.py --list` 发射、`--run` 消费）**：根 AGENTS.md「质量门」节收敛为短契约（清单来源 + 运行入口 + gene-format 例外指针），删除 11 行命令块；README 双语「Gates/门禁」节删除命令块改指针；四个结构性例外（review-tier / review-brief / change-scope / gene-format）的机制说明单家在 gates.py 头注，散文不再复制。
+1. **可执行门禁清单单一事实源 = `engine/gates.json`（`scripts/gates.mts --list` 发射、`--run` 消费）**：根 AGENTS.md「质量门」节收敛为短契约（清单来源 + 运行入口 + gene-format 例外指针），删除 11 行命令块；README 双语「Gates/门禁」节删除命令块改指针；四个结构性例外（review-tier / review-brief / change-scope / gene-format）的机制说明单家在 gates.mts 头注，散文不再复制。
 2. **散文中的门禁计数与手抄清单全部去除**：feature-flow / session-open / release-flow 的计数改「清单见根 AGENTS「质量门」」表述；HANDOFF 状态区的门禁清单行指针化、「门禁 9→10」类变更叙事修剪；README 双语 Status 的「十一件」去除。
 3. **「评审检查项（AI 兜底）」清单补位于根 AGENTS.md**（编号 + 指向规则的家；v0 三项：文档纪律语义面 / ADR 口径一致性含证据严肃性三件套 / 胶囊内容域与门禁判据口径一致）；review.md §5 保留契约与机制、内嵌清单迁出防双家；两个技能与 standard-authoring 的既有指称就此落位，不再改。
 4. **HANDOFF「开始步骤」并入 session-open 卡**：HANDOFF 只留一行指针；session-open 步骤 1 同步去掉对「开始步骤」子节的引用，消除循环。
 5. **capsule-01-migration-plan.md 下沉 journal/**（tier 表明载的过程资产家、入 git；`git mv` 保留历史）：根 AGENTS「参考」、README 双语 Status、HANDOFF 背景共四处入站链接同变更改写；计划内 1 处相对链接随新位置修正。
 6. **doc-standards tier 表补 docs/research/ 行**（设计文档与调研：设计意图与外部解剖，非当下状态快照）；HANDOFF 位置表去「3 份」计数。
-7. **gates.py `--list` 信息面容忍缺槽位**（缺值以 `<key>` 占位发射，不 fail）——散文单源声明「`--list` 发射」必须真可裸跑（实施中实测发现：带槽位门禁使裸 `--list` exit 2，声明失实）；`--run` 执行面保持缺值 fail-closed 不变，两态分离由 self-test 夹具钉住。
+7. **gates.mts `--list` 信息面容忍缺槽位**（缺值以 `<key>` 占位发射，不 fail）——散文单源声明「`--list` 发射」必须真可裸跑（实施中实测发现：带槽位门禁使裸 `--list` exit 2，声明失实）；`--run` 执行面保持缺值 fail-closed 不变，两态分离由 self-test 夹具钉住。
 
 ## Alternatives considered
 
@@ -41,7 +41,7 @@ Review: FULL/2026-09-06/R1=ok R2=ok R3=ok
 
 ## Consequences
 
-- 门禁增删从此只改 gates.json 与 gates.py 头注（例外机制），散文面不再跟改——清单漂移面收窄到单点。
+- 门禁增删从此只改 gates.json 与 gates.mts 头注（例外机制），散文面不再跟改——清单漂移面收窄到单点。
 - 「评审检查项」指称全部落位；评审简报的兜底清单核对项今后从根 AGENTS.md 取。
 - capsule 计划从仓库根消失；考古入口 = 根 AGENTS「参考」/README 双语/HANDOFF 指针。
 - 机器闸盲区（手抄清单冗余、语义指称悬空）仍在——本轮以纪律收敛而非闸封堵；一致性闸为后续候选（见 Alternatives）。
