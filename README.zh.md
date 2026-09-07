@@ -54,6 +54,7 @@ node engine/bin.js self-test      # 引擎自检
 ├── adapters/dsh/           # DSH 适配层（插件壳接线：system-prompt 节 / noo_* 工具 / solidify 人工确认 / geneBankUrl 惰性 pull / 技能随库分发；B2 起源码 TS，npm 包 = tsc dist）
 ├── genes/                  # 基因库（<domain>/<id>.json，经 solidify 入档；本仓即库）
 ├── manifest.json           # 基因库检索索引（gen-manifest 生成，verify-manifest 门禁）
+├── lefthook.yml            # git 钩子单源（pre-commit 分域 job / pre-push 单编排器；lefthook 内建 postinstall 自动安装）
 ├── events/                 # 演化事件月卷（JSONL 审计面，入 git）
 ├── templates/              # ADR / AGENTS 分层模板
 ├── HANDOFF.md + HANDOFF-todos.md   # 交接家庭
