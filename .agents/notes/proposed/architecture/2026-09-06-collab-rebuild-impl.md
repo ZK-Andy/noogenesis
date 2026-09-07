@@ -24,11 +24,11 @@ charter（[2026-09-06-framework-rebuild-charter](../../implemented/architecture/
 | B2 引擎+适配层 TS 化 | engine 11 件 + adapters 9 件 → TS；npm 管线 files→tsc dist | C1 / C3 / C9 / C10 |
 | B3 钩子与安装面 | lefthook 分域 job 直接调 `node dist/…`（零转译）；postinstall 自动安装器；`pre-push-selftest` 四态 e2e TS 重建；`setup-hooks.sh` 退役 | C2 / C4 / C6 / C13 部分 |
 | B4 挂载面接线 | A2–A6 + A8 接线（各带最小 smoke）；M1–M3 实现件（各带 HERO 判据答案）；候选门禁评估（文件名契约闸 / 上帝类预防闸） | C7 / C8 / C15 |
-| B5 切换批 | gates.json cmd 重指（条目集与门禁名不变）、删 py/sh/旧 js 源、CI 面更新、发版 0.2.0（C11/C12 若 B0 未立则随本批） | C1 / C11 / C12 / C13 / C14 / C10 |
+| B5 切换批 | gates.json cmd 重指（条目集与门禁名不变）、删 py/sh/旧 js 源、CI 面更新、发版 0.2.0 | C1 / C13 / C14 / C10 |
 
 **框架结构面排序（2026-09-08 拍板）**：主线自查指认四件框架结构件原散排 B4/B5 顺带削弱「先框架」语义，用户拍板插入 B0（先于 B1），随批新门禁直接 TS；依赖挂载面的两件（流程层评审状态机化 / M1–M3 策略件）**不得先行**（A8/A6 接线先在才有落点）——该禁令不变。
 
-**批次纪律**：每批触碰 `scripts/**` 门禁判据 = FULL 三审（tier 机械触发）；并存期（B1–B4）旧机器件保持权威执行面，TS 件以双跑对账自证，各批在事件轨标注「本批按蓝图判据」；B5 单批切换后旧机器件全量删除（charter 口径）。
+**批次纪律**：每批触碰 `scripts/**` 门禁判据 = FULL 三审（tier 机械触发）；并存期（B1–B4）旧机器件保持权威执行面，TS 件以双跑对账自证，各批在 journal 月卷标注「本批按蓝图判据」（事件轨 kind 封闭集只收 gene 事件，不收批次标注）；B5 单批切换后旧机器件全量删除（charter 口径）。
 
 **依赖面声明**：lefthook 以 devDependency 引入（npm 包，含 Go 二进制）——P1 骨架 D1「零第三方依赖」约束 engine 运行时面，不约束开发工具链（TS 统一已带 node_modules 工具链拍板，charter Decision 3）；engine 零依赖纪律不变。
 

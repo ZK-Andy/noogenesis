@@ -6,10 +6,12 @@
  * 目录不存在或空时零约束（PASS）。postmortem 形态单源：
  * docs/research/framework-rebuild-blueprint.md §5；立项 ADR 2026-09-08-b0-framework-structure。
  *
- * 用法（仓库根运行，同其余 verify-*）：node scripts/verify-postmortem-naming.ts [--self-test]
- * 退出码：0 = PASS，1 = FAIL（违命名规则），2 = fail-closed。
- * 模块语法约束：本仓 package.json type=commonjs，type stripping 不转换模块语法，
- * 故本件为纯脚本风格（无 export/import.meta）；node 内建模块经 require 引入。
+ * 用法（仓库根运行，同其余 verify-*）：node scripts/verify-postmortem-naming.mts [--self-test]
+ * 退出码：0 = PASS，1 = FAIL（违命名规则）。
+ * 运行前提：node ≥22.18（原生 type stripping 默认开启；更低版本表现为解析期
+ * 语法错而非本门禁输出——CI setup-node 钉 22，本地需自备）。
+ * 模块形态：显式 .mts（ESM）——本仓 package.json type=commonjs，裸 .ts 会被分类
+ * 为 CJS 装不下 import 语法，且不依赖 node 版本间的模块语法探测差异。
  */
 import * as fs from "node:fs";
 import * as path from "node:path";

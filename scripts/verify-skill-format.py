@@ -96,13 +96,13 @@ def check_skill(path: Path, errors: list[str]) -> None:
         errors.append(f"{path}: missing '## Workflow' section")
 
     # references/ 形态规则（蓝图 §3 扩展位；B0 拍板 2026-09-08）：拆了就必须非空
-    # 且被 SKILL.md 链接——防预铺空目录（.agents「用不上不写」纪律在技能层的投影）
+    # 且被 SKILL.md 以相对链接引用——防预铺空目录（.agents「用不上不写」纪律在技能层的投影）
     refs_dir = path.parent / "references"
     if refs_dir.is_dir():
         if not any(refs_dir.iterdir()):
             errors.append(f"{path}: references/ 目录为空（预铺空目录；用不上不写）")
-        elif "references/" not in body:
-            errors.append(f"{path}: 存在 references/ 但 SKILL.md 未链接其中任何件")
+        elif not re.search(r"\]\(references/", body):
+            errors.append(f"{path}: 存在 references/ 但 SKILL.md 无指向其中的相对链接（正文提及不算链接）")
 
 
 def scan(errors: list[str]) -> int:
@@ -179,6 +179,19 @@ def self_test() -> int:
         errs = []
         check_skill(empty_refs / "SKILL.md", errs)
         assert any("references/ 目录为空" in e for e in errs), f"should flag empty references/: {errs}"
+
+        # references/ 非空但正文只提及不链接 → 违约
+        unlinked_refs = td / "unlinked-refs"
+        unlinked_refs.mkdir()
+        (unlinked_refs / "references").mkdir()
+        (unlinked_refs / "references" / "detail.md").write_text("# Detail\n", encoding="utf-8")
+        (unlinked_refs / "SKILL.md").write_text(
+            "---\nname: unlinked-refs\ndescription: Use when testing.\n---\n\n"
+            "# Title\n\n**This skill is guidance, not a script.**\n\n## Workflow\n\n1. Put templates in references/ when needed.\n",
+            encoding="utf-8")
+        errs = []
+        check_skill(unlinked_refs / "SKILL.md", errs)
+        assert any("无指向其中的相对链接" in e for e in errs), f"should flag unlinked references/: {errs}"
 
         linked_refs = td / "linked-refs"
         linked_refs.mkdir()
