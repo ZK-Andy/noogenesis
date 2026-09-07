@@ -57,14 +57,15 @@ export function createSkillUsagePolicy(): { toolPre: ToolPrePolicy; turnStopping
 		seen: string[];
 		projected: number;
 	}
+	const initState = (): SkillState => ({ seen: [], projected: 0 });
 	const toolPre: ToolPrePolicy = (exec) => {
 		const name = skillNameOf(exec);
 		if (!name) return;
-		const state = store.of<SkillState>(exec.agent?.session, () => ({ seen: [], projected: 0 }));
+		const state = store.of<SkillState>(exec.agent?.session, initState);
 		if (!state.seen.includes(name)) state.seen.push(name);
 	};
 	const turnStopping: TurnStoppingPolicy = (payload) => {
-		const state = store.of<SkillState>(payload.agent?.session, () => ({ seen: [], projected: 0 }));
+		const state = store.of<SkillState>(payload.agent?.session, initState);
 		const fresh = state.seen.slice(state.projected);
 		if (fresh.length === 0) return;
 		state.projected = state.seen.length;
@@ -75,9 +76,10 @@ export function createSkillUsagePolicy(): { toolPre: ToolPrePolicy; turnStopping
 
 /**
  * M2 规范事前接入落点（建议档两件 + 记录一件）：A2 会话开场子树规则地图
- * （仅正装 agent；subagent 跳过）；A3 edit/write 命中布点子树归因观测；
- * A6 投影触摸记录。「须读入后才推进」拦截 = 升格候选不落地（B4 ADR
- * Proposal 4）。
+ * （每会话首个 pre-step，mapShown 单门；subagent 跳过；残余边界 = 首步即被
+ * 其他策略拒绝则地图缺席——B4 ADR Consequences 在案）；A3 edit/write 命中
+ * 布点子树归因观测（滚动窗口封顶，投影游标随平移同步）；A6 投影触摸记录。
+ * 「须读入后才推进」拦截 = 升格候选不落地（B4 ADR Proposal 4）。
  */
 export function createSubtreeRulesPolicies(config: RepoRootConfig): { preStep: PreStepPolicy; toolPre: ToolPrePolicy; turnStopping: TurnStoppingPolicy; drop(session: unknown): void } {
 	const store = createSessionStore();
@@ -86,10 +88,12 @@ export function createSubtreeRulesPolicies(config: RepoRootConfig): { preStep: P
 		projected: number;
 		mapShown: boolean;
 	}
+	const initState = (): TouchState => ({ touched: [], projected: 0, mapShown: false });
 	const preStep: PreStepPolicy = (payload) => {
-		if (payload.turn !== 1 || payload.step !== 1) return;
+		// 每会话首个 pre-step 触发（mapShown 单门去重）——R2-S1：turn/step 双门
+		// 在首步被拒时永久丢地图（turn≥2 不再命中 turn===1）。
 		if (payload.agent?.session?.header?.origin === "subagent") return;
-		const state = store.of<TouchState>(payload.agent?.session, () => ({ touched: [], projected: 0, mapShown: false }));
+		const state = store.of<TouchState>(payload.agent?.session, initState);
 		if (state.mapShown) return;
 		state.mapShown = true;
 		const repoRoot = resolveRepoRoot(config, sessionWorkspaceOf(payload));
@@ -108,12 +112,17 @@ export function createSubtreeRulesPolicies(config: RepoRootConfig): { preStep: P
 		const repoRoot = resolveRepoRoot(config, sessionWorkspaceOf(exec));
 		const subtree = subtreeOf(repoRoot, filePath);
 		if (!subtree) return;
-		const state = store.of<TouchState>(exec.agent?.session, () => ({ touched: [], projected: 0, mapShown: false }));
-		if (state.touched.length >= TOUCH_STATE_CAP) state.touched.shift();
+		const state = store.of<TouchState>(exec.agent?.session, initState);
+		if (state.touched.length >= TOUCH_STATE_CAP) {
+			state.touched.shift();
+			// 滚动窗口平移同步游标（R2-B2）：shift 丢的一个元素按已投影/未投影
+			// 分别等价于游标 -1 / 丢未投影件——先扣游标再 push，slice 语义保真。
+			state.projected = Math.max(0, state.projected - 1);
+		}
 		state.touched.push({ subtree, path: path.relative(repoRoot, filePath) });
 	};
 	const turnStopping: TurnStoppingPolicy = (payload) => {
-		const state = store.of<TouchState>(payload.agent?.session, () => ({ touched: [], projected: 0, mapShown: false }));
+		const state = store.of<TouchState>(payload.agent?.session, initState);
 		const fresh = state.touched.slice(state.projected);
 		if (fresh.length === 0) return;
 		state.projected = state.touched.length;
@@ -135,12 +144,13 @@ export function createReviewSurfacePolicy(): { toolPost: ToolPostPolicy; turnSto
 		gateRuns: number;
 		projected: number;
 	}
-	const toolPost: ToolPostPolicy = (_exec, result) => {
+	const initState = (): SurfaceState => ({ briefRuns: 0, tierRuns: 0, gateRuns: 0, projected: 0 });
+	const toolPost: ToolPostPolicy = (exec, result) => {
 		if (!result.content?.length) return;
 		const text = result.content.map((part) => (part.type === "text" && typeof part.text === "string" ? part.text : "")).join("\n");
 		const matched = [...text.matchAll(REVIEW_SURFACE_PATTERN)].map((match) => match[0]);
 		if (matched.length === 0) return;
-		const state = store.of<SurfaceState>(resultAgentKey(_exec), () => ({ briefRuns: 0, tierRuns: 0, gateRuns: 0, projected: 0 }));
+		const state = store.of<SurfaceState>(exec.agent?.session, initState);
 		for (const hit of matched) {
 			if (hit === "verify-review-brief") state.briefRuns += 1;
 			else if (hit === "verify-review-tier") state.tierRuns += 1;
@@ -148,18 +158,13 @@ export function createReviewSurfacePolicy(): { toolPost: ToolPostPolicy; turnSto
 		}
 	};
 	const turnStopping: TurnStoppingPolicy = (payload) => {
-		const state = store.of<SurfaceState>(payload.agent?.session, () => ({ briefRuns: 0, tierRuns: 0, gateRuns: 0, projected: 0 }));
+		const state = store.of<SurfaceState>(payload.agent?.session, initState);
 		const total = state.briefRuns + state.tierRuns + state.gateRuns;
 		if (total === state.projected) return;
 		state.projected = total;
 		return [{ kind: "noogenesis/review-surface", data: { turn: payload.turn ?? null, briefRuns: state.briefRuns, tierRuns: state.tierRuns, gateRuns: state.gateRuns } }];
 	};
 	return { toolPost, turnStopping, drop: (session) => void store.drop(session) };
-}
-
-/** A4 策略的会话键提取（exec.agent 的 session 对象；缺席 → undefined 不持久）。 */
-function resultAgentKey(exec: ToolExecLike): unknown {
-	return exec.agent?.session;
 }
 
 /** 全部策略件的会话清态汇总（index.mts A8 接线在 session/disposed 调用）。 */

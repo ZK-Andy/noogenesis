@@ -33,7 +33,7 @@ Related: [2026-09-06-collab-rebuild-impl](../../proposed/architecture/2026-09-06
    | A4 工具后 | `tools/post-execute` | 首个 `block(feedback)` 胜出；`additionalContexts` 按注册序累积（下游前置） |
    | A5 hooks 桥 | `agent/session-start`（会话开始时刻） | 非阻塞：inject 上下文能力 + 异常 catch → warn 降级，绝不阻塞会话 |
    | A6 停止前 | `agent/turn-stopping` | 非阻塞：策略收集记录载荷，异常 catch → warn 降级 |
-   | A8 会话事件轨 | `session/event`（drain: `session/flush`） | 每会话状态投影存储（WeakMap 按会话键隔离，GC 自清）；策略读写同一存储 |
+   | A8 会话事件轨 | 记录落点 = `session.append`（产出侧，自定义 kind）；drain = `session/disposed`（独立 cordis 事件——R2 实证：disposal 不走 `session/event` firehose，firehose 只投 `Session.append` 提交的封闭键集日志事件） | 每会话状态投影存储（WeakMap 按会话键隔离，GC 自清）；策略读写同一存储 |
 
    - **A5 归口**：四类时刻中 prompt 提交 / 工具前后 / 停止前已由 A2/A3/A4/A6 覆盖（上表映射实证），A5 自有新面 = 会话开始时刻（`agent/session-start`，非阻塞 inject）；`exit 2 阻断并回消息 / 上下文附加 / 非阻断降级 / 日志回合内`四判定语义分别落在 A3 deny、A4 block+additionalContexts、A5 catch 降级、记录落 session 面——语义单源在 mount.mts 合并器。
    - **策略件接口**：`(payload, carrier) => 决策 | void`，carrier = 宿主 payload 的最小结构面（本地窄类型，同 engine-bridge `AgentCarrier` 口径）；mount.mts 不 import 任何 `@deepseek-ai/*`（防火墙规则 2，selftest 机器扫描面随批扩到本件）。
@@ -43,7 +43,7 @@ Related: [2026-09-06-collab-rebuild-impl](../../proposed/architecture/2026-09-06
 3. **M1 技能使用守卫 = 纯记录件（蓝图降级路径采纳）**：A3 观测技能调用痕迹（`exec.name==="skill"` 且 `exec.args.name` 带 `noo-` 前缀，per-session 累积）；A6 在有新痕迹的 turn 投影 `session.append("noogenesis/skill-usage", {turn, names})` 增量记录。**HERO 答案**：检测的具体失败 = 会话推进了技能适用型工作（评审/文档写作）却零 `noo-*` 调用痕迹；真出现后下一步不同的事 = 痕迹面使「用了没有」逐会话可寻址，session-close 与下轮开场可据实提示技能目录摘要，而非凭自觉声称「技能用过了」。「该不该用」（会话类型判定）不可机器判定——prose 关键词分类 = 硬造不可判定信号（蓝图 M1 降级判据原文），不建；阻断升格 = 另案过判据（蓝图同款禁令）。
 
 4. **M2 规范事前接入落点 = 建议档两件 + 记录一件**：
-   - A2 会话开场（`turn===1 && step===1`）：会话工作区仓根处布点表五子树件（`engine/`、`adapters/`、`scripts/`、`docs/`、`.agents/notes/` 的 `AGENTS.md`）存在即追加一条**子树规则地图**消息（子树 → 件路径 → 一行承载约束，≤10 行；零子树件 = 零注入零 token）。多 agent 异仓各按各自 repoRoot 解析（四级回退链复用）；**subagent 跳过**（session header `origin === "subagent"`——窄任务子代理拿全仓地图是纯噪音）。
+   - A2 会话开场（每会话首个 pre-step，`mapShown` 单门去重——turn/step 双门在首步被拒时永久丢地图，R2 修正）：会话工作区仓根处布点表五子树件（`engine/`、`adapters/`、`scripts/`、`docs/`、`.agents/notes/` 的 `AGENTS.md`）存在即追加一条**子树规则地图**消息（子树 → 件路径 → 一行承载约束，≤10 行；零子树件 = 零注入零 token）。多 agent 异仓各按各自 repoRoot 解析（四级回退链复用）；**subagent 跳过**（session header `origin === "subagent"`——窄任务子代理拿全仓地图是纯噪音）。
    - A3 记录：`edit`/`write`（`exec.args.file_path`，闭集工具名单）命中布点子树 → 投影 `session.append("noogenesis/subtree-touch", {path, subtree})` 归因记录。
    - **HERO 答案**：检测的具体失败 = 写码会话在子树规范未入上下文时开始产出（宿主 A1 动态注入时序实证在 `tools/result` 之后——首触步盲跑，蓝图 §1「缺的是布点不是机制」的时序残余缺口）；真出现后下一步不同的事 = 开场先见子树规则地图，动工前先读对应件，而非首个触碰步盲跑、事后一步才补送。「须读入后才推进」的拦截式（A3 deny-once）= 升格候选不落地——A1 补送已盖主失败面，拦截只收窄单步窗口，先建议档积累数据另案过判据（档位纪律：守卫默认建议档）。
 
@@ -83,4 +83,5 @@ Related: [2026-09-06-collab-rebuild-impl](../../proposed/architecture/2026-09-06
 - **session.append 自定义 kind 的宿主兼容面**：`feedback/record` 先例支持自定义 kind，但持久化插件对未知 kind 的容忍度未经实机验证——本批 smoke 为脱宿主冒烟，实机验证随下一次桌面重验（todos B 类惯例）；失败面 = 记录缺席（降级纪律兜底），无阻断风险。
 - **peer dep 扩一件（dsh-llm）**：防火墙允许集从一件扩两件——已显式拍板（Proposal 2）并同变更改写 adapters/AGENTS.md；收敛规则（只 index.mts import）不变。
 - **A2 开场地图噪音面**：布点件在场的仓每会话首步多一条 ≤10 行消息；零布点仓（多数下游仓）零注入——噪音面收敛在 self-hosting 仓与本仓形态仓。
-- **WeakMap 会话键生命周期**：会话对象复用/恢复语义下投影状态可能跨「名义同会话」残留——记录件语义只增计数不授权，最坏面 = 记录偏大，无决策面依赖。
+- **WeakMap 会话键生命周期**：会话对象复用/恢复语义下投影状态可能跨「名义同会话」残留——记录件语义只增计数不授权，最坏面 = 记录偏大，无决策面依赖；显式清态 = `session/disposed`（R2 修正后为独立 cordis 事件，WeakMap GC 仍兜底）。
+- **M2 开场地图残余边界（评审收口在案）**：触发 = 每会话首个 pre-step（单门）；若该步恰被其他策略拒绝，地图随步作废（advice 档不可投递）——发生面 = 另一插件显式 reject 首步，宿主默认 fallback 永不 reject；记录件不受影响。

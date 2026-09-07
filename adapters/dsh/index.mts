@@ -217,13 +217,14 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 		}
 	});
 
-	// A8 会话事件轨（session/event）：记录落点 = session.append 胶水（A6 面）；
-	// 本监听只承担 drain 面——session/disposed 显式清策略态（WeakMap 之外的
-	// 及时回收；session/flush 持久化由宿主持久化插件承担，本插件无持久态）。
-	ctx.on("session/event", (session: unknown, event: { type?: string }) => {
-		if (event?.type === "session/disposed") mounts.dropSessionState(session);
+	// A8 会话事件轨：记录落点 = session.append 胶水（A6 面，产出侧）；drain
+	// 面挂 session/disposed 独立 cordis 事件（R2-B1 实证：disposal 不走
+	// session/event firehose——firehose 只投 Session.append 提交的日志事件，
+	// 封闭键集无 disposed；签名 (session) 单参）。session/flush 持久化由宿主
+	// 持久化插件承担，本插件无持久态。
+	ctx.on("session/disposed", (session: unknown) => {
+		mounts.dropSessionState(session);
 	});
-
 
 	// 写路径唯一触发点：agent/disposed。repoRoot 按 dispose 的那个 agent 逐次
 	// 解析（payload 携带 { agent }，与 auto 触发面同款实证）——异仓会话各归

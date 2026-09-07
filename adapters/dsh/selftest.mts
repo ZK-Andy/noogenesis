@@ -756,6 +756,11 @@ function writeFixtureGene(repoRoot: string): void {
 		assert.equal(subtreePolicies.preStep({ agent, turn: 1, step: 2 }), undefined);
 		const subagent = { session: { header: { cwd: repo, origin: "subagent" } } };
 		assert.equal(subtreePolicies.preStep({ agent: subagent, turn: 1, step: 1 }), undefined);
+		// 单门语义（R2-S1）：首个 pre-step 不限 turn/step——被拒后下一会话步仍可触发。
+		const late = createSubtreeRulesPolicies({ repoRoot: repo });
+		const lateAgent = { session: { header: { cwd: repo } } };
+		const lateAdvice = late.preStep({ agent: lateAgent, turn: 3, step: 2 });
+		assert.ok(lateAdvice && lateAdvice.kind === "advice", "first pre-step triggers regardless of turn/step");
 		const bare = createSubtreeRulesPolicies({ repoRoot: tempRepo("mount-m2-bare") });
 		assert.equal(bare.preStep({ agent: { session: { header: { cwd: path.join(os.tmpdir(), "mount-m2-bare-missing") } } }, turn: 1, step: 1 }), undefined);
 		subtreePolicies.toolPre({ name: "edit", args: { file_path: path.join(repo, "engine", "bin.ts") }, agent });
@@ -764,6 +769,19 @@ function writeFixtureGene(repoRoot: string): void {
 		const touches = subtreePolicies.turnStopping({ agent, turn: 2 }) ?? [];
 		assert.deepEqual(touches, [{ kind: "noogenesis/subtree-touch", data: { turn: 2, touches: [{ subtree: "engine", path: path.join("engine", "bin.ts") }] } }]);
 		assert.deepEqual(subtreePolicies.turnStopping({ agent, turn: 3 }) ?? [], []);
+		// 滚动窗口游标回归（R2-B2）：cap 平移后投影仍逐件到达，记录流不死。
+		{
+			const roller = createSubtreeRulesPolicies({ repoRoot: repo });
+			const rollAgent = { session: { header: { cwd: repo } } };
+			for (let i = 0; i < 50; i += 1) roller.toolPre({ name: "edit", args: { file_path: path.join(repo, "engine", `f${i}.ts`) }, agent: rollAgent });
+			const firstWave = roller.turnStopping({ agent: rollAgent, turn: 1 }) ?? [];
+			assert.equal((firstWave[0]?.data as { touches: unknown[] }).touches.length, 50);
+			assert.deepEqual(roller.turnStopping({ agent: rollAgent, turn: 2 }) ?? [], []);
+			for (const i of [50, 51]) roller.toolPre({ name: "edit", args: { file_path: path.join(repo, "engine", `f${i}.ts`) }, agent: rollAgent });
+			const secondWave = roller.turnStopping({ agent: rollAgent, turn: 3 }) ?? [];
+			assert.equal((secondWave[0]?.data as { touches: unknown[] }).touches.length, 2);
+			ok("mounts: M2 cursor regression — window shift keeps projection alive past cap");
+		}
 		ok("mounts: M2 — opening map once per session (subagent/zero-subtree skipped); edit/write touches attributed");
 	}
 
@@ -813,7 +831,7 @@ function writeFixtureGene(repoRoot: string): void {
 			},
 		};
 		apply(fakeMountCtx as never, { repoRoot: repo, geneBankUrl: false });
-		for (const event of ["agent/session-start", "agent/pre-step", "tools/pre-execute", "tools/post-execute", "agent/turn-stopping", "session/event"]) {
+		for (const event of ["agent/session-start", "agent/pre-step", "tools/pre-execute", "tools/post-execute", "agent/turn-stopping", "session/disposed"]) {
 			assert.equal(listeners.get(event)?.length, 1, `${event} must be wired exactly once`);
 		}
 		ok("mounts: index wiring — six mounting points registered one listener each");
@@ -824,7 +842,7 @@ function writeFixtureGene(repoRoot: string): void {
 		const toolPre = listeners.get("tools/pre-execute")![0]!;
 		const toolPost = listeners.get("tools/post-execute")![0]!;
 		const turnStopping = listeners.get("agent/turn-stopping")![0]!;
-		const sessionEvent = listeners.get("session/event")![0]!;
+		const sessionDisposed = listeners.get("session/disposed")![0]!;
 		const sessionStart = listeners.get("agent/session-start")![0]!;
 
 		// A2：首步地图追加一条建议消息；后续步零追加；reject 下游直通。
@@ -858,10 +876,13 @@ function writeFixtureGene(repoRoot: string): void {
 		await sessionStart({ agent });
 		ok("mounts: A5 wiring — session-start capability wired, zero-policy no-op safe");
 
-		// A8 drain：session/disposed 清态；其余事件忽略。
-		sessionEvent({}, { type: "session/disposed" });
-		sessionEvent({}, { type: "tool/result" });
-		ok("mounts: A8 wiring — session/disposed drains policy state; other events ignored");
+		// A8 drain：session/disposed 独立 cordis 事件（R2-B1：非 firehose 成员，
+		// 签名单参 (session)）——清态后同会话状态重建即重新记录。
+		sessionDisposed(agent.session);
+		toolPre({ name: "skill", args: { name: "noo-propose" }, agent }, async () => ({}));
+		await turnStopping({ agent, turn: 6 });
+		assert.equal(appended.length, 3, "drain must reset counters so post-drain usage re-records");
+		ok("mounts: A8 wiring — session/disposed drains policy state, post-drain usage re-records");
 	}
 }
 
