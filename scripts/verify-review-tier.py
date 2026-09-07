@@ -69,7 +69,7 @@ REVIEW_LINE_RE = re.compile(
 # forces the FULL tier.
 FULL_TRIGGERS = (
     ("gate-criteria", lambda rel, p: "scripts" in p.parts),
-    ("gate-criteria", lambda rel, p: ".githooks" in p.parts),
+    ("gate-criteria", lambda rel, p: p.name == "lefthook.yml"),
     ("behavior-surface", lambda rel, p: ".github" in p.parts and "workflows" in p.parts),
     ("behavior-surface", lambda rel, p: "templates" in p.parts),
     ("behavior-surface", lambda rel, p: "docs" in p.parts and "method" in p.parts),
@@ -267,6 +267,12 @@ def _self_test() -> int:
         ok(any("FULL-tier change lacks review evidence" in x and "gate-criteria" in x
                for x in rows), "FULL scripts/ change blocked without evidence")
 
+        # 2b) lefthook.yml（钩子面，B3 起取代 .githooks/）change classifies FULL
+        r = _new_repo(Path(td), "f2b")
+        _write(r, "lefthook.yml", "# hooks\n")
+        ok(any("gate-criteria" in x for x in _scan(r)),
+           "lefthook.yml change classifies FULL")
+
         # 3) FULL passes when the SAME change carries an implemented ADR with a
         #    valid Review line
         r = _new_repo(Path(td), "f3")
@@ -338,7 +344,7 @@ def _self_test() -> int:
            "--since with an unparsable ref fails closed")
 
     if failed == 0:
-        print("verify-review-tier --self-test OK (11 fixtures: triggers/evidence/modes/fail-closed)")
+        print("verify-review-tier --self-test OK (12 fixtures: triggers/evidence/modes/fail-closed)")
     else:
         print("verify-review-tier --self-test FAIL", file=sys.stderr)
     return failed

@@ -7,24 +7,17 @@
  * - `{1}` = git pre-push 位置参数（remote 名；URL 直推时两参同为 URL）。
  *   缺失或字面 "{1}" 残留（lefthook 手工裸调无 GitArgs 时模板不替换）→
  *   默认 `origin`（同旧 bash hook 的 `${1:-origin}` 口径）。
- * - `{files}` = 恒跑逃生口占位：lefthook v2 对 pre-push job 按 push 文件集
- *   门控（tag 推送/新分支首推文件集为空 → job 全 skip，fail-closed 档位强制
- *   会被静默旁路）；job 级 `files: echo lefthook.yml` + run 串引用 `{files}`
- *   使 replacedFiles 非空、绕过该门控（上游 discussion #504 / 源码
- *   build_command.go，journal 实探记录）。值恒为 lefthook.yml，此脚本忽略。
- * - `use_stdin: true`（上游 #547）把 git 的 ref 行原样转发到本进程 stdin。
- * - stdin 为终端 → tier 循环跳过并注明（同旧 bash `[ -t 0 ]` 分支）。
+ * - `{files}` = 恒跑逃生口占位（lefthook v2 pre-push push-files 门控的绕过，
+ *   机制与上游锚点见 ADR 2026-09-08-b3-hooks-install Problem 节），值恒为
+ *   lefthook.yml，本脚本忽略。
+ * - `use_stdin: true` 把 git 的 ref 行原样转发到本进程 stdin；stdin 为终端 →
+ *   tier 循环跳过并注明（同旧 bash `[ -t 0 ]` 分支）。
  *
- * 并行组（Promise.allSettled 聚合，任一非零即 exit 1）：
- * - change-scope 展示（信息面，`|| true`，bash 件 B5 退役）；
- * - gates：node scripts/gates.mts --run --skip review-tier,review-brief,change-scope
- *   （B1 DAG runner，默认有界并行——C6 并行化的实质消费面）；
- * - gene-format：node scripts/verify-gene-format.mts（白名单外独立件）；
- * - dist 自测：node dist/engine/bin.js self-test + node dist/adapters/dsh/selftest.mjs
- *   （B3 起钩子跑预构建 dist，C6；缺 dist 即诊断失败，C4）；
- * - review-tier：逐 ref 档位循环 TS 端口——语义与旧 .githooks/pre-push bash 版
- *   逐字节同构（lsha 全零跳过；tag 走 rev-list 可达性，先判 rc 再判空集保
- *   fail-closed 方向；分支走 merge-base + verify-review-tier --enforce）。
+ * 组结构：change-scope 展示（串行信息面）+ allSettled 并行组（任一非零即
+ * exit 1）：gates / gene-format / dist 自测 / review-tier（逐 ref 档位循环
+ * TS 端口——与旧 .githooks/pre-push bash 版逐分支语义同构，仅 tier enforce
+ * 调用面 .py→.mts 指向有意变更；子进程 stdin 以 ignore 隔离，防未来门禁读
+ * stdin 与 tier 抢行造成 fail-open）。
  *
  * 权威面口径（批次纪律）：pre-push 执行面本批切 TS；py 权威由 CI 双列维持至
  * B5（gates.json cmd 重指批）；自证 = reconcile-b1 零 diff + 本循环 e2e 四态
@@ -44,7 +37,9 @@ interface GroupResult {
 function spawnGroup(name: string, cmd: string, args: string[]): Promise<GroupResult> {
   console.log(`-> ${name}`);
   return new Promise((resolve) => {
-    const child = spawn(cmd, args, { stdio: "inherit" });
+    // stdin 用 ignore：并行组子进程与 tierLoop 的 readFileSync(0) 共享 fd 0，
+    // 子进程若读 stdin 会抢走 git 的 ref 行 → tier 空集通过 = fail-open。
+    const child = spawn(cmd, args, { stdio: ["ignore", "inherit", "inherit"] });
     child.on("close", (code) => resolve({ name, ok: code === 0 }));
     child.on("error", (e: Error) => {
       console.error(`${name}: 进程启动失败 — ${e.message}`);
@@ -57,8 +52,9 @@ function isAllZero(sha: string): boolean {
   return /^0+$/.test(sha);
 }
 
-/** 逐 ref 档位循环（旧 bash 版逐字节同构端口）；返回是否通过。 */
+/** 逐 ref 档位循环（旧 bash 版逐分支语义同构端口，仅 tier enforce 指向 .py→.mts 有意变更）；返回是否通过。 */
 function tierLoop(remote: string): boolean {
+  console.log("-> 评审档位（--enforce）");
   if (process.stdin.isTTY) {
     console.log("review-tier: 非 push 调用（stdin 为终端），跳过档位强制");
     return true;
@@ -66,7 +62,8 @@ function tierLoop(remote: string): boolean {
   let rc = 0;
   const input = fs.readFileSync(0, "utf-8");
   for (const line of input.split("\n")) {
-    const fields = line.trim().length === 0 ? [] : line.trim().split(/\s+/);
+    const trimmed = line.trim();
+    const fields = trimmed.length === 0 ? [] : trimmed.split(/\s+/);
     const lref = fields[0] ?? "";
     const lsha = fields[1] ?? "";
     const rref = fields[2] ?? "";
@@ -116,7 +113,6 @@ function tierLoop(remote: string): boolean {
       rc = 1;
       continue;
     }
-    console.log("-> 评审档位（--enforce）");
     const tier = spawnSync("node", ["scripts/verify-review-tier.mts", "--enforce", "--since", base], {
       stdio: "inherit",
     });
@@ -169,6 +165,7 @@ function main(): void {
   void Promise.allSettled(groups).then((settled) => {
     const failed: string[] = [];
     for (const item of settled) {
+      // rejected 仅病理可达（tierLoop 内 readFileSync(0) 同步异常）——真兜底非死面。
       if (item.status === "fulfilled" && !item.value.ok) failed.push(item.value.name);
       if (item.status === "rejected") failed.push("unknown");
     }

@@ -4,7 +4,7 @@
  *
  * 判据（review.md §1 的路径可机械子集；语义判据——async/并发/跨边界契约/用户显式
  * 批量审核——仍留该处人工评审，单源 docs/method/review.md §1）。FULL-tier 路径触发集：
- *   gate-criteria     scripts/**（含共享门禁助手）、.githooks/**
+ *   gate-criteria     scripts/**（含共享门禁助手）、lefthook.yml（钩子面，B3 起）
  *   behavior-surface  .github/** 下的 workflows、templates/**、docs/method/**、
  *                     任意深度的 AGENTS.md、.agents/workflows/**
  * 另：.agents/notes 下 Status: proposed 的 ADR 正文自诺「三重审核」亦判 FULL——
@@ -67,7 +67,7 @@ interface Trigger { label: string; pred: (rel: string, parts: string[], name: st
 
 const FULL_TRIGGERS: readonly Trigger[] = [
   { label: "gate-criteria", pred: (_rel, parts, _name) => parts.includes("scripts") },
-  { label: "gate-criteria", pred: (_rel, parts, _name) => parts.includes(".githooks") },
+  { label: "gate-criteria", pred: (_rel, _parts, name) => name === "lefthook.yml" },
   { label: "behavior-surface", pred: (_rel, parts, _name) => parts.includes(".github") && parts.includes("workflows") },
   { label: "behavior-surface", pred: (_rel, parts, _name) => parts.includes("templates") },
   { label: "behavior-surface", pred: (_rel, parts, _name) => parts.includes("docs") && parts.includes("method") },
@@ -313,6 +313,12 @@ function selfTest(): number {
     ok(rows.some((x) => x.includes("FULL-tier change lacks review evidence") && x.includes("gate-criteria")),
       "FULL scripts/ change blocked without evidence");
 
+    // 2b) lefthook.yml（钩子面，B3 起取代 .githooks/）变更判 FULL
+    r = newRepo(td, "f2b");
+    writeIn(r, "lefthook.yml", "# hooks\n");
+    ok(scan(r).some((x) => x.includes("gate-criteria")),
+      "lefthook.yml change classifies FULL");
+
     // 3) 同一变更携带带合法 Review 行的 implemented ADR 时放行
     r = newRepo(td, "f3");
     writeIn(r, "scripts/verify-x.py", "# gate\n");
@@ -383,7 +389,7 @@ function selfTest(): number {
   }
 
   if (failed === 0) {
-    out("verify-review-tier --self-test OK (11 fixtures: triggers/evidence/modes/fail-closed)");
+    out("verify-review-tier --self-test OK (12 fixtures: triggers/evidence/modes/fail-closed)");
   } else {
     errOut("verify-review-tier --self-test FAIL");
   }

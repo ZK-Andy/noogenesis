@@ -16,7 +16,7 @@ Review: FULL/2026-09-06/R1=ok R2=ok R3=ok
 - 目标 commit 解析失败（悬空对象等）同样 fail-closed。
 - `<remote>` 取 pre-push 参数 `$1`（缺省 `origin`），只查该远端的 tracking refs；URL 直推形态（`git push <url> <tag>`，$1=URL）tracking 集恒空 → 可达 tag 也被拦，属保守误伤（钩子头注注明，用远端名推送即可避免）。
 - 分支三态逻辑零改动；删除行（local 全零）仍跳过。
-- 证据：`scripts/pre-push-selftest.sh` e2e 四态（新分支首推拒 / tag 达远端过 / tag 携带未推 commit 拒 / tag 删除跳过），临时 bare 远端 + 克隆实跑；脚本强制 stdin 非 tty（hook 档位段在 tty 下整体跳过，tty 运行会使四态断言失真），B 态断言用「零 outgoing」唯一子串钉死通过来自 tag 分支。
+- 证据：`scripts/pre-push-selftest.mts` e2e 四态（新分支首推拒 / tag 达远端过 / tag 携带未推 commit 拒 / tag 删除跳过），临时 bare 远端 + 克隆实跑；脚本强制 stdin 非 tty（hook 档位段在 tty 下整体跳过，tty 运行会使四态断言失真），B 态断言用「零 outgoing」唯一子串钉死通过来自 tag 分支。（载体随 B3 钩子面迁移：循环 TS 端口 = `scripts/pre-push.mts`，e2e 由 bash 版 `pre-push-selftest.sh` 重建为 .mts——ADR [2026-09-08-b3-hooks-install](../architecture/2026-09-08-b3-hooks-install.md)；决定与四态语义不变。）
 
 ## Alternatives considered
 
@@ -26,6 +26,6 @@ Review: FULL/2026-09-06/R1=ok R2=ok R3=ok
 
 ## Consequences
 
-- **采用面**：`.githooks/pre-push` 评审档位循环 + 头注释；新增 `scripts/pre-push-selftest.sh`（独立证据脚本，不进 `engine/gates.json` 白名单——它测 hook 本体，非文档门）。
+- **采用面**：pre-push 评审档位循环（载体随 B3 迁至 `scripts/pre-push.mts` TS 端口）+ 头注释；e2e = `scripts/pre-push-selftest.mts`（独立证据脚本，不进 `engine/gates.json` 白名单——它测 hook 本体，非文档门）。
 - **行为面**：tag 目标 commit 已达远端 → 推送不再被档位强制拦截（三次发版豁免前提消失）；其余输入形态行为不变。release-flow 的 tag 推送步骤解除手工豁免前提。
 - **HANDOFF-todos（C 类）「pre-push 钩子 tag 缺口」条目随本批收口。**
