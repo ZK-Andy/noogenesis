@@ -2,7 +2,7 @@
 
 > Provenance：蒸馏自 dotnet-deepseek-harness-desktop `.agents/notes/README.md`（MIT，2026-09-05）；双语相关节按本仓单语决策删除，其余规则保留。
 
-本目录是心源的决策记录系统（Agent Notes / ADR）。规则如下，`scripts/verify-adr-format.py` 机器强制。
+本目录是心源的决策记录系统（Agent Notes / ADR）。规则如下，`scripts/verify-adr-format.mts` 机器强制。
 
 ## 何时写
 
@@ -15,7 +15,7 @@
 - lifecycle（状态即目录，随状态迁移）：`proposed/` → `implemented/` → `archived/`；另有 `rejected/`。
 - class（封闭集合）：`feature` / `bug-fix` / `simplification` / `architecture`（交付源码）/ `process`（工具流程）/ `testing`。刻意无 `refactor`（与 `simplification` 重叠：判别词"可观察行为是否变化"）。
 - 日期 = 首次提出日，迁移改名不改日期。
-- 文件名 = `yyyy-mm-dd-<kebab-slug>.md`：slug 小写连字符（`[a-z0-9]+(-[a-z0-9]+)*`），禁大写/下划线/中文；日期为合法日历日且不晚于今日。此命名格式由 `verify-adr-format.py` 机器强制，违约即 FAIL。
+- 文件名 = `yyyy-mm-dd-<kebab-slug>.md`：slug 小写连字符（`[a-z0-9]+(-[a-z0-9]+)*`），禁大写/下划线/中文；日期为合法日历日且不晚于今日。此命名格式由 `verify-adr-format.mts` 机器强制，违约即 FAIL。
 
 ## 格式
 
@@ -42,8 +42,8 @@
 ## 门禁
 
 ```sh
-python3 scripts/verify-adr-format.py               # 在仓库根运行，校验头/骨架/状态-目录一致性 + 文件名/路径命名规则
-python3 scripts/verify-adr-format.py --self-test   # 离线夹具自测（违约样例应 FAIL，合规样例应 PASS）
+node scripts/verify-adr-format.mts               # 在仓库根运行，校验头/骨架/状态-目录一致性 + 文件名/路径命名规则
+node scripts/verify-adr-format.mts --self-test   # 离线夹具自测（违约样例应 FAIL，合规样例应 PASS）
 ```
 
 正文中文单语；启用双语时恢复 `.zh.md` 镜像 + `.i18n.yaml` 配对机制（届时另立 ADR）。

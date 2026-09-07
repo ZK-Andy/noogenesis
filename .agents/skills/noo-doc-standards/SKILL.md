@@ -15,7 +15,7 @@ description: Use when writing, moving, reviewing, or auditing documentation in t
 
 - [docs/method/doc-standards.md](../../../docs/method/doc-standards.md) — tier 表与口诀（bugs → cookbook；rationale → ADR；procedures → cookbook/method；contracts → README；standing orders → AGENTS.md）。
 - [.agents/notes/README.md](../../notes/README.md) — 什么决定配一条 ADR 及其内部结构。
-- [scripts/verify-doc-budgets.py](../../../scripts/verify-doc-budgets.py) / [verify-md-links.py](../../../scripts/verify-md-links.py) / [verify-cookbook.py](../../../scripts/verify-cookbook.py) — 机器门禁。
+- [scripts/verify-doc-budgets.mts](../../../scripts/verify-doc-budgets.mts) / [verify-md-links.mts](../../../scripts/verify-md-links.mts) / [verify-cookbook.mts](../../../scripts/verify-cookbook.mts) — 机器门禁。
 
 ## 先审结构再审散文
 
@@ -34,9 +34,9 @@ description: Use when writing, moving, reviewing, or auditing documentation in t
 
 ## 工作流（Workflow）——审计语料
 
-结构检查后，用最便宜探针先跑 slop 清单。先用 `scripts/change-scope.sh <base> <head>` 定范围再做语义判断。
+结构检查后，用最便宜探针先跑 slop 清单。先用 `scripts/change-scope.mts <base> <head>` 定范围再做语义判断。
 
-1. 度量：`python3 scripts/verify-doc-budgets.py --manifest scripts/doc-budgets.manifest.json`（manifest 是心源仓实例——外部宿主自建同款清单后同法跑），再 `git ls-files '*.md' | xargs wc -w | sort -rn | head -30` 找未入预算的超重文件。
+1. 度量：`node scripts/verify-doc-budgets.mts --manifest scripts/doc-budgets.manifest.json`（manifest 是心源仓实例——外部宿主自建同款清单后同法跑），再 `git ls-files '*.md' | xargs wc -w | sort -rn | head -30` 找未入预算的超重文件。
 2. 猎杀推理转写泄漏（叙述史/死设计引用/评审编舞/控制流叙述/walkthrough）——用 [noo-trim-cot-leakage](../noo-trim-cot-leakage/SKILL.md)。
 3. grep 标志性短语猎重复；留一个家，其余改链接。
 4. 手抄目录/状态清单换成权威源头（真实树/脚本/生成参考）。

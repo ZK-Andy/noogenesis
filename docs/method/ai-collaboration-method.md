@@ -73,9 +73,9 @@ durable 文档写**当前状态**，禁止 "previously / now / no longer / renam
 
 **技能放置**：目录束 `<技能名>/SKILL.md`；frontmatter 必填 `name`（小写 kebab，前缀 `noo-`）+ `description`（Use when…，能被真实任务触发）；可选 `whenToUse` / `invocation`（如 `disable-model-invocation` 标手动调用）。技能随 agent 自动发现，无需注册。
 
-**分层 AGENTS**：根文件只放常驻命令 + 链接（每条 1-3 行）；子树文件 ≤300 词、只写专属规则。字数预算由 `verify-doc-budgets.py`（manifest 驱动）强制；超限处理序：迁移 → 精简 → 才提额度（manifest `_justify_bump` 留理由）。
+**分层 AGENTS**：根文件只放常驻命令 + 链接（每条 1-3 行）；子树文件 ≤300 词、只写专属规则。字数预算由 `verify-doc-budgets.mts`（manifest 驱动）强制；超限处理序：迁移 → 精简 → 才提额度（manifest `_justify_bump` 留理由）。
 
-**门禁分工**：hooks 只做快检查，CI 拥有穷尽矩阵；push 前按 diff 面选最窄检查（`change-scope.sh`），不默认全量。
+**门禁分工**：hooks 只做快检查，CI 拥有穷尽矩阵；push 前按 diff 面选最窄检查（`change-scope.mts`），不默认全量。
 
 **Git 纪律**：改写历史必须 `--force-with-lease=<branch>:<observed-oid>`，raw `--force` 永远禁止；过程资产（HANDOFF/journal）入 git。
 
@@ -109,7 +109,7 @@ durable 文档写**当前状态**，禁止 "previously / now / no longer / renam
 
 ### 4. 机械验证（防写偏）
 
-能机械校验的是**格式合规**（DSH 能否加载、内链不烂、结构齐）；**不能**机械校验的是内容质量——靠对照规范写 + 评审兜底。`scripts/verify-skill-format.py` 校验：frontmatter（name 小写 kebab + description 非空）、目录束结构（无根级 README）、**内链强制检查 skills/**（默认排除它掩盖断链——frecency 11 技能全死链的教训）、必要结构段（防只写空话）。
+能机械校验的是**格式合规**（DSH 能否加载、内链不烂、结构齐）；**不能**机械校验的是内容质量——靠对照规范写 + 评审兜底。`scripts/verify-skill-format.mts` 校验：frontmatter（name 小写 kebab + description 非空）、目录束结构（无根级 README）、**内链强制检查 skills/**（默认排除它掩盖断链——frecency 11 技能全死链的教训）、必要结构段（防只写空话）。
 
 ---
 

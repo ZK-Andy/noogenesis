@@ -9,7 +9,7 @@ Status: proposed
 > 放置路径：`.agents/notes/proposed/<class>/yyyy-mm-dd-<topic-title>.md`
 > class ∈ {feature, bug-fix, simplification, architecture, process, testing}
 > 日期 = 首次提出日（迁移改名不改日期）。文件名 `yyyy-mm-dd-<kebab-slug>.md`：slug 小写连字符，禁大写/下划线/中文。正文中文单语（双语暂不启用）。
-> 命名格式由 `scripts/verify-adr-format.py`（含 `--self-test`）机器强制，新建即校验。
+> 命名格式由 `scripts/verify-adr-format.mts`（含 `--self-test`）机器强制，新建即校验。
 
 ## Problem
 

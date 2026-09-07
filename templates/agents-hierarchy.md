@@ -74,7 +74,7 @@
 | 子树 AGENTS.md | ≤ 300 词 |
 | 文档标准 | ≤ 800 词 |
 
-门禁：`scripts/verify-doc-budgets.py`（manifest 驱动）。超限时：① 迁移到其他层（留一行链接）→ ② 精简 → ③ 才允许提额度（PR 说明理由）。
+门禁：`scripts/verify-doc-budgets.mts`（manifest 驱动）。超限时：① 迁移到其他层（留一行链接）→ ② 精简 → ③ 才允许提额度（PR 说明理由）。
 
 ## 5. 其他 agent 规则文件
 

@@ -21,7 +21,7 @@ description: Use when reviewing a change or batch of changes in this repo — or
 
 ## 先定精确范围
 
-1. 从 remote/stack 状态确认分支与 base，**不猜测**；用 `scripts/change-scope.sh <base> <head>` 算出范围，retarget/base 合并后重跑。报告给出触碰路径，它不替代语义评审。
+1. 从 remote/stack 状态确认分支与 base，**不猜测**；用 `scripts/change-scope.mts <base> <head>` 算出范围，retarget/base 合并后重跑。报告给出触碰路径，它不替代语义评审。
 2. 不开局读全仓规则面——标准面按 diff 面按需引用（见 review.md §2 面收窄）。
 
 ## 工作流（Workflow）——审 diff
@@ -43,4 +43,4 @@ description: Use when reviewing a change or batch of changes in this repo — or
 
 ## 验证
 
-文档面跑 `python3 scripts/verify-md-links.py` + `verify-adr-format.py`；按 diff 面跑对应门禁；报告实际跑过的核对清单。
+文档面跑 `node scripts/verify-md-links.mts` + `verify-adr-format.mts`；按 diff 面跑对应门禁；报告实际跑过的核对清单。

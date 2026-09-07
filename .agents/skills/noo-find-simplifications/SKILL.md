@@ -54,4 +54,4 @@ description: Use when working in this repo to find non-obvious simplification ca
 
 ## 验证
 
-文档面 ADR 工作跑 `python3 scripts/verify-adr-format.py` + `git diff --check`；代码变更跑受影响面的门禁与测试；PR 正文总结新增/并收/删除与有意排除的范围。
+文档面 ADR 工作跑 `node scripts/verify-adr-format.mts` + `git diff --check`；代码变更跑受影响面的门禁与测试；PR 正文总结新增/并收/删除与有意排除的范围。

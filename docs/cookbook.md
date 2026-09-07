@@ -1,6 +1,6 @@
 # Cookbook（踩坑记录）
 
-> 踩坑单一事实源。条目格式：`- **[域] 主题（日期 来源）**：症状。根因。规避。`——域标签封闭集见 `scripts/verify-cookbook.py`（演化/门禁/文档/协作/环境/上游/产品），格式由该门禁机器强制。
+> 踩坑单一事实源。条目格式：`- **[域] 主题（日期 来源）**：症状。根因。规避。`——域标签封闭集见 `scripts/verify-cookbook.mts`（演化/门禁/文档/协作/环境/上游/产品），格式由该门禁机器强制。
 > Provenance：原子蒸馏自 dotnet-deepseek-harness-desktop、dsh-frecency、work 区（dsh-continual-evolve）的已验证踩坑（首批搬迁见 ADR `2026-09-05-capsule-01-migration`）。
 
 ## 演化
@@ -21,7 +21,7 @@
 - **[门禁] CI 缓存按分支/ref 作用域隔离，tag 首 run 必 miss（2026-08-21 来源：desktop 实测）**：症状——同一缓存键在 tag 发布流首 run 不命中，误判为缓存配置坏了。根因——Actions 缓存不跨 ref 互通，每个 tag 是独立 ref。规避——做缓存优化别期待跨 tag 复利；命中条件只有同 tag 重跑或与默认分支共享。
 - **[门禁] 沙箱只能验降级分支，成功分支须真机或 force 开关走通（2026-08-24 来源：desktop dev 门禁）**：症状——「命令路由不存在即优雅降级」类功能在沙箱验过即当功能验证完成。根因——沙箱环境只能触达失败/降级路径，成功路径根本没执行。规避——成功分支需真机或显式 force 开关（如 `*_FORCE=1`）实走一遍再定性；"优雅降级正常"与"功能正常"是两个结论。
 - **[门禁] 超类型聚合对象 + 遍历键当数据键，是迟早误判的脆弱模式（2026-09-05 来源：dsh-continual-evolve FAQ #11）**：症状——候选分数大涨（0→100）却被判回归 REJECTED，理由 `case totalDurationMs regressed`，且 `autoRollbackOnReject` 连坐回滚删掉刚沉淀的产物。根因——聚合返回值把 per-case 键与元数据键（`overall`/`totalDurationMs` 等）混在同一对象，回归判定遍历 `Object.entries` 只硬编码排除部分元数据键；新增键漏排除，且"耗时更短"方向语义相反仍被当分数比对。规避——判定/报告从真实数据键集合（cells 派生的 caseId 集）出发，元数据只在明确键名上取，不做"遍历一切键"式兜底。
-- **[门禁] 测试模块直跑是 no-op 时，静默 exit 0 = 假绿（2026-09-06 来源：noogenesis engine/selftest.js 只导出无顶层调用，R2 评审实证）**：症状——`node engine/selftest.js` 直跑零输出 exit 0 被当全绿，坏夹具实际从未执行（真 runner = `node engine/bin.js self-test`，在其下 exit 1）。根因——测试入口有两个形状：导出模块（供 bin 分发）与顶层直跑脚本，直跑面无调用即静默成功。规避——验证一律走真装配入口（bin 分发面）；「零输出 + exit 0」必须与已知 ok 数核对，不裸信静默成功。
+- **[门禁] 测试模块直跑是 no-op 时，静默 exit 0 = 假绿（2026-09-06 来源：noogenesis engine/selftest.js 只导出无顶层调用，R2 评审实证）**：症状——`node engine/selftest.js` 直跑零输出 exit 0 被当全绿，坏夹具实际从未执行（真 runner = `node dist/engine/bin.js self-test`，在其下 exit 1）。根因——测试入口有两个形状：导出模块（供 bin 分发）与顶层直跑脚本，直跑面无调用即静默成功。规避——验证一律走真装配入口（bin 分发面）；「零输出 + exit 0」必须与已知 ok 数核对，不裸信静默成功。
 - **[门禁] CJS 包内的裸 .ts 走不了 ESM，type stripping 又是解析期动作（2026-09-08 来源：noogenesis B0 两件 .mts 门禁，R1/R2 评审实证）**：症状——`package.json` `type:commonjs` 下写 `scripts/*.ts` 用 `import` 语法，node 按包类型分类为 CJS 直接语法错；又指望「文件内加 node 版本守卫」兜 ≥22.18（原生 type stripping 前提），但剥类型发生在解析期，守卫代码根本执行不到。规避——新 TS 门禁一律 `.mts`（显式 ESM，不赌版本间模块探测差异）；node 版本前提靠 CI `setup-node` 钉版 + 头注声明，不写文件内守卫。
 - **[门禁] `wc -w` 对中文文本严重少计词数（2026-09-08 来源：noogenesis B0，R3 评审实证）**：症状——SKILL.md 用 `wc -w` 量得 198 词当拍板依据，仓计数单源（verify-doc-budgets 的 WORD_RE，CJK 逐字计词）实为 359，差近一倍。根因——`wc -w` 按空白分词，CJK 无空格。规避——凡「词数」判断一律用 doc-budgets 同款计数口径；拿不准时两种口径都算并声明用的是哪个。
 

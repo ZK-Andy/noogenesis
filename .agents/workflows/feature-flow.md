@@ -6,7 +6,7 @@
 
 ## 1. 定案
 
-方案讨论收敛 → 写 ADR；`## Alternatives considered` 强制。同会话内即落地的，proposed→implemented 可折叠——直接以 implemented 格式落档（格式由 `verify-adr-format.py` 把关）。
+方案讨论收敛 → 写 ADR；`## Alternatives considered` 强制。同会话内即落地的，proposed→implemented 可折叠——直接以 implemented 格式落档（格式由 `verify-adr-format.mts` 把关）。
 
 ## 2. 实现
 

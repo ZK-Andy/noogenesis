@@ -1,6 +1,6 @@
 # 评审体系（三重审核契约）
 
-> Provenance：蒸馏自 dotnet-deepseek-harness-desktop（MIT，2026-09-05）：ADR `2026-08-31-review-scope-narrowing` + `2026-09-03-review-tier-escape-proofing` + `2026-09-04-review-brief-gate-self-assertion` + feature-flow 评审节。差异：.NET 具体判据（IPC 帧/csproj）泛化为本仓等价面；机械闸（verify-review-tier / verify-review-brief）已按本仓评审面落地（ADR [2026-09-05-review-mechanical-gate](../../.agents/notes/implemented/process/2026-09-05-review-mechanical-gate.md)），本文承载语义判据（人工面）与简报结构契约，路径触发集的机械化单一事实源在 verify-review-tier.py。
+> Provenance：蒸馏自 dotnet-deepseek-harness-desktop（MIT，2026-09-05）：ADR `2026-08-31-review-scope-narrowing` + `2026-09-03-review-tier-escape-proofing` + `2026-09-04-review-brief-gate-self-assertion` + feature-flow 评审节。差异：.NET 具体判据（IPC 帧/csproj）泛化为本仓等价面；机械闸（verify-review-tier / verify-review-brief）已按本仓评审面落地（ADR [2026-09-05-review-mechanical-gate](../../.agents/notes/implemented/process/2026-09-05-review-mechanical-gate.md)），本文承载语义判据（人工面）与简报结构契约，路径触发集的机械化单一事实源在 verify-review-tier.mts。
 
 ## 1. 定档判据（命中任一 → FULL 三重审核）
 
@@ -22,13 +22,13 @@
 - 删除/新增/变更**可观察副作用**（写文件、改 rc、发事件帧）。
 - 触碰 async/并发/生命周期（即使只删，也须确认无连带行为）。
 
-判据用法：逐一对照，任一命中 → 重三审；全部未命中且测试/门禁绿 → 轻审。**模棱两可宁可重三审**——轻审只省时间，漏审的代价是行为缺陷漏网。FULL 档路径命中（行为契约面/门禁判据/承诺三审的 ADR）即强制重审，通用轻审判据**不得覆盖**。路径触发的机械化单一事实源 = `scripts/verify-review-tier.py`（`FULL_TRIGGERS`，含本清单路径面 + `scripts/**` 门禁共享件）；其触发集与本节口径漂移即违约。
+判据用法：逐一对照，任一命中 → 重三审；全部未命中且测试/门禁绿 → 轻审。**模棱两可宁可重三审**——轻审只省时间，漏审的代价是行为缺陷漏网。FULL 档路径命中（行为契约面/门禁判据/承诺三审的 ADR）即强制重审，通用轻审判据**不得覆盖**。路径触发的机械化单一事实源 = `scripts/verify-review-tier.mts`（`FULL_TRIGGERS`，含本清单路径面 + `scripts/**` 门禁共享件）；其触发集与本节口径漂移即违约。
 
 **证据随变更**（机械强制，ADR [2026-09-05-review-mechanical-gate](../../.agents/notes/implemented/process/2026-09-05-review-mechanical-gate.md)）：FULL 档变更的评审证据 = 同变更集内 implemented ADR 头部 `Review: FULL/<日期>/R1=ok R2=ok R3=ok` 行（真实日历日；R 值严格 =ok；proposed ADR 不得自证）。push 前 `verify-review-tier --since <远端 sha> --enforce` 拒推缺证据的 FULL 变更；无 ADR 可承载的 FULL 批次加一枚最小 process 笔记。
 
 ## 2. 范围收窄（审的范围，不审整仓）
 
-- 一次只审一个逻辑单元：评审代理拿精确 diff（`scripts/change-scope.sh` 界定），**只读** diff 触及的文件 + 一层以内相邻件 + 与本 diff 直接相关的契约/标准段落（如 [doc-standards](doc-standards.md) 对应节、相关 ADR 的 Consequences）。
+- 一次只审一个逻辑单元：评审代理拿精确 diff（`scripts/change-scope.mts` 界定），**只读** diff 触及的文件 + 一层以内相邻件 + 与本 diff 直接相关的契约/标准段落（如 [doc-standards](doc-standards.md) 对应节、相关 ADR 的 Consequences）。
 - **禁止**开局从头读全仓规则面/Agent Notes 树；改为按 diff 面按需引用。
 - 量化参考：单次 diff 视野 ≤200 行变更（超限分批）；定向检查项 ≤5 条；明确不做清单 ≥1 条。
 
@@ -56,7 +56,7 @@
 
 字段规则：**「门禁自证」与「陪跑文件」耦合**——声明「已盖」必须同简报携带主会话实跑且 exit 全 0 的门禁清单；漏跑门禁却写「已盖」会把成本转嫁给评审代理（desktop 2026-09-04 exit-2 教训）。`陪跑文件：无` 不声明已盖，免自证。**简报给「材料 + 检查项」，不给「结论倾向」**——评审代理须独立判读，不得被简报带偏。自证只覆盖机器门禁；**ADR↔代码一致性、语义判读永远不属"已盖"**。
 
-**发射前机械闸**：每路简报写毕、评审代理发射前，主会话实跑 `python3 scripts/verify-review-brief.py --enforce`（结构合规 + 门禁自证耦合；所需 lane 集由简报自身 base..head 的档位推导——FULL→R1/R2/R3，LIGHT→R2，`--lanes` 可显式覆盖）。简报缺项或自证含非 0 exit 即发射被拦。
+**发射前机械闸**：每路简报写毕、评审代理发射前，主会话实跑 `node scripts/verify-review-brief.mts --enforce`（结构合规 + 门禁自证耦合；所需 lane 集由简报自身 base..head 的档位推导——FULL→R1/R2/R3，LIGHT→R2，`--lanes` 可显式覆盖）。简报缺项或自证含非 0 exit 即发射被拦。
 
 ## 4. 三路默认收窄
 

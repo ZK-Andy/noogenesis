@@ -10,7 +10,7 @@ Status: implemented
 > class ∈ {feature, bug-fix, simplification, architecture, process, testing}
 > 日期 = 首次提出日（提案期定，迁移不改）。文件名 `yyyy-mm-dd-<kebab-slug>.md`：slug 小写连字符，禁大写/下划线/中文。正文中文单语（双语暂不启用）。
 > 纪律：本文件用**现在时**描述已上线现实；代码移动/改名/改默认值时，同一变更中同步改写本文件（只改事实，不改决定）。
-> 命名格式由 `scripts/verify-adr-format.py`（含 `--self-test`）机器强制，新建即校验。
+> 命名格式由 `scripts/verify-adr-format.mts`（含 `--self-test`）机器强制，新建即校验。
 
 ## Problem
 

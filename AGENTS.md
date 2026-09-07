@@ -26,7 +26,7 @@
 ## Git 纪律
 
 - raw `--force` 永远禁止；改写历史必须 `--force-with-lease=<branch>:<observed-oid>`，改写后重新审计评审状态。
-- push 前最小证据：按 diff 面选最窄检查（先用 `scripts/change-scope.sh`）；禁止默认全量跑、禁止为掩盖未覆盖文件收窄范围。
+- push 前最小证据：按 diff 面选最窄检查（先用 `scripts/change-scope.mts`）；禁止默认全量跑、禁止为掩盖未覆盖文件收窄范围。
 - hooks 只做快检查，CI 拥有穷尽矩阵。
 - **过程资产入 git**：`journal/` 月卷与 HANDOFF 家庭均提交——过程即资产，会话轨迹是未来演化原料；durable 结论仍只落四家，交接只留指针。
 
@@ -40,7 +40,7 @@
 
 ## 质量门
 
-可执行门禁清单**单源**于 `engine/gates.json`：`python3 scripts/gates.py --list` 发射、`--run` 运行，hooks/CI 消费同一清单；结构性例外四件（review-tier / review-brief / change-scope / gene-format）非平跑，机制见 gates.py 头注。清单明细不在此手抄。
+可执行门禁清单**单源**于 `engine/gates.json`：`node scripts/gates.mts --list` 发射、`--run` 运行，hooks/CI 消费同一清单；结构性例外四件（review-tier / review-brief / change-scope / gene-format）非平跑，机制见 gates.mts 头注。清单明细不在此手抄。
 
 ## 字数预算
 

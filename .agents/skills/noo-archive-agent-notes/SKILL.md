@@ -15,7 +15,7 @@ description: Use when adding, auditing, pruning, archiving, or reviewing Agent N
 
 - [.agents/notes/README.md](../../notes/README.md) — 笔记规则：生命周期/class/命名、implemented 现在时、Alternatives 强制、证据严肃性三件套。
 - [根 AGENTS.md](../../../AGENTS.md)「文档纪律」— rationale → ADR；durable 文档写当前状态。
-- [scripts/verify-adr-format.py](../../../scripts/verify-adr-format.py) — 机器门禁（头/骨架/状态-目录一致性/命名日期规则）。
+- [scripts/verify-adr-format.mts](../../../scripts/verify-adr-format.mts) — 机器门禁（头/骨架/状态-目录一致性/命名日期规则）。
 
 ## 归档判断（按未来决策价值分类）
 
@@ -36,8 +36,8 @@ description: Use when adding, auditing, pruning, archiving, or reviewing Agent N
 1. 把 `yyyy-mm-dd-<topic>.md` 从 `implemented/<class>/` 移到 `archived/<class>/`（`implemented` 刻意不出现在归档路径中）。
 2. **正文零编辑**；仅在 `Status: implemented` 正下方插入 `Archived: YYYY-MM-DD`（归档日）。
 3. 搜活跃散文中的入站链接：重定向到当前权威；只有有意引用历史快照才指向归档路径；或删除。**永不校验/修复从归档笔记发出的链接**。
-4. 跑 `python3 scripts/verify-adr-format.py`（校验状态-目录一致与命名/日期；`archived/` 由笔记规则永久冻结，脚本不强制——之后不得再编辑）。
+4. 跑 `node scripts/verify-adr-format.mts`（校验状态-目录一致与命名/日期；`archived/` 由笔记规则永久冻结，脚本不强制——之后不得再编辑）。
 
 ## 验证
 
-`python3 scripts/verify-adr-format.py` + `git diff --check`；补充证据按 [noo-pre-push-checks](../noo-pre-push-checks/SKILL.md) 选。报告：保留/归档的 implemented 数、保留/删除的 rejected 数、如有 reject 的 proposed、每个边界情形及其词数与处置。
+`node scripts/verify-adr-format.mts` + `git diff --check`；补充证据按 [noo-pre-push-checks](../noo-pre-push-checks/SKILL.md) 选。报告：保留/归档的 implemented 数、保留/删除的 rejected 数、如有 reject 的 proposed、每个边界情形及其词数与处置。
