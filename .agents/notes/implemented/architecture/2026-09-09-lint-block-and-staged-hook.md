@@ -15,9 +15,9 @@ Review: FULL/2026-09-09/R1=ok R2=ok R3=ok
 本批 = 编码规范机器拦近程升格两件（用户 2026-09-09 拍板立项，替代分类：不取代活跃 ADR，是轨道 A / b4「首批建议档」拍板的**升格批**，升格单源 = 本 ADR）。
 
 1. **A4 block 升格**（`adapters/dsh/lint-feedback.mts`）：write/edit 成功 + oxlint 非空诊断 → `toolPost` 决策从 `{ kind: "context", lines }` 改为 `{ kind: "block", feedback }`（违规清单合单条文本，内容 = 现 `context` 行格式 `rel:line:col rule: msg` + 截断尾行）。模型收到 block 后必须修正才能继续该文件写码。**降级面全部保留**（缺基建/异常/非 `.ts/.mts`/出仓 → `void` 静默 + warn-once；`result.isError` → `void`）——block 只在确有判据时触发，不改变降级纪律。
-2. **pre-commit lint 收窄暂存面**：`scripts/verify-lint.mts` 新增 `--staged` 模式——目标 = `git diff --cached --name-only --diff-filter=ACM` 且扩展名 ∈ `.ts/.mts`；无匹配 → exit 0。`lefthook.yml` pre-commit `lint` job 改调 `verify-lint.mts --staged`；`engine/gates.json` 的 `lint` 条目不变（默认全仓）→ **pre-push 与 CI 仍全仓穷尽**，收窄只作用于 pre-commit 快检档。
+2. **pre-commit lint 收窄暂存面**：`scripts/verify-lint.mts` 新增 `--staged` 模式——目标 = `git diff --cached --name-only --diff-filter=ACMR`（含 R 档 rename 目标，R2 实证 ACM 漏 rename）且扩展名 ∈ `.ts/.mts`；无匹配 → exit 0。`lefthook.yml` pre-commit `lint` job 改调 `verify-lint.mts --staged`；`engine/gates.json` 的 `lint` 条目不变（默认全仓）→ **pre-push 与 CI 仍全仓穷尽**，收窄只作用于 pre-commit 快检档。
 
-## Design notes（子设计，随本 ADR 评审收口）
+## 子设计
 
 - **block 防死锁**：per-session per-file 连续 block 计数，同文件达上限（常量 N=3）后降级 `context`（违规仍可见、不再拦）——防「模型改不对 → 无限重试」；计数按会话隔离，文件重写成功即复位。
 - **夹具**：`verify-lint.mts` self-test 增 `--staged` 分支（临时 git 仓 + staged 违规必红 / staged 干净必绿 / 无 staged 文件 exit 0）；`adapters/dsh/selftest.mts` 现 context 断言改 block 断言（违规 → block、干净 → void）+ 死锁降级两例 + 降级面回归保持。
@@ -36,7 +36,7 @@ Review: FULL/2026-09-09/R1=ok R2=ok R3=ok
 - **写码当轮机器可判违规被拦**：write/edit 成功 + oxlint 非空 → A4 `block`（结果被替换为纠正消息，模型须修正才能继续），不再「可见但可无视」；干净代码零 block 零注入。
 - **死锁防护**：同文件连续 block 第 4 次起降级 `context`（违规仍可见、不再拦），一次干净写码 delete 复位重武装——block 状态按会话 WeakMap 隔离。
 - **降级面保持**：缺 `.oxlintrc.json`/oxlint 二进制、路径出仓、非 `.ts/.mts`、`result.isError`、runLint 抛错 → 一律 `void` + 每会话至多一条 warn；策略件永不抛（A4 建议档纪律的既有降级面原样继承）。
-- **pre-commit lint 收窄暂存面**：`verify-lint.mts --staged` 只 lint 暂存 `.ts/.mts`（`git diff --cached --name-only --diff-filter=ACM`）；无匹配 exit 0；`gates.json` `lint` 条目不变 → pre-push/CI 仍全仓穷尽（B3 分层基线恢复）。
+- **pre-commit lint 收窄暂存面**：`verify-lint.mts --staged` 只 lint 暂存 `.ts/.mts`（`git diff --cached --name-only --diff-filter=ACMR`）；无匹配 exit 0；`gates.json` `lint` 条目不变 → pre-push/CI 仍全仓穷尽（B3 分层基线恢复）。
 - **宿主 A4 消费面**：`index.mts` 对 `merged.block` 直接 `{ kind: "block", feedback }`（不调 `next()`）；A3 deny/ask、A5、A2 reject 仍零策略件使用（能力位在场）。
 
 ## 验收（收口核对）
@@ -53,3 +53,10 @@ Review: FULL/2026-09-09/R1=ok R2=ok R3=ok
 - **升格偏离「首批建议档」既有拍板**：本 ADR 为升格单源（b4 / 轨道 A 处只留指针），评审 FULL 三审收口后转 implemented。
 - **staged 收窄后本地漏网**（未暂存违规不挡提交）：由 pre-push 全仓 + CI 穷尽兜底（B3 分层基线显式接受）。
 - **block 依赖宿主 A4 决策语义**：`feedback` 替换成功回执——若宿主升级改变 block 消费形态，`host-api-contract.mts` 断言面（`PostToolDecision` 判别式）即红。
+
+## 评审收口（2026-09-09 FULL 三审）
+
+- **R1（简化）0B/5S**：采纳折叠 state 初始化、删 `--full` 零消费者、git 失败返回 `null` 弃哨兵数组；夹具五态覆盖确认；「未暂存违规不拦」属设计已接受上下文（S4 接受不修）；docs 同步义务漏项并入 R2 B2 处理。
+- **R2（code-review）2B/3S**：B1 = `--diff-filter=ACM` 漏 rename 档（R 目标实测漏拦 exit 0）→ 改 `ACMR` + rename 违规必红夹具；B2 = 09-08 轨道 A ADR 三处未同步 → 同变更改写 + Related 指针；S1 = 根 AGENTS 检查项「建议档不阻断」残留 → 改 block 拦回；S2 = git.status 非零未 fail-closed → 并入 B1 修；S3 = edit 中间态计死锁（代理偏差，非缺陷）**接受不修**。
+- **R3（ADR 面）0B/3S**：S1 = 09-09 自述单源却两处仍写 `ACM` → 改 `ACMR`；S2 = 「b4 处只留指针」失实（b4 无指针）→ b4 Related 补升格指针；S3 = `Design notes（…）` 标题中英混杂 + 无日期框架语 → 改「## 子设计」。
+- **全采纳收口**；三路各复跑门禁全绿；Review: FULL/2026-09-09/R1=ok R2=ok R3=ok。
