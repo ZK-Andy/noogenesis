@@ -9,6 +9,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-08｜**0.2.2 重验 + 宿主 0.1.3-alpha.2 对齐核验（todo B 勾账 + issue 外报条删除；维持 A8 撤除）**：0.2.2 重验绿（日志零 noogenesis/* 事件）；上游 alpha 恢复 ignorable 读侧容忍（ADR 2026-08-30-retain-ignorable-external-session-events）但 append 写入口仍无——撤除结构性成立，复投影不开案。`e717b2d`。**README 无漂移。**
 - 2026-09-08｜**A8 会话记录投影撤除批（FULL 三审全采纳收口；ADR `2026-09-08-a8-session-record-projection-removal` implemented；0.2.2 发版）**：读路径对未标 ignorable 插件事件 fail-closed → 投影面退役，A2 地图与能力层保留。`1eb742e→bee3a35`。**节点：0.2.1 重验判据作废改写（todos → 0.2.2）。** README 核对有变更已同步。
 - 2026-09-08｜**B4 实机重验 + M1/M2 修复收口（FULL 三审全采纳；ADR `2026-09-08-mount-exec-arguments-field` implemented；0.2.1 发版）**：根因 = exec 字段 `arguments` 被误读 `exec.args`（夹具复刻假设 = 冒烟假绿教训）；B4 ADR 同步/勘误。（勘误随 A8 撤除批：「持久化容忍度 ✅」撤回，投影面退役。）README 无变更。
 - 2026-09-08｜**B5 切换批收口（FULL 三审全采纳；ADR `2026-09-08-b5-switch` implemented；`00b84ff`→`93de846` 含 0.2.0 发版）**：gates.json cmd 全量重指 TS + 旧机器件零残留 + CI/钩子单轨 + 例外机制单家迁 gates.mts 头注；基因指针经 solidify updated 刷新。**节点：B0–B5 收官，C1–C15 全绿。** README 核对已同步。
@@ -45,10 +46,9 @@
 
 - 2026-09-06｜**M2 适配层实现轮（FULL 三审 R1 0B/4S、R2 1B/8S、R3 3B/4S 全采纳；ADR `2026-09-06-m2-adapter-wiring`；commits `78eb26f`→`65ca063`）**：adapters/dsh 八件 + npm 插件包形态 + gates.json 单源发射器；R2-B1（命中节 {{ 未转义）零宽中性化；真安装验证随 npm 首发收口；README 核对已同步（三处）。
 
-- 2026-09-05｜**胶囊 01 搬迁收口（S7 dogfood FULL 三审全过；ADR `capsule-01-migration` + 三拍板 ADR；commits `dd32053`→`1b7346f`）**：R1/R2/R3 Blocker 0+0+4，30 条建议 21 修 3 落简化候选待办；R3 Blocker（虚引用/决策无家/证据强度升级）全修，结论见 journal 2026-09 卷。README 核对无变更。
 - 2026-09-05｜**简化候选收口（FULL 三审全过；ADR `consolidate-r1-simplification-candidates`；commits `cf45f32`→收口）**：R1/R2/R3 = 0/3、0/3、1/4，Blocker（ADR 措辞失实）+8 建议全修；`scripts/mdref.py` 单一来源化 −84 行、行为恒等实测；py 头注 ADR 引用立日期+主题口径。
 - 2026-09-05｜**评审机械闸落地（胶囊 v0.2 收口件；ADR `2026-09-05-review-mechanical-gate`；commits `0b3a501`→收口）**：R1/R2/R3 = 1/7、2/6、2/2 全采纳（fail-closed 双修、lane 推导修复、CI 真强制）；门禁 7→9；Review 证据行首签、tier 全链路转绿。**节点：体系 v0.2 收口，下一步（D）立项讨论轮。**
-- 2026-09-05｜**P1 立项讨论轮·参考引擎考古（ADR `evomap-evox-engine-anatomy` proposed + 演化史解剖；commits `725b272`/`0f3b7b4`）**：官方清痕后 fork 考古得 MIT 时代全源码；四接口实战印证、记忆图 ~200 行、Genesis 记 P2；发动机骨架（独立 CLI 零 DSH + 四命令 + Gene/Event 最小闭环）待拍板。README 核对：修正门禁 7→9 与 research 目录表述。
+- 2026-09-08｜**P1 立项讨论轮·参考引擎考古（ADR `evomap-evox-engine-anatomy` proposed + 演化史解剖；commits `725b272`/`0f3b7b4`）**：官方清痕后 fork 考古得 MIT 时代全源码；四接口实战印证、记忆图 ~200 行、Genesis 记 P2；发动机骨架（独立 CLI 零 DSH + 四命令 + Gene/Event 最小闭环）待拍板。README 核对：修正门禁 7→9 与 research 目录表述。
 
 ## 背景
 
