@@ -31,7 +31,7 @@ const REVIEW_SURFACE_PATTERN = /\bverify-review-(brief|tier)\b|\bgates(?:\.py|\.
 /** M1 技能使用痕迹观测（A3）：skill 工具调用 + noo-* 前缀即痕迹。 */
 function skillNameOf(exec: ToolExecLike): string | undefined {
 	if (exec.name !== "skill") return undefined;
-	const name = exec.args?.name;
+	const name = exec.arguments?.name;
 	return typeof name === "string" && name.startsWith("noo-") ? name : undefined;
 }
 
@@ -107,7 +107,7 @@ export function createSubtreeRulesPolicies(config: RepoRootConfig): { preStep: P
 	};
 	const toolPre: ToolPrePolicy = (exec) => {
 		if (exec.name === undefined || !WRITE_TOOLS.has(exec.name)) return;
-		const filePath = exec.args?.file_path;
+		const filePath = exec.arguments?.file_path;
 		if (typeof filePath !== "string") return;
 		const repoRoot = resolveRepoRoot(config, sessionWorkspaceOf(exec));
 		const subtree = subtreeOf(repoRoot, filePath);

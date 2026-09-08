@@ -724,13 +724,13 @@ function writeFixtureGene(repoRoot: string): void {
 	{
 		const skill = createSkillUsagePolicy();
 		const agent = { session: { header: { cwd: "/tmp/m1" } } };
-		skill.toolPre({ name: "skill", args: { name: "noo-doc-standards" }, agent });
-		skill.toolPre({ name: "skill", args: { name: "other-skill" }, agent });
-		skill.toolPre({ name: "read", args: { file_path: "/x" }, agent });
+		skill.toolPre({ name: "skill", arguments: { name: "noo-doc-standards" }, agent });
+		skill.toolPre({ name: "skill", arguments: { name: "other-skill" }, agent });
+		skill.toolPre({ name: "read", arguments: { file_path: "/x" }, agent });
 		const first = skill.turnStopping({ agent, turn: 3 }) ?? [];
 		assert.deepEqual(first, [{ kind: "noogenesis/skill-usage", data: { turn: 3, names: ["noo-doc-standards"] } }]);
 		assert.deepEqual(skill.turnStopping({ agent, turn: 4 }) ?? [], []);
-		skill.toolPre({ name: "skill", args: { name: "noo-evaluate" }, agent });
+		skill.toolPre({ name: "skill", arguments: { name: "noo-evaluate" }, agent });
 		const second = skill.turnStopping({ agent, turn: 5 }) ?? [];
 		assert.deepEqual(second[0]?.data, { turn: 5, names: ["noo-evaluate"] });
 		ok("mounts: M1 — noo-* skill traces recorded incrementally; foreign skills ignored");
@@ -762,9 +762,9 @@ function writeFixtureGene(repoRoot: string): void {
 		assert.ok(lateAdvice && lateAdvice.kind === "advice", "first pre-step triggers regardless of turn/step");
 		const bare = createSubtreeRulesPolicies({ repoRoot: tempRepo("mount-m2-bare") });
 		assert.equal(bare.preStep({ agent: { session: { header: { cwd: path.join(os.tmpdir(), "mount-m2-bare-missing") } } }, turn: 1, step: 1 }), undefined);
-		subtreePolicies.toolPre({ name: "edit", args: { file_path: path.join(repo, "engine", "bin.ts") }, agent });
-		subtreePolicies.toolPre({ name: "read", args: { file_path: path.join(repo, "engine", "x.ts") }, agent });
-		subtreePolicies.toolPre({ name: "write", args: { file_path: "/elsewhere/out.ts" }, agent });
+		subtreePolicies.toolPre({ name: "edit", arguments: { file_path: path.join(repo, "engine", "bin.ts") }, agent });
+		subtreePolicies.toolPre({ name: "read", arguments: { file_path: path.join(repo, "engine", "x.ts") }, agent });
+		subtreePolicies.toolPre({ name: "write", arguments: { file_path: "/elsewhere/out.ts" }, agent });
 		const touches = subtreePolicies.turnStopping({ agent, turn: 2 }) ?? [];
 		assert.deepEqual(touches, [{ kind: "noogenesis/subtree-touch", data: { turn: 2, touches: [{ subtree: "engine", path: path.join("engine", "bin.ts") }] } }]);
 		assert.deepEqual(subtreePolicies.turnStopping({ agent, turn: 3 }) ?? [], []);
@@ -772,11 +772,11 @@ function writeFixtureGene(repoRoot: string): void {
 		{
 			const roller = createSubtreeRulesPolicies({ repoRoot: repo });
 			const rollAgent = { session: { header: { cwd: repo } } };
-			for (let i = 0; i < 50; i += 1) roller.toolPre({ name: "edit", args: { file_path: path.join(repo, "engine", `f${i}.ts`) }, agent: rollAgent });
+			for (let i = 0; i < 50; i += 1) roller.toolPre({ name: "edit", arguments: { file_path: path.join(repo, "engine", `f${i}.ts`) }, agent: rollAgent });
 			const firstWave = roller.turnStopping({ agent: rollAgent, turn: 1 }) ?? [];
 			assert.equal((firstWave[0]?.data as { touches: unknown[] }).touches.length, 50);
 			assert.deepEqual(roller.turnStopping({ agent: rollAgent, turn: 2 }) ?? [], []);
-			for (const i of [50, 51]) roller.toolPre({ name: "edit", args: { file_path: path.join(repo, "engine", `f${i}.ts`) }, agent: rollAgent });
+			for (const i of [50, 51]) roller.toolPre({ name: "edit", arguments: { file_path: path.join(repo, "engine", `f${i}.ts`) }, agent: rollAgent });
 			const secondWave = roller.turnStopping({ agent: rollAgent, turn: 3 }) ?? [];
 			assert.equal((secondWave[0]?.data as { touches: unknown[] }).touches.length, 2);
 			ok("mounts: M2 cursor regression — window shift keeps projection alive past cap");
@@ -856,7 +856,7 @@ function writeFixtureGene(repoRoot: string): void {
 
 		// A3：首批零 deny/ask → next 透传（M1 观测在 pre-execute 不拦）。
 		const passthroughMarker = { marker: true };
-		assert.equal(await toolPre({ name: "skill", args: { name: "noo-select" }, agent }, async () => passthroughMarker), passthroughMarker);
+		assert.equal(await toolPre({ name: "skill", arguments: { name: "noo-select" }, agent }, async () => passthroughMarker), passthroughMarker);
 		ok("mounts: A3 wiring — no first-batch denial; passthrough preserved");
 
 		// A4：观测零决策 → 透传（M3 只读结果面）。
@@ -878,7 +878,7 @@ function writeFixtureGene(repoRoot: string): void {
 		// A8 drain：session/disposed 独立 cordis 事件（R2-B1：非 firehose 成员，
 		// 签名单参 (session)）——清态后同会话状态重建即重新记录。
 		sessionDisposed(agent.session);
-		toolPre({ name: "skill", args: { name: "noo-propose" }, agent }, async () => ({}));
+		toolPre({ name: "skill", arguments: { name: "noo-propose" }, agent }, async () => ({}));
 		await turnStopping({ agent, turn: 6 });
 		assert.equal(appended.length, 3, "drain must reset counters so post-drain usage re-records");
 		ok("mounts: A8 wiring — session/disposed drains policy state, post-drain usage re-records");

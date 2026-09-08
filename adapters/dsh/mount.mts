@@ -31,11 +31,13 @@ export interface PreStepPayload extends AgentCarrier {
 	signal?: unknown;
 }
 
-/** A3/A4 工具 exec 窄面（`tools/pre-execute` / `tools/post-execute`）。 */
+/** A3/A4 工具 exec 窄面（`tools/pre-execute` / `tools/post-execute`）。参数面
+ * 字段 = `arguments`（宿主 dsh-tools createExecution 铸造形态；官方消费方
+ * hooks-claude-code 同读——bug-fix ADR 2026-09-08-mount-exec-arguments-field）。 */
 export interface ToolExecLike extends AgentCarrier {
 	agent?: AgentRef;
 	name?: string;
-	args?: Record<string, unknown>;
+	arguments?: Record<string, unknown>;
 	signal?: unknown;
 }
 
