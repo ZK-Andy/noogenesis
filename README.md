@@ -49,7 +49,7 @@ node dist/engine/bin.js self-test  # engine self-test (consumes prebuilt dist)
 │   ├── method/             # methodology body (the content domain being evolved)
 │   ├── cookbook.md         # pitfalls single source of truth (atomic entries)
 │   └── research/           # design docs (swarm framework / shared layer / JIT-Agent research) + reference engine teardowns
-├── scripts/                # verify-* machine gates (zero-dependency .mts, node ≥22.18 native type stripping) + gates.mts DAG runner (list single-sourced in engine/gates.json)
+├── scripts/                # verify-* machine gates (.mts, node ≥22.18 native type stripping; the lint/export-docs gates use the oxlint/typescript devDependencies) + gates.mts DAG runner (list single-sourced in engine/gates.json)
 ├── engine/                 # evolution engine (zero-dependency five commands + gates.json whitelist; pull = read-only bank consumption; TS source, run form = tsc dist)
 ├── adapters/dsh/           # DSH adapter layer (plugin shell wiring: system-prompt section / noo_* tools / solidify confirmation / geneBankUrl lazy pull / bank-distributed skills / four-point mount wiring A2–A5 with the A2 opening map (A6/A8 record projection removed, see the [removal ADR](.agents/notes/implemented/architecture/2026-09-08-a8-session-record-projection-removal.md)); TS source since B2, npm package = tsc dist)
 ├── genes/                  # gene bank (<domain>/<id>.json, archived via solidify; this repo is the bank)

@@ -1,7 +1,7 @@
 # 代码规范（code-standards）
 
 > Provenance：自建（2026-09-08，立项 ADR [2026-09-08-coding-standards](../../.agents/notes/implemented/architecture/2026-09-08-coding-standards.md)）；基准 = 蒸馏社区权威 TS 规范（Google TS Style Guide / oxlint 推荐规则集）为本仓子集 + 本仓专属例外；方法与纪律对齐 [standard-authoring](standard-authoring.md)。
-> 档位标注 `[M]` / `[W]` / `[I]` / `[R]`，定义与机制单源见 [standard-authoring](standard-authoring.md) §1；升档路径集中 §6。
+> 档位标注 `[M]` / `[W]` / `[I]` / `[R]`，定义与机制单源见 [standard-authoring](standard-authoring.md) §1；机器强制面集中 §6。
 
 ## 1. 强制力度分档
 
@@ -11,10 +11,11 @@
 
 > 本节是注释判据与写法的家（自 [noo-prose-standard](../../.agents/skills/noo-prose-standard/SKILL.md)「按位置」节收编，该技能代码注释条目改指此处）；散文铁律（每事实一个家/写当前状态/禁变更史）见 [doc-standards](doc-standards.md) §2，注释是代码里的散文，同样适用。
 
-### 2.1 公共 API 契约注释 `[R]`（升档见 §6）
+### 2.1 公共 API 契约注释 `[M]`（存在性）/ `[R]`（内容）
 
-停档理由：契约缺位是语义缺陷，机器不可判。
+停档理由：导出函数/类的注释**存在性**机器可判（`export-docs` 闸）；注释是否说清契约是语义面，机器不可判。
 
+- 机器面：`engine/` + `adapters/dsh/` + `scripts/` 的**导出函数/类声明**必须有紧邻 `/** */` 块（[verify-export-docs.mts](../../scripts/verify-export-docs.mts)）；类型/接口/常量不判——契约常由类型自身承载，强制注释产 slop。
 - **契约** = 调用方/被调方/实现者所依赖的义务、不变量、前置/后置条件、兼容承诺（prose-standard 定义）。
 - **必须注释**（代码/类型本身说不出的契约）：返回区别、抛出/拒绝、副作用、所有权、时序、取消、持久性——调用方可见即算公共。
 - **判别式**：删掉这段注释，调用方能否安全使用而不踩坑？能 → 不必注释；不能 → 必须注释。
@@ -29,28 +30,28 @@
 - **禁止注释**：控制流叙述（`// 循环遍历每个基因`）、代码复述（`// 加 1`）、显而易见处（`// 检查是否为空`）。
 - **判别式**：注释说的事，代码 + 类型 5 秒内能否看出？能 → 删注释（噪声）；不能 → 保留。
 
-### 2.3 注释不写什么（slop 治理）`[R]`
+### 2.3 注释不写什么（slop 治理）`[M]`（词面）/ `[R]`（语境）
 
-停档理由：词面禁写可按字面检出，但语境判定（是否"叙事/答辩腔"）需人；`TODO` 格式可判，随 c2 工具化。
+停档理由：`TODO`/`FIXME`/`XXX` 词面由 `no-warning-comments` 机器拦；「叙事/答辩腔」的语境判定需人。
 
 承接 [doc-standards](doc-standards.md) §3 slop 清单 + [noo-trim-cot-leakage](../../.agents/skills/noo-trim-cot-leakage/SKILL.md)，注释**禁止**：
 - 变更史/叙事（`previously` / `now` / `renamed` / PR 号 / 提交哈希叙事）——只进 commit/ADR；
 - 推理过程转写（决策复盘、多步推导）——需要留痕进 ADR，不在代码里写小说；
-- 实现状态标注（`TODO: implement` / `future:` / `implemented!`）——状态会腐烂；真实 TODO 用 `TODO(<owner>):` 格式且必须带日期，c2 起 `no-warning-comments` 强制收敛；
+- 实现状态标注与待办（`TODO` / `FIXME` / `XXX` / `future:` / `implemented!`）——状态会腐烂，机器拦；跨会话遗留进 [HANDOFF-todos](../../HANDOFF-todos.md)，代码内一律不写；
 - 满屏强调/答辩腔/给评审看的解释（prose 同款纪律）。
 
-### 2.4 格式约定 `[R]`（升档见 §6）
+### 2.4 格式约定 `[R]`
 
-停档理由：c1 零工具批，纯约定面暂无 lint/editor 机制可依；c2 随 oxlint 升 `[W]`。
-- 行注释 `//` 单行；块注释 `/** */` 用于公共契约注释（JSDoc 面）。
-- 头注 = 每文件首个注释块：一句话职责 + 关键契约/纪律指针 + 归属 ADR（如有）；现行形态为 `//` 行注释（如 `engine/bin.ts`），c2 工具化时统一为 `/** */`；不长篇叙事。
+停档理由：白名单无注释形态/语言类判据（oxlint 无此规则；为它上 jsPlugin 不成比例），逐条按字面人工可判，留评审。
+- 行注释 `//` 单行；块注释 `/** */` 专用于声明级契约注释（JSDoc 面，与 2.1 闸口径一致）。
+- 头注 = 每文件首个注释块，用 `//` 行注释：一句话职责 + 关键契约/纪律指针 + 归属 ADR（如有）；不长篇叙事。
 - 中文单语（与正文一致）；代码标识符/术语保留英文。
 - 注释与代码同行不尾随（尾随注释留给真须强调的例外），上方独立行优先。
 - 判别式：逐条按字面可判——头注三要素缺一、尾随注释、中英混杂即违反。
 
-## 3. 命名与结构 `[R]`（判别式）
+## 3. 命名与结构 `[R]`（判别式；机械可判子集已由 lint 接管）
 
-停档理由：命名意图与职责边界需语义判断，机器不可判（可判定面随 c2 lint 升档，见 §6）。
+停档理由：命名意图与职责边界需语义判断，机器不可判。机械可判子集 = 未用变量（`no-unused-vars`，`_` 前缀豁免）与 `as const`（`typescript/prefer-as-const`），已由 [lint 白名单](../../.oxlintrc.json) 强制。
 
 - **命名揭示意图而非类型**：`signals`（是什么）优于 `arr`（是什么类型）；布尔用 `is`/`has`/`can` 前缀；动词开头 = 函数，名词 = 数据。判别式：读名不知其意 = 改名，不是加注释。
 - **一个函数一个职责**：能说出「它做什么」一句话；说不出的拆。判别式：函数名含 `and` = 拆。
@@ -73,7 +74,10 @@
 
 本节「留评审」档条目（2.1–2.4、3）已列入根 [AGENTS.md](../../AGENTS.md)「评审检查项」第 4 条（兜底清单单源在根 AGENTS，机制见 [review.md](review.md) §5）；评审代理按其核对本节判别式在 diff 面是否被违反。升档路径见 §6。
 
-## 6. 升档路径（c2）
+## 6. 机器强制面
 
-- oxlint 接入后：2.4 → `[W]`；2.1 公共契约注释 → `no-warning-comments`/JSDoc 档位升 `[W]`/`[M]`（具体机制选型随 c2 立项定）；3 部分可判定的（未用变量、`as const` 可判定面）随 lint 规则升。
-- 升档按 [standard-authoring](standard-authoring.md)「能升就升」逐条过 HERO 判据（规则能检测具体失败、失败后下一步不同）。
+> 判据单源 = [.oxlintrc.json](../../.oxlintrc.json)（lint 显式白名单，逐条规则写明理由）+ [verify-export-docs.mts](../../scripts/verify-export-docs.mts)（导出面注释存在性）；挂载单源 = `engine/gates.json` 的 `lint` / `export-docs` 两条（pre-commit/pre-push/CI 消费同一清单）。立项与取舍见 [c2 ADR](../../.agents/notes/implemented/architecture/2026-09-08-c2-lint-enforcement.md)。
+
+- **已升档**：2.1 存在性 `[M]`（export-docs）；2.3 词面 `[M]`（`no-warning-comments`）；§3 未用变量 / `as const` `[M]`（`no-unused-vars` / `typescript/prefer-as-const`）。
+- **仍留评审**：2.1 内容质量、2.2 内部注释、2.4 格式约定、§3 命名意图与职责边界——语义判断，机器不可判（理由见各条停档理由），兜底在根 [AGENTS.md](../../AGENTS.md)「评审检查项」第 4 条。
+- **未纳入（有触发条件再立）**：type-aware 规则（`oxlint-tsgolint`）与 `no-explicit-any` / `no-non-null-assertion`——本仓当前无对应失败类，改造量属重构批次；触发 = 真实 async 失守或类型逃逸缺陷出现。

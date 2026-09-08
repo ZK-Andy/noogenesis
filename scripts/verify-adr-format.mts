@@ -52,7 +52,7 @@ const TOP_LEVEL_EXEMPT = ["README.md"];
 
 // Python str.splitlines() 的边界全集：\n \r \r\n \v \f \x1c \x1d \x1e \x85 \u2028 \u2029
 // （JS split("\n") 只认 \n——逐字对账必须用全集中文/控制字符行为一致）。
-export function splitlines(s: string): string[] {
+function splitlines(s: string): string[] {
   const out: string[] = [];
   let start = 0;
   for (let i = 0; i < s.length; i++) {
@@ -77,6 +77,7 @@ export function splitlines(s: string): string[] {
 
 // Python str.strip() 的空白集（比 JS trim 多 \x1c-\x1f \x85，少 \ufeff）。
 const PY_STRIP_RE =
+  // oxlint-disable-next-line no-control-regex -- py str.strip 空白集含控制字符（有意匹配）
   /^[ \t\n\r\v\f\x1c\x1d\x1e\x1f\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+|[ \t\n\r\v\f\x1c\x1d\x1e\x1f\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+$/g;
 
 function pyStrip(s: string): string {

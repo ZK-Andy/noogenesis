@@ -12,7 +12,7 @@ function loadGates(engineRoot: string, repoRoot: string) {
   let raw;
   try {
     raw = fs.readFileSync(p, 'utf8');
-  } catch (e) {
+  } catch {
     throw new EngineError(`gates.json missing/unreadable (${p}) — fail-closed, refusing to evaluate`);
   }
   let doc;

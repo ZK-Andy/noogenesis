@@ -5,7 +5,6 @@ import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import { execFileSync } from 'child_process';
-import * as crypto from 'crypto';
 
 import { normalizeSignal, sha256Hex, EngineError } from './util.js';
 import { loadGates } from './gates.js';

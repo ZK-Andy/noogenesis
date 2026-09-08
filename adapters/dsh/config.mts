@@ -60,6 +60,10 @@ function optGeneBankUrl(value: unknown): string | false | undefined {
 	return value;
 }
 
+/**
+ * 校验并归一化插件配置（8 字段；缺省与失败模式单源见 ./README.md「配置」表）。
+ * 违约抛 Error（fail-closed）；geneBankUrl undefined = 官方库缺省、false = 显式禁用。
+ */
 export function validateConfig(config: unknown = {}) {
 	if (!isRecord(config)) {
 		throw new Error("noogenesis: config must be an object");

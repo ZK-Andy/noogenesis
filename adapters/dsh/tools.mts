@@ -65,6 +65,10 @@ function repoRootOf(repoRootFor: RepoRootFor, exec: AgentCarrier | null | undefi
 	return repoRootFor(exec);
 }
 
+/**
+ * 注册 noo_select / noo_propose / noo_evaluate 三工具（逐个 register——DSH 单参
+ * 合同，合并传参只上第一个）；引擎故障（exit 1 + 空 stdout）抛错，不静默降级。
+ */
 export function registerNooTools(ctx: ToolHost, { defineTool, runEngine, repoRoot: repoRootFor }: {
 	defineTool: typeof defineToolContract;
 	runEngine: EngineRunner;

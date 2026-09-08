@@ -29,10 +29,9 @@ c1 已落地验证（2026-09-08，FULL 三审 R1 1B/4S、R2 1B/4S、R3 2B/3S 全
 
 class 归 `architecture/` 的自证：本 ADR 拍板的是内容域结构面（方法论正文新增内容域 + 兜底清单接线 + 门禁判据分档），非纯流程动作——desktop 先例 `2026-08-30-csharp-coding-standard` 落 `process/` 源于其只搬既有标准、无此结构面。
 
-### c2（后续批，另立 ADR 立项）
+### c2（已交付 2026-09-08，另立 ADR）
 
-- **oxlint 接入**（走 TS 面最顺；版本与 companion 选型随 c2 立项核实并补 provenance）+ 公共 API 注释**机器强制**（如 `no-warning-comments` / JSDoc 档位升格）；进 gates.json + hooks/CI；规则一次调完。
-- c1 的「留评审/IDE 提示」档条目，能升档者随 c2 逐条升（standard-authoring「能升就升」）。
+- 立项与取舍见 [c2 ADR](2026-09-08-c2-lint-enforcement.md)（同目录）：oxlint 显式白名单 + 导出面契约注释闸落地；2.1 存在性 / 2.3 词面 / §3 机械子集升 `[M]`，2.4 留 `[R]`（无工具判据，理由在该 ADR）。
 
 ## Alternatives considered
 
@@ -45,4 +44,4 @@ class 归 `architecture/` 的自证：本 ADR 拍板的是内容域结构面（�
 
 - 编码/注释规范从「半建 + 散落」转「单源成文 + 档位声明」，agent 写码可查、评审有兜底。
 - c1 为纯文档变更，已按 docs 门禁与 FULL 三审收口（含前提：编码规范属方法论正文，落 docs/method/，非 research）。
-- c2 引依赖（oxlint）需先过 P1 骨架 D1「引擎零依赖」纪律边界（工具链在 scripts/ 面、engine 运行时面不受影响——B1 工具链豁免先例）；届时单独过 HERO 判据与防火墙允许集。
+- c2 已引依赖（oxlint，devDependency 精确钉版）并过 P1 骨架 D1「引擎零依赖」边界：工具链在 scripts/ 面、engine 运行时零依赖不变（B1 工具链豁免先例），HERO 判据与防火墙允许集见 [c2 ADR](2026-09-08-c2-lint-enforcement.md)。

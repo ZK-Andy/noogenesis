@@ -61,8 +61,8 @@ const REPORT_SENTENCE = "Blocker[]/Suggestion[]";
 const CHECK_ITEM_RE = /^\s*-\s*\[ \]\s+.+/u;
 // Scope 引用只捕裸 git ref——模板允许尾注（"head: 0b3a501（评审对象 = …）"），
 // 贪婪捕获会把尾注吞进 ref 毒化泳道推导。
-const BASE_RE = /base:\s*([0-9A-Za-z._/~^\-]+)/u;
-const HEAD_RE = /head:\s*([0-9A-Za-z._/~^\-]+)/u;
+const BASE_RE = /base:\s*([0-9A-Za-z._/~^-]+)/u;
+const HEAD_RE = /head:\s*([0-9A-Za-z._/~^-]+)/u;
 const DEEP_RE = /需深审面[^\n]*?[:：]/u;
 const COMPANION_RE = /陪跑文件[^\n]*?[:：]/u;
 // 门禁自证行：声明陪跑文件「机器门禁已盖」必须由主会话实跑的 exit 码背书。
@@ -72,10 +72,11 @@ const SELFASSERT_RE = /门禁自证[^\n]*?[:：]/u;
 // 会让 exit 3 等码被静默忽略成"全 0 通过"。扫描绑定在本行内，简报正文其余部分
 // 的 `<token>:1`（文件:行引用）不会误报。尾部 (?![\p{L}\p{N}_]) 等价 Python \b
 // 的 Unicode 边界语义（数字后跟字母 = 非边界，不得成项）。
-const SELFASSERT_ITEM_RE = /([A-Za-z0-9._\-]+)[:：](\d+)(?![\p{L}\p{N}_])/gu;
+const SELFASSERT_ITEM_RE = /([A-Za-z0-9._-]+)[:：](\d+)(?![\p{L}\p{N}_])/gu;
 
 /** Python str.isspace 的字符集（JS \s 差 \x1c-\x1f、多 \ufeff——按 Python 口径）。 */
 const PY_SPACE_RE =
+  // oxlint-disable-next-line no-control-regex -- py str.isspace 集含控制字符（有意匹配）
   /[\t\n\v\f\r\x1c-\x1f\x85 \xa0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]/u;
 function pyIsSpace(ch: string | undefined): boolean {
   return ch !== undefined && PY_SPACE_RE.test(ch);

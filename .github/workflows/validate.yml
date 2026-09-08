@@ -72,6 +72,8 @@ jobs:
           node scripts/gen-manifest.mts --self-test
           node scripts/verify-archived-agent-notes.mts --self-test
           node scripts/verify-postmortem-naming.mts --self-test
+          node scripts/verify-lint.mts --self-test
+          node scripts/verify-export-docs.mts --self-test
 
       # 引擎元评测（schema ADR S3）：与 verify-* self-test 平级，不占门禁编号；
       # 消费预构建 dist（C10 发布形态）

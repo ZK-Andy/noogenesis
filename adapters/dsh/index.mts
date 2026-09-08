@@ -13,7 +13,6 @@
  * 校验实现在 ./config.mts（fail-closed，selftest 直测）。
  */
 import { defineTool } from "@deepseek-ai/dsh-tools";
-import type { ToolDefinition } from "@deepseek-ai/dsh-tools";
 import { createUserMessage } from "@deepseek-ai/dsh-llm";
 import { runEngine, runEngineSync, resolveRepoRoot, sessionWorkspaceOf } from "./engine-bridge.mjs";
 import type { AgentCarrier } from "./engine-bridge.mjs";
@@ -102,6 +101,10 @@ function askFactory(ctx: HostContext): (candidates: string[]) => Promise<AskDeci
 	};
 }
 
+/**
+ * 插件入口（cordis apply 合同）：校验配置 → 解析 repoRoot → 注册工具体、system-prompt
+ * 节、技能 provider 与挂载面策略。config 违约抛 Error（装载即失败，不半启用）。
+ */
 export function apply(ctx: HostContext, config: unknown = {}): void {
 	const cfg = validateConfig(config);
 	const repoRoot = resolveRepoRoot(cfg);

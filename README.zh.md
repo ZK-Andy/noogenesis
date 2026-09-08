@@ -49,7 +49,7 @@ node dist/engine/bin.js self-test  # 引擎自检（消费预构建 dist）
 │   ├── method/             # 方法论正文（被演化的内容域）
 │   ├── cookbook.md         # 踩坑单一事实源（原子条目）
 │   └── research/           # 设计文档（蜂群框架设计 / 共享层设计 / JIT-Agent 研究）+ 参考引擎调研解剖
-├── scripts/                # verify-* 机器门禁（零依赖 .mts，node ≥22.18 原生直跑）+ gates.mts 门禁清单单源发射器（含 needs/after DAG）
+├── scripts/                # verify-* 机器门禁（.mts，node ≥22.18 原生直跑；lint/export-docs 两闸用 oxlint/typescript devDependency）+ gates.mts 门禁清单单源发射器（含 needs/after DAG）
 ├── engine/                 # 演化发动机（Node 零依赖五命令 + gates.json 白名单；pull = 基因库只读消费；源码 TS，运行形态 = tsc dist）
 ├── adapters/dsh/           # DSH 适配层（插件壳接线：system-prompt 节 / noo_* 工具 / solidify 人工确认 / geneBankUrl 惰性 pull / 技能随库分发 / 挂载面 A2–A5 四点接线与 A2 开场地图（A6/A8 记录投影已撤，见 [撤除 ADR](.agents/notes/implemented/architecture/2026-09-08-a8-session-record-projection-removal.md)）；B2 起源码 TS，npm 包 = tsc dist）
 ├── genes/                  # 基因库（<domain>/<id>.json，经 solidify 入档；本仓即库）

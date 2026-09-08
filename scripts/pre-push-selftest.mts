@@ -18,8 +18,10 @@
  * - 钩子经 lefthook：克隆内 cp 根仓 .git/hooks/pre-push wrapper（wrapper 经
  *   `node_modules/lefthook-<平台>/bin/lefthook` 相对寻路，克隆内以 node_modules
  *   symlink 指向根仓解析）。
- * - 工作树版同步：cp 根仓 lefthook.yml + scripts/pre-push.mts（克隆验证工作树
- *   态，含未提交修复——同 bash 版「显式同步」口径）。
+ * - 工作树版同步：cp 根仓 scripts/ + engine/gates.json + .oxlintrc.json + lefthook.yml
+ *   （克隆验证工作树态，含未提交修复与新增门禁件——同 bash 版「显式同步」口径）。
+ *   注意：克隆的 engine/adapters 源来自 HEAD，故新增全仓门禁（lint 等）需先提交
+ *   本批再跑本自测，否则克隆内跑的是未修源。
  * - dist/ 拷入 + node_modules symlink：pre-push 编排器跑预构建 dist 与
  *   ts-typecheck（tsc 经 typescript 工具链），克隆缺这两样即假红。
  * - 必须 stdin 非 tty 运行（CI / `</dev/null`）：tier 循环在 tty 下整体跳过，
@@ -69,10 +71,12 @@ function main(): void {
     git(clone, ["remote", "set-url", "origin", path.join(tmp, "origin.git")], false);
 
     // 钩子与工作树态同步：wrapper（相对寻路 + node_modules symlink 可解析）、
-    // lefthook.yml、pre-push 编排器（工作树版，含未提交修复）。
+    // 脚本族 + gates.json + lint 配置 + lefthook.yml（工作树版，含未提交修复/新件）。
     fs.copyFileSync(path.join(ROOT, ".git", "hooks", "pre-push"), path.join(clone, ".git", "hooks", "pre-push"));
     fs.copyFileSync(path.join(ROOT, "lefthook.yml"), path.join(clone, "lefthook.yml"));
-    fs.copyFileSync(path.join(ROOT, "scripts", "pre-push.mts"), path.join(clone, "scripts", "pre-push.mts"));
+    fs.cpSync(path.join(ROOT, "scripts"), path.join(clone, "scripts"), { recursive: true });
+    fs.copyFileSync(path.join(ROOT, "engine", "gates.json"), path.join(clone, "engine", "gates.json"));
+    fs.copyFileSync(path.join(ROOT, ".oxlintrc.json"), path.join(clone, ".oxlintrc.json"));
     fs.cpSync(path.join(ROOT, "dist"), path.join(clone, "dist"), { recursive: true });
     fs.symlinkSync(path.join(ROOT, "node_modules"), path.join(clone, "node_modules"), "dir");
 

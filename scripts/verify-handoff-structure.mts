@@ -75,7 +75,9 @@ function pyStrip(s: string): string {
 
 // str.splitlines() 等价：Python 按全量边界（\r\n/\r/\n/\v/\f/\x1c-\x1e/\x85/
 // \u2028/\u2029）切分且结尾边界不产生空尾元素；split("\n") 会留 \r、漏边界。
+// oxlint-disable-next-line no-control-regex -- py str.splitlines 边界集含控制字符（有意匹配）
 const SPLIT_RE = /\r\n|\r|\n|\v|\f|\x1c|\x1d|\x1e|\x85|\u2028|\u2029/;
+// oxlint-disable-next-line no-control-regex -- 同上，结尾边界判定用
 const ENDS_SPLIT_RE = /(?:\r\n|\r|\n|\v|\f|\x1c|\x1d|\x1e|\x85|\u2028|\u2029)$/;
 
 function pySplitlines(text: string): string[] {
@@ -310,7 +312,6 @@ function selfTest(): number {
   const fmt = (d: Date) => `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
   const prevMonth = fmt(prev);
   const volExists = `${prevMonth}.md`;
-  const volMissing = `${fmt(new Date(first - 41 * 24 * 60 * 60 * 1000))}.md`;
   const volCurrent = `${CURRENT_MONTH}.md`;
 
   function build(tree: string, entries: string[], journal: boolean, sections: boolean,

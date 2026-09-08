@@ -18,7 +18,6 @@
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
 import { resolveRepoRoot } from "./engine-bridge.mjs";
-import type { AgentCarrier } from "./engine-bridge.mjs";
 
 /** 宿主 dsh-skill 为打包技能定义的标准 precedence 位（镜像常量，不引宿主依赖）。 */
 export const BUNDLED_SKILL_RANK = 600;

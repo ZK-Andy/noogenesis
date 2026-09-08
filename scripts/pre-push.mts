@@ -27,8 +27,6 @@
 import * as fs from "node:fs";
 import { spawn, spawnSync } from "node:child_process";
 
-const PROGRAM = "pre-push.mts";
-
 interface GroupResult {
   name: string;
   ok: boolean;
@@ -66,7 +64,6 @@ function tierLoop(remote: string): boolean {
     const fields = trimmed.length === 0 ? [] : trimmed.split(/\s+/);
     const lref = fields[0] ?? "";
     const lsha = fields[1] ?? "";
-    const rref = fields[2] ?? "";
     const rsha = fields[3] ?? "";
     if (lsha.length === 0) continue;
     if (isAllZero(lsha)) continue;

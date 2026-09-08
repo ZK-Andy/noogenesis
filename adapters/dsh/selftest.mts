@@ -429,24 +429,24 @@ function writeFixtureGene(repoRoot: string): void {
 	// 两路径共享闸（每实例每仓至多一次）；成功回调 onPulled（技能面 invalidate）。
 	{
 		const schedCfg = { geneBankUrl: "https://example.com/bank.git" };
-		const pulls: Array<string | undefined> = [];
+		const schedPulls: Array<string | undefined> = [];
 		const pulledCallbacks: number[] = [];
-		const logger = { info: () => {}, warn: () => {} };
+		const schedLogger = { info: () => {}, warn: () => {} };
 		const runEngine = async (args: string[], { repoRoot }: { repoRoot?: string } = {}) => {
-			pulls.push(repoRoot);
+			schedPulls.push(repoRoot);
 			return { code: EXIT.OK, stdout: "pull: cloned bank\n", stderr: "" };
 		};
-		const sched = createBankPullScheduler({ config: schedCfg, runEngine, logger, onPulled: () => pulledCallbacks.push(1) });
+		const sched = createBankPullScheduler({ config: schedCfg, runEngine, logger: schedLogger, onPulled: () => pulledCallbacks.push(1) });
 
 		// 装载期：无显式锚定 → 跳过，且绝不落 cwd 兜底（错位落地回归：宿主 cwd ≠ 用户仓）
 		assert.deepEqual(await sched.pullAtLoad(), { pulled: false, reason: "repoRoot unknown at load" });
-		assert.deepEqual(pulls, []);
+		assert.deepEqual(schedPulls, []);
 		ok("bank-pull: scheduler — load-time pull skipped without explicit anchor (never cwd fallback)");
 
 		// 会话期：会话工作区锚定；成功回调即技能面 invalidate
 		const session = await sched.pullForSession({ agent: { session: { header: { cwd: "/tmp/repo-a" } } } });
 		assert.equal(session.pulled, true);
-		assert.deepEqual(pulls, ["/tmp/repo-a"]);
+		assert.deepEqual(schedPulls, ["/tmp/repo-a"]);
 		assert.equal(pulledCallbacks.length, 1);
 		ok("bank-pull: scheduler — session workspace anchors the pull; onPulled fires on success");
 
@@ -455,19 +455,19 @@ function writeFixtureGene(repoRoot: string): void {
 		assert.equal(pulledCallbacks.length, 1);
 		// 异仓各归各仓
 		await sched.pullForSession({ agent: { session: { header: { cwd: "/tmp/repo-b" } } } });
-		assert.deepEqual(pulls, ["/tmp/repo-a", "/tmp/repo-b"]);
+		assert.deepEqual(schedPulls, ["/tmp/repo-a", "/tmp/repo-b"]);
 		// 无会话工作区 → 跳过（不落 cwd 兜底）
 		assert.deepEqual(await sched.pullForSession({}), { pulled: false, reason: "no session workspace" });
-		assert.equal(pulls.length, 2);
+		assert.equal(schedPulls.length, 2);
 		ok("bank-pull: scheduler — shared gate dedupes per repo (never released); missing session cwd skipped");
 
 		// 显式锚定 → 装载期触发（0.1.2 显式配置部署行为不变）；相对 repoRoot 过
 		// resolveRepoRoot 归一化——装载与会话两路径闸键同空间（R1-B1 回归）
-		pulls.length = 0;
+		schedPulls.length = 0;
 		const rel = "rel-pinned-repo";
-		const pinned = createBankPullScheduler({ config: { ...schedCfg, repoRoot: rel }, runEngine, logger });
+		const pinned = createBankPullScheduler({ config: { ...schedCfg, repoRoot: rel }, runEngine, logger: schedLogger });
 		assert.equal((await pinned.pullAtLoad()).pulled, true);
-		assert.deepEqual(pulls, [path.resolve(rel)]);
+		assert.deepEqual(schedPulls, [path.resolve(rel)]);
 		ok("bank-pull: scheduler — explicit repoRoot keeps load-time trigger; relative root normalized (absolute gate key)");
 
 		// 禁用面：false → 两路径零引擎 spawn
@@ -475,7 +475,7 @@ function writeFixtureGene(repoRoot: string): void {
 		const off = createBankPullScheduler({
 			config: { geneBankUrl: false, repoRoot: "/tmp/off" },
 			runEngine: async () => { spawned = true; return { code: EXIT.OK, stdout: "", stderr: "" }; },
-			logger,
+			logger: schedLogger,
 		});
 		assert.deepEqual(await off.pullAtLoad(), { pulled: false, reason: "disabled" });
 		assert.deepEqual(await off.pullForSession({ agent: { session: { header: { cwd: "/tmp/x" } } } }), { pulled: false, reason: "disabled" });

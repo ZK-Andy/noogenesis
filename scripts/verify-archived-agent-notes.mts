@@ -138,7 +138,7 @@ function loadHeadFreeze(freezeRel: string): FreezeList {
     if (/exists on disk, but not in HEAD|does not exist|unknown revision/.test(stderr)) {
       return { version: 1, files: {} }; // 清单尚不在 HEAD = 首次提交，旧集为空
     }
-    throw new Error(`HEAD:${freezeRel} 读取失败（fail-closed）：${stderr.trim() || e}`);
+    throw new Error(`HEAD:${freezeRel} 读取失败（fail-closed）：${stderr.trim() || e}`, { cause: e });
   }
   return JSON.parse(out) as FreezeList;
 }
@@ -209,7 +209,7 @@ function selfTest(): number {
   const archRoot = path.join(root, "archived");
 
   // 合规：树 + 清单 + append-only 全过
-  let r = checkTree(archRoot);
+  const r = checkTree(archRoot);
   if (r.violations.length !== 0 || r.files.length !== 1) failures.push("合规样例（树结构）被误判 FAIL");
   const freeze: FreezeList = { version: 1, files: { "process/2026-09-05-review-gate-defer.md": hash } };
   if (checkFreeze(archRoot, freeze, r.files).length !== 0) failures.push("合规样例（冻结清单）被误判 FAIL");

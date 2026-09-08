@@ -231,7 +231,7 @@ function verify(repo: string): [number, string[]] {
   for (const ref of rowKeys.filter((r) => !treeKeys.includes(r)).sort(pyCmp)) {
     errors.push(`manifest.json: stale entry ${ref} (file absent from genes/)`);
   }
-  for (const [ref, info] of Object.entries(tree)) {
+  for (const info of Object.values(tree)) {
     if (Object.prototype.hasOwnProperty.call(info, "_error")) {
       errors.push(info["_error"] as string);
     }

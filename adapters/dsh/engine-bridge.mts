@@ -127,13 +127,13 @@ export function runEngine(args: string[], { repoRoot, timeoutMs = 120_000 }: { r
 	});
 }
 
+const SYNC_TIMEOUT_MS = 60_000;
+
 /**
  * 同步执行引擎命令（system-prompt 节 provider 用——宿主 text provider 是同步
  * 面 dictated by the host API）。引擎无 LLM、无网络，但同步面仍强制界：
  * spawnSync timeout 到点 kill，status null → FAIL_CLOSED（与 async 面同口径）。
  */
-const SYNC_TIMEOUT_MS = 60_000;
-
 export function runEngineSync(args: string[], { repoRoot, timeoutMs = SYNC_TIMEOUT_MS }: { repoRoot?: string; timeoutMs?: number } = {}): EngineResult {
 	const r = spawnSync(process.execPath, [ENGINE_ENTRY, ...args], {
 		cwd: repoRoot,

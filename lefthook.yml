@@ -40,6 +40,12 @@ pre-commit:
     - name: handoff-structure
       run: node scripts/verify-handoff-structure.mts
 
+    - name: lint
+      run: node scripts/verify-lint.mts
+
+    - name: export-docs
+      run: node scripts/verify-export-docs.mts
+
     - name: gene-format
       run: node scripts/verify-gene-format.mts
 

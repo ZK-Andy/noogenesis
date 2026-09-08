@@ -39,6 +39,7 @@ const ANCHOR_RE = /<a\s+id="([^"]+)"/;
 
 /** Python str.splitlines() 等价：按行拆分，结尾终结符不产生空尾行。 */
 export function splitLines(text: string): string[] {
+  // oxlint-disable-next-line no-control-regex -- py str.splitlines 边界集含控制字符（有意匹配）
   const parts = text.split(/\r\n|[\n\v\f\r\x1c\x1d\x1e\x85\u2028\u2029]/);
   if (parts[parts.length - 1] === "") parts.pop();
   return parts;
@@ -49,7 +50,7 @@ export function slugify(text: string): string {
   text = text.trim().toLowerCase();
   // Python `[^\w\u4e00-\u9fff \-]`：\w 是 unicode 词字符（\p{L}\p{N}_），JS \w
   // 只匹配 ASCII——以此等价展开并经夹具实测 CJK 一致。
-  text = text.replace(/[^\p{L}\p{N}_ \u4e00-\u9fff\-]+/gu, "");
+  text = text.replace(/[^\p{L}\p{N}_ \u4e00-\u9fff-]+/gu, "");
   text = text.replace(/\s+/gu, "-");
   return text;
 }

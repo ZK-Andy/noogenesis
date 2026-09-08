@@ -1,8 +1,7 @@
 // evaluate.ts — 保守评估（骨架 ADR D4）：gates.json 全集作为入档门槛；红即拒，无豁免。
 // 入档条件 = 门禁全绿，仅此一条——文档域"前沿单调不降"的可执行形态。
 
-import { run, deriveSlots, changedPaths, pathUnder } from './util.js';
-import { EngineError } from './util.js';
+import { run, deriveSlots, changedPaths, pathUnder, EngineError } from './util.js';
 import { loadGates, instantiate } from './gates.js';
 import { scanGenes } from './gene.js';
 import { resolveGeneRef } from './propose.js';

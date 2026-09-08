@@ -13,6 +13,8 @@
     { "name": "review-tier", "cmd": "node", "args": ["scripts/verify-review-tier.mts", "--since", "{{outgoing_base}}", "--enforce"] },
     { "name": "review-brief", "cmd": "node", "args": ["scripts/verify-review-brief.mts", "--lanes", "R1,R2,R3"] },
     { "name": "change-scope", "cmd": "node", "args": ["scripts/change-scope.mts", "{{outgoing_base}}", "{{head}}"] },
+    { "name": "lint", "cmd": "node", "args": ["scripts/verify-lint.mts"] },
+    { "name": "export-docs", "cmd": "node", "args": ["scripts/verify-export-docs.mts"] },
     { "name": "ts-typecheck", "cmd": "node", "args": ["node_modules/typescript/bin/tsc", "--noEmit"] }
   ]
 }

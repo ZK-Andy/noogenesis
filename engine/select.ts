@@ -1,7 +1,6 @@
 // select.ts — 信号 → 基因 机械匹配（骨架 ADR D2）：显式喂入、归一化后字面精确匹配、多键取并集。
 // Detect 不进引擎：信号发现的判断在人/流程卡侧，引擎只做匹配。
 
-import * as path from 'path';
 import { normalizeSignal } from './util.js';
 import { scanGenes } from './gene.js';
 

@@ -1,0 +1,97 @@
+// .oxlintrc.json — 编码规范机器强制（C2；ADR 2026-09-08-c2-lint-enforcement）
+//
+// 形态 = 显式白名单：correctness 类目整体关闭，逐条启用并在此写明理由。
+// 类目全开实测（2026-09-08，39 文件）报 80 条，其中 ~49 条为风格偏好而非失败类
+// （unicorn/no-array-sort 35、consistent-function-scoping 14）——白名单把「能检测
+// 具体失败」与「口味」分开（HERO 判据）。
+//
+// 判据单源：docs/method/code-standards.md（档位与停档理由）；本文件承载机器可判面，
+// 语义面留评审（根 AGENTS「评审检查项」第 4 条）。
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "plugins": ["typescript"],
+  "categories": { "correctness": "off" },
+  "env": { "builtin": true },
+  "options": {
+    // 失效的 oxlint-disable 注释 = 判据漂移，当错误处理（与 --deny-warnings 配合）。
+    "reportUnusedDisableDirectives": "error"
+  },
+  "ignorePatterns": [
+    "dist/**",
+    "node_modules/**",
+    ".cache/**",
+    ".research-mirror/**",
+    ".noogenesis/**",
+    ".review-briefs/**"
+  ],
+  "rules": {
+    // ── 死代码 / 未用符号 ────────────────────────────────────────────────
+    // `_` 前缀 = 有意忽略（catch 绑定、未用形参）；其余未用即删。
+    "no-unused-vars": [
+      "error",
+      {
+        "argsIgnorePattern": "^_",
+        "varsIgnorePattern": "^_",
+        "caughtErrorsIgnorePattern": "^_"
+      }
+    ],
+
+    // ── 明确错误（无口味争议） ──────────────────────────────────────────
+    "no-dupe-keys": "error",
+    "no-dupe-class-members": "error",
+    "no-dupe-else-if": "error",
+    "no-duplicate-case": "error",
+    "no-unreachable": "error",
+    "no-constant-binary-expression": "error",
+    "no-self-assign": "error",
+    "no-self-compare": "error",
+    "no-unsafe-negation": "error",
+    "no-unsafe-optional-chaining": "error",
+    "no-fallthrough": "error",
+    "no-cond-assign": "error",
+    "valid-typeof": "error",
+    "use-isnan": "error",
+    "no-compare-neg-zero": "error",
+    "no-sparse-arrays": "error",
+    "no-empty-pattern": "error",
+    "no-func-assign": "error",
+    "no-import-assign": "error",
+    "no-obj-calls": "error",
+    "no-setter-return": "error",
+    "no-prototype-builtins": "error",
+    "no-misleading-character-class": "error",
+    "no-template-curly-in-string": "error",
+    "no-unexpected-multiline": "error",
+
+    // ── 代码卫生（可判定、低误报） ──────────────────────────────────────
+    "no-useless-escape": "error",
+    "no-shadow": "error",
+    "no-var": "error",
+    "prefer-const": "error",
+    "no-unused-expressions": "error",
+    "no-useless-constructor": "error",
+    "no-array-constructor": "error",
+    "eqeqeq": "error",
+    "preserve-caught-error": "error",
+    // 值/类型分行 import 是本仓形态（B2 起 `.mts` 显式扩展）；只拦同模块的重复值导入。
+    "no-duplicate-imports": ["error", { "allowSeparateTypeImports": true }],
+
+    // ── 注释纪律（code-standards §2.3） ─────────────────────────────────
+    // 代码内不写 TODO/FIXME/XXX：待办进 HANDOFF-todos（跨会话遗留唯一落点）。
+    "no-warning-comments": "error",
+    // 校验器有意匹配控制字符（py str.splitlines 边界集）；逐处 oxlint-disable 带理由。
+    "no-control-regex": "error",
+
+    // ── TypeScript ──────────────────────────────────────────────────────
+    "typescript/prefer-as-const": "error",
+    "typescript/no-unnecessary-type-assertion": "error",
+    "typescript/no-duplicate-enum-values": "error",
+    "typescript/no-misused-new": "error",
+    "typescript/no-unsafe-declaration-merging": "error",
+    "typescript/no-empty-object-type": "error",
+    "typescript/consistent-type-imports": "error",
+    "typescript/no-import-type-side-effects": "error",
+    "typescript/no-namespace": "error",
+    "typescript/no-inferrable-types": "error"
+  }
+}

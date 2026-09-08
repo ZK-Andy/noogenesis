@@ -68,6 +68,7 @@ function pyStrip(s: string): string {
 }
 
 // py str.splitlines() 全集（\r\n 计一处，含 \v \f \x1c-\x1e \x85 \u2028 \u2029）
+// oxlint-disable-next-line no-control-regex -- py 边界集含控制字符（有意匹配）
 const SPLIT_RE = /\r\n|[\n\r\v\f\x1c\x1d\x1e\x85\u2028\u2029]/g;
 
 function pySplitlines(s: string): string[] {
@@ -474,7 +475,7 @@ function parseIsoOffset(s: string, j: number): { ms: number; next: number } | nu
   const oh = Number(s.slice(k, k + 2));
   k += 2;
   let om = 0;
-  let os = 0;
+  let offsetSec = 0;
   let ous = 0;
   if (s[k] === ":") {
     const m1 = /^:(\d{2})/.exec(s.slice(k));
@@ -484,7 +485,7 @@ function parseIsoOffset(s: string, j: number): { ms: number; next: number } | nu
     if (s[k] === ":") {
       const m2 = /^:(\d{2})/.exec(s.slice(k));
       if (m2 === null) return null;
-      os = Number(m2[1]);
+      offsetSec = Number(m2[1]);
       k += 3;
       const fr = parseFrac(s, k);
       if (fr !== null) {
@@ -496,7 +497,7 @@ function parseIsoOffset(s: string, j: number): { ms: number; next: number } | nu
     om = Number(s.slice(k, k + 2));
     k += 2;
     if (k + 1 < s.length && /^\d{2}/.test(s.slice(k, k + 2))) {
-      os = Number(s.slice(k, k + 2));
+      offsetSec = Number(s.slice(k, k + 2));
       k += 2;
       const fr = parseFrac(s, k);
       if (fr !== null) {
@@ -505,8 +506,8 @@ function parseIsoOffset(s: string, j: number): { ms: number; next: number } | nu
       }
     }
   }
-  if (oh > 23 || om > 59 || os > 59) return null;
-  return { ms: sign * (oh * 3600000 + om * 60000 + os * 1000 + ous / 1000), next: k };
+  if (oh > 23 || om > 59 || offsetSec > 59) return null;
+  return { ms: sign * (oh * 3600000 + om * 60000 + offsetSec * 1000 + ous / 1000), next: k };
 }
 
 /** py datetime.fromisoformat(ts.replace("Z", "+00:00")) 的等价实现；naive 视为 UTC。 */

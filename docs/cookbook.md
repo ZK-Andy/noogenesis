@@ -25,6 +25,8 @@
 - **[门禁] 测试模块直跑是 no-op 时，静默 exit 0 = 假绿（2026-09-06 来源：noogenesis engine/selftest.js 只导出无顶层调用，R2 评审实证）**：症状——`node engine/selftest.js` 直跑零输出 exit 0 被当全绿，坏夹具实际从未执行（真 runner = `node dist/engine/bin.js self-test`，在其下 exit 1）。根因——测试入口有两个形状：导出模块（供 bin 分发）与顶层直跑脚本，直跑面无调用即静默成功。规避——验证一律走真装配入口（bin 分发面）；「零输出 + exit 0」必须与已知 ok 数核对，不裸信静默成功。
 - **[门禁] CJS 包内的裸 .ts 走不了 ESM，type stripping 又是解析期动作（2026-09-08 来源：noogenesis B0 两件 .mts 门禁，R1/R2 评审实证）**：症状——`package.json` `type:commonjs` 下写 `scripts/*.ts` 用 `import` 语法，node 按包类型分类为 CJS 直接语法错；又指望「文件内加 node 版本守卫」兜 ≥22.18（原生 type stripping 前提），但剥类型发生在解析期，守卫代码根本执行不到。规避——新 TS 门禁一律 `.mts`（显式 ESM，不赌版本间模块探测差异）；node 版本前提靠 CI `setup-node` 钉版 + 头注声明，不写文件内守卫。
 - **[门禁] `wc -w` 对中文文本严重少计词数（2026-09-08 来源：noogenesis B0，R3 评审实证）**：症状——SKILL.md 用 `wc -w` 量得 198 词当拍板依据，仓计数单源（verify-doc-budgets 的 WORD_RE，CJK 逐字计词）实为 359，差近一倍。根因——`wc -w` 按空白分词，CJK 无空格。规避——凡「词数」判断一律用 doc-budgets 同款计数口径；拿不准时两种口径都算并声明用的是哪个。
+- **[门禁] 在被 .gitignore 忽略的目录里做 linter 探针 = 零文件假象（2026-09-08 来源：noogenesis C2 oxlint 调优）**：症状——在 `.cache/` 下放探针源码跑 `oxlint --rules .` 恒报 `No files found to lint`，误判工具坏或规则集为空。根因——oxlint 默认尊重 `.gitignore`，探针目录被整体忽略；`--no-ignore` 只覆盖 `.eslintignore`/`--ignore-pattern` 面，不解除 gitignore。规避——探针放未忽略路径或直接对真实源码跑；判「规则是否存在」用真实文件的命中结果，不靠被忽略目录。
+- **[门禁] `no-duplicate-imports` 误伤值/类型分行 import（2026-09-08 来源：noogenesis C2 白名单）**：症状——TS 惯用的 `import { x } from "m"` + `import type { T } from "m"` 被报同模块重复导入（10 处里仅 1 处是真重复值导入）。根因——规则默认不区分 type-only import。规避——配 `["error", { "allowSeparateTypeImports": true }]`；白名单落地前先跑一遍看噪声分布，别按规则名望文生义。
 
 ## 文档
 

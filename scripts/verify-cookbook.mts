@@ -51,6 +51,7 @@ const HEADING_RE = /^## (?<stage>.+?)\s*$/;
 
 /** Python str.splitlines 边界集（\n \r \r\n \v \f \x1c-\x1e \x85 U+2028 U+2029）。 */
 function splitPyLines(text: string): string[] {
+  // oxlint-disable-next-line no-control-regex -- py str.splitlines 边界集含控制字符（有意匹配）
   return text.split(/\r\n|[\n\r\v\f\x1c\x1d\x1e\x85\u2028\u2029]/);
 }
 
