@@ -1,6 +1,7 @@
 # Agent Note: C2 编码规范机器强制——oxlint 显式白名单 + 导出面契约注释闸
 
 Status: implemented
+Review: FULL/2026-09-08/R1=ok R2=ok R3=ok
 
 ## Problem
 
@@ -8,6 +9,7 @@ Status: implemented
 - 形态未定，且类目全开不可行（n=1 全仓跑 39 文件，2026-09-08；【探索性】）：correctness+suspicious+perf 全类目报 80 条，其中 `unicorn/no-array-sort` 35 + `consistent-function-scoping` 14 属风格偏好；同轮抓出 9 条真实死代码（未用 import/变量）——失败类与口味混杂，需显式白名单分离。
 - 导出面注释无判据：68 个导出声明中 56 带 JSDoc、缺 12（其中函数/类 5），回归无拦。
 - c1 的 `TODO(<owner>):` 格式约定与仓库实际纪律冲突：跨会话遗留的唯一落点是 [HANDOFF-todos](../../../../HANDOFF-todos.md)，代码内不应留待办。
+- 下列单轮数字同为 n=1 全仓扫快照（2026-09-08，【探索性】；设置 = oxlint 1.82.0 + 本仓白名单 / TS 编译器 API 统计），非多次测量。
 
 ## Decision
 
@@ -15,7 +17,7 @@ Status: implemented
 
 - devDependency `oxlint` 精确钉版 `1.82.0`（规则集稳定性；`^` 会让 CI 随 minor 漂移）。companion `oxlint-tsgolint`（type-aware）不引（见 Alternatives）。
 - 仓库根 `.oxlintrc.json` = 判据单源：`categories.correctness: "off"` + 显式规则清单，**逐条写明理由**；`options.reportUnusedDisableDirectives: "error"`（失效的 disable 注释 = 判据漂移，当错处理）。忽略面不重复声明（`.gitignore` 已覆盖，oxlint 默认尊重）、`env.builtin` 不写（schema 默认值且无消费规则）——R1 评审收口。
-- 启用面 = 明确错误类 + 代码卫生 + 注释词面 + TS 可判定面（清单见该文件）。不启用并记录理由：`no-array-sort` / `consistent-function-scoping`（风格偏好）、`no-await-in-loop`（顺序 CLI 有意）、`no-non-null-assertion`（131 处，`noUncheckedIndexedAccess` 下的本仓 idiom）、`no-explicit-any`（31 处 JSON 边界，迁移 `unknown` 另案）。
+- 启用面 = 明确错误类 + 代码卫生 + 注释词面 + TS 可判定面（清单见该文件）。不启用并记录理由：`no-array-sort` / `consistent-function-scoping`（风格偏好）、`no-await-in-loop`（顺序 CLI 有意）、`no-non-null-assertion`（base 131 / HEAD 132 处，`noUncheckedIndexedAccess` 下的本仓 idiom）、`no-explicit-any`（31 处 JSON 边界，迁移 `unknown` 另案）。
 - `no-control-regex` 启用 + 7 处逐行 `oxlint-disable-next-line` 带理由（py 边界集校验器有意匹配控制字符）；`no-duplicate-imports` 配 `allowSeparateTypeImports`（值/类型分行 import 是本仓形态，B2 起）。
 
 ### D2 门禁挂载与自证

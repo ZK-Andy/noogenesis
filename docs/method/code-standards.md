@@ -31,14 +31,14 @@
 - **禁止注释**：控制流叙述（`// 循环遍历每个基因`）、代码复述（`// 加 1`）、显而易见处（`// 检查是否为空`）。
 - **判别式**：注释说的事，代码 + 类型 5 秒内能否看出？能 → 删注释（噪声）；不能 → 保留。
 
-### 2.3 注释不写什么（slop 治理）`[M]`（词面）/ `[R]`（语境）
+### 2.3 注释不写什么（slop 治理）`[M]`（TODO/FIXME/XXX 词面）/ `[R]`（其余）
 
-停档理由：`TODO`/`FIXME`/`XXX` 词面由 `no-warning-comments`（`location: anywhere`）机器拦；「叙事/答辩腔」的语境判定需人。
+停档理由：`TODO`/`FIXME`/`XXX` 词面由 `no-warning-comments`（`location: anywhere`）机器拦；变更史/叙事与「答辩腔」的语境判定需人。
 
 承接 [doc-standards](doc-standards.md) §3 slop 清单 + [noo-trim-cot-leakage](../../.agents/skills/noo-trim-cot-leakage/SKILL.md)，注释**禁止**：
 - 变更史/叙事（`previously` / `now` / `renamed` / PR 号 / 提交哈希叙事）——只进 commit/ADR；
 - 推理过程转写（决策复盘、多步推导）——需要留痕进 ADR，不在代码里写小说；
-- 实现状态标注与待办（`TODO` / `FIXME` / `XXX` / `future:` / `implemented!`）——状态会腐烂，机器拦；跨会话遗留进 [HANDOFF-todos](../../HANDOFF-todos.md)，代码内一律不写；
+- 实现状态标注与待办：`TODO` / `FIXME` / `XXX` 机器拦（任意位置）；`future:` / `implemented!` 一类状态词留评审（无机器判据，需显式登记才拦）；跨会话遗留进 [HANDOFF-todos](../../HANDOFF-todos.md)；
 - 满屏强调/答辩腔/给评审看的解释（prose 同款纪律）。
 
 ### 2.4 格式约定 `[R]`

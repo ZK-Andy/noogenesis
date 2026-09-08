@@ -1,4 +1,4 @@
-# Agent Note: 编码规范内容域补建——c1 文档约定 + 注释成文（零工具）/ c2 oxlint + 公共 API 注释强制（后续批）
+# Agent Note: 编码规范内容域补建——c1 文档约定 + 注释成文（零工具）/ c2 oxlint + 公共 API 注释强制
 
 Status: implemented
 Review: FULL/2026-09-08/R1=ok R2=ok R3=ok
@@ -12,14 +12,14 @@ Review: FULL/2026-09-08/R1=ok R2=ok R3=ok
 
 ## Decision
 
-**批次化（用户拍板 2026-09-08）：c1 文档约定 + 注释成文（零依赖零工具）；c2 才接 oxlint + 公共 API 注释机器强制（后续批）。**
+**批次化（用户拍板 2026-09-08）：c1 文档约定 + 注释成文（零依赖零工具）；c2 接 oxlint + 公共 API 注释机器强制（2026-09-08 交付）。**
 
 ### c1（已交付，零新依赖）
 
 1. **新建 `docs/method/code-standards.md`（编码规范正文）**，**注释为主体**。结构（用户拍板 2026-09-08：注释为主要内容、规范正文完整）：
    - **注释规范（最大内容块，独立成文）**：公共 API 契约注释判据（自 `noo-prose-standard`「按位置」节收编为家 + 扩写，该技能代码注释条目改指此处）、何时写/不写注释、注释不写什么（推理转写/变更史/slop，承接 doc-standards 铁律与 CoT 治理）、档位声明；
    - **命名与结构约定**：标识符、文件组织、模块边界（判别式写法，可判定「是否违反」）；
-   - **格式与风格**：当前零 lint 工具，先落可判别式约定，工具化升档排 c2（条目落「留评审」档）；
+   - **格式与风格**：c1 批零 lint 工具，先落可判别式约定，工具化升档排 c2（条目落「留评审」档）；
    - **评审兜底**：上述语义面（机器盖不住）条目列入根 [AGENTS.md](../../../../AGENTS.md)「评审检查项」第 4 条（兜底清单单源在根 AGENTS，机制见 [review.md](../../../../docs/method/review.md) §5）；
    - 工程纪律（引擎零依赖/防火墙只 spawn 引擎/夹具纪律/退出码语义等）**不占正文主体**——已有家 AGENTS/ADR，只留链接（每事实一个家）。
 
@@ -44,4 +44,4 @@ class 归 `architecture/` 的自证：本 ADR 拍板的是内容域结构面（�
 
 - 编码/注释规范从「半建 + 散落」转「单源成文 + 档位声明」，agent 写码可查、评审有兜底。
 - c1 为纯文档变更，已按 docs 门禁与 FULL 三审收口（含前提：编码规范属方法论正文，落 docs/method/，非 research）。
-- c2 已引依赖（oxlint，devDependency 精确钉版）并过 P1 骨架 D1「引擎零依赖」边界：工具链在 scripts/ 面、engine 运行时零依赖不变（B1 工具链豁免先例），HERO 判据与防火墙允许集见 [c2 ADR](2026-09-08-c2-lint-enforcement.md)。
+- c2 已引依赖（oxlint，devDependency 精确钉版）并过 P1 骨架 D1「引擎零依赖」边界：工具链在 scripts/ 面、engine 运行时零依赖不变（B1 工具链豁免先例），HERO 判据见 [c2 ADR](2026-09-08-c2-lint-enforcement.md)；adapters 防火墙允许集不受影响（依赖落在 scripts/ 面，见 [m2 ADR](2026-09-06-m2-adapter-wiring.md)）。
