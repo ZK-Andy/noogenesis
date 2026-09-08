@@ -22,7 +22,7 @@ Related: [2026-09-08-b4-mount-wiring](2026-09-08-b4-mount-wiring.md)（撤其 De
 
 1. **mount-policies.mts**：`createSkillUsagePolicy`（M1）与 `createReviewSurfacePolicy`（M3）整件删除；M2 撤 toolPre 触摸归因与 turnStopping 投影（触摸窗口、投影游标、cap 逻辑随件退役），**A2 开场地图保留**（`mapShown` 单门语义不变）；`MountPolicySet` 撤 `turnStopping` 与 `dropSessionState`（残留状态仅余 WeakMap 键控的 mapShown 布尔，GC 自清兜底，`session/disposed` drain 面随之撤除）。
 2. **mount.mts**：`MountRecord` / `TurnStoppingPayload` / `TurnStoppingPolicy` / `runTurnStopping` 删除；`AgentRef` 撤 `session.append` 面（preStep 的 `session.header.origin` 窄面保留）。能力层合并器（A2–A5 的 reject/deny/ask/block/context/inject 语义单源）**原样保留**——升格候选落地的接线与判定语义不因本批收窄。
-3. **index.mts**：`appendRecord` 胶水、`agent/turn-stopping` 与 `session/disposed` 两个 listener 删除；A2/A3/A4/A5 四点接线保留（A3/A4/A5 首批零策略能力位，策略件出现时增挂不触宿主接线面——B4 已拍板原则）。
+3. **index.mts**：`appendRecord` 胶水、`agent/turn-stopping` 与 `session/disposed` 两个 listener 删除；A2/A3/A4/A5 四点接线保留（A3/A5 零策略能力位，策略件出现时增挂不触宿主接线面——B4 已拍板原则；A4 已挂写码在环 lint 反馈，ADR [2026-09-08-lint-in-loop-feedback](2026-09-08-lint-in-loop-feedback.md)）。
 4. **selftest.mts**：M1/M2 触摸/滚窗游标/M3 断言与 A6+A8 接线冒烟随件删除；A2 地图语义（每会话一次/subagent 跳过/零布点仓零注入）、能力层合并语义、防火墙机器检查保留；六点接线条目改四点。
 5. **证据存活面**：M3 检测基座不依赖投影件——评审机器面标记（`verify-review-brief` / `verify-review-tier` / `gates --run`）在 `tool/result` 事件文本中持久在案，session-close 对账 grep 该面即得。投影件本只是预聚合便利层；证据语义回归「读宿主日志」。
 6. **上游补能力后可复投影**：宿主给 `Session.append` 提供 ignorable 透传，或建立下游插件事件合入/注册机制时，另案恢复投影（本 ADR Problem 节记录了完整机制链，投影件形状见 B4 ADR Decision 3–5 原文）。

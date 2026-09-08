@@ -1,6 +1,6 @@
 # 编码强制实施计划：写码在环反馈 + TS 类型语义门禁
 
-> 状态：待执行（2026-09-08 讨论轮产出；用户拍板「两个都做，不要妥协」）——**下一会话按本文件执行**。
+> 状态：批 1（轨道 A）已落地——ADR [2026-09-08-lint-in-loop-feedback](../../.agents/notes/implemented/architecture/2026-09-08-lint-in-loop-feedback.md)；批 2（B-1/B-2）与批 3（B-4 测量）待执行。2026-09-08 讨论轮产出、用户拍板「两个都做，不要妥协」。
 > 家：本文件 = 两轨实施的单一事实源（procedure / 执行序）；决策理由与取舍落各批 ADR，本文件不承载决策。
 > 依据：问题池 [capsule-01-optimization-round.md](capsule-01-optimization-round.md) §2.1「规范事前接入」+ §2.2-6「TS 统一解锁语义门禁但未建」；能力面单源 [framework-rebuild-blueprint.md](framework-rebuild-blueprint.md) §7 A1–A8 / M1–M3；规范单源 [code-standards](../method/code-standards.md)；判据单源 `.oxlintrc.json` + `scripts/verify-export-docs.mts`（ADR [2026-09-08-c2-lint-enforcement](../../.agents/notes/implemented/architecture/2026-09-08-c2-lint-enforcement.md)）。
 
@@ -14,14 +14,14 @@
 
 ### A-1 现状与挂载点（证据）
 
-- 四挂载点已接线：`adapters/dsh/index.mts:158-217`（A5/A2/A3/A4）；策略件空位 = `adapters/dsh/mount-policies.mts:71-73`（`toolPre/toolPost/sessionStart` 空数组）——**本轨只往 `toolPost` 加一件**。
+- 四挂载点已接线：`adapters/dsh/index.mts:158-217`（A5/A2/A3/A4）；策略件空位 = `adapters/dsh/mount-policies.mts` 的 `toolPre` / `sessionStart` 空数组（`toolPost` 已挂轨道 A 策略）——**本轨只往 `toolPost` 加一件**。
 - A4 合同：`ToolPostPolicy = (exec, result) => {kind:"block";feedback} | {kind:"context";lines} | void`（`adapters/dsh/mount.mts:66,74`）；`context` 经 `index.mts:214-216` 转 `additionalContexts`，宿主作为 user message 注入 agent loop（DSH 合同 `packages/core/tools/src/index.ts:590`，消费点 `packages/core/agent-loop/src/tool-calls.ts:157`）。
 - 工具名/参数实证：`write{file_path,content}`、`edit{file_path,old_string,new_string,replace_all?}`（DSH `packages/fs/tool-fs/src/write.ts:69`、`edit.ts:83`）；`exec.arguments` = 解析后参数（bug-fix ADR [2026-09-08-mount-exec-arguments-field](../../.agents/notes/implemented/bug-fix/2026-09-08-mount-exec-arguments-field.md)）。
 
 ### A-2 实现（新件 `adapters/dsh/lint-feedback.mts`）
 
-- 工厂：`createLintFeedbackPolicies(config: RepoRootConfig, deps?: { runLint?: RunLint }): { toolPost: ToolPostPolicy }`；`deps.runLint` = 测试注入缝。
-- `RunLint = (ctx: { bin: string; config: string; file: string; cwd: string }) => { line: number; column: number; rule: string; message: string }[]`；默认实现 `spawnSync(process.execPath, [bin, "--config", config, "--deny-warnings", "-f", "json", file])`，timeout 5s。
+- 工厂：`createLintFeedbackPolicies(config: RepoRootConfig, deps?: { runLint?: RunLint; warn?: (message: string) => void }): { toolPost: ToolPostPolicy }`；`deps` = 执行面/日志面注入缝。
+- `RunLint = (ctx: LintRunContext) => LintDiagnostic[]`（`LintRunContext` = `{ bin; config; file; cwd }`）；默认实现 `spawnSync(process.execPath, [bin, "--config", config, "--deny-warnings", "-f", "json", file])`，timeout 5s。
 - 行为合同（逐条可测）：
   1. `exec.name ∉ {write, edit}` → `void`；
   2. `exec.arguments?.file_path` 非 string → `void`；
@@ -31,12 +31,12 @@
   6. `<repoRoot>/.oxlintrc.json` 或 `<repoRoot>/node_modules/oxlint/bin/oxlint` 缺 → `void`（静默降级 + 每会话 warn 一次；离线降级纪律同 bank-pull）；
   7. 诊断空 → `void`；非空 → `{kind:"context", lines}`，≤10 条 + `…(+N more)` 尾行；
   8. 任何异常 → `void`（策略件自身不抛；index.mts 胶水已 catch + warn）。
-- 接线：`mount-policies.mts` 的 `createMountPolicies` 把该策略追加进 `toolPost`；**`index.mts` 零改动**（每挂载点恰一个 listener 的既有原则）。
-- A-2b 指针行：`createSubtreeRulesPolicies` 的地图追加一行 `- 写码规范：docs/method/code-standards.md（机器面 lint/export-docs 写码后自动反馈）`。
+- 接线：`mount-policies.mts` 的 `createMountPolicies` 把该策略追加进 `toolPost`；`index.mts` 只把既有 `logger.warn` 透传进 deps（不新增 listener；偏离本计划原「零改动」字面，理由见 ADR Decision 2）。
+- A-2b 指针行：`createSubtreeRulesPolicies` 的地图在 `docs/method/code-standards.md` 实存时追加一行 `- 写码规范：docs/method/code-standards.md（机器面 lint 写码后自动反馈；export-docs 在门禁面）`。
 
 ### A-3 测试（`adapters/dsh/selftest.mts` 追加夹具组）
 
-- 注入 `runLint` 桩：① write + 1 条诊断 → `context` 且行含 `规则: 消息`；② read 工具 → `void`；③ `isError:true` → `void`；④ 路径在 repoRoot 外 → `void`；⑤ 非 `.ts` → `void`；⑥ 桩抛错 → `void`（降级）；⑦ >10 条 → 截断 + 尾行。
+- 注入 `runLint` 桩：① write + 1 条诊断 → `context` 且行含 `规则: 消息`；② read 工具 → `void`；③ `isError:true` → `void`；④ 路径在 repoRoot 外（相对 + 绝对）→ `void`；⑤ 非 `.ts`/`.mts` → `void`；⑥ 桩抛错 → `void`（降级）；⑦ >10 条 → 截断 + 尾行；⑧ 空诊断 → `void`（桩被调用）。
 - 真件 e2e（1 组）：临时目录 + 复制 `.oxlintrc.json` + symlink `node_modules` → 写入含 `var` 的 `.ts` → 默认 `runLint` 返回 `context`。
 - 防火墙：`node dist/adapters/dsh/selftest.mjs` 全绿（import 面机器断言不新增宿主依赖）。
 

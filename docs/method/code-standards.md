@@ -81,6 +81,6 @@
 > 判据单源 = [.oxlintrc.json](../../.oxlintrc.json)（lint 显式白名单，逐条规则写明理由）+ [verify-export-docs.mts](../../scripts/verify-export-docs.mts)（导出面注释存在性）；挂载单源 = `engine/gates.json` 的 `lint` / `export-docs` 两条（pre-commit/pre-push/CI 消费同一清单）。立项与取舍见 [c2 ADR](../../.agents/notes/implemented/architecture/2026-09-08-c2-lint-enforcement.md)。
 
 - **已升档**：2.1 存在性 `[M]`（export-docs）；2.3 词面 `[M]`（`no-warning-comments`）；§3 未用变量 / `as const` `[M]`（`no-unused-vars` / `typescript/prefer-as-const`）。
-- **写码在环反馈**：写码工具成功后同步跑同一 `.oxlintrc.json`，诊断经 A4 `context` 回注下一模型步（[lint-feedback.mts](../../adapters/dsh/lint-feedback.mts)；ADR [2026-09-08-lint-in-loop-feedback](../../.agents/notes/implemented/feature/2026-09-08-lint-in-loop-feedback.md)）——判据不变，机器面从 git 边界提前到写码当轮。
+- **写码在环反馈**：写码工具成功后同步跑同一 `.oxlintrc.json`，诊断经 A4 `context` 回注下一模型步（[lint-feedback.mts](../../adapters/dsh/lint-feedback.mts)；ADR [2026-09-08-lint-in-loop-feedback](../../.agents/notes/implemented/architecture/2026-09-08-lint-in-loop-feedback.md)）——判据不变，机器面从 git 边界提前到写码当轮。
 - **仍留评审**：2.1 内容质量、2.2 内部注释、2.4 格式约定、§3 命名意图与职责边界——语义判断，机器不可判（理由见各条停档理由），兜底在根 [AGENTS.md](../../AGENTS.md)「评审检查项」第 4 条。
 - **未纳入（有触发条件再立）**：type-aware 规则（`oxlint-tsgolint`）与 `no-explicit-any` / `no-non-null-assertion`——本仓当前无对应失败类，改造量属重构批次；触发 = 真实 async 失守或类型逃逸缺陷出现。
