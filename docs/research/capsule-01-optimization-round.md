@@ -62,11 +62,11 @@
 ### 2.1 待办
 
 - [ ] **技能集总结**（用户拍板：现在只总结需要哪些技能，后续实施）：已确认需要 = 防过度编码/过度设计（事前，该写）；架构/编码/注释算不算技能随总结再定（不一定是技能）；清单待用户补「等等」项；先例参照 = HERO-Anti-OverDefense（见 §3.7）。
-- [ ] **技能使用挂载**（②该不该用/③用了没有）：平台原生挂载点在案——agent/pre-step waterfall 可权威拒绝、tool/call ordered pre 可阻断并回消息、packages/hooks 桥覆盖 prompt 提交/工具前后/停止前；我方适配层仅接 system-prompt 节 + 三工具 + agent/created，上述面全未用。解法方向 = 自建 pre-tool/pre-step 守卫/记录插件；上游同款缺口在案（技能调用仍自觉，repeat-tool-reminder 明示 advice never block）。**求解阶段：先出方案（见 §2.2-1）。**
-- [ ] **评审实质执行在自觉区**（2026-09-06 会话发现、用户拍板记入）：verify-review-brief 机械可判定但无挂载点（gates.py 头注：仅本地预发射，不入 CI、pre-push 不跑——发射评审前无机器事件，靠主会话自觉想起跑）；pre-push/CI 挂载的 review-tier `--enforce` 只强制形式（ADR 带 Review 证据行），评审是否真跑、三路是否真审，机器验不了。推广问题 = git 边界之前的动作序列零挂载点，与「规范事前接入」同根；解法未定。
+- [ ] **技能使用挂载**（②该不该用/③用了没有）：平台原生挂载点在案——agent/pre-step waterfall 可权威拒绝、tool/call ordered pre 可阻断并回消息、packages/hooks 桥覆盖 prompt 提交/工具前后/停止前；我方适配层仅接 system-prompt 节 + 三工具 + agent/created，上述面全未用。解法方向 = 自建 pre-tool/pre-step 守卫/记录插件；上游同款缺口在案（技能调用仍自觉，repeat-tool-reminder 明示 advice never block）。**求解阶段：先出方案（见 §2.2-1）。**〔状态 2026-09-08：B4 已将首版落为**纯记录件**（A3 观测 `exec.name===\"skill\"`、A6 投影 skill-usage 增量；HERO 判据答案在案）——但 **A8 撤除批随投影面整体退役**（宿主无 ignorable 写入口，fail-closed 拒绝解释会话历史），「用了没有」证据面回归读宿主日志/`tool/result` 事件文本；详 [2026-09-08-b4-mount-wiring](../../.agents/notes/implemented/architecture/2026-09-08-b4-mount-wiring.md) + [A8 撤除](../../.agents/notes/implemented/architecture/2026-09-08-a8-session-record-projection-removal.md)。〕
+- [ ] **评审实质执行在自觉区**（2026-09-06 会话发现、用户拍板记入）：verify-review-brief 机械可判定但无挂载点（gates.py 头注：仅本地预发射，不入 CI、pre-push 不跑——发射评审前无机器事件，靠主会话自觉想起跑）；pre-push/CI 挂载的 review-tier `--enforce` 只强制形式（ADR 带 Review 证据行），评审是否真跑、三路是否真审，机器验不了。推广问题 = git 边界之前的动作序列零挂载点，与「规范事前接入」同根；解法未定。〔状态 2026-09-08：B4 落为纯**记录件**（A4 观测评审机器面运行痕迹、A6 投影 review-surface 累计计数；HERO 判据答案在案）——**A8 撤除批随投影面整体退役**，「评审机器面标记」仍在 `tool/result` 事件文本持久在案，session-close 对账 grep 该面即得；阻断档依 §5 另案过判据。〕
 - [ ] **规范事前接入**（用户原话：软件架构、编码规范、注释规范等等规范并没有接入协作体系，这也是问题；「我觉得不一定是技能，而是有这个问题，需要事前进行。具体怎么解决，还没有思路」）：问题在案、解决形态未定，待讨论出思路；防上帝类机械校验另条。
-- [ ] **上帝类预防闸**：单文件行数/依赖扇出上限类机械门禁（engine 现状健康——最大 selftest.js 486 行、核心命令 ≤170，属预防非治病）；静态可计算 → 挂载即零自觉真强制（§3.4 谱系）；对应设计稿 §10「机械校验（scope/blast-radius）」面。
-- [ ] **记忆库/记忆系统连接**（用户定调：文档漂移清账后再议——清账已完成 2026-09-06）：零前案新议题（durable 全域 grep 零命中）；相邻线 = EvoMap memory-graph 精华未建（P1 只落 Gene/Event）+ 痕迹提炼面（仍在 HANDOFF-todos，触发 = 架构定稿）；方向选项 = 本地记忆库立项 / memory-graph 原语 / 融合轮前半场，未拍板。
+- [ ] **上帝类预防闸**：单文件行数/依赖扇出上限类机械门禁（engine 现状健康——最大 selftest.js 486 行、核心命令 ≤170，属预防非治病）；静态可计算 → 挂载即零自觉真强制（§3.4 谱系）；对应设计稿 §10「机械校验（scope/blast-radius）」面。〔状态 2026-09-08：B4 C15 评估**判不立**——实测 n=38 行数 p50=152/p90=516/max=1158 无自然拐点、零失控件，立闸 = 防 speculative（HERO-O）；触发条件 = 真实失控件出现（改写困难/评审反复抓同一文件）时以 max×1.5 为候选阈值再过判据，见 [B4 ADR Decision 6](../../.agents/notes/implemented/architecture/2026-09-08-b4-mount-wiring.md)。〕
+- [ ] **记忆库/记忆系统连接**（用户定调：文档漂移清账后再议——清账已完成 2026-09-06）：零前案新议题（durable 全域 grep 零命中）；相邻线 = EvoMap memory-graph 精华未建（P1 只落 Gene/Event）+ 痕迹提炼面（仍在 HANDOFF-todos，触发 = 架构定稿）；方向选项 = 本地记忆库立项 / memory-graph 原语 / 融合轮前半场，未拍板。〔状态 2026-09-08：触发条件已全部满足——文档漂移清账 ✅（2026-09-06）、架构定稿 ✅（charter implemented + 蓝图定稿）；本项仍待方案设计阶段开题轮拍板方向。〕
 - [ ] **事实面定案（免行动留档）**：①懒加载已实证——技能目录只发 ≤500 字摘要、正文经 skill 工具按名注入（设计稿 §8 as-needed 生效），rank 600 = 最弱 bundled 层、同名静默遮蔽，兜底位设计安全非缺陷；②技能脱离本仓可运行性分级实证——2 纯方法论 / 3 半绑定 / 2 实质绑定，「正文可带走、机器检查带不走」，SKILL.md 宿主口径行已自认，免行动。
 
 ### 2.2 方案设计工作面（2026-09-06 起进入求解阶段——材料已集齐，先出方案，无拍板项）
@@ -77,8 +77,8 @@
 2. **防过度编码/过度设计的方案设计**：以 HERO 细读（§3.7）为参照设计解决形态——技能 / 常驻注入块（HERO 是常驻档实例，作者自认非 enforcement）/ 门禁补挂 / 混合，先用 §3.4 谱系逐档过一遍再定。
 3. **小落差评估**：钩子自动安装 / 门禁 DAG 并行 / CI 文件名契约闸 / archived-notes 校验件 / 技能 references/ 形态——逐项评估要不要纳入及何时纳入。
 4. **技能清单补全**：第一题的「等等」项——架构/编码/注释算不算技能、还缺什么，与用户继续收集归纳（先例参照 = HERO）。
-5. **记忆库线开题**：漂移清账已完成，记忆系统连接（含 EvoMap memory-graph 未建面）如何开题，随方案设计阶段排期。
-6. **语言统一 = 全栈 TypeScript**（2026-09-06 用户最终定调）：
+5. **记忆库线开题**：漂移清账已完成，记忆系统连接（含 EvoMap memory-graph 未建面）如何开题，随方案设计阶段排期。〔状态 2026-09-08：开题前置（漂移清账 + 架构定稿）均已满足，排期未定，待拍板方向后启动。〕
+6. **语言统一 = 全栈 TypeScript**（2026-09-06 用户最终定调）〔**状态 2026-09-08：已随框架重建 B1/B2/B3/B5 全部落地**——gates 族 13 件 py + change-scope.sh 退役为 .mts、engine 10 .js + adapters 9 .mjs 退役为 TS/dist、npm 发布面切 dist、CI/钩子单轨（py/bash 零残留，C1/C13/C14 转绿）；语义门禁能力随 TS 统一解锁但未建（候选场景 = 宿主 API 签名核对/契约一致性/镜像比对，走 CI 穷尽矩阵，另案）。本段以下为 09-06 决策轨迹留档。〕：
    - 用户原话（决策轨迹）：「我们npm发包，都有node，直接跑nodejs 看来是最好的路径」→「我觉得不对，为什么我们不需要语义门禁呢？我们没有是因为我们不会写啊，为什么是不需要呢？」→「你很执拗，我们肯定统一语言啊，既然决定走TS了，那就都走TS，放弃nodejs。」
    - **定调：统一 TS。** agent 曾两度坚持「零依赖纯 JS」中间路线（以裸 checkout 钩子可用性为由），用户否决——语言统一优先，不为省 node_modules 拆成两套栈。agent 的零依赖方案作废。
    - **实施形态**：仓库源码全栈 TS（engine / adapters / gates / 未来宿主工具）；开发与门禁运行用 tsx；**发布 npm 包 = tsc 构建产物 dist JS**（消费者不背工具链）；钩子依赖随 install 在场——**postinstall 自动装钩子**从「小落差候选」升级为本方案的必要件（上游 install-lefthook 模式照搬）。语义门禁（§2.2-6 前述候选场景：宿主 API 签名核对 / 契约一致性 / 双实现镜像比对）随 TS 统一成为可建能力，走 CI 穷尽矩阵。
@@ -88,7 +88,7 @@
    - **钩子速度设计约束（2026-09-06，源实证 2026-07-22-fast-local-git-hooks ADR + 用户体感「dsh 执行很慢」）**：上游每个门禁 = 独立 tsx 进程（node 启动 + 逐文件转译，单进程数百 ms），pre-push 另跑全程序 typecheck——慢是结构性的；他们的对策是裁剪（hooks 只留 staged lint/whitespace/vendor manifest 三件廉价高置信检查，测试/快照/文档/构建一律不进钩子，CI 拥有穷尽矩阵）。我方约束：**钩子永远跑预构建 dist（node dist/…，零转译），tsx 只属开发态**；门禁迁移时补 DAG 并行（我方 pre-push 现 11 件串行，慢在串行非语言，并行化后反快于今日）；pre-push 按变更面收窄门禁数（change-scope 思想已有）。
    - **去 bash 设计约束（2026-09-06 用户定调「我们也要尽量去掉bash」）**：与「混合开发除非逼不得已不选」同原则——bash 3 件（change-scope.sh / pre-push-selftest.sh / setup-hooks.sh）随 TS 迁移一并退役；lefthook job 直接调 node/tsx（上游 lefthook.yml 即此形态，无 shell 包装）；bash 仅在逼不得已（如上游两件零星 shell 检查的等价物）时保留且须说明理由。
    - **血统考古补证（2026-09-06）**：desktop 源仓门禁 = Python + bash，头注释无任何选型理由（仅 shebang）——混合态是两次独立事件的叠加（desktop 的 Python 门禁 + 我方 P1 的 Node 引擎），**从未经过语言设计决策**；「不是选择了 Python，是没人问过语言该是什么」。用户补充定调：「我讨厌厌恶混合开发，除非逼不得已，我不会选择混合开发的。」
-7. **框架重建评估信号（2026-09-06 用户收尾定调，原话）**：「记录整个AI协作框架可能需要参考DSH 完全推倒重建。」——信号级在案：优化轮的范围可能从「现有框架增量优化（语言统一 / 守卫 / 规范接入等 §2.2-1~6）」升格为「参考 DSH 架构的完全重建」。两路线并存待方案设计阶段对比（增量演化 vs 推倒重建：迁移成本 / 风险面 / 既有资产处置——6 基因与事件轨、评审三审历史、门禁自测资产）；本条只记录信号与对比义务，不做取舍。
+7. **框架重建评估信号（2026-09-06 用户收尾定调，原话）**：「记录整个AI协作框架可能需要参考DSH 完全推倒重建。」——信号级在案：优化轮的范围可能从「现有框架增量优化（语言统一 / 守卫 / 规范接入等 §2.2-1~6）」升格为「参考 DSH 架构的完全重建」。两路线并存待方案设计阶段对比（增量演化 vs 推倒重建：迁移成本 / 风险面 / 既有资产处置——6 基因与事件轨、评审三审历史、门禁自测资产）；本条只记录信号与对比义务，不做取舍。〔**状态 2026-09-08：重建已拍板并 B0–B5 全批收官**——charter ADR [2026-09-06-framework-rebuild-charter](../../.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md) implemented，蓝图 [framework-rebuild-blueprint](framework-rebuild-blueprint.md) B0–B5 协作层重建闭环（C1–C15 全绿，机器层分批重建 + 单批切换，旧机器件零残留）；本信号条目完成使命。〕
 
 ## 3. 调研报告
 
@@ -139,6 +139,8 @@
 ### 3.5 小落差清单（求解阶段评估：是否纳入、何时纳入）
 
 钩子自动安装（postinstall vs 手动）/ 门禁 DAG 并行调度（run-gates.ts vs gates.py 串行）/ CI 文件名契约闸（expected-filenames.yml）/ archived-notes 校验件 / 技能 references/ 子目录形态。
+
+〔**状态 2026-09-08（B0/B1/B3/B5 逐项落地）**：钩子自动安装 → **lefthook 内建 postinstall 落地**（B3，devDependency，`lefthook install -f`，非自研安装器）；门禁 DAG 并行 → **gates.mts DAG runner 落地**（B1：needs/after + 有界并行 + fail-closed 图校验）；archived-notes 校验件 → **verify-archived-agent-notes.mts 落地**（B0：封闭类树 + freeze 清单 append-only）；技能 references/ 形态 → **判据落地不实拆**（B0：目录非空 + SKILL.md 相对链接；noo-doc-standards 实测 377 词无拆分需求，实拆随真实需求另起）；CI 文件名契约闸 → **C15 判不立**（B4 Decision 6：全历史 `--diff-filter=A` 零构建产物入库 + `.gitignore`/CI/评审三层已盖 = 防 speculative，HERO-O；触发条件在案）。〕
 
 ### 3.6 外部生态（AI 协作类仓库，2026-09-06 检索）
 
