@@ -35,6 +35,8 @@ import { BUNDLED_SKILL_RANK, PROVIDER_NAME, createBankSkillProvider, parseSkillF
 import { validateConfig, DEFAULT_GENE_BANK_URL } from "./config.mjs";
 import { createSessionStore, mergePreStep, mergeSessionStart, mergeToolPost, mergeToolPre } from "./mount.mjs";
 import { createMountPolicies, createSubtreeRulesPolicies } from "./mount-policies.mjs";
+import { createLintFeedbackPolicies } from "./lint-feedback.mjs";
+import type { LintDiagnostic } from "./lint-feedback.mjs";
 import { apply } from "./index.mjs";
 
 const ADAPTER_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -722,6 +724,7 @@ function writeFixtureGene(repoRoot: string): void {
 			"Noogenesis subtree rules map — read a subtree's AGENTS.md before working in it:",
 			"- engine/ → engine/AGENTS.md",
 			"- scripts/ → scripts/AGENTS.md",
+			"- 写码规范：docs/method/code-standards.md（机器面 lint/export-docs 写码后自动反馈）",
 		]);
 		assert.equal(subtreePolicies.preStep({ agent, turn: 1, step: 2 }), undefined);
 		const subagent = { session: { header: { cwd: repo, origin: "subagent" } } };
@@ -736,14 +739,15 @@ function writeFixtureGene(repoRoot: string): void {
 		ok("mounts: M2 — opening map once per session (subagent/zero-subtree skipped)");
 	}
 
-	// 策略件组装：A2 地图件 + A3/A4/A5 零策略能力位（A6/A8 投影面已撤——撤除 ADR）。
+	// 策略件组装：A2 地图件 + A4 写码在环反馈件 + A3/A5 零策略能力位
+	//（A6/A8 投影面已撤——撤除 ADR）。
 	{
 		const set = createMountPolicies({ repoRoot: "/tmp/assembly" });
 		assert.equal(set.preStep.length, 1);
 		assert.deepEqual(set.toolPre, []);
-		assert.deepEqual(set.toolPost, []);
+		assert.equal(set.toolPost.length, 1);
 		assert.deepEqual(set.sessionStart, []);
-		ok("mounts: policy set assembly — A2 map + A3/A4/A5 zero-policy capability lanes");
+		ok("mounts: policy set assembly — A2 map + A4 lint feedback + A3/A5 zero-policy lanes");
 	}
 
 	// index 接线假 ctx 冒烟：存留四点各恰一个 listener + 行为逐条。
@@ -791,15 +795,93 @@ function writeFixtureGene(repoRoot: string): void {
 		assert.equal(await toolPre({ name: "read", arguments: { file_path: "/tmp/x.ts" }, agent }, async () => passthroughMarker), passthroughMarker);
 		ok("mounts: A3 wiring — no first-batch denial; passthrough preserved");
 
-		// A4：首批零策略 → 透传（能力位在场）。
+		// A4：非写码 exec → 透传；写码面缺 lint 基建 → 静默降级 + 每会话一条
+		// warn（warn 经 index.mts 透传的 logger 捕获）。
 		const postDownstream = { kind: "accept" };
 		assert.equal(await toolPost({ agent }, { content: [{ type: "text", text: "ok" }] }, async () => postDownstream), postDownstream);
-		ok("mounts: A4 wiring — zero-policy post lane passes result through");
+		const writeExec = { name: "write", arguments: { file_path: "x.ts" }, agent };
+		assert.equal(await toolPost(writeExec, {}, async () => postDownstream), postDownstream);
+		assert.equal(await toolPost(writeExec, {}, async () => postDownstream), postDownstream);
+		assert.equal(warns.filter((m) => m.includes("lint feedback offline")).length, 1);
+		ok("mounts: A4 wiring — non-write passthrough; track A degrades with one warn per session");
 
 		// A5：零策略件 → 无注入不抛（能力位在场即冒烟）。
 		await sessionStart({ agent });
 		ok("mounts: A5 wiring — session-start capability wired, zero-policy no-op safe");
 	}
+}
+
+// ── 5.8) 轨道 A 写码在环反馈：A4 lint 策略逐条合同 + 真件 e2e ───────────────
+{
+	const repo = tempRepo("lint-feedback");
+	fs.copyFileSync(path.join(REPO_ROOT, ".oxlintrc.json"), path.join(repo, ".oxlintrc.json"));
+	fs.symlinkSync(path.join(REPO_ROOT, "node_modules"), path.join(repo, "node_modules"), "dir");
+	const agent = { session: { header: { cwd: repo } } };
+	const writeExec = { name: "write", arguments: { file_path: "sample.ts" }, agent };
+	const stubCalls: Array<{ bin: string; config: string; file: string; cwd: string }> = [];
+	const withStub = (diagnostics: LintDiagnostic[]) =>
+		createLintFeedbackPolicies(
+			{ repoRoot: repo },
+			{
+				runLint: (ctx) => {
+					stubCalls.push(ctx);
+					return diagnostics;
+				},
+			},
+		);
+
+	const single = withStub([{ line: 3, column: 5, rule: "eslint(no-var)", message: "Unexpected var" }]);
+	assert.deepEqual(single.toolPost(writeExec, {}), {
+		kind: "context",
+		lines: ["sample.ts:3:5 eslint(no-var): Unexpected var"],
+	});
+	assert.equal(stubCalls[0]!.cwd, repo);
+	assert.equal(stubCalls[0]!.file, path.join(repo, "sample.ts"));
+	assert.equal(stubCalls[0]!.config, path.join(repo, ".oxlintrc.json"));
+	ok("lint-feedback: write + diagnostics → context line with rule and message");
+
+	assert.equal(single.toolPost({ name: "read", arguments: { file_path: "sample.ts" }, agent }, {}), undefined);
+	assert.equal(single.toolPost(writeExec, { isError: true }), undefined);
+	assert.equal(single.toolPost({ name: "write", arguments: { file_path: "../outside.ts" }, agent }, {}), undefined);
+	assert.equal(single.toolPost({ name: "write", arguments: { file_path: "notes.md" }, agent }, {}), undefined);
+	assert.equal(single.toolPost({ name: "write", arguments: { file_path: 42 }, agent }, {}), undefined);
+	ok("lint-feedback: non-write / isError / outside-repo / non-TS / bad file_path → void");
+
+	const throwing = createLintFeedbackPolicies(
+		{ repoRoot: repo },
+		{
+			runLint: () => {
+				throw new Error("boom");
+			},
+		},
+	);
+	assert.equal(throwing.toolPost(writeExec, {}), undefined);
+	ok("lint-feedback: runLint throws → void (never propagates)");
+
+	const many = Array.from({ length: 13 }, (_, i) => ({ line: i + 1, column: 1, rule: "r", message: `m${i}` }));
+	const truncated = withStub(many).toolPost(writeExec, {});
+	assert.ok(truncated && truncated.kind === "context");
+	assert.equal(truncated.lines.length, 11);
+	assert.match(truncated.lines[10]!, /\+3 more/);
+	ok("lint-feedback: >10 diagnostics truncated with (+N more) tail");
+
+	const bare = tempRepo("lint-feedback-bare");
+	const bareAgent = { session: { header: { cwd: bare } } };
+	const warns: string[] = [];
+	const degraded = createLintFeedbackPolicies({ repoRoot: bare }, { warn: (m) => warns.push(m) });
+	assert.equal(degraded.toolPost({ name: "write", arguments: { file_path: "a.ts" }, agent: bareAgent }, {}), undefined);
+	assert.equal(degraded.toolPost({ name: "write", arguments: { file_path: "a.ts" }, agent: bareAgent }, {}), undefined);
+	assert.equal(warns.length, 1);
+	ok("lint-feedback: missing oxlint infra → void + one warn per session");
+
+	const real = createLintFeedbackPolicies({ repoRoot: repo });
+	fs.writeFileSync(path.join(repo, "sample.ts"), "export function bad(): number { var x = 1; return x; }\n");
+	const reported = real.toolPost(writeExec, {});
+	assert.ok(reported && reported.kind === "context");
+	assert.match(reported.lines.join("\n"), /no-var/);
+	fs.writeFileSync(path.join(repo, "sample.ts"), "export function ok(): number { return 1; }\n");
+	assert.equal(real.toolPost(writeExec, {}), undefined);
+	ok("lint-feedback: default runLint e2e — real oxlint reports no-var; clean file → void");
 }
 
 // ── 6) 防火墙机器检查：import 面 / 引擎零依赖 / 包结构契约 ────────────────

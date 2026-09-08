@@ -15,7 +15,7 @@
 
 停档理由：导出函数/类的注释**存在性**机器可判（`export-docs` 闸）；注释是否说清契约是语义面，机器不可判。
 
-- 机器面：`adapters/dsh/` + `scripts/` 的**导出函数/类声明**必须有紧邻 `/** */` 块（[verify-export-docs.mts](../../scripts/verify-export-docs.mts)）；两种导出形态（声明修饰符 / 文件尾 `export { }`）都认，重载组一份注释即可；类型/接口/常量不判——契约常由类型自身承载，强制注释产 slop。
+- 机器面：`adapters/dsh/` + `scripts/` 的**导出函数/类声明**必须有紧邻 `/** */` 块（[verify-export-docs.mts](../../scripts/verify-export-docs.mts)）；两种导出形态（声明修饰符 / 文件尾 `export { }`）都认，重载组一份注释即可；类型/接口/常量不判——契约常由类型自身承载，强制注释产 slop。该闸只在门禁面（判据是声明面整体，写码中途不成立）。
 - **`engine/` 不在闸内**：其导出是引擎内部接缝（适配层只 spawn CLI、不 import），公共契约 = CLI（[engine/README.md](../../engine/README.md)）；内部注释沿用 `//` 块（engine 约定）。
 - **契约** = 调用方/被调方/实现者所依赖的义务、不变量、前置/后置条件、兼容承诺（prose-standard 定义）。
 - **必须注释**（代码/类型本身说不出的契约）：返回区别、抛出/拒绝、副作用、所有权、时序、取消、持久性——调用方可见即算公共。
@@ -81,5 +81,6 @@
 > 判据单源 = [.oxlintrc.json](../../.oxlintrc.json)（lint 显式白名单，逐条规则写明理由）+ [verify-export-docs.mts](../../scripts/verify-export-docs.mts)（导出面注释存在性）；挂载单源 = `engine/gates.json` 的 `lint` / `export-docs` 两条（pre-commit/pre-push/CI 消费同一清单）。立项与取舍见 [c2 ADR](../../.agents/notes/implemented/architecture/2026-09-08-c2-lint-enforcement.md)。
 
 - **已升档**：2.1 存在性 `[M]`（export-docs）；2.3 词面 `[M]`（`no-warning-comments`）；§3 未用变量 / `as const` `[M]`（`no-unused-vars` / `typescript/prefer-as-const`）。
+- **写码在环反馈**：写码工具成功后同步跑同一 `.oxlintrc.json`，诊断经 A4 `context` 回注下一模型步（[lint-feedback.mts](../../adapters/dsh/lint-feedback.mts)；ADR [2026-09-08-lint-in-loop-feedback](../../.agents/notes/implemented/feature/2026-09-08-lint-in-loop-feedback.md)）——判据不变，机器面从 git 边界提前到写码当轮。
 - **仍留评审**：2.1 内容质量、2.2 内部注释、2.4 格式约定、§3 命名意图与职责边界——语义判断，机器不可判（理由见各条停档理由），兜底在根 [AGENTS.md](../../AGENTS.md)「评审检查项」第 4 条。
 - **未纳入（有触发条件再立）**：type-aware 规则（`oxlint-tsgolint`）与 `no-explicit-any` / `no-non-null-assertion`——本仓当前无对应失败类，改造量属重构批次；触发 = 真实 async 失守或类型逃逸缺陷出现。

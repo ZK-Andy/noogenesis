@@ -1,6 +1,6 @@
 /**
- * mount-policies.mts — B4 首批挂载物存留件（M2 的 A2 开场地图；M1/M2 记录件
- * 与 M3 已随 A8 投影撤除批整体退役——ADR
+ * mount-policies.mts — 挂载策略件组装（A2 开场地图 + A4 写码在环 lint 反馈；
+ * M1/M2 记录件与 M3 已随 A8 投影撤除批整体退役——ADR
  * 2026-09-08-a8-session-record-projection-removal：宿主 Session.append 无
  * ignorable 写入口，下游插件自定义事件类型会令会话历史在读路径 fail-closed
  * 不可加载）。
@@ -9,8 +9,8 @@
  * warn，建议缺席不阻塞会话。状态按会话 WeakMap 隔离（GC 自清）。零宿主
  * 依赖（防火墙规则 2）；fs 只读（M2 布点件存在性检查）。
  *
- * HERO 答案单源 = B4 ADR Decision 4（A2 地图件；M1/M3 的 HERO 判据原文亦在
- * 案，投影面恢复须另案过上游能力补齐）；本文不重抄判据，只落实现。
+ * HERO 答案单源 = B4 ADR Decision 4（A2 地图件）+ 轨道 A ADR
+ * 2026-09-08-lint-in-loop-feedback（A4 反馈件）；本文不重抄判据，只落组装。
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -18,6 +18,8 @@ import { createSessionStore } from "./mount.mjs";
 import type { PreStepPolicy, SessionStartPolicy, ToolPostPolicy, ToolPrePolicy } from "./mount.mjs";
 import { resolveRepoRoot, sessionWorkspaceOf } from "./engine-bridge.mjs";
 import type { RepoRootConfig } from "./engine-bridge.mjs";
+import { createLintFeedbackPolicies } from "./lint-feedback.mjs";
+import type { LintFeedbackDeps } from "./lint-feedback.mjs";
 
 /** M2 布点表（蓝图 §1 五件；闭集，新增子树件随 C11 布点变更同改）。 */
 export const SUBTREE_AGENTS = ["engine", "adapters", "scripts", "docs", ".agents/notes"] as const;
@@ -47,13 +49,14 @@ export function createSubtreeRulesPolicies(config: RepoRootConfig): { preStep: P
 		const lines = [
 			"Noogenesis subtree rules map — read a subtree's AGENTS.md before working in it:",
 			...present.map((subtree) => `- ${subtree}/ → ${subtree}/AGENTS.md`),
+			"- 写码规范：docs/method/code-standards.md（机器面 lint/export-docs 写码后自动反馈）",
 		];
 		return { kind: "advice", lines };
 	};
 	return { preStep };
 }
 
-/** 全部策略件的挂载面汇总（A3/A4/A5 首批零策略能力位——升格件出现时增挂）。 */
+/** 全部策略件的挂载面汇总（A3/A5 首批零策略能力位——升格件出现时增挂）。 */
 export interface MountPolicySet {
 	preStep: PreStepPolicy[];
 	toolPre: ToolPrePolicy[];
@@ -61,15 +64,19 @@ export interface MountPolicySet {
 	sessionStart: SessionStartPolicy[];
 }
 
-/** 组装存留挂载物（A2 地图件）；config 走 M2 的 repoRoot 回退链。 */
-export function createMountPolicies(config: RepoRootConfig = {}): MountPolicySet {
+/**
+ * 组装存留挂载物（A2 地图件 + A4 写码在环反馈）；config 走 M2 的 repoRoot
+ * 回退链，deps 透传给 A4 策略（执行面/日志面注入缝）。
+ */
+export function createMountPolicies(config: RepoRootConfig = {}, deps: LintFeedbackDeps = {}): MountPolicySet {
 	const subtree = createSubtreeRulesPolicies(config);
+	const lintFeedback = createLintFeedbackPolicies(config, deps);
 	return {
 		preStep: [subtree.preStep],
-		// A3/A4/A5 首批零策略能力位：能力位已接线（index.mts），策略件出现时
+		// A3/A5 首批零策略能力位：能力位已接线（index.mts），策略件出现时
 		// 增挂此处，不触宿主接线面（B4 已拍板原则）。
 		toolPre: [],
-		toolPost: [],
+		toolPost: [lintFeedback.toolPost],
 		sessionStart: [],
 	};
 }

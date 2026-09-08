@@ -7,4 +7,5 @@
 - **每宿主一个薄目录** `adapters/<host>/`，互不渗透（P4 多 harness 留位）；DSH 特有面不得越出 `adapters/dsh/`。
 - **改接线必跑防火墙自测**：`node dist/adapters/dsh/selftest.mjs`（`npm run build` 后；含 import 面机器检查）；漏跑 = 耦合回归直接进 main。
 - **userQuestions 不进 `inject` 声明**（cordis 缺席注入服务会推迟整个插件装载，降级不可达）——disposal 时懒取用；新增注入面前先核此教训。
+- **A4 写码在环反馈（轨道 A）**：`lint-feedback.mts` 在 write/edit 成功后同步跑仓根 oxlint（5s 超时、≤10 条诊断、建议档）；缺 `.oxlintrc.json` / 二进制、路径出仓、非 `.ts`/`.mts`、异常一律静默降级（每会话至多一条 warn）——降级面绝不变成写码阻断。
 - `repoRoot` 四级回退链、工具退出码映射（exit 1 + 空 stdout = 引擎故障须抛错）是已拍板语义，改动先立 ADR。

@@ -152,8 +152,9 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 	// mount.mts 合并器 + 策略层 mount-policies.mts；首批全部建议档——记录档
 	// 面已随撤除批退役（撤除 ADR），零阻断路径——A3/A4 的 deny/block 能力
 	// 由合并器单源承载，首批策略件不使用）。每挂载点恰一个 ctx.on
-	// listener，策略件增挂只动 mount-policies.mts，不复制宿主接线。 ──
-	const mounts = createMountPolicies(cfg);
+	// listener，策略件增挂只动 mount-policies.mts，不复制宿主接线；logger
+	// 透传给策略层降级提示（A4 写码反馈缺 lint 基建时每会话至多一条 warn）。 ──
+	const mounts = createMountPolicies(cfg, { warn: (message) => logger.warn(message) });
 
 	// A5 会话开始时刻（agent/session-start，hooks 桥四类时刻的会话开始位）：
 	// 非阻塞 inject 能力；异常 catch → warn 降级（hook-protocol 非阻断语义）。
