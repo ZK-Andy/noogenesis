@@ -40,3 +40,5 @@
 - [x] （D）P2 实现轮 2026-09-06（FULL 三审 R1 1B/5S、R2 1B/8S、R3 0B/6S 全采纳），ADR [2026-09-06-p2-shared-consumer](.agents/notes/implemented/architecture/2026-09-06-p2-shared-consumer.md) implemented。
 - [ ] （D）痕迹提炼面归融合轮（2026-09-06 用户拍板：记录但不急）：「纪律留痕→无人提炼→下会话考古」缺口在案，解法随 dsh-continual-evolve 融合轮再议（触发 = 架构定稿，设计稿 §13.5）；旧项目 OBSERVATION 观察生命周期协议为实物参照（work 区）。边界：非自动沉淀复刻（#18 负面清单有效）、不让引擎扫会话，只议 session-close 摩擦点落点是否可寻址。
 - [x] （C）编码规范 c1 评审恢复与收口 2026-09-08（FULL 三审恢复重跑：R1 1B/4S、R2 1B/4S、R3 2B/3S 全采纳收口），ADR [2026-09-08-coding-standards](.agents/notes/implemented/architecture/2026-09-08-coding-standards.md) implemented。
+- [ ] （C）mdref 共享件副本折叠（R1 评审 2026-09-08 发现）：`splitLines` 在 verify-adr-format / verify-cookbook / verify-gene-format / verify-handoff-structure 各有手搓副本（3 份与 `scripts/mdref.mts` 等价、cookbook 缺尾部空行剔除已分叉），`pyStrip` 另有 3 份同集副本——折叠可删实现 + 7 条 `no-control-regex` 豁免中的 5 条；跨件判据行为面，另批立项。
+- [ ] （C）verify-review-tier 证据继承弱点（C2 批发现）：`evidenceInChange` 只要变更集内**任一** implemented ADR 带合法 `Review:` 行即放行——本批 c2 ADR 未加证据行时 `--enforce` 已过（同批触碰了已评审的 c1 ADR）= FULL 变更可搭旧 ADR 证据车。修法候选 = 证据须落在本变更集**新增/改动**的 ADR；触发 = 下批门禁判据改动同变更处理。

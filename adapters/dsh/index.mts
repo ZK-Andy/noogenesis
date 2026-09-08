@@ -102,8 +102,8 @@ function askFactory(ctx: HostContext): (candidates: string[]) => Promise<AskDeci
 }
 
 /**
- * 插件入口（cordis apply 合同）：校验配置 → 解析 repoRoot → 注册工具体、system-prompt
- * 节、技能 provider 与挂载面策略。config 违约抛 Error（装载即失败，不半启用）。
+ * 插件入口（cordis apply 合同）：装载时校验配置并接线全部注册面；config 违约抛
+ * Error（fail-closed，不半启用）。
  */
 export function apply(ctx: HostContext, config: unknown = {}): void {
 	const cfg = validateConfig(config);

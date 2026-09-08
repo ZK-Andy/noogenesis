@@ -14,7 +14,7 @@ Status: implemented
 ### D1 显式白名单，不类目全开
 
 - devDependency `oxlint` 精确钉版 `1.82.0`（规则集稳定性；`^` 会让 CI 随 minor 漂移）。companion `oxlint-tsgolint`（type-aware）不引（见 Alternatives）。
-- 仓库根 `.oxlintrc.json` = 判据单源：`categories.correctness: "off"` + 显式规则清单，**逐条写明理由**；`options.reportUnusedDisableDirectives: "error"`（失效的 disable 注释 = 判据漂移，当错处理）。
+- 仓库根 `.oxlintrc.json` = 判据单源：`categories.correctness: "off"` + 显式规则清单，**逐条写明理由**；`options.reportUnusedDisableDirectives: "error"`（失效的 disable 注释 = 判据漂移，当错处理）。忽略面不重复声明（`.gitignore` 已覆盖，oxlint 默认尊重）、`env.builtin` 不写（schema 默认值且无消费规则）——R1 评审收口。
 - 启用面 = 明确错误类 + 代码卫生 + 注释词面 + TS 可判定面（清单见该文件）。不启用并记录理由：`no-array-sort` / `consistent-function-scoping`（风格偏好）、`no-await-in-loop`（顺序 CLI 有意）、`no-non-null-assertion`（131 处，`noUncheckedIndexedAccess` 下的本仓 idiom）、`no-explicit-any`（31 处 JSON 边界，迁移 `unknown` 另案）。
 - `no-control-regex` 启用 + 7 处逐行 `oxlint-disable-next-line` 带理由（py 边界集校验器有意匹配控制字符）；`no-duplicate-imports` 配 `allowSeparateTypeImports`（值/类型分行 import 是本仓形态，B2 起）。
 
@@ -26,9 +26,9 @@ Status: implemented
 
 ### D3 导出面契约注释闸
 
-- `scripts/verify-export-docs.mts`：TS 编译器 API 解析 `engine/` + `adapters/dsh/` + `scripts/`，**导出函数/类声明**必须紧邻 JSDoc（`ts.getJSDocCommentsAndTags`）。类型/接口/常量不判——契约常由类型自身承载，强制注释产 slop（2.1 判别式）。
-- 清账：4 处补契约注释（`validateConfig` / `runEngineSync` / `apply` / `registerNooTools`）；`verify-adr-format.mts` 的 `splitlines` 导出无消费方 → 去导出（死面）。
-- `no-warning-comments` 承接 2.3：代码内禁 `TODO` / `FIXME` / `XXX`，待办进 HANDOFF-todos（替代 c1 的 `TODO(<owner>):` 约定）。
+- `scripts/verify-export-docs.mts`：TS 编译器 API 解析 `adapters/dsh/` + `scripts/`，**导出函数/类声明**必须紧邻 JSDoc（`ts.getJSDocCommentsAndTags`）；两种导出形态（声明修饰符 / 文件尾 `export { }`）都认，重载组一份注释即可，任一根缺失 fail-closed。类型/接口/常量不判——契约常由类型自身承载，强制注释产 slop（2.1 判别式）。`engine/` 不入闸：其导出是引擎内部接缝（适配层只 spawn CLI、不 import），公共契约 = CLI（engine/README.md），内部注释沿用 `//` 块——R1 评审 Blocker 收口。
+- 清账：导出面契约注释 4 处到位（`validateConfig` / `apply` / `registerNooTools` 新增；`runEngineSync` 既有 JSDoc 从常量上移到函数使归属成立）；`verify-adr-format.mts` 的 `splitlines` 导出无消费方 → 去导出（死面）。
+- `no-warning-comments` 承接 2.3：代码内禁 `TODO` / `FIXME` / `XXX`（`location: anywhere`——默认 `start` 漏 `/** TODO */` 与行中词面，R2 评审实证），待办进 HANDOFF-todos（替代 c1 的 `TODO(<owner>):` 约定）。
 
 ### D4 真实缺陷清账（本批）
 
@@ -46,7 +46,7 @@ Status: implemented
 - **`eslint-plugin-jsdoc` jsPlugin（`jsdoc/require-jsdoc`）**：落败——~15 传递依赖换一条规则，与零依赖纪律不成比例；自研件用已在场的 typescript，且能精确限定「导出函数/类」。
 - **只接 oxlint、不做导出面闸**：落败——c1 §6 明列 2.1 升档义务；56/68 已合规说明约定已成、缺口可机器闭合。
 - **直接 `gates.json` 跑 oxlint（不写 wrapper）**：落败——判据是仓内配置数据，无夹具则配置腐烂静默通过；tsc 先例不适用（第三方语义）。
-- **文件头统一 `/** */`（c1 §2.4 的暂定承诺）**：落败——头注不是声明级注释，转 JSDoc 后与 export-docs 的归属语义冲突（头块紧邻首个导出会被计为其契约注释）；改为头注保持 `//`、`/** */` 专用于声明级契约。
+- **强制头注单一形态**：落败——仓内 `//`（engine 十件）与 `/** */`（其余三十一件）两形态并存，机器无判据；改为 §2.4 承认两形态并存、按角色区分（头注两种皆可；声明级契约注释 `adapters/dsh/` + `scripts/` 用 `/** */`、`engine/` 沿用 `//`）。
 
 ## Consequences
 
@@ -54,3 +54,4 @@ Status: implemented
 - 新 devDependency 1 个（oxlint，精确钉版）；engine 运行时零依赖纪律不破——工具链在 scripts/ 面（B1 先例），发布包 `files` 白名单不含 scripts/。
 - 档位诚实化：2.4 未升档并写明理由，2.1 只升存在性；内容质量仍靠评审（根 AGENTS 兜底第 4 条）。
 - 后续触发式条目：type-aware、`no-explicit-any` → `unknown` 迁移——有失败类证据再立项。
+- 评审收口（2026-09-08 FULL 三审）：R1 抓出 engine 尾部导出零覆盖（范围收窄 + 判据补两导出形态）；R2 抓出 §2.4 头注口径自相矛盾（改两形态并存）与 `no-warning-comments` 默认 `start` 漏检（改 `anywhere`）；并采纳 lint 配置去重、typescript 插件面夹具、导出面重载/缺根 fail-closed、`apply` 注释去控制流叙述等建议。未采纳：mdref `splitLines` 四份副本折叠（跨件行为面，另批）。

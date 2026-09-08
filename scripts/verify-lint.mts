@@ -7,7 +7,7 @@
  * --deny-warnings）、用夹具把「配置腐烂」挡在自测里——与 ts-typecheck 的差别在于
  * tsc 的判据是第三方语义，而 lint 的判据是本仓配置数据。
  *
- * 用法（仓库根运行，同其余 verify-*）：node scripts/verify-lint.mts [--self-test] [-- <oxlint 参数>]
+ * 用法（仓库根运行，同其余 verify-*）：node scripts/verify-lint.mts [--self-test]
  * 退出码：0 = PASS，1 = 有违规，2 = fail-closed（oxlint 或配置缺失）。
  * 运行前提：node ≥22.18 + devDependency oxlint（精确钉版，见 package.json）。
  * 模块形态：显式 .mts（ESM）——本仓 package.json type=commonjs，裸 .ts 装不下 import。
@@ -49,13 +49,13 @@ function runOxlint(invocation: Invocation, targets: string[], cwd: string, inher
   return result.status ?? 2;
 }
 
-function realRun(repoRoot: string, extra: string[]): number {
+function realRun(repoRoot: string): number {
   const invocation = resolveInvocation(repoRoot);
   if (invocation === null) {
     console.error(`${PROGRAM}: FAIL-CLOSED — 缺 ${OXLINT_BIN_REL} 或 ${CONFIG_REL}（先 npm ci）`);
     return 2;
   }
-  return runOxlint(invocation, extra.length > 0 ? extra : ["."], repoRoot, true);
+  return runOxlint(invocation, ["."], repoRoot, true);
 }
 
 /** 夹具自测：违规必红、干净必绿、配置与二进制在册。 */
@@ -70,11 +70,15 @@ function selfTest(repoRoot: string): number {
   try {
     const clean = path.join(dir, "clean.ts");
     const bad = path.join(dir, "bad.ts");
+    const badTs = path.join(dir, "bad-ts.ts");
     fs.writeFileSync(clean, "export function ok(): number { return 1; }\n");
     // no-var：白名单首条可判失败类——配置若被整体关掉，此夹具即失去红灯。
     fs.writeFileSync(bad, "export function bad(): number { var x = 1; return x; }\n");
+    // typescript/no-inferrable-types：插件面腐烂（plugins 数组被清空 → 该规则静默消失）时红灯。
+    fs.writeFileSync(badTs, "export const n: number = 1;\n");
     if (runOxlint(invocation, [clean], dir, false) !== 0) failures.push("合规样例（干净文件）被误判 FAIL");
     if (runOxlint(invocation, [bad], dir, false) === 0) failures.push("违约样例（no-var 违规）未被拒");
+    if (runOxlint(invocation, [badTs], dir, false) === 0) failures.push("违约样例（typescript 插件规则违规）未被拒");
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
@@ -82,14 +86,12 @@ function selfTest(repoRoot: string): number {
     for (const f of failures) console.log(`SELF-TEST FAIL: ${f}`);
     return 1;
   }
-  console.log(`${PROGRAM} self-test: 2 fixture groups passed`);
+  console.log(`${PROGRAM} self-test: 3 fixture groups passed`);
   return 0;
 }
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const argv = process.argv.slice(2);
-if (argv[0] === "--self-test") {
+if (process.argv[2] === "--self-test") {
   process.exit(selfTest(repoRoot));
 }
-const sep = argv.indexOf("--");
-process.exit(realRun(repoRoot, sep === -1 ? [] : argv.slice(sep + 1)));
+process.exit(realRun(repoRoot));

@@ -11,19 +11,10 @@
   "$schema": "./node_modules/oxlint/configuration_schema.json",
   "plugins": ["typescript"],
   "categories": { "correctness": "off" },
-  "env": { "builtin": true },
   "options": {
     // 失效的 oxlint-disable 注释 = 判据漂移，当错误处理（与 --deny-warnings 配合）。
     "reportUnusedDisableDirectives": "error"
   },
-  "ignorePatterns": [
-    "dist/**",
-    "node_modules/**",
-    ".cache/**",
-    ".research-mirror/**",
-    ".noogenesis/**",
-    ".review-briefs/**"
-  ],
   "rules": {
     // ── 死代码 / 未用符号 ────────────────────────────────────────────────
     // `_` 前缀 = 有意忽略（catch 绑定、未用形参）；其余未用即删。
@@ -78,7 +69,9 @@
 
     // ── 注释纪律（code-standards §2.3） ─────────────────────────────────
     // 代码内不写 TODO/FIXME/XXX：待办进 HANDOFF-todos（跨会话遗留唯一落点）。
-    "no-warning-comments": "error",
+    // location:anywhere——默认 start 只拦注释首字符即词面，`/** TODO */` 与行中
+    // `// 见 TODO` 会漏（R2 评审 2026-09-08 实证）。
+    "no-warning-comments": ["error", { "location": "anywhere" }],
     // 校验器有意匹配控制字符（py str.splitlines 边界集）；逐处 oxlint-disable 带理由。
     "no-control-regex": "error",
 

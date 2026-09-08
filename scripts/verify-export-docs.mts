@@ -2,16 +2,23 @@
 /**
  * verify-export-docs — 导出面契约注释闸（C2；ADR 2026-09-08-c2-lint-enforcement）。
  *
- * 判据：engine/ + adapters/dsh/ + scripts/ 的 .ts/.mts 中，**导出函数/类声明**
- * 必须有紧邻 JSDoc 块（`/** *\/`）。类型/接口/常量不判——契约常由类型自身承载，
- * 强制注释产 slop（code-standards §2.1 判别式：「删掉注释调用方能否安全使用」）。
- * 注释内容质量仍留评审（根 AGENTS「评审检查项」第 4 条），本闸只判存在性。
+ * 判据：`adapters/dsh/` + `scripts/` 的 .ts/.mts 中，**导出函数/类声明**必须有紧邻
+ * JSDoc 块（`/** *\/`）。类型/接口/常量不判——契约常由类型自身承载，强制注释产
+ * slop（code-standards §2.1 判别式）。注释内容质量仍留评审（根 AGENTS「评审检查项」
+ * 第 4 条），本闸只判存在性。
  *
- * 已知语义：TS 的 JSDoc 归属把「文件头块直接紧邻首个导出」计为该导出的注释
- * （本仓文件头后必有 import 或非导出声明，实测无此形态）。
+ * 范围不含 `engine/`：其导出走文件尾 `export { … }` 形态且是引擎内部接缝（适配层
+ * 只 spawn CLI、不 import），公共契约 = CLI（engine/README.md）；内部注释沿用 `//`
+ * 块（engine 约定），入闸会逼出签名复述式注释（R1 评审 2026-09-08）。
+ *
+ * 判据语义：
+ * - 两种导出形态都认：声明上的 `export` 修饰符 + 文件尾 `export { local as exported }`；
+ * - 重载：同名声明成组，组内**任一**带 JSDoc 即通过（一份契约注释即可，不逼重复）；
+ * - TS 的 JSDoc 归属把「文件头块直接紧邻首个导出」计为该导出的注释（本仓文件头后
+ *   必有 import 或非导出声明，实测无此形态）。
  *
  * 用法（仓库根运行，同其余 verify-*）：node scripts/verify-export-docs.mts [--self-test]
- * 退出码：0 = PASS，1 = FAIL（导出函数/类缺契约注释），2 = fail-closed（源树缺失）。
+ * 退出码：0 = PASS，1 = FAIL（导出函数/类缺契约注释），2 = fail-closed（任一根缺失）。
  * 运行前提：node ≥22.18（原生 type stripping）+ devDependency typescript（解析器）。
  * 模块形态：显式 .mts（ESM）——本仓 package.json type=commonjs，裸 .ts 装不下 import。
  */
@@ -21,7 +28,7 @@ import { fileURLToPath } from "node:url";
 import ts from "typescript";
 
 const PROGRAM = "verify-export-docs.mts";
-const SOURCE_ROOTS = ["engine", "adapters/dsh", "scripts"];
+const SOURCE_ROOTS = ["adapters/dsh", "scripts"];
 const SOURCE_EXT_RE = /\.(ts|mts)$/;
 
 interface Violation {
@@ -43,40 +50,73 @@ function listSources(root: string): string[] {
   return out;
 }
 
-/** 单文件判据：导出函数/类声明无 JSDoc → 违规。 */
+function isFnOrClass(node: ts.Node): node is ts.FunctionDeclaration | ts.ClassDeclaration {
+  return ts.isFunctionDeclaration(node) || ts.isClassDeclaration(node);
+}
+
+/** 单文件判据：导出函数/类（两种导出形态）无 JSDoc → 违规。 */
 function checkSource(file: string, text: string): Violation[] {
   const sf = ts.createSourceFile(file, text, ts.ScriptTarget.ESNext, true, ts.ScriptKind.TS);
-  const out: Violation[] = [];
-  const visit = (node: ts.Node): void => {
+  const byName = new Map<string, ts.Node[]>();
+  const direct: { node: ts.Node; name: string }[] = [];
+  const trailing = new Set<string>();
+  const collect = (node: ts.Node): void => {
     const mods = ts.canHaveModifiers(node) ? ts.getModifiers(node) : undefined;
     const isExport = mods?.some((m) => m.kind === ts.SyntaxKind.ExportKeyword) ?? false;
-    const isFn = ts.isFunctionDeclaration(node);
-    const isClass = ts.isClassDeclaration(node);
-    if (isExport && (isFn || isClass) && ts.getJSDocCommentsAndTags(node).length === 0) {
-      const start = node.getStart(sf);
-      out.push({
-        file,
-        line: sf.getLineAndCharacterOfPosition(start).line + 1,
-        kind: isClass ? "class" : "function",
-        name: node.name?.getText(sf) ?? "<default>",
-      });
+    if (isFnOrClass(node)) {
+      const name = node.name?.getText(sf);
+      if (name !== undefined) {
+        byName.set(name, [...(byName.get(name) ?? []), node]);
+      }
+      if (isExport) direct.push({ node, name: name ?? "<default>" });
     }
-    ts.forEachChild(node, visit);
+    if (ts.isExportDeclaration(node) && node.exportClause !== undefined && ts.isNamedExports(node.exportClause)) {
+      for (const el of node.exportClause.elements) {
+        if (!el.isTypeOnly) trailing.add((el.propertyName ?? el.name).getText(sf));
+      }
+    }
+    ts.forEachChild(node, collect);
   };
-  visit(sf);
+  collect(sf);
+
+  const out: Violation[] = [];
+  const reported = new Set<string>();
+  const report = (nodes: ts.Node[], name: string): void => {
+    if (reported.has(name) || nodes.some((n) => ts.getJSDocCommentsAndTags(n).length > 0)) return;
+    reported.add(name);
+    const node = nodes[0]!;
+    out.push({
+      file,
+      line: sf.getLineAndCharacterOfPosition(node.getStart(sf)).line + 1,
+      kind: ts.isClassDeclaration(node) ? "class" : "function",
+      name,
+    });
+  };
+  for (const { node, name } of direct) {
+    report(name === "<default>" ? [node] : (byName.get(name) ?? [node]), name);
+  }
+  for (const name of trailing) {
+    const nodes = byName.get(name);
+    if (nodes !== undefined) report(nodes, name);
+  }
   return out;
 }
 
 function realRun(repoRoot: string): number {
   const files: string[] = [];
-  for (const rel of SOURCE_ROOTS) files.push(...listSources(path.join(repoRoot, rel)));
-  if (files.length === 0) {
-    console.error(`${PROGRAM}: FAIL-CLOSED — 源树为空（${SOURCE_ROOTS.join(", ")}），判据失效`);
+  const missingRoots: string[] = [];
+  for (const rel of SOURCE_ROOTS) {
+    const abs = path.join(repoRoot, rel);
+    if (!fs.existsSync(abs)) missingRoots.push(rel);
+    files.push(...listSources(abs));
+  }
+  if (missingRoots.length > 0) {
+    console.error(`${PROGRAM}: FAIL-CLOSED — 源根缺失：${missingRoots.join(", ")}（覆盖面不得静默归零）`);
     return 2;
   }
   const violations = files.flatMap((f) => checkSource(path.relative(repoRoot, f), fs.readFileSync(f, "utf-8")));
   if (violations.length === 0) {
-    console.log(`OK: ${files.length} 件源码导出函数/类均带契约注释`);
+    console.log(`OK: ${files.length} 件源码的导出函数/类均带契约注释`);
     return 0;
   }
   for (const v of violations) {
@@ -89,35 +129,31 @@ function realRun(repoRoot: string): number {
 function selfTest(): number {
   const failures: string[] = [];
   const check = (name: string, text: string): number => checkSource(name, text).length;
-  if (check("good.ts", "/** 契约：返回 1。 */\nexport function foo(): number { return 1; }\n") !== 0) {
-    failures.push("合规样例（导出函数带 JSDoc）被误判 FAIL");
-  }
-  if (check("good-class.ts", "/** 契约：持有 n。 */\nexport class Box { constructor(readonly n: number) {} }\n") !== 0) {
-    failures.push("合规样例（导出类带 JSDoc）被误判 FAIL");
-  }
-  if (check("bad.ts", "export function foo(): number { return 1; }\n") === 0) {
-    failures.push("违约样例（导出函数无 JSDoc）未被拒");
-  }
-  if (check("bad-class.ts", "export class Box {}\n") === 0) {
-    failures.push("违约样例（导出类无 JSDoc）未被拒");
-  }
-  if (check("bad-line-comment.ts", "// 行注释不是 JSDoc\nexport function foo(): number { return 1; }\n") === 0) {
-    failures.push("违约样例（仅行注释）未被拒");
-  }
-  if (check("ok-const.ts", "export const N = 1;\nexport type T = string;\nexport interface I { a: number }\n") !== 0) {
-    failures.push("合规样例（导出常量/类型/接口不在判据内）被误判 FAIL");
-  }
-  if (check("ok-internal.ts", "function hidden(): number { return 1; }\n") !== 0) {
-    failures.push("合规样例（非导出函数不在判据内）被误判 FAIL");
-  }
-  if (check("bad-default.ts", "export default function (): number { return 1; }\n") === 0) {
-    failures.push("违约样例（匿名默认导出函数无 JSDoc）未被拒");
-  }
+  const expect = (name: string, text: string, wantViolation: boolean, what: string): void => {
+    const n = check(name, text);
+    if (wantViolation ? n === 0 : n !== 0) failures.push(what);
+  };
+  expect("good.ts", "/** 契约：返回 1。 */\nexport function foo(): number { return 1; }\n", false, "合规样例（导出函数带 JSDoc）被误判 FAIL");
+  expect("good-class.ts", "/** 契约：持有 n。 */\nexport class Box { constructor(readonly n: number) {} }\n", false, "合规样例（导出类带 JSDoc）被误判 FAIL");
+  expect("bad.ts", "export function foo(): number { return 1; }\n", true, "违约样例（导出函数无 JSDoc）未被拒");
+  expect("bad-class.ts", "export class Box {}\n", true, "违约样例（导出类无 JSDoc）未被拒");
+  expect("bad-line-comment.ts", "// 行注释不是 JSDoc\nexport function foo(): number { return 1; }\n", true, "违约样例（仅行注释）未被拒");
+  expect("ok-const.ts", "export const N = 1;\nexport type T = string;\nexport interface I { a: number }\n", false, "合规样例（导出常量/类型/接口不在判据内）被误判 FAIL");
+  expect("ok-internal.ts", "function hidden(): number { return 1; }\n", false, "合规样例（非导出函数不在判据内）被误判 FAIL");
+  expect("bad-default.ts", "export default function (): number { return 1; }\n", true, "违约样例（匿名默认导出函数无 JSDoc）未被拒");
+  expect("trailing-good.ts", "/** 契约：返回 1。 */\nfunction foo(): number { return 1; }\nexport { foo };\n", false, "合规样例（文件尾导出 + 声明 JSDoc）被误判 FAIL");
+  expect("trailing-bad.ts", "function foo(): number { return 1; }\nexport { foo as bar };\n", true, "违约样例（文件尾导出无 JSDoc）未被拒");
+  expect(
+    "overload.ts",
+    "/** 契约：接受两种入参。 */\nexport function f(x: string): string;\nexport function f(x: number): number;\nexport function f(x: string | number): string | number { return x; }\n",
+    false,
+    "合规样例（重载组内一份 JSDoc）被误判 FAIL",
+  );
   if (failures.length > 0) {
     for (const f of failures) console.log(`SELF-TEST FAIL: ${f}`);
     return 1;
   }
-  console.log(`${PROGRAM} self-test: 8 fixtures passed`);
+  console.log(`${PROGRAM} self-test: 11 fixtures passed`);
   return 0;
 }
 
