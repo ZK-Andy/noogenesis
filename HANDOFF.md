@@ -5,11 +5,13 @@
 
 > **⚡ 最高优先级（框架重建）：charter ADR + 七层蓝图 → [.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md) · [docs/research/framework-rebuild-blueprint.md](docs/research/framework-rebuild-blueprint.md)**——用户拍板推倒重建（先框架后协作层、本仓原地重建），蓝图定稿（七层三段式 + A1–A8 挂载面 + M1–M3 + C1–C15）；**B0–B5 全批闭环（协作层重建收官，C1–C15 全绿）**——B5 切换批（gates.json cmd 全量重指 TS + 旧机器件零残留 + CI/钩子单轨 + 发版 0.2.0；实现 ADR [.agents/notes/implemented/architecture/2026-09-08-b5-switch.md](.agents/notes/implemented/architecture/2026-09-08-b5-switch.md)，批次表 [.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md](.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md)）；优化轮问题池余项（技能清单补全/记忆库）随重建后进行（规范展开 c1/c2 已交付；行动区仍在 [docs/research/capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)）。
 
-> **⏭ 下一步（用户拍板 2026-09-08）：编码强制两轨实施 → [coding-enforcement-impl-plan.md](docs/research/coding-enforcement-impl-plan.md)**——轨道 A = 写码在环反馈（A4 + 指针）；轨道 B = TS 类型语义门禁（宿主 API 签名核对 + 发布面不变量；镜像比对判死，type-aware lint 评估后定）。下一会话按该文件执行。
+> **⏭ 下一步：批 2 评审恢复（R1/R2/R3 完整重跑）→ 补 track-b ADR `Review:` 行 → push（本地领先 origin 1 笔 `30fa01c`）**——批 1（轨道 A）已闭环；批 2（轨道 B-1/B-2 + 批 3 测量延后）实现与门禁已全绿、负向手验通过，仅缺独立三审证据。恢复后下一节点 = 优化轮问题池余项（技能清单补全 + 记忆库开题，[capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)）。
 
 ## 交接更新记录（摘要滚动窗）
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
+
+- 2026-09-08｜**编码强制两轨：批 1 轨道 A 收口（FULL 三审全采纳，CI 绿）/ 批 2 轨道 B 已提交待审（独立评审通道未交付，未推送）/ 批 3 测量延后**：A4 在环 lint 反馈 + 宿主 API 类型断言 + 发布面不变量闸（15→16）；type-aware 零 async 缺陷 → 延后。**节点：批 2 评审恢复。** README 无漂移。
 
 - 2026-09-08｜**编码强制两轨实施计划落盘（讨论轮；无 ADR，行动区指针）**：`docs/research/coding-enforcement-impl-plan.md`——轨道 A（A4 写码在环反馈 + 指针）+ 轨道 B（宿主 API 签名核对[类型级] + 发布面不变量[AST/JSON]；镜像比对判死；type-aware lint 评估后定）。**节点：下一会话执行批 1。** README 无漂移。
 - 2026-09-08｜**编码规范 c2 机器强制收口（FULL 三审 R1 1B/6S、R2 1B/5S、R3 1B/5S 全采纳；ADR `2026-09-08-c2-lint-enforcement` implemented；`8a3898f`→`9844023`）**：oxlint 白名单 + 导出面契约注释闸入 gates.json（13→15，三面同判据）；清 19 处真实缺陷 + 4 处注释缺口。**节点：c1/c2 闭环。** README 有变更已同步。
@@ -47,8 +49,6 @@
 
 - 2026-09-06｜**P2 只读共享消费落地（FULL 三审 R1 1B/5S、R2 1B/8S、R3 0B/6S 全采纳；ADR `2026-09-06-p2-shared-consumer` implemented）**：本仓即库 + `engine pull` + 缓存合并扫描（本仓优先）+ manifest 索引/门禁（11 件）+ adapter `geneBankUrl` 惰性 pull；设计稿未决 1/3/4 回写。**节点：P2 闭环。** README 核对无漂移。
 
-- 2026-09-06｜**npm 真包首发（release-flow；repository 修正 `cecc815`；tag `v0.1.0`）**：`noogenesis@0.1.0` = latest；desktop 实装（bundles 层栈 + plugin row 合成 + 引擎空仓退化/真仓命中）；minimumReleaseAge 拦新包 → 单命令豁免（cookbook [环境]）；M2 ADR 发布 gate 清账；会话级装载新会话确认。**节点：M2 全链路收口。**
-
 ## 背景
 
 Noogenesis（心源）：DeepSeek Harness 之上的"蜂群进化框架"；终极北极星 AGI（只定方向）；当前落地 = 第一个进化胶囊「AI 协作编码方法论」——四源（devops-template / dotnet-deepseek-harness-desktop / dsh-frecency / work 区）提炼搬迁，self-hosting：用心源体系开发心源。设计基准 `docs/research/dsh-swarm-evolution-framework-design.md`；搬迁计划（已实施冻结）[journal/capsule-01-migration-plan.md](journal/capsule-01-migration-plan.md)（评审定稿 2026-09-05）。
@@ -73,6 +73,7 @@ Noogenesis（心源）：DeepSeek Harness 之上的"蜂群进化框架"；终极
 - **护栏延后拍板**（ADR [2026-09-06-guardrail-defer-trigger](.agents/notes/proposed/architecture/2026-09-06-guardrail-defer-trigger.md) proposed）：护栏三件（token-meter 真测量 / 严格改进度量 / canary）需要但延后，触发 = 首个胶囊优化完成后（触发参照随重建时序对齐，见 ADR 交叉链接）。
 - **编码规范机器强制已落地**（ADR [2026-09-08-c2-lint-enforcement](.agents/notes/implemented/architecture/2026-09-08-c2-lint-enforcement.md) implemented，FULL 三审全采纳）：oxlint 1.82.0 显式白名单（根 `.oxlintrc.json`，逐条理由）+ 导出面契约注释闸（`verify-export-docs.mts`，`adapters/dsh` + `scripts`）入 `engine/gates.json`（15 条，pre-commit/pre-push/CI 同判据）；首轮清 19 处真实缺陷 + 4 处注释缺口 + 1 死导出；[code-standards](docs/method/code-standards.md) 档位同步（2.1 存在性 / 2.3 词面 / §3 机械子集升 `[M]`，2.4 留 `[R]`）。
 - 门禁第一梯队全绿（含 self-test；清单单源 `engine/gates.json`，入口见根 AGENTS「质量门」）；engine self-test 与 CI 同跑（run 33976291727 绿）。
+- **编码强制两轨：批 1 已闭环**（ADR [2026-09-08-lint-in-loop-feedback](.agents/notes/implemented/architecture/2026-09-08-lint-in-loop-feedback.md) implemented + Review 行；CI run 34249821201 绿）——A4 写码在环 lint 反馈（建议档 `context`，8 条合同 + A2 指针行）。**批 2 已实现待审**（ADR [2026-09-08-coding-enforcement-track-b](.agents/notes/implemented/architecture/2026-09-08-coding-enforcement-track-b.md) 无 Review 行、本地提交 `30fa01c` 未推送）：宿主 API 类型契约断言 + 发布面不变量闸（gates.json 15→16）+ `arguments` 不实收窄修正 + type-only 闭集；type-aware lint 以证据延后。**真机复验待装机**（todos B 条）。
 - 技能 noo-* 7 个已被 DSH 自动发现；评审机械闸已落地（verify-review-tier + verify-review-brief，ADR [2026-09-05-review-mechanical-gate](.agents/notes/implemented/process/2026-09-05-review-mechanical-gate.md)）。
 - 四项拍板：评审闸延后 v0.2 ✅ / journal 入 git ✅ / 技能前缀 noo-* ✅ / cookbook 首批 15 条 ✅。
 

@@ -1,6 +1,6 @@
 # 编码强制实施计划：写码在环反馈 + TS 类型语义门禁
 
-> 状态：批 1（轨道 A）已落地——ADR [2026-09-08-lint-in-loop-feedback](../../.agents/notes/implemented/architecture/2026-09-08-lint-in-loop-feedback.md)；批 2（B-1/B-2）与批 3（B-4 测量）待执行。2026-09-08 讨论轮产出、用户拍板「两个都做，不要妥协」。
+> 状态：批 1（轨道 A）与批 2（B-1/B-2）已落地——ADR [2026-09-08-lint-in-loop-feedback](../../.agents/notes/implemented/architecture/2026-09-08-lint-in-loop-feedback.md) / [2026-09-08-coding-enforcement-track-b](../../.agents/notes/implemented/architecture/2026-09-08-coding-enforcement-track-b.md)；批 3（B-4 测量）结论 = 以证据延后（零真实 async 缺陷；触发 = 真实 async 失守，见 track-b ADR D6）。2026-09-08 讨论轮产出、用户拍板「两个都做，不要妥协」。
 > 家：本文件 = 两轨实施的单一事实源（procedure / 执行序）；决策理由与取舍落各批 ADR，本文件不承载决策。
 > 依据：问题池 [capsule-01-optimization-round.md](capsule-01-optimization-round.md) §2.1「规范事前接入」+ §2.2-6「TS 统一解锁语义门禁但未建」；能力面单源 [framework-rebuild-blueprint.md](framework-rebuild-blueprint.md) §7 A1–A8 / M1–M3；规范单源 [code-standards](../method/code-standards.md)；判据单源 `.oxlintrc.json` + `scripts/verify-export-docs.mts`（ADR [2026-09-08-c2-lint-enforcement](../../.agents/notes/implemented/architecture/2026-09-08-c2-lint-enforcement.md)）。
 
@@ -69,13 +69,13 @@
 
 ### B-3 双实现镜像比对（判死）
 
-- 前提消失：B5 已删 py 权威件 13 件 + 旧 js 源 10/9 件，**无第二实现可镜像**。关闭，理由落批 2 ADR 的 `Alternatives considered`。
+- 前提消失：B5 已删 py 权威件 13 件 + 旧 js 源 10/9 件，**无第二实现可镜像**。关闭，理由落批 2 ADR 的 `Alternatives considered`。〔状态 2026-09-08：判死已落 track-b ADR D5。〕
 
 ### B-4 类型感知 lint（评估后定）
 
 - 只读测量：装 `oxlint-tsgolint`（devDependency，精确钉版），`--type-aware` 跑 `typescript/no-floating-promises`、`no-misused-promises`、`await-thenable`、`no-unnecessary-condition`。
 - 判定：≥1 条**真实** async 缺陷 → 纳入白名单 + `lint` 命令加 `--type-aware`；零真实缺陷 → 以证据延后（HERO），触发 = 后续出现 async 失守。
-- 成本闸：先测 lint 墙钟增量（当前 ~50ms）；>1s 则评估 pre-commit 降级为 pre-push。
+- 成本闸：先测 lint 墙钟增量（当前 ~50ms）；>1s 则评估 pre-commit 降级为 pre-push。〔状态 2026-09-08：测量完成 → **延后**（四规则零真实 async 缺陷 + 11 条误报 + 墙钟 ~3.7×）；见 track-b ADR D6。〕
 
 ## 3. 批次与执行序
 
