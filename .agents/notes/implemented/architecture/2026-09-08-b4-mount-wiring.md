@@ -79,7 +79,7 @@ Related: [2026-09-06-collab-rebuild-impl](../../proposed/architecture/2026-09-06
 - **防火墙自测**：`selftest.mjs` import 面机器扫描扩到 mount.mts（零 `@deepseek-ai/*`）；index.mts 允许集 = dsh-tools + dsh-llm 两件。
 - FULL 三审采纳收口后本 ADR 转 implemented；journal 月卷「本批按蓝图判据」标注。
 - **风险面**：
-- **session.append 自定义 kind 的宿主兼容面**：`feedback/record` 先例支持自定义 kind，但持久化插件对未知 kind 的容忍度未经实机验证——本批 smoke 为脱宿主冒烟，实机验证随下一次桌面重验（todos B 类惯例）；失败面 = 记录缺席（降级纪律兜底），无阻断风险。
+- **session.append 自定义 kind 的宿主兼容面**：`feedback/record` 先例支持自定义 kind，但持久化插件对未知 kind 的容忍度未经实机验证——本批 smoke 为脱宿主冒烟，实机验证随下一次桌面重验（todos B 类惯例）；失败面 = 记录缺席（降级纪律兜底），无阻断风险。（实机验证 2026-09-08 ✅：`noogenesis/review-surface` 以一等事件类型落宿主 session 持久层、turn 级增量与对照探针精确对账——journal 2026-09 卷重验批在案；同批实锤 M1/M2 A3 观测面 `exec.args` 字段误读缺陷，修复 ADR [2026-09-08-mount-exec-arguments-field](../../proposed/bug-fix/2026-09-08-mount-exec-arguments-field.md)。）
 - **peer dep 扩一件（dsh-llm）**：防火墙允许集从一件扩两件——已显式拍板（Decision 2）并同变更改写 adapters/AGENTS.md；收敛规则（只 index.mts import）不变。
 - **A2 开场地图噪音面**：布点件在场的仓每会话首步多一条 ≤10 行消息；零布点仓（多数下游仓）零注入——噪音面收敛在 self-hosting 仓与本仓形态仓。
 - **WeakMap 会话键生命周期**：会话对象复用/恢复语义下投影状态可能跨「名义同会话」残留——记录件语义只增计数不授权，最坏面 = 记录偏大，无决策面依赖；显式清态 = `session/disposed`（R2 修正后为独立 cordis 事件，WeakMap GC 仍兜底）。
