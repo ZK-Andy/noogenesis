@@ -857,7 +857,9 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.equal(single.toolPost({ name: "write", arguments: { file_path: "notes.md" }, agent }, {}), undefined);
 	assert.equal(single.toolPost({ name: "write", arguments: { file_path: 42 }, agent }, {}), undefined);
 	assert.equal(single.toolPost({ name: "write", arguments: { file_path: "" }, agent }, {}), undefined);
-	ok("lint-feedback: non-write / isError / outside-repo (rel+abs) / non-TS / bad file_path → void");
+	assert.equal(single.toolPost({ name: "write", arguments: "not-an-object", agent }, {}), undefined);
+	assert.equal(single.toolPost({ name: "write", agent }, {}), undefined);
+	ok("lint-feedback: non-write / isError / outside-repo (rel+abs) / non-TS / bad file_path / non-object arguments → void");
 
 	// row 7 空诊断分支：桩被调用且返回空 → void（与「桩抛错」同结果但路径不同）。
 	{
@@ -923,35 +925,40 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.ok(adapterModules.length > 0, "firewall module scan must be non-empty (dist .mjs / source .mts)");
 	for (const file of adapterModules) {
 		const text = fs.readFileSync(path.join(ADAPTER_DIR, file), "utf8");
-		assert.doesNotMatch(text, /from ["']@deepseek-ai\//, `${file} must not import host packages (firewall rule 2)`);
+		assert.doesNotMatch(
+			text,
+			/from\s+["']@deepseek-ai\/|import\s+["']@deepseek-ai\/|import\(\s*["']@deepseek-ai\/|require\(\s*["']@deepseek-ai\//,
+			`${file} must not import host packages (firewall rule 2)`,
+		);
 	}
 	ok("firewall: only index.* imports @deepseek-ai/* (dependency injection at entry)");
 
 	// 源码面：宿主 import 的值/类型分野（轨道 B-1 ADR Decision 3）——dist 扫描
 	// 看不见源码 import（type-only 发射期擦除），本断言把闭集钉死：值 import 仅
 	// index.mts，type-only import 仅 host-api-contract.mts / selftest.mts / tools.mts。
+	// 三形态同扫（静态 import/export-from + 动态 import() + require()）：动态与
+	// require 是运行时值耦合，不能被发射期擦除掩盖。
 	{
 		const sourceDir = path.join(REPO_ROOT, "adapters", "dsh");
-		const statements: Array<{ file: string; text: string }> = [];
+		const STATIC_RE = /(?:^|\n)\s*(?:import|export)\s+(type\s+)?[^;]*?\bfrom\s+["']@deepseek-ai\//g;
+		const SIDE_EFFECT_RE = /(?:^|\n)\s*import\s+["']@deepseek-ai\//g;
+		const DYNAMIC_RE = /(?:^|\n)\s*(?:await\s+)?import\(\s*["']@deepseek-ai\//g;
+		const REQUIRE_RE = /(?:^|\n)[^\n]*?\brequire\(\s*["']@deepseek-ai\//g;
+		const valueImporters = new Set<string>();
+		const typeImporters = new Set<string>();
 		for (const file of fs.readdirSync(sourceDir).filter((f) => f.endsWith(".mts")).sort()) {
-			const lines = fs.readFileSync(path.join(sourceDir, file), "utf8").split("\n");
-			for (let i = 0; i < lines.length; i++) {
-				if (!/^\s*import\s/.test(lines[i]!)) continue;
-				let stmt = lines[i]!;
-				let j = i;
-				while (!/from\s+["']/.test(stmt) && !stmt.trimEnd().endsWith(";") && j + 1 < lines.length) {
-					j += 1;
-					stmt += `\n${lines[j]!}`;
-				}
-				if (/@deepseek-ai\//.test(stmt)) statements.push({ file, text: stmt });
+			const text = fs.readFileSync(path.join(sourceDir, file), "utf8");
+			for (const match of text.matchAll(STATIC_RE)) {
+				(match[1] === undefined ? valueImporters : typeImporters).add(file);
+			}
+			if (text.match(SIDE_EFFECT_RE) !== null || text.match(DYNAMIC_RE) !== null || text.match(REQUIRE_RE) !== null) {
+				valueImporters.add(file);
 			}
 		}
-		const valueImporters = [...new Set(statements.filter((s) => !/^\s*import\s+type\s/.test(s.text)).map((s) => s.file))].sort();
-		const typeImporters = [...new Set(statements.filter((s) => /^\s*import\s+type\s/.test(s.text)).map((s) => s.file))].sort();
-		assert.deepEqual(valueImporters, ["index.mts"], "value host imports must stay in index.mts (firewall rule 2)");
-		assert.deepEqual(typeImporters, ["host-api-contract.mts", "selftest.mts", "tools.mts"], "type-only host imports are a closed set");
+		assert.deepEqual([...valueImporters].sort(), ["index.mts"], "value host imports must stay in index.mts (firewall rule 2)");
+		assert.deepEqual([...typeImporters].sort(), ["host-api-contract.mts", "selftest.mts", "tools.mts"], "type-only host imports are a closed set");
 	}
-	ok("firewall: source host imports — value only index.mts; type-only {host-api-contract,selftest,tools}");
+	ok("firewall: source host imports — value only index.mts; type-only {host-api-contract,selftest,tools} (static/dynamic/require)");
 
 	// index.* 宿主 import 允许集封底（B4 ADR Decision 2：dsh-tools + dsh-llm；
 	// 新增宿主依赖必须同变更扩本断言 + ADR 拍板）。

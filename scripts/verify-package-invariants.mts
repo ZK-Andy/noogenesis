@@ -4,9 +4,9 @@
  * 2026-09-08-coding-enforcement-track-b）。
  *
  * 判据 = package.json 与 dist 发布面的结构一致性（JSON/AST 级，不跑 npm pack）：
- *   1. `main` / `exports` 指针指向实存件（悬空指针 = 发布即坏）；
- *   2. `files` 白名单覆盖 `main`/`exports` 全部路径（`package.json` 恒由 npm
- *      附带，豁免）与契约件清单（engine/gates.json、两 README、cordis.patch.yml、
+ *   1. `main` / `exports`（含裸字符串、条件对象、嵌套条件）的每个字符串目标实存；
+ *   2. 上述目标被 `files` 白名单覆盖（`package.json` 恒由 npm 附带，豁免），且
+ *      `files` 显式收录契约件清单（engine/gates.json、两 README、cordis.patch.yml、
  *      README.md、LICENSE、THIRD-PARTY-NOTICES.md）；
  *   3. dist 关键件实存（适配层入口 / 引擎 CLI / 门禁清单）；
  *   4. `engines.node` 在场、`dsh.bundle.patch` 指向实存件、`peerDependencies`
@@ -19,7 +19,7 @@
  * Consequences）。
  *
  * 用法（仓库根运行）：node scripts/verify-package-invariants.mts [--self-test]
- * 退出码：0 = PASS，1 = 违约，2 = fail-closed（缺 dist / package.json 不可读）。
+ * 退出码：0 = PASS，1 = 违约，2 = fail-closed（缺 dist / package.json 缺失或不可解析）。
  * 模块形态：显式 .mts（ESM），相对 import 带显式扩展，只依赖 node: 内建。
  */
 import * as fs from "node:fs";
@@ -53,7 +53,7 @@ const REQUIRED_PEER_DEPENDENCIES = ["@deepseek-ai/dsh-llm", "@deepseek-ai/dsh-to
 interface PackageManifest {
 	name?: string;
 	main?: string;
-	exports?: Record<string, unknown>;
+	exports?: unknown;
 	files?: string[];
 	engines?: { node?: string };
 	dsh?: { bundle?: { patch?: string } };
@@ -73,29 +73,37 @@ function coveredBy(files: readonly string[], target: string): boolean {
 	});
 }
 
-/** 取 exports 各键的默认目标（字符串形态或 `{default}` 形态）。 */
-function exportTargets(exports: PackageManifest["exports"]): Array<[string, string]> {
-	const out: Array<[string, string]> = [];
-	if (exports === undefined || typeof exports !== "object") return out;
-	for (const [key, value] of Object.entries(exports)) {
-		if (typeof value === "string") out.push([`exports[${JSON.stringify(key)}]`, value]);
-		else if (value !== null && typeof value === "object" && typeof (value as { default?: unknown }).default === "string") {
-			out.push([`exports[${JSON.stringify(key)}]`, (value as { default: string }).default]);
-		}
+/** 递归收集 `exports` 树里的全部字符串目标（裸字符串 / 条件对象 / 嵌套条件同覆盖）。 */
+function collectExportTargets(value: unknown, label: string, out: Array<[string, string]>): void {
+	if (typeof value === "string") {
+		out.push([label, value]);
+		return;
 	}
-	return out;
+	if (value === null || typeof value !== "object") return;
+	for (const [key, child] of Object.entries(value)) {
+		collectExportTargets(child, `${label}[${JSON.stringify(key)}]`, out);
+	}
+}
+
+/** 读 package.json（坏 JSON / 不可读 → null，由调用方 fail-closed）。 */
+function readManifest(repoRoot: string): PackageManifest | null {
+	try {
+		return JSON.parse(fs.readFileSync(path.join(repoRoot, "package.json"), "utf-8")) as PackageManifest;
+	} catch {
+		return null;
+	}
 }
 
 /** 单仓判据：返回违约串（空即合规）。 */
-function collectViolations(repoRoot: string): string[] {
+function collectViolations(repoRoot: string, pkg: PackageManifest): string[] {
 	const violations: string[] = [];
-	const pkg = JSON.parse(fs.readFileSync(path.join(repoRoot, "package.json"), "utf-8")) as PackageManifest;
 	const files = pkg.files ?? [];
 
 	// 1) main / exports 指针实存 + 2) files 覆盖
 	const targets: Array<[string, string]> = [];
 	if (typeof pkg.main === "string") targets.push(["main", pkg.main]);
-	targets.push(...exportTargets(pkg.exports));
+	if (typeof pkg.exports === "string") targets.push(["exports", pkg.exports]);
+	else collectExportTargets(pkg.exports, "exports", targets);
 	for (const [label, raw] of targets) {
 		const target = normalize(raw);
 		if (!fs.existsSync(path.join(repoRoot, target))) {
@@ -138,31 +146,37 @@ function collectViolations(repoRoot: string): string[] {
 	return violations;
 }
 
-function realRun(repoRoot: string): number {
-	const pkgPath = path.join(repoRoot, "package.json");
-	if (!fs.existsSync(pkgPath)) {
-		console.error(`${PROGRAM}: FAIL-CLOSED — 缺 package.json`);
-		return 2;
+/** 判据主体（纯函数：CLI 与夹具共用）：退出码 + 输出行。 */
+function evaluatePackage(repoRoot: string): { code: number; lines: string[] } {
+	if (!fs.existsSync(path.join(repoRoot, "package.json"))) {
+		return { code: 2, lines: [`${PROGRAM}: FAIL-CLOSED — 缺 package.json`] };
 	}
 	if (!fs.existsSync(path.join(repoRoot, "dist"))) {
-		console.error(`${PROGRAM}: FAIL-CLOSED — 缺 dist/（先 npm run build；发布面不变量无法判定）`);
-		return 2;
+		return { code: 2, lines: [`${PROGRAM}: FAIL-CLOSED — 缺 dist/（先 npm run build；发布面不变量无法判定）`] };
 	}
-	const violations = collectViolations(repoRoot);
+	const pkg = readManifest(repoRoot);
+	if (pkg === null) return { code: 2, lines: [`${PROGRAM}: FAIL-CLOSED — package.json 不可解析`] };
+	const violations = collectViolations(repoRoot, pkg);
 	if (violations.length === 0) {
-		console.log("OK: 发布面不变量（main/exports 实存 · files 覆盖 · dist 关键件 · engines/peer/bundle）");
-		return 0;
+		return { code: 0, lines: ["OK: 发布面不变量（main/exports 实存 · files 覆盖 · dist 关键件 · engines/peer/bundle）"] };
 	}
-	for (const violation of violations) console.log(`FAIL: ${violation}`);
-	return 1;
+	return { code: 1, lines: violations.map((violation) => `FAIL: ${violation}`) };
 }
 
-/** 夹具自测：以真实 package.json 为基线合成临时包，违约样例必须 FAIL。 */
+/** CLI 入口：打印判据结果并返回退出码。 */
+function realRun(repoRoot: string): number {
+	const { code, lines } = evaluatePackage(repoRoot);
+	for (const line of lines) (code === 2 ? console.error : console.log)(line);
+	return code;
+}
+
+/** 夹具自测：以真实 package.json 为基线合成临时包，违约样例必须 FAIL、合规必须 PASS。 */
 function selfTest(repoRoot: string): number {
 	const failures: string[] = [];
 	const base = JSON.parse(fs.readFileSync(path.join(repoRoot, "package.json"), "utf-8")) as PackageManifest;
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "verify-package-invariants-"));
-	const build = (label: string, mutate: (pkg: PackageManifest) => void, remove?: (root: string) => void): number => {
+	/** 合成一个包：合规基线（真实 manifest + 判据面全实存件）按 mutate 改写，返回退出码。 */
+	const codeOf = (label: string, mutate: (pkg: PackageManifest) => void, remove?: (root: string) => void): number => {
 		const root = path.join(dir, label);
 		fs.mkdirSync(root, { recursive: true });
 		for (const rel of [...DIST_KEY_FILES, ...REQUIRED_FILES_ENTRIES]) {
@@ -174,14 +188,57 @@ function selfTest(repoRoot: string): number {
 		mutate(pkg);
 		fs.writeFileSync(path.join(root, "package.json"), JSON.stringify(pkg, null, 2));
 		remove?.(root);
-		return collectViolations(root).length;
+		return evaluatePackage(root).code;
+	};
+	const expect = (label: string, want: number, mutate: (pkg: PackageManifest) => void, remove?: (root: string) => void): void => {
+		const got = codeOf(label, mutate, remove);
+		if (got !== want) failures.push(`${label}: 期望 exit ${want}，实得 ${got}`);
 	};
 	try {
-		if (build("ok", () => {}) !== 0) failures.push("合规夹具（真实 package.json + 全实存件）被误判 FAIL");
-		if (build("no-dist-bin", () => {}, (root) => fs.rmSync(path.join(root, "dist/engine/bin.js"))) === 0) failures.push("违约夹具（缺 dist/engine/bin.js）未被拒");
-		if (build("files-miss", (pkg) => { pkg.files = (pkg.files ?? []).filter((f) => f !== "THIRD-PARTY-NOTICES.md"); }) === 0) failures.push("违约夹具（files 漏契约件）未被拒");
-		if (build("exports-dangling", (pkg) => { (pkg.exports as Record<string, unknown>)["."] = "./dist/adapters/dsh/missing.mjs"; }) === 0) failures.push("违约夹具（exports 悬空指针）未被拒");
-		if (build("src-in-files", (pkg) => { pkg.files = [...(pkg.files ?? []), "src/"]; }) === 0) failures.push("违约夹具（files 收录 src/）未被拒");
+		expect("ok", 0, () => {});
+		expect("no-dist-bin", 1, () => {}, (root) => fs.rmSync(path.join(root, "dist/engine/bin.js")));
+		expect("files-miss", 1, (pkg) => {
+			pkg.files = (pkg.files ?? []).filter((f) => f !== "THIRD-PARTY-NOTICES.md");
+		});
+		expect("exports-dangling", 1, (pkg) => {
+			pkg.exports = { ".": "./dist/adapters/dsh/missing.mjs", "./package.json": "./package.json" };
+		});
+		expect("exports-bare-string", 1, (pkg) => {
+			pkg.exports = "./dist/adapters/dsh/missing.mjs";
+		});
+		expect("src-in-files", 1, (pkg) => {
+			pkg.files = [...(pkg.files ?? []), "src/"];
+		});
+		expect("bare-src-in-files", 1, (pkg) => {
+			pkg.files = [...(pkg.files ?? []), "src"];
+		});
+		expect("files-uncovered", 1, (pkg) => {
+			pkg.files = (pkg.files ?? []).filter((f) => f !== "dist/");
+		});
+		expect("engines-missing", 1, (pkg) => {
+			delete pkg.engines;
+		});
+		expect("bundle-dangling", 1, (pkg) => {
+			pkg.dsh = { bundle: { patch: "./missing.yml" } };
+		});
+		expect("peer-missing", 1, (pkg) => {
+			delete pkg.peerDependencies?.["@deepseek-ai/dsh-tools"];
+		});
+		expect("exports-conditions-positive", 0, (pkg) => {
+			pkg.exports = { ".": { types: "./dist/adapters/dsh/index.mjs", default: "./dist/adapters/dsh/index.mjs" } };
+		});
+		// fail-closed 三档（缺 package.json / 缺 dist / 坏 JSON）——直跑判据主体。
+		const empty = path.join(dir, "empty");
+		fs.mkdirSync(empty, { recursive: true });
+		if (evaluatePackage(empty).code !== 2) failures.push("empty: 缺 package.json 未被 fail-closed");
+		const noDist = path.join(dir, "no-dist");
+		fs.mkdirSync(noDist, { recursive: true });
+		fs.writeFileSync(path.join(noDist, "package.json"), JSON.stringify(base, null, 2));
+		if (evaluatePackage(noDist).code !== 2) failures.push("no-dist: 缺 dist 未被 fail-closed");
+		const badJson = path.join(dir, "bad-json");
+		fs.mkdirSync(path.join(badJson, "dist"), { recursive: true });
+		fs.writeFileSync(path.join(badJson, "package.json"), "{ not json");
+		if (evaluatePackage(badJson).code !== 2) failures.push("bad-json: 坏 package.json 未被 fail-closed");
 	} finally {
 		fs.rmSync(dir, { recursive: true, force: true });
 	}
@@ -189,7 +246,7 @@ function selfTest(repoRoot: string): number {
 		for (const failure of failures) console.log(`SELF-TEST FAIL: ${failure}`);
 		return 1;
 	}
-	console.log(`${PROGRAM} self-test: 5 fixtures passed`);
+	console.log(`${PROGRAM} self-test: 15 fixtures passed`);
 	return 0;
 }
 
