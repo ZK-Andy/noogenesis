@@ -78,9 +78,10 @@
 
 ## 6. 机器强制面
 
-> 判据单源 = [.oxlintrc.json](../../.oxlintrc.json)（lint 显式白名单，逐条规则写明理由）+ [verify-export-docs.mts](../../scripts/verify-export-docs.mts)（导出面注释存在性）；挂载单源 = `engine/gates.json` 的 `lint` / `export-docs` 两条（pre-commit/pre-push/CI 消费同一清单）。立项与取舍见 [c2 ADR](../../.agents/notes/implemented/architecture/2026-09-08-c2-lint-enforcement.md)。
+> 判据单源 = [.oxlintrc.json](../../.oxlintrc.json)（lint 显式白名单，逐条规则写明理由）+ [verify-export-docs.mts](../../scripts/verify-export-docs.mts)（导出面注释存在性）+ [verify-package-invariants.mts](../../scripts/verify-package-invariants.mts)（发布面不变量）；挂载单源 = `engine/gates.json` 的 `lint` / `export-docs` / `package-invariants` 三条（pre-commit/pre-push/CI 消费同一清单）。立项与取舍见 [c2 ADR](../../.agents/notes/implemented/architecture/2026-09-08-c2-lint-enforcement.md) + [轨道 B ADR](../../.agents/notes/implemented/architecture/2026-09-08-coding-enforcement-track-b.md)。
 
 - **已升档**：2.1 存在性 `[M]`（export-docs）；2.3 词面 `[M]`（`no-warning-comments`）；§3 未用变量 / `as const` `[M]`（`no-unused-vars` / `typescript/prefer-as-const`）。
 - **写码在环反馈**：写码工具成功后同步跑同一 `.oxlintrc.json`，诊断经 A4 `context` 回注下一模型步（[lint-feedback.mts](../../adapters/dsh/lint-feedback.mts)；ADR [2026-09-08-lint-in-loop-feedback](../../.agents/notes/implemented/architecture/2026-09-08-lint-in-loop-feedback.md)）——判据不变，机器面从 git 边界提前到写码当轮。
+- **宿主合同与发布面（轨道 B）**：`adapters/dsh/host-api-contract.mts` 断言宿主 API 合同（判据 = `ts-typecheck`）；`package-invariants` 闸校验 `main`/`exports` 实存、`files` 覆盖与契约件、dist 关键件——ADR [2026-09-08-coding-enforcement-track-b](../../.agents/notes/implemented/architecture/2026-09-08-coding-enforcement-track-b.md)。
 - **仍留评审**：2.1 内容质量、2.2 内部注释、2.4 格式约定、§3 命名意图与职责边界——语义判断，机器不可判（理由见各条停档理由），兜底在根 [AGENTS.md](../../AGENTS.md)「评审检查项」第 4 条。
-- **未纳入（有触发条件再立）**：type-aware 规则（`oxlint-tsgolint`）与 `no-explicit-any` / `no-non-null-assertion`——本仓当前无对应失败类，改造量属重构批次；触发 = 真实 async 失守或类型逃逸缺陷出现。
+- **未纳入（有触发条件再立）**：type-aware 规则（`oxlint-tsgolint`）——2026-09-08 实测（n=5，【探索性】）四目标规则零真实 async 缺陷、且多报 11 条 `noUncheckedIndexedAccess` 语境断言误报，以证据延后（[轨道 B ADR](../../.agents/notes/implemented/architecture/2026-09-08-coding-enforcement-track-b.md) D6）；`no-explicit-any` / `no-non-null-assertion` 仍无失败类。触发 = 真实 async 失守或类型逃逸缺陷出现。

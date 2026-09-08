@@ -108,7 +108,9 @@ export function createLintFeedbackPolicies(config: RepoRootConfig, deps: LintFee
 	const toolPost: ToolPostPolicy = (exec, result) => {
 		try {
 			if (exec.name !== "write" && exec.name !== "edit") return;
-			const filePath = exec.arguments?.file_path;
+			const args = exec.arguments;
+			if (typeof args !== "object" || args === null) return;
+			const filePath = (args as Record<string, unknown>).file_path;
 			if (typeof filePath !== "string") return;
 			if (result.isError === true) return;
 			const sessionCwd = sessionWorkspaceOf(exec);

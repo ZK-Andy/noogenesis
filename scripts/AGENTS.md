@@ -8,7 +8,7 @@
 - **tsc 类型闸**：改任何 .mts 必跑 `node node_modules/typescript/bin/tsc --noEmit`（白名单 `ts-typecheck` 闸，strict + noUncheckedIndexedAccess；单文件自测不带后者，全仓跑为准）。
 - **钩子面 lefthook 单源（B3）**：钩子 = `lefthook.yml`（postinstall 自动装钩子，bash 件已退役）。pre-push 编排器 `scripts/pre-push.mts`（tier 循环 TS 端口 + 并行门禁组；dist 自测需先 `npm run build`）；改循环语义必过 `pre-push-selftest.mts` 四态 e2e。v2 pre-push job 按推送文件集门控（tag/新分支全 skip），编排器 job 的 `files: echo lefthook.yml` 恒跑逃生口是 fail-closed 依赖勿删（[B3 ADR](../.agents/notes/implemented/architecture/2026-09-08-b3-hooks-install.md)）。
 - **TS 两族 import 形态分野（B2）**：scripts 族 .mts = type stripping **源跑**，相对导入带 `.mts` 扩展；engine/adapters 族 .ts/.mts = tsc 构建 **dist 跑**（`npm run build`），相对导入带发射名 `.js`/`.mjs` 扩展。新件先归族再选形态，混用即两头跑不起来（[B2 ADR](../.agents/notes/implemented/architecture/2026-09-08-b2-engine-adapter-ts.md) §Decision 点 2）。
-- **lint / export-docs（C2）**：判据单源 = 根 `.oxlintrc.json`（白名单逐条理由）+ `verify-export-docs.mts`（导出函数/类须紧邻 JSDoc）；改判据即改夹具与 [code-standards](../docs/method/code-standards.md) 档位。
+- **lint / export-docs / package-invariants（C2/B2）**：判据单源 = 根 `.oxlintrc.json` + `verify-export-docs.mts`（导出函数/类须紧邻 JSDoc）+ `verify-package-invariants.mts`（发布面不变量；缺 dist → fail-closed）；改判据即改夹具与 [code-standards](../docs/method/code-standards.md) 档位。
 - 范围收窄判据与纪律单源：根 [AGENTS.md](../AGENTS.md)「Git 纪律」（工具 = `scripts/change-scope.mts`）。
-- **mdref 共享件单源**：`scripts/mdref.mts`（verify-md-links.mts / verify-skill-format.mts 的共享链接原语库，显式扩展 import 消费）；链接/锚点正则语义改动即改判据，夹具同批核。
+- **mdref 共享件单源**：`scripts/mdref.mts`（链接/锚点原语库，显式扩展 import 消费）；链接/锚点正则语义改动即改判据，夹具同批核。
 - 生成物与校验件成对：`gen-manifest` 产出、`verify-manifest` 校验；改 manifest 格式四件同变更。

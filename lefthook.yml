@@ -46,6 +46,10 @@ pre-commit:
     - name: export-docs
       run: node scripts/verify-export-docs.mts
 
+    - name: package-invariants
+      glob: "package.json"
+      run: node scripts/verify-package-invariants.mts
+
     - name: gene-format
       run: node scripts/verify-gene-format.mts
 
