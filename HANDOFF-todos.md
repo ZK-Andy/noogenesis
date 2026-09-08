@@ -33,6 +33,7 @@
 - [x] （B）M1/M2 exec 载荷字段修复 2026-09-08（FULL 三审 R1 1B/R2 1B/1S/R3 0B 全采纳收口；0.2.1 发版 + B4 ADR 同步/勘误落账），ADR [2026-09-08-mount-exec-arguments-field](.agents/notes/implemented/bug-fix/2026-09-08-mount-exec-arguments-field.md)。
 - [x] （B）A8 会话记录投影撤除 2026-09-08（宿主读路径拒解释含未标 ignorable 插件事件的日志且 append 无写入口——投影面退役，A2 地图与能力层保留；0.2.2 bump），ADR [撤除 ADR](.agents/notes/implemented/architecture/2026-09-08-a8-session-record-projection-removal.md)。
 - [ ] （B）0.2.2 重装重验（A8 撤除批）：用户更新插件至 0.2.2 后新会话真机探针——历史加载正常 + 会话日志零 `noogenesis/*` 自定义事件类型（原 0.2.1 投影清账判据随撤除批作废；存量含投影事件的会话日志仍不可 observe，修复另案拍板）。
+- [ ] （C）DSH 上游能力缺口外报（A8 撤除批残余）：下游插件无运行时 `ignorable` 写入口（装机 `Session.append` 无参数位、`KNOWN_SESSION_EVENT_TYPES` 仓内生成封闭集）——向 DSH 仓报 issue，机制证据 = 撤除 ADR Problem 节源读链；投影面复投影候选随上游补能力另案。
 - [x] （C）engine/bin.ts pull guard 合并 2026-09-08 随 B5 兑现（B2 R1 延后项，同文案 fail 合一 + 不可达 continue 消除，行为零变化）；B5 ADR Decision 6。
 - [x] （A）框架重建立项收口 2026-09-06（推倒重建/先框架后协作层/原地重建；FULL 三审 R1 0B/5S、R2 2B/6S、R3 1B/3S 全采纳），ADR [2026-09-06-framework-rebuild-charter](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md)。
 - [x] （C）main 领先包体出包 2026-09-08 随 B5 0.2.0 断点销账（git 前置条件 + ENOENT 诊断 `b5fcb2e`→`10745e2` 已带出；tag `v0.2.0` + npm latest 在案）。
