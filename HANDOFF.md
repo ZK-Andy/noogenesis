@@ -11,6 +11,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-08｜**编码强制两轨实施计划落盘（讨论轮；无 ADR，行动区指针）**：`docs/research/coding-enforcement-impl-plan.md`——轨道 A（A4 写码在环反馈 + 指针）+ 轨道 B（宿主 API 签名核对[类型级] + 发布面不变量[AST/JSON]；镜像比对判死；type-aware lint 评估后定）。**节点：下一会话执行批 1。** README 无漂移。
 - 2026-09-08｜**编码规范 c2 机器强制收口（FULL 三审 R1 1B/6S、R2 1B/5S、R3 1B/5S 全采纳；ADR `2026-09-08-c2-lint-enforcement` implemented；`8a3898f`→`9844023`）**：oxlint 白名单 + 导出面契约注释闸入 gates.json（13→15，三面同判据）；清 19 处真实缺陷 + 4 处注释缺口。**节点：c1/c2 闭环。** README 有变更已同步。
 - 2026-09-08｜**编码规范 c1 评审恢复收口（FULL 三审 R1 1B/4S、R2 1B/4S、R3 2B/3S 全采纳；ADR `2026-09-08-coding-standards` implemented；`155e1af`→收口）**：修复 = §2.4 改 [R] + 停档理由、判据收编落家、实例去虚构、兜底归属单源根 AGENTS、五命令对齐、ADR 出处归口问题池。**节点：c1 收口，下一批 = c2。** README 无漂移。
 - 2026-09-08｜**问题池状态同步批（`c53882f` push）**：capsule-01-optimization-round.md 对齐 09-08 现实——TS 统一/推倒重建转已落地；M1/M3 标 A8 撤除随投影面退役、证据回 tool/result 事件文本；上帝类闸 C15 判不立；§3.5 逐项落地。**README 无漂移。**
@@ -47,8 +48,6 @@
 - 2026-09-06｜**P2 只读共享消费落地（FULL 三审 R1 1B/5S、R2 1B/8S、R3 0B/6S 全采纳；ADR `2026-09-06-p2-shared-consumer` implemented）**：本仓即库 + `engine pull` + 缓存合并扫描（本仓优先）+ manifest 索引/门禁（11 件）+ adapter `geneBankUrl` 惰性 pull；设计稿未决 1/3/4 回写。**节点：P2 闭环。** README 核对无漂移。
 
 - 2026-09-06｜**npm 真包首发（release-flow；repository 修正 `cecc815`；tag `v0.1.0`）**：`noogenesis@0.1.0` = latest；desktop 实装（bundles 层栈 + plugin row 合成 + 引擎空仓退化/真仓命中）；minimumReleaseAge 拦新包 → 单命令豁免（cookbook [环境]）；M2 ADR 发布 gate 清账；会话级装载新会话确认。**节点：M2 全链路收口。**
-
-- 2026-09-06｜**M2 适配层实现轮（FULL 三审 R1 0B/4S、R2 1B/8S、R3 3B/4S 全采纳；ADR `2026-09-06-m2-adapter-wiring`；commits `78eb26f`→`65ca063`）**：adapters/dsh 八件 + npm 插件包形态 + gates.json 单源发射器；R2-B1（命中节 {{ 未转义）零宽中性化；真安装验证随 npm 首发收口；README 核对已同步（三处）。
 
 ## 背景
 
