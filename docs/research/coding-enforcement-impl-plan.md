@@ -50,26 +50,26 @@
 
 ### B-1 宿主 API 签名核对（类型级，建）
 
-- 新件 `adapters/dsh/host-api-contract.ts`：**纯类型断言、零运行时代码**——判据 = `tsc --noEmit`（`ts-typecheck` 闸已有，零新门禁脚本）。
-- 断言面（依赖的宿主合同）：`"tools/pre-execute" | "tools/post-execute" | "agent/pre-step" | "agent/session-start" | "agent/created" | "agent/disposed" extends keyof Events`；`ToolExecution.arguments` 键；`PostToolDecision` 的 `additionalContexts`；`PreToolDecision` 的 allow/deny/ask 判别；`defineTool` 参数/返回形状；`createUserMessage` 入参形状。
+- 新件 `adapters/dsh/host-api-contract.mts`：**纯类型断言、零运行时代码**——判据 = `tsc --noEmit`（`ts-typecheck` 闸已有，零新门禁脚本）。
+- 断言面（依赖的宿主合同）**两组互补**：**键存在性**（`Events` 六键；`ToolExecution` 的 `name`/`arguments`/`agent`/`signal`；`ToolExecutionResult` 的 `isError`/`content`；`PostToolDecision.additionalContexts`）+ **形状相容**（`ToolExecution`/`ToolExecutionResult` extends `mount.mts` 窄类型）；另有决策判别式（`PreToolDecision` 三态、`PostToolDecision` accept/block）。`defineTool` 参数/返回与 `createUserMessage` 入参**不入断言面**——真实调用点由编译器同参数类型检查。
 - 手法：`type Assert<T extends true> = T` + `type _k1 = Assert<…>`；上游漂移 → tsc 红。
-- 验收：`tsc` 零错；负向手验（临时改一处断言 → 红，不留仓）。无 `--self-test`（判据 = 编译器，同 `ts-typecheck` 先例）。
+- 验收：`tsc` 零错；负向手验（改键名/收窄形状 → 红，不留仓）。无 `--self-test`（判据 = 编译器，同 `ts-typecheck` 先例）。
 
 ### B-2 发布面不变量（AST/JSON 级，建）
 
 - 新件 `scripts/verify-package-invariants.mts` + `engine/gates.json` 条目 `package-invariants`（15→16 条）+ `.github/workflows/validate.yml` self-test 行 + `lefthook.yml` pre-commit job。
 - 判据：
-  1. `main` / `exports["."]` / `exports["./package.json"]` 指向 dist 实存件；
+  1. `main` / `exports`（递归收集全部字符串目标——裸字符串、条件对象、嵌套条件）指向 dist 实存件；
   2. `files` 白名单覆盖 `exports`/`main` 全部路径 + `engine/gates.json`、`engine/README.md`、`adapters/dsh/README.md`、`cordis.patch.yml`、`README.md`、`LICENSE`、`THIRD-PARTY-NOTICES.md`；
   3. dist 关键件存在：`dist/adapters/dsh/index.mjs`、`dist/engine/bin.js`、`dist/engine/gates.json`；
   4. `engines.node` 在场；`dsh.bundle.patch` 指向实存件；`peerDependencies` 的 `@deepseek-ai/*` 在场；
   5. 白名单外目录（`src`/`tests`/`.cache`）不得进入 `files`。
-- `--self-test` 夹具：合规包 PASS；缺 dist / `files` 漏项 / `exports` 指向不存在路径 / 多余 src 各 FAIL。
-- 前置：`npm run build`（CI 与 pre-push 已建 dist）；缺 dist → fail-closed exit 2。
+- `--self-test` 15 夹具：合规包（含 exports 条件对象形态）PASS；缺 dist 件 / `files` 漏项 / `files` 未覆盖 main / `exports` 悬空（字符串与裸字符串）/ 多余 `src`（带斜杠与裸目录名）/ `engines` 缺失 / `bundle.patch` 悬空 / peer 缺失各 FAIL；另三例钉 fail-closed 三档（缺 package.json / 缺 dist / 坏 JSON）。
+- 前置：`npm run build`（**权威面 = CI**：`validate.yml` 先构建再跑；pre-push 只检查 dist 存在、不重建）；缺 dist → fail-closed exit 2。
 
 ### B-3 双实现镜像比对（判死）
 
-- 前提消失：B5 已删 py 权威件 13 件 + 旧 js 源 10/9 件，**无第二实现可镜像**。关闭，理由落批 2 ADR 的 `Alternatives considered`。〔状态 2026-09-08：判死已落 track-b ADR D5。〕
+- 前提消失：B5 已删 py 权威件 13 件 + 旧 js 源 10/9 件，**无第二实现可镜像**。关闭，理由落批 2 ADR 的 D5。〔状态 2026-09-08：判死已落 track-b ADR D5。〕
 
 ### B-4 类型感知 lint（评估后定）
 

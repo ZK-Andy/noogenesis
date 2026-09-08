@@ -1,6 +1,7 @@
 # Agent Note: 轨道 B——宿主 API 类型契约 + 发布面不变量门禁（B-3 判死 / B-4 测量延后）
 
 Status: implemented
+Review: FULL/2026-09-08/R1=ok R2=ok R3=ok
 
 Related: 实施计划 [coding-enforcement-impl-plan](../../../../docs/research/coding-enforcement-impl-plan.md)（批 2 = B-1/B-2 + B-3/B-4 定夺）；批 1 [2026-09-08-lint-in-loop-feedback](2026-09-08-lint-in-loop-feedback.md)；防火墙与允许集单源 [adapters/AGENTS.md](../../../../adapters/AGENTS.md) + [2026-09-06-m2-adapter-wiring](2026-09-06-m2-adapter-wiring.md) / [2026-09-08-b4-mount-wiring](2026-09-08-b4-mount-wiring.md)；门禁清单单源 [engine/gates.json](../../../../engine/gates.json)；判据面 [2026-09-08-c2-lint-enforcement](2026-09-08-c2-lint-enforcement.md)
 
@@ -64,6 +65,8 @@ Related: 实施计划 [coding-enforcement-impl-plan](../../../../docs/research/c
 - **package-invariants 不进 pre-commit（只 CI/pre-push）**：落败——实施计划 §B-2 明列 pre-commit job；`glob: package.json` 把成本限制在发布面变更的提交上。
 - **type-aware lint 纳入白名单**：落败——零 async 缺陷 + 11 条 `noUncheckedIndexedAccess` 语境下的误报；HERO-O（不为想象失败面投资）。
 - **镜像比对留空实现占位**：落败——无第二实现即无判据，占位闸是死代码。
+- **门禁与 adapter selftest 共持发布面事实（折叠为一处）**：未采纳（R1 评审 2026-09-08）——跨层运行形态不同（`scripts` 源跑 `.mts` / `adapters` dist 跑 `.mjs`），防火墙禁跨层 import；镜像同一批事实是边界代价。
+- **源码面只留 type-only 半区（值半区与 dist 面重复）**：未采纳（R1 评审 2026-09-08）——源码面给出文件名级定位，且动态 `import()` / `require()` 形态只有源码面能分类。
 
 ## Consequences
 
@@ -74,4 +77,4 @@ Related: 实施计划 [coding-enforcement-impl-plan](../../../../docs/research/c
 - 发布面实证（2026-09-08，0.2.2 树）：`npm pack --dry-run` 列 32 件——dist 全件 + `engine/gates.json` + `engine/README.md` + `adapters/dsh/README.md` + `cordis.patch.yml` + `README(.zh).md` + `LICENSE` + `THIRD-PARTY-NOTICES.md`，零 `src/`/`tests/`/`.cache`；`host-api-contract.mjs` = 11B 空模块（type-only 擦除实证）。
 - type-aware lint 以证据延后（零 async 缺陷 + 11 条误报 + 墙钟 ~3.7×），触发条件在案。
 - 镜像比对判死，零新增代码。
-- 评审收口（2026-09-08 FULL 三审）：R1/R2 共指 **B1 = 形状断言钉不住键名**（补键存在性断言 + 改口径 + 修 Alternatives）；R1-B2 = 判据 4 与多条分支零违约夹具（夹具 5→15，含 fail-closed 三档）；R2-B2 = 防火墙漏动态 `import()` / `export-from`（三形态同扫）；R2-S1 = exports 只认字符串/`{default}`（改递归收集）；R2-S2 = 坏 JSON 抛栈非 fail-closed（改 exit 2）；R2-S4 = `adapters/AGENTS.md` 允许集口径自相矛盾（值/类型分野改写）；R1-S1/S2 = `defineTool`/`createUserMessage` 断言零证伪力（删）；R2-S5 = 收窄分支缺非对象/缺席夹具（补）；R2-S3 = fail-closed 无回归夹具（补）。未采纳：R1-S4（门禁与 selftest 镜像同一事实——跨层运行形态不同，不可共 import，边界代价）、R1-S5（源码面值半区与 dist 面重复——源码面给出文件名级定位，保留）。
+- 评审收口（2026-09-08 FULL 三审）：R1/R2 共指 **B1 = 形状断言钉不住键名**（补键存在性断言 + 改口径 + 修 Alternatives）；R1-B2 = 判据 4 与多条分支零违约夹具（夹具 5→15，含 fail-closed 三档）；R2-B2 = 防火墙漏动态 `import()` / `export-from`（三形态同扫）；R2-S1 = exports 只认字符串/`{default}`（改递归收集）；R2-S2 = 坏 JSON 抛栈非 fail-closed（改 exit 2）；R2-S4 = `adapters/AGENTS.md` 允许集口径自相矛盾（值/类型分野改写）；R1-S1/S2 = `defineTool`/`createUserMessage` 断言零证伪力（删）；R2-S5 = 收窄分支缺非对象/缺席夹具（补）；R2-S3 = fail-closed 无回归夹具（补）；R3-B1 = 实施计划 procedure 正文未随批 2 同步（文件名/断言面/夹具数/dist 前置四处改写）；R3-S1/S2/S3/S4 = 判死理由归 D5、code-standards 的 n 与【推断】标注、cordis 改精确钉版、未采纳备选归 Alternatives。
