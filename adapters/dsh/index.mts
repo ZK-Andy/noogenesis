@@ -24,8 +24,8 @@ import { runSolidifyTrigger, listStagingCandidates, createInFlightGate, ASK_TIME
 import { createBankPullScheduler } from "./bank-pull.mjs";
 import { registerBankSkills } from "./skill-provider.mjs";
 import { validateConfig } from "./config.mjs";
-import { mergePreStep, mergeSessionStart, mergeToolPost, mergeToolPre, runTurnStopping } from "./mount.mjs";
-import type { MountRecord, PreStepPayload, SessionStartPayload, ToolExecLike, ToolResultLike, TurnStoppingPayload } from "./mount.mjs";
+import { mergePreStep, mergeSessionStart, mergeToolPost, mergeToolPre } from "./mount.mjs";
+import type { PreStepPayload, SessionStartPayload, ToolExecLike, ToolResultLike } from "./mount.mjs";
 import { createMountPolicies } from "./mount-policies.mjs";
 
 export const name = "noogenesis";
@@ -57,21 +57,6 @@ function adviceMessage(lines: string[]): unknown {
 		content: lines.map((text) => ({ type: "text" as const, text })),
 		source: PLUGIN_SOURCE,
 	});
-}
-
-/**
- * A8 记录落点：挂载记录 → 宿主 session 事件面（session.append 自定义 kind，
- * `noogenesis/` 前缀；feedback/record 先例支持自定义 kind——B4 ADR Risks 在
- * 案，持久化插件对未知 kind 的容忍度随桌面重验实证）。append 异常 = 记录
- * 缺席（降级纪律：warn 一次留痕，绝不阻塞会话）。
- */
-function appendRecord(agent: unknown, record: MountRecord, logger: { warn(message: string): void }): void {
-	const session = (agent as { session?: { append?(kind: string, data: unknown): void } } | null | undefined)?.session;
-	try {
-		session?.append?.(record.kind, record.data);
-	} catch (cause) {
-		logger.warn(`noogenesis record ${record.kind} append failed: ${cause instanceof Error ? cause.message : String(cause)}`);
-	}
 }
 
 /**
@@ -227,24 +212,9 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 		return { ...downstream, additionalContexts: [adviceMessage(merged.context), ...(downstream.additionalContexts ?? [])] };
 	});
 
-	// A6 停止前（agent/turn-stopping，serial 非阻断位）：记录载荷投影 → A8
-	// 落点（session.append）；异常 catch → warn 降级。
-	ctx.on("agent/turn-stopping", (payload: TurnStoppingPayload) => {
-		try {
-			for (const record of runTurnStopping(mounts.turnStopping, payload)) appendRecord(payload.agent, record, logger);
-		} catch (cause) {
-			logger.warn(`noogenesis turn-stopping mount failed: ${cause instanceof Error ? cause.message : String(cause)}`);
-		}
-	});
-
-	// A8 会话事件轨：记录落点 = session.append 胶水（A6 面，产出侧）；drain
-	// 面挂 session/disposed 独立 cordis 事件（R2-B1 实证：disposal 不走
-	// session/event firehose——firehose 只投 Session.append 提交的日志事件，
-	// 封闭键集无 disposed；签名 (session) 单参）。session/flush 持久化由宿主
-	// 持久化插件承担，本插件无持久态。
-	ctx.on("session/disposed", (session: unknown) => {
-		mounts.dropSessionState(session);
-	});
+	// 挂载面 A6/A8 记录投影已撤（ADR 2026-09-08-a8-session-record-projection-removal：
+	// 宿主读路径对未标 ignorable 的下游插件事件类型 fail-closed，Session.append
+	// 无 ignorable 写入口）；存留挂载面 = A2/A3/A4/A5 四点 + 挂载点各自降级。
 
 	// 写路径唯一触发点：agent/disposed。repoRoot 按 dispose 的那个 agent 逐次
 	// 解析（payload 携带 { agent }，与 auto 触发面同款实证）——异仓会话各归

@@ -33,8 +33,8 @@ import { listStagingCandidates, buildSolidifyArgs, solidifyNotice, runSolidifyTr
 import { buildPullArgs, pullBankOnce, createBankPullScheduler } from "./bank-pull.mjs";
 import { BUNDLED_SKILL_RANK, PROVIDER_NAME, createBankSkillProvider, parseSkillFile, registerBankSkills } from "./skill-provider.mjs";
 import { validateConfig, DEFAULT_GENE_BANK_URL } from "./config.mjs";
-import { createSessionStore, mergePreStep, mergeSessionStart, mergeToolPost, mergeToolPre, runTurnStopping } from "./mount.mjs";
-import { createMountPolicies, createReviewSurfacePolicy, createSkillUsagePolicy, createSubtreeRulesPolicies } from "./mount-policies.mjs";
+import { createSessionStore, mergePreStep, mergeSessionStart, mergeToolPost, mergeToolPre } from "./mount.mjs";
+import { createMountPolicies, createSubtreeRulesPolicies } from "./mount-policies.mjs";
 import { apply } from "./index.mjs";
 
 const ADAPTER_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -695,17 +695,6 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.deepEqual(mergeSessionStart([() => ({ kind: "inject" as const, lines: ["a", "b"] })], {}), ["a", "b"]);
 	ok("mounts: session-start merge — inject lines accumulate (non-blocking)");
 
-	const flattened = runTurnStopping(
-		[
-			() => [{ kind: "k1", data: {} }],
-			() => undefined,
-			() => [{ kind: "k2", data: { x: 1 } }],
-		],
-		{},
-	);
-	assert.deepEqual(flattened, [{ kind: "k1", data: {} }, { kind: "k2", data: { x: 1 } }]);
-	ok("mounts: turn-stopping merge — record payloads flatten in registration order");
-
 	// 会话键控存储：同键共享实例、异键隔离、drop 清态、无键降级为即席实例。
 	{
 		const store = createSessionStore();
@@ -720,23 +709,7 @@ function writeFixtureGene(repoRoot: string): void {
 		ok("mounts: session store — per-key state, drop clears, keyless degrades to fresh");
 	}
 
-	// M1：noo-* 技能痕迹 → A6 增量记录；外来技能/非 skill 工具零痕迹。
-	{
-		const skill = createSkillUsagePolicy();
-		const agent = { session: { header: { cwd: "/tmp/m1" } } };
-		skill.toolPre({ name: "skill", arguments: { name: "noo-doc-standards" }, agent });
-		skill.toolPre({ name: "skill", arguments: { name: "other-skill" }, agent });
-		skill.toolPre({ name: "read", arguments: { file_path: "/x" }, agent });
-		const first = skill.turnStopping({ agent, turn: 3 }) ?? [];
-		assert.deepEqual(first, [{ kind: "noogenesis/skill-usage", data: { turn: 3, names: ["noo-doc-standards"] } }]);
-		assert.deepEqual(skill.turnStopping({ agent, turn: 4 }) ?? [], []);
-		skill.toolPre({ name: "skill", arguments: { name: "noo-evaluate" }, agent });
-		const second = skill.turnStopping({ agent, turn: 5 }) ?? [];
-		assert.deepEqual(second[0]?.data, { turn: 5, names: ["noo-evaluate"] });
-		ok("mounts: M1 — noo-* skill traces recorded incrementally; foreign skills ignored");
-	}
-
-	// M2：开场地图每会话一次（subagent / 零布点仓跳过）；edit/write 触摸归因。
+	// M2：开场地图每会话一次（subagent / 零布点仓跳过）。
 	{
 		const repo = tempRepo("mount-m2");
 		for (const subtree of ["engine", "scripts"]) {
@@ -762,56 +735,20 @@ function writeFixtureGene(repoRoot: string): void {
 		assert.ok(lateAdvice && lateAdvice.kind === "advice", "first pre-step triggers regardless of turn/step");
 		const bare = createSubtreeRulesPolicies({ repoRoot: tempRepo("mount-m2-bare") });
 		assert.equal(bare.preStep({ agent: { session: { header: { cwd: path.join(os.tmpdir(), "mount-m2-bare-missing") } } }, turn: 1, step: 1 }), undefined);
-		subtreePolicies.toolPre({ name: "edit", arguments: { file_path: path.join(repo, "engine", "bin.ts") }, agent });
-		subtreePolicies.toolPre({ name: "read", arguments: { file_path: path.join(repo, "engine", "x.ts") }, agent });
-		subtreePolicies.toolPre({ name: "write", arguments: { file_path: "/elsewhere/out.ts" }, agent });
-		const touches = subtreePolicies.turnStopping({ agent, turn: 2 }) ?? [];
-		assert.deepEqual(touches, [{ kind: "noogenesis/subtree-touch", data: { turn: 2, touches: [{ subtree: "engine", path: path.join("engine", "bin.ts") }] } }]);
-		assert.deepEqual(subtreePolicies.turnStopping({ agent, turn: 3 }) ?? [], []);
-		// 滚动窗口游标回归（R2-B2）：cap 平移后投影仍逐件到达，记录流不死。
-		{
-			const roller = createSubtreeRulesPolicies({ repoRoot: repo });
-			const rollAgent = { session: { header: { cwd: repo } } };
-			for (let i = 0; i < 50; i += 1) roller.toolPre({ name: "edit", arguments: { file_path: path.join(repo, "engine", `f${i}.ts`) }, agent: rollAgent });
-			const firstWave = roller.turnStopping({ agent: rollAgent, turn: 1 }) ?? [];
-			assert.equal((firstWave[0]?.data as { touches: unknown[] }).touches.length, 50);
-			assert.deepEqual(roller.turnStopping({ agent: rollAgent, turn: 2 }) ?? [], []);
-			for (const i of [50, 51]) roller.toolPre({ name: "edit", arguments: { file_path: path.join(repo, "engine", `f${i}.ts`) }, agent: rollAgent });
-			const secondWave = roller.turnStopping({ agent: rollAgent, turn: 3 }) ?? [];
-			assert.equal((secondWave[0]?.data as { touches: unknown[] }).touches.length, 2);
-			ok("mounts: M2 cursor regression — window shift keeps projection alive past cap");
-		}
-		ok("mounts: M2 — opening map once per session (subagent/zero-subtree skipped); edit/write touches attributed");
+		ok("mounts: M2 — opening map once per session (subagent/zero-subtree skipped)");
 	}
 
-	// M3：评审机器面标记闭集计数 → A6 累计记录（只在计数有变化的 turn 落）。
-	{
-		const review = createReviewSurfacePolicy();
-		const agent = { session: { header: { cwd: "/tmp/m3" } } };
-		const exec = { agent };
-		review.toolPost(exec, { content: [{ type: "text", text: "gates.mts --run\nFAIL review-brief" }] });
-		review.toolPost(exec, { content: [{ type: "text", text: "node scripts/verify-review-brief.mts --lanes R1,R2,R3" }] });
-		review.toolPost(exec, { content: [{ type: "text", text: "node scripts/verify-review-tier.mts --enforce" }] });
-		review.toolPost(exec, { content: [{ type: "text", text: "no markers here" }] });
-		const records = review.turnStopping({ agent, turn: 7 }) ?? [];
-		assert.deepEqual(records, [{ kind: "noogenesis/review-surface", data: { turn: 7, briefRuns: 1, tierRuns: 1, gateRuns: 1 } }]);
-		assert.deepEqual(review.turnStopping({ agent, turn: 8 }) ?? [], []);
-		ok("mounts: M3 — review machine-face markers counted, cumulative record on delta");
-	}
-
-	// 策略件组装：M1/M2/M3 五条 lane + A5 零策略能力位。
+	// 策略件组装：A2 地图件 + A3/A4/A5 零策略能力位（A6/A8 投影面已撤——撤除 ADR）。
 	{
 		const set = createMountPolicies({ repoRoot: "/tmp/assembly" });
 		assert.equal(set.preStep.length, 1);
-		assert.equal(set.toolPre.length, 2);
-		assert.equal(set.toolPost.length, 1);
+		assert.deepEqual(set.toolPre, []);
+		assert.deepEqual(set.toolPost, []);
 		assert.deepEqual(set.sessionStart, []);
-		assert.equal(set.turnStopping.length, 3);
-		assert.equal(typeof set.dropSessionState, "function");
-		ok("mounts: policy set assembly — M1/M2/M3 in five lanes; A5 zero-policy capability");
+		ok("mounts: policy set assembly — A2 map + A3/A4/A5 zero-policy capability lanes");
 	}
 
-	// index 接线假 ctx 冒烟：六点各恰一个 listener + 行为逐条。
+	// index 接线假 ctx 冒烟：存留四点各恰一个 listener + 行为逐条。
 	{
 		const repo = tempRepo("mount-wiring");
 		fs.mkdirSync(path.join(repo, "engine"), { recursive: true });
@@ -830,18 +767,15 @@ function writeFixtureGene(repoRoot: string): void {
 			},
 		};
 		apply(fakeMountCtx as never, { repoRoot: repo, geneBankUrl: false });
-		for (const event of ["agent/session-start", "agent/pre-step", "tools/pre-execute", "tools/post-execute", "agent/turn-stopping", "session/disposed"]) {
+		for (const event of ["agent/session-start", "agent/pre-step", "tools/pre-execute", "tools/post-execute"]) {
 			assert.equal(listeners.get(event)?.length, 1, `${event} must be wired exactly once`);
 		}
-		ok("mounts: index wiring — six mounting points registered one listener each");
+		ok("mounts: index wiring — surviving four mounting points registered one listener each");
 
-		const appended: Array<[string, unknown]> = [];
-		const agent = { session: { header: { cwd: repo }, append: (kind: string, data: unknown) => appended.push([kind, data]) } };
+		const agent = { session: { header: { cwd: repo } } };
 		const preStep = listeners.get("agent/pre-step")![0]!;
 		const toolPre = listeners.get("tools/pre-execute")![0]!;
 		const toolPost = listeners.get("tools/post-execute")![0]!;
-		const turnStopping = listeners.get("agent/turn-stopping")![0]!;
-		const sessionDisposed = listeners.get("session/disposed")![0]!;
 		const sessionStart = listeners.get("agent/session-start")![0]!;
 
 		// A2：首步地图追加一条建议消息；后续步零追加；reject 下游直通。
@@ -854,34 +788,19 @@ function writeFixtureGene(repoRoot: string): void {
 		assert.equal(rejected.kind, "reject");
 		ok("mounts: A2 wiring — opening map appended once; later steps and reject passthrough");
 
-		// A3：首批零 deny/ask → next 透传（M1 观测在 pre-execute 不拦）。
+		// A3：首批零 deny/ask → next 透传（能力位在场，观测面已随投影撤除）。
 		const passthroughMarker = { marker: true };
 		assert.equal(await toolPre({ name: "skill", arguments: { name: "noo-select" }, agent }, async () => passthroughMarker), passthroughMarker);
 		ok("mounts: A3 wiring — no first-batch denial; passthrough preserved");
 
-		// A4：观测零决策 → 透传（M3 只读结果面）。
+		// A4：首批零策略 → 透传（能力位在场）。
 		const postDownstream = { kind: "accept" };
 		assert.equal(await toolPost({ agent }, { content: [{ type: "text", text: "node scripts/verify-review-brief.mts" }] }, async () => postDownstream), postDownstream);
-		ok("mounts: A4 wiring — observation-only policy passes result through");
-
-		// A6+A8：记录投影落 session 面（skill-usage + review-surface，subtree 零触摸）。
-		await turnStopping({ agent, turn: 4 });
-		assert.deepEqual(appended.map(([kind]) => kind), ["noogenesis/skill-usage", "noogenesis/review-surface"]);
-		await turnStopping({ agent, turn: 5 });
-		assert.equal(appended.length, 2, "zero-delta turn must project nothing");
-		ok("mounts: A6+A8 wiring — records land on session surface, deltas only");
+		ok("mounts: A4 wiring — zero-policy post lane passes result through");
 
 		// A5：零策略件 → 无注入不抛（能力位在场即冒烟）。
 		await sessionStart({ agent });
 		ok("mounts: A5 wiring — session-start capability wired, zero-policy no-op safe");
-
-		// A8 drain：session/disposed 独立 cordis 事件（R2-B1：非 firehose 成员，
-		// 签名单参 (session)）——清态后同会话状态重建即重新记录。
-		sessionDisposed(agent.session);
-		toolPre({ name: "skill", arguments: { name: "noo-propose" }, agent }, async () => ({}));
-		await turnStopping({ agent, turn: 6 });
-		assert.equal(appended.length, 3, "drain must reset counters so post-drain usage re-records");
-		ok("mounts: A8 wiring — session/disposed drains policy state, post-drain usage re-records");
 	}
 }
 

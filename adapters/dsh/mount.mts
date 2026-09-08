@@ -1,5 +1,7 @@
 /**
- * mount.mts — 挂载面能力层（B4 ADR Decision 1）：六点合并语义单源。
+ * mount.mts — 挂载面能力层（B4 ADR Decision 1；A6 记录位与 A8 落点已随
+ * A8 投影撤除批退役——ADR 2026-09-08-a8-session-record-projection-removal，
+ * 撤除后能力面 = A2–A5）。
  *
  * 六挂载点（A2–A6 + A8）各一组策略接口 + 一个合并器——hook-protocol 判定
  * 语义的本地蒸馏（蓝图 §7 边界：不建两方言桥，deny→A3 阻断并回消息 /
@@ -14,11 +16,10 @@
  */
 import type { AgentCarrier } from "./engine-bridge.mjs";
 
-/** 宿主 agent 的最小结构面（会话 append 落点 + 会话身份键）。 */
+/** 宿主 agent 的最小结构面（会话身份键；A6/A8 的 append 落点已撤——撤除 ADR）。 */
 export interface AgentRef {
 	session?: {
 		header?: { cwd?: string; origin?: string };
-		append?(kind: string, data: unknown): void;
 	};
 }
 
@@ -47,23 +48,10 @@ export interface ToolResultLike {
 	content?: Array<{ type?: string; text?: string }>;
 }
 
-/** A6 停止前 payload（`agent/turn-stopping` 窄面；serial 非阻断位）。 */
-export interface TurnStoppingPayload extends AgentCarrier {
-	agent?: AgentRef;
-	turn?: number;
-	signal?: unknown;
-}
-
 /** A5 会话开始 payload（`agent/session-start` 窄面；inject 为非阻塞能力位）。 */
 export interface SessionStartPayload extends AgentCarrier {
 	agent?: AgentRef & { inject?(message: unknown): void };
 	source?: unknown;
-}
-
-/** A6 投影的挂载记录载荷（session.append 自定义 kind；数据面恒 JSON 可序列化）。 */
-export interface MountRecord {
-	kind: string;
-	data: Record<string, unknown>;
 }
 
 /** A2 策略决策：reject = 权威拒绝一步（阻断档，首批不用）；advice = 建议档消息行。 */
@@ -78,17 +66,16 @@ export type ToolPostPolicyDecision = { kind: "block"; feedback: string } | { kin
 /** A5 策略决策：inject = 会话开始注入上下文行（非阻塞）。 */
 export type SessionStartPolicyDecision = { kind: "inject"; lines: string[] };
 
-/** 策略接口五件（A8 无策略——记录落点 = session.append 胶水 + 会话清态，见 index）。 */
+/** 策略接口四件（A6/A8 记录投影面已撤——撤除 ADR；A3/A4/A5 首批零策略件）。 */
 export type PreStepPolicy = (payload: PreStepPayload) => PreStepPolicyDecision | void;
 export type ToolPrePolicy = (exec: ToolExecLike) => ToolPrePolicyDecision | void;
 export type ToolPostPolicy = (exec: ToolExecLike, result: ToolResultLike) => ToolPostPolicyDecision | void;
 export type SessionStartPolicy = (payload: SessionStartPayload) => SessionStartPolicyDecision | void;
-export type TurnStoppingPolicy = (payload: TurnStoppingPayload) => MountRecord[] | void;
 
 /**
  * 每会话键控状态存储（WeakMap，GC 自清）：键 = 宿主 session 对象（dsh-goal
- * 同款键位——会话对象身份跨 agent 稳定）。策略件各自持有实例；session/disposed
- * 显式清态由 index.mts A8 接线调用（mount-policies dropSessionState）。
+ * 同款键位——会话对象身份跨 agent 稳定）。策略件各自持有实例；残留状态仅
+ * A2 地图的单门布尔（投影状态与其 drain 面已随撤除批退役）。
  */
 export function createSessionStore(): { of<T>(key: unknown, init: () => T): T; drop(key: unknown): boolean } {
 	const store = new WeakMap<object, unknown>();
@@ -178,14 +165,4 @@ export function mergeSessionStart(policies: readonly SessionStartPolicy[], paylo
 		if (decision) lines.push(...decision.lines);
 	}
 	return lines;
-}
-
-/** A6 合并语义：各策略的记录载荷按注册序展平（非阻断位，异常由胶水降级）。 */
-export function runTurnStopping(policies: readonly TurnStoppingPolicy[], payload: TurnStoppingPayload): MountRecord[] {
-	const records: MountRecord[] = [];
-	for (const policy of policies) {
-		const produced = policy(payload);
-		if (produced) records.push(...produced);
-	}
-	return records;
 }
