@@ -42,7 +42,7 @@ Related: 实施计划 [coding-enforcement-impl-plan](../../../../docs/research/c
 
 ### D6 B-4 type-aware lint：测量后延后
 
-- 测量（2026-09-08，n=5，`oxlint-tsgolint@7.0.2001` + oxlint 1.82.0，本机，【探索性】）：目标四规则命中 = `no-floating-promises` 0 / `no-misused-promises` 0 / `await-thenable` 0 / `no-unnecessary-condition` 1（`scripts/verify-archived-agent-notes.mts:150` 的形状校验冗余分支，非 async 缺陷）。
+- 测量（2026-09-08，`oxlint-tsgolint@7.0.2001` + oxlint 1.82.0，本机）：**规则命中 = n=1 单跑**（【探索性】）——目标四规则命中 = `no-floating-promises` 0 / `no-misused-promises` 0 / `await-thenable` 0 / `no-unnecessary-condition` 1（`scripts/verify-archived-agent-notes.mts:150` 的形状校验冗余分支，非 async 缺陷）。
 - 副作用：`--type-aware` 把既有 `typescript/no-unnecessary-type-assertion` 升级为语义版，多报 11 条；其中 `engine/bin.ts:122`、`adapters/dsh/selftest.mts:865` 的断言在 `noUncheckedIndexedAccess` 下必要（【推断 · 未证】：tsgolint 未应用该编译选项）。
 - 墙钟（n=5，【探索性】）：全仓 baseline 93–116ms vs type-aware 358–420ms（~3.7×）——低于计划成本闸（>1s 降级），但按计划判据「零真实 async 缺陷 → 证据延后（HERO）」**不纳入**；触发 = 出现真实 async 失守。
 
@@ -66,5 +66,6 @@ Related: 实施计划 [coding-enforcement-impl-plan](../../../../docs/research/c
 - 防火墙语义精确化：值/类型 import 分野机器断言，源码面补上 dist 扫描的盲区；devDependency +1（cordis，type-only）。
 - 发布面不变量入 `engine/gates.json`（15→16 条）：`main`/`exports` 悬空、`files` 漏项、dist 缺件、白名单外目录四类发布事故在 CI 前置拦下；本地 pre-push 受陈旧 dist 限制（权威面 CI）。
 - **gates.json 双用面**：它既是门禁清单，也是基因 `evaluate` 的全集门槛（`engine/evaluate.ts` 逐条跑）——新闸随之进入每次 `noo_evaluate`，故 `package-invariants` 要求评估仓有 `dist/`（本仓自举恒满足；消费仓 evaluate 本已因仓内规则闸失败，无新增退化）。
+- 发布面实证（2026-09-08，0.2.2 树）：`npm pack --dry-run` 列 32 件——dist 全件 + `engine/gates.json` + `engine/README.md` + `adapters/dsh/README.md` + `cordis.patch.yml` + `README(.zh).md` + `LICENSE` + `THIRD-PARTY-NOTICES.md`，零 `src/`/`tests/`/`.cache`；`host-api-contract.mjs` = 11B 空模块（type-only 擦除实证）。
 - type-aware lint 以证据延后（零 async 缺陷 + 11 条误报 + 墙钟 ~3.7×），触发条件在案。
 - 镜像比对判死，零新增代码。

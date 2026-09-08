@@ -939,7 +939,7 @@ function writeFixtureGene(repoRoot: string): void {
 				if (!/^\s*import\s/.test(lines[i]!)) continue;
 				let stmt = lines[i]!;
 				let j = i;
-				while (!/from\s+["']/.test(stmt) && j + 1 < lines.length) {
+				while (!/from\s+["']/.test(stmt) && !stmt.trimEnd().endsWith(";") && j + 1 < lines.length) {
 					j += 1;
 					stmt += `\n${lines[j]!}`;
 				}
