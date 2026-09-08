@@ -1,8 +1,9 @@
 # Agent Note: A8 会话记录投影撤除——宿主无下游插件 ignorable 写入口
 
 Status: implemented
+Review: FULL/2026-09-08/R1=ok R2=ok R3=ok
 
-Related: [2026-09-08-b4-mount-wiring](2026-09-08-b4-mount-wiring.md)（撤其 Decision 3/4 后半/5 与 A6 投影位、A8 落点；A2 地图与 A3/A4/A5 能力层保留）；[2026-09-08-mount-exec-arguments-field](../bug-fix/2026-09-08-mount-exec-arguments-field.md)（字段名修复仍有效，其验证所依赖的投影面退役）；上游读面契约单源：dsh-session `known-event-types` 头注 + `.agents/notes/implemented/architecture/2026-08-30-retain-ignorable-external-session-events.md`（DSH 仓）
+Related: [2026-09-08-b4-mount-wiring](2026-09-08-b4-mount-wiring.md)（撤其 Decision 3/4 后半/5 与 A6 投影位、A8 落点；A2 地图与 A3/A4/A5 能力层保留）；[2026-09-08-mount-exec-arguments-field](../bug-fix/2026-09-08-mount-exec-arguments-field.md)（字段名修复仍有效，其验证所依赖的投影面退役）；[2026-09-06-collab-rebuild-impl](../../proposed/architecture/2026-09-06-collab-rebuild-impl.md)（其「A8/A6 接线先在才有落点」批序禁令的前提机制随本批退役——该约束仅对挂载建议面存续）；[2026-09-08-b5-switch](2026-09-08-b5-switch.md)（其 B4 重验待核面「session.append 自定义 kind 宿主容忍度 + 六点真机」已随本批撤除，该核对面失效）；上游读面契约单源：dsh-session `known-event-types` 头注 + `.agents/notes/implemented/architecture/2026-08-30-retain-ignorable-external-session-events.md`（DSH 仓）
 
 ## Problem
 

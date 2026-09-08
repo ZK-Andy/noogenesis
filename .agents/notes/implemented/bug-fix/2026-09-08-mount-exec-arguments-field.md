@@ -2,7 +2,7 @@
 
 Status: implemented
 Review: FULL/2026-09-08/R1=ok R2=ok R3=ok
-Erratum: 2026-09-08 — 撤回行为面的「真机上 M1/M2 投影恢复预期」与验收所依赖的 M3 投影对照面：记录投影面整体随 A8 撤除批退役（宿主读路径对未标 ignorable 的下游插件事件类型 fail-closed，`Session.append` 无 ignorable 写入口）；`exec.arguments` 字段名修复（宿主合同证据与 A2 链路结论）保留。Decision 中「859/881 行 glue 全路径夹具双钉即红」回归钉声明一并撤回——M1/M2 直测与全部 `.args` 读面消费者已随撤除批删除，该字段名修复现为宿主合同单源记录（`ToolExecLike.arguments` 保留）。单源：[2026-09-08-a8-session-record-projection-removal](../architecture/2026-09-08-a8-session-record-projection-removal.md)。
+Erratum: 2026-09-08 — 撤回行为面的「真机上 M1/M2 投影恢复预期」与验收所依赖的 M3 投影对照面：记录投影面整体随 A8 撤除批退役（宿主读路径对未标 ignorable 的下游插件事件类型 fail-closed，`Session.append` 无 ignorable 写入口）；`exec.arguments` 字段名修复（宿主合同证据与 A2 链路结论）保留。Decision 中「859/881 行 glue 全路径夹具双钉即红」回归钉声明一并撤回——M1/M2 直测与全部 `.args` 读面消费者已随撤除批删除，该字段名修复现为宿主合同单源记录（`ToolExecLike.arguments` 保留）；本文件 Related 行「其 Risks 首条实证结果已随本批事实同步」指向的 ✅ 括注已被 B4 ADR Erratum 撤回，循此指针以 B4 Erratum 为准。单源：[2026-09-08-a8-session-record-projection-removal](../architecture/2026-09-08-a8-session-record-projection-removal.md)。
 
 > Provenance：本仓原创修复（2026-09-08，B4 挂载面实机重验批发现）。出处：HANDOFF-todos（B）修复轮条目 + journal 2026-09 卷「B4 挂载面实机重验批」。
 > Related：[2026-09-08-b4-mount-wiring](../architecture/2026-09-08-b4-mount-wiring.md)（本批修其交付件的宿主合同误读，决定面不变；其 Risks 首条实证结果已随本批事实同步、Decision 3/4 已加就地勘误指针）。
