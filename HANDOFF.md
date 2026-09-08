@@ -11,7 +11,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-08｜**编码强制两轨收口（批 1 轨道 A / 批 2 轨道 B / 批 3 测量延后；FULL 三审全采纳；ADR `2026-09-08-coding-enforcement-track-b`）**：A4 在环 lint 反馈 + A2 指针行；宿主 API 键存在+形状相容断言 + 发布面不变量闸（15→16）+ `arguments` 收窄；type-aware 零 async 缺陷 → 延后。**节点：两轨闭环，真机复验待装机。** README 无漂移。
+- 2026-09-08｜**编码强制两轨收口（批 1 轨道 A / 批 2 轨道 B / 批 3 测量延后；FULL 三审全采纳；ADR `2026-09-08-coding-enforcement-track-b`）**：A4 在环 lint 反馈；宿主 API 键存在+形状相容断言 + 发布面不变量闸；type-aware 零 async 缺陷 → 延后。`5a1822e`→`49687f6`。**节点：两轨闭环，真机复验待装机。** README 无漂移。
 
 - 2026-09-08｜**编码强制两轨实施计划落盘（讨论轮；无 ADR，行动区指针）**：`docs/research/coding-enforcement-impl-plan.md`——轨道 A（A4 写码在环反馈 + 指针）+ 轨道 B（宿主 API 签名核对[类型级] + 发布面不变量[AST/JSON]；镜像比对判死；type-aware lint 评估后定）。**节点：下一会话执行批 1。** README 无漂移。
 - 2026-09-08｜**编码规范 c2 机器强制收口（FULL 三审 R1 1B/6S、R2 1B/5S、R3 1B/5S 全采纳；ADR `2026-09-08-c2-lint-enforcement` implemented；`8a3898f`→`9844023`）**：oxlint 白名单 + 导出面契约注释闸入 gates.json（13→15，三面同判据）；清 19 处真实缺陷 + 4 处注释缺口。**节点：c1/c2 闭环。** README 有变更已同步。
