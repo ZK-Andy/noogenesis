@@ -3,7 +3,7 @@
 Status: implemented
 Review: FULL/2026-09-08/R1=ok R2=ok R3=ok
 
-Related: 实施计划 [coding-enforcement-impl-plan](../../../../docs/research/coding-enforcement-impl-plan.md)（本批 = 批 1 轨道 A，procedure 单源）；能力层与档位纪律 [2026-09-08-b4-mount-wiring](2026-09-08-b4-mount-wiring.md)（A4 决策形态 `additionalContexts` + 建议档）；防火墙与允许集 [2026-09-06-m2-adapter-wiring](2026-09-06-m2-adapter-wiring.md)；离线降级纪律 [2026-09-06-bank-pull-session-trigger](../bug-fix/2026-09-06-bank-pull-session-trigger.md)；判据单源 [code-standards](../../../../docs/method/code-standards.md) + [.oxlintrc.json](../../../../.oxlintrc.json)（c2 立项 [2026-09-08-c2-lint-enforcement](2026-09-08-c2-lint-enforcement.md)）；问题池余项 [capsule-01-optimization-round](../../../../docs/research/capsule-01-optimization-round.md) §2.1「规范事前接入」
+Related: 实施计划 [coding-enforcement-impl-plan](../../../../docs/research/coding-enforcement-impl-plan.md)（本批 = 批 1 轨道 A，procedure 单源）；能力层与档位纪律 [2026-09-08-b4-mount-wiring](2026-09-08-b4-mount-wiring.md)（A4 决策形态 `additionalContexts` + 建议档）；防火墙与允许集 [2026-09-06-m2-adapter-wiring](2026-09-06-m2-adapter-wiring.md)；离线降级纪律 [2026-09-06-bank-pull-session-trigger](../bug-fix/2026-09-06-bank-pull-session-trigger.md)；判据单源 [code-standards](../../../../docs/method/code-standards.md) + [.oxlintrc.json](../../../../.oxlintrc.json)（c2 立项 [2026-09-08-c2-lint-enforcement](2026-09-08-c2-lint-enforcement.md)）；问题池余项 [capsule-01-optimization-round](../../../../docs/research/capsule-01-optimization-round.md) §2.1「规范事前接入」；**升格批 [2026-09-09-lint-block-and-staged-hook](2026-09-09-lint-block-and-staged-hook.md)**（本件 A4 决策由 context 建议档升格为 block 拦回——升格后的语义与后果以 09-09 件为准）
 
 ## Problem
 
@@ -25,7 +25,7 @@ Related: 实施计划 [coding-enforcement-impl-plan](../../../../docs/research/c
    | 4 | 绝对路径（`sessionWorkspaceOf` 为基）不在 `repoRoot` 内 | `void` |
    | 5 | 扩展名 ∉ `{.ts, .mts}` | `void` |
    | 6 | 仓根缺 `.oxlintrc.json` 或 `node_modules/oxlint/bin/oxlint` | `void` + 每会话至多一条 warn（离线降级，同 [bank-pull](../bug-fix/2026-09-06-bank-pull-session-trigger.md) 纪律） |
-   | 7 | 诊断空 / 非空 | `void` / `{kind:"context", lines}`（≤10 行 + `…(+N more)` 尾行） |
+   | 7 | 诊断空 / 非空 | `void` / 诊断行（≤10 行 + `…(+N more)` 尾行）；非空诊断经 `block` 拦回、同文件连续拦回达上限降级 `context`（[升格批](2026-09-09-lint-block-and-staged-hook.md)） |
    | 8 | 任何异常 | `void` + 每会话至多一条 warn（策略件自身永不抛） |
 
    - `RunLint = (ctx: LintRunContext) => LintDiagnostic[]`（`LintRunContext` = `{ bin; config; file; cwd }`）为执行面注入缝；默认实现 `spawnSync(process.execPath, [bin, "--config", config, "--deny-warnings", "-f", "json", file])`（timeout 5s，`cwd` = 仓根），解析 oxlint JSON 的 `diagnostics[].labels[0].span`（行/列 1 基）。
@@ -35,7 +35,7 @@ Related: 实施计划 [coding-enforcement-impl-plan](../../../../docs/research/c
 
 3. **A2 指针行**：`createSubtreeRulesPolicies` 的开场地图在 `docs/method/code-standards.md` 实存时追加一行 `- 写码规范：docs/method/code-standards.md（机器面 lint 写码后自动反馈；export-docs 在门禁面）`——地图已承载「动工前先读哪份规则」，写码规范指针与 A4 反馈同批落地；零布点件、或缺 `docs/method/code-standards.md` 的仓不加（指针行与布点件同款存在性过滤）。反馈本身另需仓根 `.oxlintrc.json` + oxlint 二进制，缺席时静默降级（第 1 节第 6 条）。
 
-4. **测试**：`adapters/dsh/selftest.mts` 追加夹具组——①–⑧ 逐条合同（注入桩，含空诊断、`.mts` 正例、绝对出仓、截断与尾行）、缺基建 warn-once（文案钉死）、默认 `runLint` 真件 e2e（临时仓 + `.oxlintrc.json` + `node_modules` 符号链接 + 含 `var` 的 `.ts` → `context`；干净文件 → `void`）、index 接线面 warn-once 冒烟、A2 指针行存在性正负两例。防火墙自测（import 面机器断言）同批全绿。
+4. **测试**：`adapters/dsh/selftest.mts` 追加夹具组——①–⑧ 逐条合同（注入桩，含空诊断、`.mts` 正例、绝对出仓、截断与尾行）、缺基建 warn-once（文案钉死）、默认 `runLint` 真件 e2e（临时仓 + `.oxlintrc.json` + `node_modules` 符号链接 + 含 `var` 的 `.ts` → `block`；干净文件 → `void`）、index 接线面 warn-once 冒烟、A2 指针行存在性正负两例。防火墙自测（import 面机器断言）同批全绿。
 
 5. **不做（升格触发条件照实施计划 §1-A4）**：A3 写入前阻断（`PreToolDecision` 无 context 通道；`edit` 是 diff，写入前需模拟应用）、自动 `--fix`（静默改文件致模型心智模型漂移）、A6 停止前扫描（git 边界已覆盖推送面）。
 
@@ -55,7 +55,7 @@ Related: 实施计划 [coding-enforcement-impl-plan](../../../../docs/research/c
 - 延迟实测（n=5，`node node_modules/oxlint/bin/oxlint --config .oxlintrc.json --deny-warnings -f json <单文件>`，2026-09-08 本机，【探索性】）：0.07–0.12s/次；实施计划估的 30–60ms 偏低（进程启动主导为【推断 · 未证】），仍属可接受写码往返开销。
 - 泛化边界：v1 只对 `repoRoot` 内、仓根带 `.oxlintrc.json` + oxlint 的仓生效（self-hosting 面）；按文件所属仓找 lint 配置列为后续（实施计划 §5 同口径）。
 - 判据零新增：与 `lint` 闸消费同一 `.oxlintrc.json`；`export-docs` 不入在环面（其判据是声明面整体，写码中途不成立）。
-- 不触碰阻断路径：A4 的 `block` 能力仍在合并器单源承载，本策略只用 `context`（建议档纪律）。
+- A4 决策 = `block` 拦回（同文件连续拦回达上限降级 `context` 防死锁；合并器单源承载，见 [升格批](2026-09-09-lint-block-and-staged-hook.md)）。
 - **同步面代价**：`spawnSync` 在 A4 listener 的同步段、早于 `next()` 执行——每次 write/edit 阻塞宿主事件循环 ~0.1s（非仅该会话往返；「流式输出同受影响」为【推断 · 未证】）。异步化见 Alternatives 升格触发。
 - **出仓判定语义**：`path.relative` 三段判据（`..` 自身 / `..<sep>` 前缀 / 绝对路径）；仓内经 symlink 指向仓外的文件按仓内处理（v1 无 realpath 解析）。
 - 评审收口（2026-09-08 FULL 三审）：R1 抓出指针行「export-docs 在环」口径矛盾（改文案）+ 三处可简化（`rel === ""` 冗余、运行入参类型三写、空串校验冗余）；R2 抓出 A4「零策略」口径五处未同步（`README.md` / `mount.mts` ×3 / `index.mts`）、`warnOnce` 未自保、出仓前缀判定过宽、指针行缺存在性过滤、夹具五处弱断言/缺正例；R3 抓出两处未标【推断 · 未证】的成因/影响、A8 撤除 ADR 的 A4 零策略事实未同步、实施计划 procedure 单源与偏离自陈矛盾，另采纳测量设置补全、指针行门条件口径、Related 补链、`adapters/AGENTS.md` 常量去重、README 拍板单源补链、本笔记归 `architecture/` 类目。**全采纳**。

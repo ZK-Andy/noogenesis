@@ -53,13 +53,15 @@ function runOxlint(invocation: Invocation, targets: string[], cwd: string, inher
   return result.status ?? 2;
 }
 
-/** 暂存面目标收集：`git diff --cached --name-only --diff-filter=ACM` 中 .ts/.mts
- * （pre-commit 只拦本次引入违规；全仓穷尽归 pre-push/CI）。无匹配 → 空数组。 */
-function stagedTargets(repoRoot: string): string[] {
-  const git = spawnSync("git", ["diff", "--cached", "--name-only", "--diff-filter=ACM"], { cwd: repoRoot, encoding: "utf-8" });
-  if (git.error !== undefined) {
-    console.error(`${PROGRAM}: git diff --cached 启动失败 — ${git.error.message}（fail-closed）`);
-    return ["__fail_closed__"];
+/** 暂存面目标收集：`git diff --cached --name-only --diff-filter=ACMR` 中 .ts/.mts
+ * （pre-commit 只拦本次引入违规；全仓穷尽归 pre-push/CI）。R（rename）目标恒以
+ * 目标路径出现在 name-only（B2 实测：改名带违规须拦）；无匹配 → 空数组。
+ * git 启动失败或非零退出（非 git 仓 exit 129 等）→ null（fail-closed exit 2）。 */
+function stagedTargets(repoRoot: string): string[] | null {
+  const git = spawnSync("git", ["diff", "--cached", "--name-only", "--diff-filter=ACMR"], { cwd: repoRoot, encoding: "utf-8" });
+  if (git.error !== undefined || git.status !== 0) {
+    console.error(`${PROGRAM}: git diff --cached 失败（exit ${git.status ?? "spawn"}: ${git.error?.message ?? ""}）— fail-closed`);
+    return null;
   }
   return (git.stdout ?? "")
     .split("\n")
@@ -73,9 +75,10 @@ function realRun(repoRoot: string, staged: boolean): number {
     console.error(`${PROGRAM}: FAIL-CLOSED — 缺 ${OXLINT_BIN_REL} 或 ${CONFIG_REL}（先 npm ci）`);
     return 2;
   }
-  const targets = staged ? stagedTargets(repoRoot) : ["."];
-  if (staged && targets[0] === "__fail_closed__") return 2;
-  if (staged && targets.length === 0) return 0; // 无暂存 .ts/.mts → 快检零噪音
+  if (!staged) return runOxlint(invocation, ["."], repoRoot, true);
+  const targets = stagedTargets(repoRoot);
+  if (targets === null) return 2; // git 失败（fail-closed）
+  if (targets.length === 0) return 0; // 无暂存 .ts/.mts → 快检零噪音
   return runOxlint(invocation, targets, repoRoot, true);
 }
 
@@ -131,6 +134,23 @@ function selfTest(repoRoot: string): number {
       run("git rm --cached -q notes.md");
       fs.writeFileSync(path.join(gdir, "unadded.ts"), "export function u(): number { var y = 1; return y; }\n");
       if (realRun(gdir, true) !== 0) failures.push("staged: 未暂存违规(空暂存) → 应 PASS");
+      // rename(R) 档：git mv 改名 + 内容引入违规 → 目标路径须被拦（B2 实测：
+      // ACM 的 name-only 为空漏网；ACMR 输出目标路径）。先暂存合规基座 →
+      // git mv（内容未变）→ 再改内容引入违规 → add（此时 git 判 R 档）。
+      run("git rm --cached -q unadded.ts && git add clean.ts");
+      if (realRun(gdir, true) !== 0) failures.push("staged: 基线 clean.ts 暂存 → 应 PASS 前置失败");
+      const mvVar = path.join(gdir, "mv-var.ts");
+      run("git mv clean.ts mv-var.ts");
+      fs.writeFileSync(mvVar, "export function mvV(): number { var z = 9; return z; }\n");
+      run("git add -A");
+      if (realRun(gdir, true) === 0) failures.push("staged: rename 目标含违规(mv-var.ts) → 应 FAIL");
+      // 非 git 仓 → fail-closed exit 2（S2：git.status 非零不再静默 PASS）。
+      const nongit = fs.mkdtempSync(path.join(os.tmpdir(), "verify-lint-nongit-"));
+      try {
+        if (realRun(nongit, true) !== 2) failures.push("staged: 非 git 仓 → 应 fail-closed exit 2");
+      } finally {
+        fs.rmSync(nongit, { recursive: true, force: true });
+      }
     } finally {
       fs.rmSync(gdir, { recursive: true, force: true });
     }
@@ -152,8 +172,8 @@ if (arg === "--self-test") {
 if (arg === "--staged") {
   process.exit(realRun(repoRoot, true));
 }
-if (arg !== undefined && arg !== "--full") {
-  console.error(`${PROGRAM}: unknown argument '${arg}'（仅 --staged / --full / --self-test）`);
+if (arg !== undefined) {
+  console.error(`${PROGRAM}: unknown argument '${arg}'（仅 --staged / --self-test）`);
   process.exit(2);
 }
 process.exit(realRun(repoRoot, false));
