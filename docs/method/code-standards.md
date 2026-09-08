@@ -1,6 +1,6 @@
 # 代码规范（code-standards）
 
-> Provenance：自建（2026-09-08，立项 ADR [2026-09-08-coding-standards](../../.agents/notes/proposed/architecture/2026-09-08-coding-standards.md)）；基准 = 蒸馏社区权威 TS 规范（Google TS Style Guide / oxlint 推荐规则集）为本仓子集 + 本仓专属例外；方法与纪律对齐 [standard-authoring](standard-authoring.md)。
+> Provenance：自建（2026-09-08，立项 ADR [2026-09-08-coding-standards](../../.agents/notes/implemented/architecture/2026-09-08-coding-standards.md)）；基准 = 蒸馏社区权威 TS 规范（Google TS Style Guide / oxlint 推荐规则集）为本仓子集 + 本仓专属例外；方法与纪律对齐 [standard-authoring](standard-authoring.md)。
 > 档位标注 `[M]` / `[W]` / `[I]` / `[R]`，定义与机制单源见 [standard-authoring](standard-authoring.md) §1；升档路径集中 §6。
 
 ## 1. 强制力度分档

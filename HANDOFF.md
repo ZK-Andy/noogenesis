@@ -9,6 +9,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-08｜**编码规范 c1 评审恢复收口（FULL 三审 R1 1B/4S、R2 1B/4S、R3 2B/3S 全采纳；ADR `2026-09-08-coding-standards` implemented；`155e1af`→收口）**：修复 = §2.4 改 [R] + 停档理由、判据收编落家、实例去虚构、兜底归属单源根 AGENTS、五命令对齐、ADR 出处归口问题池。**节点：c1 收口，下一批 = c2。** README 无漂移。
 - 2026-09-08｜**问题池状态同步批（`c53882f` push）**：capsule-01-optimization-round.md 对齐 09-08 现实——TS 统一/推倒重建转已落地；M1/M3 标 A8 撤除随投影面退役、证据回 tool/result 事件文本；上帝类闸 C15 判不立；§3.5 逐项落地。**README 无漂移。**
 - 2026-09-08｜**编码规范 c1 立项 + 部分实现（proposed ADR `2026-09-08-coding-standards`；`155e1af` 未 push）**：拍板 = 注释为主体成文（基准蒸馏社区 TS 规范）+ 命名/结构 + 工程纪律留链接；零工具批，oxlint 排 c2。FULL 三审在 R1/R2 并行后被取消——**批未过 FULL、ADR 未翻转**，评审恢复待办见 todos（C）。**README 无漂移。**
 - 2026-09-08｜**0.2.2 重验 + 宿主 0.1.3-alpha.2 对齐核验（todo B 勾账 + issue 外报条删除；维持 A8 撤除）**：0.2.2 重验绿（日志零 noogenesis/* 事件）；上游 alpha 恢复 ignorable 读侧容忍（ADR 2026-08-30-retain-ignorable-external-session-events）但 append 写入口仍无——撤除结构性成立，复投影不开案。`e717b2d`。**README 无漂移。**
@@ -47,8 +48,6 @@
 - 2026-09-06｜**M2 适配层实现轮（FULL 三审 R1 0B/4S、R2 1B/8S、R3 3B/4S 全采纳；ADR `2026-09-06-m2-adapter-wiring`；commits `78eb26f`→`65ca063`）**：adapters/dsh 八件 + npm 插件包形态 + gates.json 单源发射器；R2-B1（命中节 {{ 未转义）零宽中性化；真安装验证随 npm 首发收口；README 核对已同步（三处）。
 
 - 2026-09-05｜**简化候选收口（FULL 三审全过；ADR `consolidate-r1-simplification-candidates`；commits `cf45f32`→收口）**：R1/R2/R3 = 0/3、0/3、1/4，Blocker（ADR 措辞失实）+8 建议全修；`scripts/mdref.py` 单一来源化 −84 行、行为恒等实测；py 头注 ADR 引用立日期+主题口径。
-- 2026-09-05｜**评审机械闸落地（胶囊 v0.2 收口件；ADR `2026-09-05-review-mechanical-gate`；commits `0b3a501`→收口）**：R1/R2/R3 = 1/7、2/6、2/2 全采纳（fail-closed 双修、lane 推导修复、CI 真强制）；门禁 7→9；Review 证据行首签、tier 全链路转绿。**节点：体系 v0.2 收口，下一步（D）立项讨论轮。**
-
 ## 背景
 
 Noogenesis（心源）：DeepSeek Harness 之上的"蜂群进化框架"；终极北极星 AGI（只定方向）；当前落地 = 第一个进化胶囊「AI 协作编码方法论」——四源（devops-template / dotnet-deepseek-harness-desktop / dsh-frecency / work 区）提炼搬迁，self-hosting：用心源体系开发心源。设计基准 `docs/research/dsh-swarm-evolution-framework-design.md`；搬迁计划（已实施冻结）[journal/capsule-01-migration-plan.md](journal/capsule-01-migration-plan.md)（评审定稿 2026-09-05）。
