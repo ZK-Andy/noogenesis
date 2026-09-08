@@ -47,7 +47,8 @@ type AskDecision = "archive" | "later" | null;
 const PLUGIN_SOURCE = { kind: "plugin", plugin: "noogenesis" } as const;
 
 /**
- * 建议档消息构造（A2 追加 / A4 附加上下文 / A5 会话开始注入共用）：
+ * 建议档消息构造（A2 追加 / A4 附加上下文 / A5 会话开始注入共用；A4 拦回
+	 * 档 block 的消息由 index 直接构造，不走本工厂）：
  * createUserMessage（宿主工厂）+ 多行合一条消息（多行多消息会放大模型面
  * 噪音；单条多 text part 与 hooks 桥 contextFrom 同形态）。
  */
@@ -149,11 +150,11 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 	registerNooTools(ctx, { defineTool, runEngine, repoRoot: repoRootFor });
 
 	// ── 挂载面接线（B4 ADR Decision 1–2 + Decision 7 档位纪律：能力层
-	// mount.mts 合并器 + 策略层 mount-policies.mts；首批全部建议档——记录档
-	// 面已随撤除批退役（撤除 ADR），零阻断路径——A3/A4 的 deny/block 能力
-	// 由合并器单源承载，首批策略件不使用）。每挂载点恰一个 ctx.on
-	// listener，策略件增挂只动 mount-policies.mts，不复制宿主接线；logger
-	// 透传给策略层降级提示（A4 写码反馈缺 lint 基建时每会话至多一条 warn）。 ──
+	// mount.mts 合并器 + 策略层 mount-policies.mts；A4 lint 反馈用 block 拦回档
+	// ——升格批 2026-09-09-lint-block-and-staged-hook；A3 deny 仍零策略件；记录档
+	// 面已随撤除批退役（撤除 ADR）。每挂载点恰一个 ctx.on listener，策略件增挂只动
+	// mount-policies.mts，不复制宿主接线；logger 透传给策略层降级提示（A4 写码
+	// 反馈缺 lint 基建时每会话至多一条 warn）。 ──
 	const mounts = createMountPolicies(cfg, { warn: (message) => logger.warn(message) });
 
 	// A5 会话开始时刻（agent/session-start，hooks 桥四类时刻的会话开始位）：
@@ -201,7 +202,8 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 	});
 
 	// A4 工具后（tools/post-execute waterfall）：block/附加上下文由合并器单源
-	// 承载（现存策略件用 context 档，block 能力位零使用）；上下文行合一条消息前置。
+	// 承载（现存 A4 lint 策略用 block 拦回档——机器可判违规拦回；死锁降级走
+	// context 档）；block → 直接拦回纠正消息（不调 next），context → 合一条消息前置。
 	// 合并异常 → warn 降级返回下游结果。
 	ctx.on("tools/post-execute", async (exec: ToolExecLike, result: ToolResultLike, next: () => Promise<{ kind: string; additionalContexts?: unknown[] }>) => {
 		let merged;

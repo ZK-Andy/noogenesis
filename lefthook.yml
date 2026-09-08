@@ -41,7 +41,9 @@ pre-commit:
       run: node scripts/verify-handoff-structure.mts
 
     - name: lint
-      run: node scripts/verify-lint.mts
+      # 只拦本次暂存面（.ts/.mts）；全仓穷尽归 pre-push/CI（gates.json lint 条目
+      # 默认全仓）——B3「钩子快检 / CI 穷尽」基线（升格批 2026-09-09）。
+      run: node scripts/verify-lint.mts --staged
 
     - name: export-docs
       run: node scripts/verify-export-docs.mts

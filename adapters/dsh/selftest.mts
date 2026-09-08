@@ -842,13 +842,13 @@ function writeFixtureGene(repoRoot: string): void {
 
 	const single = withStub([{ line: 3, column: 5, rule: "eslint(no-var)", message: "Unexpected var" }]);
 	assert.deepEqual(single.toolPost(writeExec, {}), {
-		kind: "context",
-		lines: ["sample.ts:3:5 eslint(no-var): Unexpected var"],
+		kind: "block",
+		feedback: "sample.ts:3:5 eslint(no-var): Unexpected var",
 	});
 	assert.equal(stubCalls[0]!.cwd, repo);
 	assert.equal(stubCalls[0]!.file, path.join(repo, "sample.ts"));
 	assert.equal(stubCalls[0]!.config, path.join(repo, ".oxlintrc.json"));
-	ok("lint-feedback: write + diagnostics → context line with rule and message");
+	ok("lint-feedback: write + diagnostics → block with rule and message");
 
 	assert.equal(single.toolPost({ name: "read", arguments: { file_path: "sample.ts" }, agent }, {}), undefined);
 	assert.equal(single.toolPost(writeExec, { isError: true }), undefined);
@@ -891,10 +891,45 @@ function writeFixtureGene(repoRoot: string): void {
 
 	const many = Array.from({ length: 13 }, (_, i) => ({ line: i + 1, column: 1, rule: "r", message: `m${i}` }));
 	const truncated = withStub(many).toolPost(writeExec, {});
-	assert.ok(truncated && truncated.kind === "context");
-	assert.equal(truncated.lines.length, 11);
-	assert.match(truncated.lines[10]!, /\+3 more/);
+	assert.ok(truncated && truncated.kind === "block");
+	assert.match(truncated.feedback, /\+3 more/);
+	assert.match(truncated.feedback, /m0.*m9/s);
 	ok("lint-feedback: >10 diagnostics truncated with (+N more) tail");
+
+	// 死锁降级：同文件连续 block 达上限后 → context；干净写码复位后重新 block。
+	{
+		const two = withStub([{ line: 1, column: 1, rule: "no-var", message: "var" }]);
+		const first = two.toolPost(writeExec, {});
+		const second = two.toolPost(writeExec, {});
+		const third = two.toolPost(writeExec, {});
+		const fourth = two.toolPost(writeExec, {});
+		assert.ok(first && first.kind === "block", "1st must block");
+		assert.ok(second && second.kind === "block", "2nd must block");
+		assert.ok(third && third.kind === "block", "3rd must block");
+		assert.ok(fourth && fourth.kind === "context", "4th+ must demote to context");
+		assert.ok(fourth.kind === "context" && Array.isArray(fourth.lines), "demoted decision carries lines");
+		const fifth = two.toolPost(writeExec, {});
+		assert.ok(fifth && fifth.kind === "context", "stays context after demotion (no re-arm until clean write)");
+
+		// 干净写码复位 → 下一违规重新 block（可切换诊断的桩：违规当 flip=true）。
+		let flip = true;
+		const flipper = createLintFeedbackPolicies(
+			{ repoRoot: repo },
+			{
+				runLint: (c) => {
+					stubCalls.push(c);
+					return flip ? [{ line: 1, column: 1, rule: "no-var", message: "var" }] : [];
+				},
+			},
+		);
+		for (let i = 0; i < 4; i++) flipper.toolPost(writeExec, {});
+		flip = false; // 下次干净
+		assert.equal(flipper.toolPost(writeExec, {}), undefined, "clean write after demotion → void (delete resets)");
+		flip = true; // 再违规
+		const re = flipper.toolPost(writeExec, {});
+		assert.ok(re && re.kind === "block", "after clean reset, next violation re-arms block");
+		ok("lint-feedback: deadlock demotion to context after N; clean write resets to block");
+	}
 
 	const bare = tempRepo("lint-feedback-bare");
 	const bareAgent = { session: { header: { cwd: bare } } };
@@ -909,11 +944,11 @@ function writeFixtureGene(repoRoot: string): void {
 	const real = createLintFeedbackPolicies({ repoRoot: repo });
 	fs.writeFileSync(path.join(repo, "sample.ts"), "export function bad(): number { var x = 1; return x; }\n");
 	const reported = real.toolPost(writeExec, {});
-	assert.ok(reported && reported.kind === "context");
-	assert.match(reported.lines.join("\n"), /no-var/);
+	assert.ok(reported && reported.kind === "block");
+	assert.match(reported.feedback, /no-var/);
 	fs.writeFileSync(path.join(repo, "sample.ts"), "export function ok(): number { return 1; }\n");
 	assert.equal(real.toolPost(writeExec, {}), undefined);
-	ok("lint-feedback: default runLint e2e — real oxlint reports no-var; clean file → void");
+	ok("lint-feedback: default runLint e2e — real oxlint blocks no-var; clean file → void");
 }
 
 // ── 6) 防火墙机器检查：import 面 / 引擎零依赖 / 包结构契约 ────────────────

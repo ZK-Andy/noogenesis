@@ -1,13 +1,17 @@
 #!/usr/bin/env node
 /**
- * verify-lint — oxlint 白名单闸（C2；ADR 2026-09-08-c2-lint-enforcement）。
+ * verify-lint — oxlint 白名单闸（C2；ADR 2026-09-08-c2-lint-enforcement；
+ * 升格批 2026-09-09-lint-block-and-staged-hook 加 `--staged`：pre-commit
+ * 只拦本次暂存面，pre-push/CI 仍全仓穷尽）。
  *
  * 判据单源 = 仓库根 `.oxlintrc.json`（显式白名单，逐条规则写明理由）。本件只做
- * 三件事：定位二进制与配置（缺任一 fail-closed）、固定调用形态（--config +
- * --deny-warnings）、用夹具把「配置腐烂」挡在自测里——与 ts-typecheck 的差别在于
- * tsc 的判据是第三方语义，而 lint 的判据是本仓配置数据。
+ * 四件事：定位二进制与配置（缺任一 fail-closed）、固定调用形态（--config +
+ * --deny-warnings）、用夹具把「配置腐烂」挡在自测里、`--staged` 时把目标收窄为
+ * 暂存区的 .ts/.mts（git diff --cached）——与 ts-typecheck 的差别在于 tsc 的判据
+ * 是第三方语义，而 lint 的判据是本仓配置数据。
  *
- * 用法（仓库根运行，同其余 verify-*）：node scripts/verify-lint.mts [--self-test]
+ * 用法（仓库根运行，同其余 verify-*）：node scripts/verify-lint.mts [--staged]
+ * [--self-test]
  * 退出码：0 = PASS，1 = 有违规，2 = fail-closed（oxlint 或配置缺失）。
  * 运行前提：node ≥22.18 + devDependency oxlint（精确钉版，见 package.json）。
  * 模块形态：显式 .mts（ESM）——本仓 package.json type=commonjs，裸 .ts 装不下 import。
@@ -49,13 +53,30 @@ function runOxlint(invocation: Invocation, targets: string[], cwd: string, inher
   return result.status ?? 2;
 }
 
-function realRun(repoRoot: string): number {
+/** 暂存面目标收集：`git diff --cached --name-only --diff-filter=ACM` 中 .ts/.mts
+ * （pre-commit 只拦本次引入违规；全仓穷尽归 pre-push/CI）。无匹配 → 空数组。 */
+function stagedTargets(repoRoot: string): string[] {
+  const git = spawnSync("git", ["diff", "--cached", "--name-only", "--diff-filter=ACM"], { cwd: repoRoot, encoding: "utf-8" });
+  if (git.error !== undefined) {
+    console.error(`${PROGRAM}: git diff --cached 启动失败 — ${git.error.message}（fail-closed）`);
+    return ["__fail_closed__"];
+  }
+  return (git.stdout ?? "")
+    .split("\n")
+    .map((s) => s.trim())
+    .filter((s) => /\.(ts|mts)$/.test(s));
+}
+
+function realRun(repoRoot: string, staged: boolean): number {
   const invocation = resolveInvocation(repoRoot);
   if (invocation === null) {
     console.error(`${PROGRAM}: FAIL-CLOSED — 缺 ${OXLINT_BIN_REL} 或 ${CONFIG_REL}（先 npm ci）`);
     return 2;
   }
-  return runOxlint(invocation, ["."], repoRoot, true);
+  const targets = staged ? stagedTargets(repoRoot) : ["."];
+  if (staged && targets[0] === "__fail_closed__") return 2;
+  if (staged && targets.length === 0) return 0; // 无暂存 .ts/.mts → 快检零噪音
+  return runOxlint(invocation, targets, repoRoot, true);
 }
 
 /** 夹具自测：违规必红、干净必绿、配置与二进制在册。 */
@@ -82,16 +103,57 @@ function selfTest(repoRoot: string): number {
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }
+  // --staged 夹具：临时 git 仓——staged 含违规 .ts 必红；staged 干净（仅暂存
+  // 干净 .ts）必绿；无 staged .ts/.mts → exit 0；未暂存违规不拦（全仓归
+  // pre-push/CI）。git 用户身份用环境钉住，避免夹具受本机配置影响。
+  {
+    const gdir = fs.mkdtempSync(path.join(os.tmpdir(), "verify-lint-staged-"));
+    const env: NodeJS.ProcessEnv = { ...process.env, GIT_AUTHOR_NAME: "selftest", GIT_AUTHOR_EMAIL: "selftest@test", GIT_COMMITTER_NAME: "selftest", GIT_COMMITTER_EMAIL: "selftest@test" };
+    try {
+      const run = (c: string, wd = gdir): number => spawnSync(c, { cwd: wd, shell: true, stdio: "ignore", env }).status ?? 2;
+      if (run("git init -q") !== 0) failures.push("staged: git init 失败");
+      fs.copyFileSync(path.join(repoRoot, ".oxlintrc.json"), path.join(gdir, ".oxlintrc.json"));
+      fs.symlinkSync(path.join(repoRoot, "node_modules"), path.join(gdir, "node_modules"), "dir");
+      const bad = path.join(gdir, "bad.ts");
+      const clean = path.join(gdir, "clean.ts");
+      const md = path.join(gdir, "notes.md");
+      fs.writeFileSync(bad, "export function bad(): number { var x = 1; return x; }\n");
+      fs.writeFileSync(clean, "export function ok(): number { return 1; }\n");
+      fs.writeFileSync(md, "# n\n");
+      if (realRun(gdir, true) !== 0) failures.push("staged: 无 staged 文件 → 应 PASS(exit 0)");
+      run("git add bad.ts");
+      if (realRun(gdir, true) === 0) failures.push("staged: staged 含违规 bad.ts → 应 FAIL");
+      run("git rm --cached -q bad.ts && git add clean.ts");
+      if (realRun(gdir, true) !== 0) failures.push("staged: staged 干净 clean.ts → 应 PASS");
+      run("git rm --cached -q clean.ts && git add notes.md");
+      if (realRun(gdir, true) !== 0) failures.push("staged: staged 仅非 .ts(notes.md) → 应 PASS(零噪音)");
+      // 未暂存违规不拦：bad.ts 落盘但不 add → --staged 应绿（全仓穷尽归 pre-push/CI）
+      run("git rm --cached -q notes.md");
+      fs.writeFileSync(path.join(gdir, "unadded.ts"), "export function u(): number { var y = 1; return y; }\n");
+      if (realRun(gdir, true) !== 0) failures.push("staged: 未暂存违规(空暂存) → 应 PASS");
+    } finally {
+      fs.rmSync(gdir, { recursive: true, force: true });
+    }
+  }
+
   if (failures.length > 0) {
     for (const f of failures) console.log(`SELF-TEST FAIL: ${f}`);
     return 1;
   }
-  console.log(`${PROGRAM} self-test: 3 fixture groups passed`);
+  console.log(`${PROGRAM} self-test: 3 fixture groups + staged group passed`);
   return 0;
 }
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-if (process.argv[2] === "--self-test") {
+const arg = process.argv[2];
+if (arg === "--self-test") {
   process.exit(selfTest(repoRoot));
 }
-process.exit(realRun(repoRoot));
+if (arg === "--staged") {
+  process.exit(realRun(repoRoot, true));
+}
+if (arg !== undefined && arg !== "--full") {
+  console.error(`${PROGRAM}: unknown argument '${arg}'（仅 --staged / --full / --self-test）`);
+  process.exit(2);
+}
+process.exit(realRun(repoRoot, false));

@@ -1,16 +1,18 @@
 /**
- * mount-policies.mts — 挂载策略件组装（A2 开场地图 + A4 写码在环 lint 反馈；
+ * mount-policies.mts — 挂载策略件组装（A2 开场地图 + A4 写码在环 lint 拦回；
  * M1/M2 记录件与 M3 已随 A8 投影撤除批整体退役——ADR
  * 2026-09-08-a8-session-record-projection-removal：宿主 Session.append 无
  * ignorable 写入口，下游插件自定义事件类型会令会话历史在读路径 fail-closed
  * 不可加载）。
  *
- * 建议档，零阻断路径（档位纪律）；降级 = 异常由 index.mts 胶水 catch →
- * warn，建议缺席不阻塞会话。状态按会话 WeakMap 隔离（GC 自清）。零宿主
- * 依赖（防火墙规则 2）；fs 只读（M2 布点件存在性检查）。
+ * 档位：A4 lint 反馈 = block 拦回（升格批 2026-09-09-lint-block-and-staged-hook；
+ * 同文件连续 block 达上限降级 context 防死锁）；A3/A5 零策略件；降级 = 异常由
+ * index.mts 胶水 catch → warn，拦回缺席不阻塞会话。状态按会话 WeakMap 隔离
+ * （GC 自清）。零宿主依赖（防火墙规则 2）；fs 只读。
  *
  * HERO 答案单源 = B4 ADR Decision 4（A2 地图件）+ 轨道 A ADR
- * 2026-09-08-lint-in-loop-feedback（A4 反馈件）；本文不重抄判据，只落组装。
+ * 2026-09-08-lint-in-loop-feedback + 升格 ADR 2026-09-09-lint-block-and-staged-hook
+ * （A4 反馈/拦回件）；本文不重抄判据，只落组装。
  */
 import fs from "node:fs";
 import path from "node:path";
@@ -68,7 +70,7 @@ export interface MountPolicySet {
 }
 
 /**
- * 组装存留挂载物（A2 地图件 + A4 写码在环反馈）；config 走 M2 的 repoRoot
+ * 组装存留挂载物（A2 地图件 + A4 写码在环 lint 拦回）；config 走 M2 的 repoRoot
  * 回退链，deps 透传给 A4 策略（执行面/日志面注入缝）。
  */
 export function createMountPolicies(config: RepoRootConfig = {}, deps: LintFeedbackDeps = {}): MountPolicySet {

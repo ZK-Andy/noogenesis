@@ -11,10 +11,11 @@
  * 规则 2，selftest 机器扫描）——宿主 payload 只取本地窄结构面（同
  * engine-bridge AgentCarrier 口径）。
  *
- * 档位纪律（B4 ADR Decision 7）：合并器提供 deny/block 能力（A3/A4 的阻断
- * 语义单源在案），但首批策略件全部建议档（记录档面已撤——撤除 ADR），不
- * 使用阻断路径；升格逐件过 HERO 另案。宿主事件与决策形态实证记录见 B4
- * ADR Problem 节。
+ * 档位纪律（B4 ADR Decision 7 + 升格批 2026-09-09-lint-block-and-staged-hook）：
+ * 合并器提供 deny/block 能力（A3/A4 的阻断语义单源在案）；A4 lint 反馈已用
+ * block 拦回档（同文件连续 block 达上限降级 context 防死锁），A3 deny/ask 仍
+ * 零策略件（记录档面已撤——撤除 ADR）；其余升格逐件过 HERO 另案。宿主事件与
+ * 决策形态实证记录见 B4 ADR Problem 节。
  */
 import type { AgentCarrier } from "./engine-bridge.mjs";
 

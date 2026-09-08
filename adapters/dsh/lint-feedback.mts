@@ -1,9 +1,12 @@
 /**
- * lint-feedback.mts — 轨道 A：A4 写码在环规范反馈（ADR
- * 2026-09-08-lint-in-loop-feedback）。
+ * lint-feedback.mts — A4 写码在环规范拦回（ADR
+ * 2026-09-08-lint-in-loop-feedback + 升格 ADR
+ * 2026-09-09-lint-block-and-staged-hook）。
  *
- * 写码工具（write/edit）成功后同步跑仓根 oxlint，把诊断行经 A4 `context`
- * 回注下一模型步——规范在 git 边界之前回到模型，不依赖它事先读过规范。
+ * 写码工具（write/edit）成功后同步跑仓根 oxlint：有诊断 → A4 `block` 拦回
+ * （工具结果被替换为纠正消息，模型须修正才能继续）；零诊断 → void（干净
+ * 代码零注入）。同文件连续 block 达上限后降级 `context`（违规仍可见、不再
+ * 拦，防改不对无限重试死锁）。规范在 git 边界之前回到模型。
  *
  * 降级纪律（同 bank-pull 离线档）：策略件自身永不抛；缺 `.oxlintrc.json` /
  * oxlint 二进制、路径出仓、非 .ts/.mts、结果 isError —— 一律 void（静默不
@@ -47,6 +50,8 @@ const OXLINT_BIN_REL = path.join("node_modules", "oxlint", "bin", "oxlint");
 const OXLINT_CONFIG_REL = ".oxlintrc.json";
 const LINT_TIMEOUT_MS = 5_000;
 const MAX_FEEDBACK_LINES = 10;
+/** 同文件连续 block 上限：达上限后降级 context（违规仍可见、不再拦）——防模型改不对无限重试死锁。 */
+const MAX_BLOCK_PER_FILE = 3;
 
 /** oxlint `-f json` 输出中本件消费的窄面（其余字段不读）。 */
 interface OxlintJson {
@@ -94,10 +99,12 @@ export function createLintFeedbackPolicies(config: RepoRootConfig, deps: LintFee
 	const store = createSessionStore();
 	interface State {
 		warned: boolean;
+		/** 同文件连续 block 计数（文件维度防死锁；成功写码即复位）。 */
+		blockCounts: Map<string, number>;
 	}
 	const warnOnce = (session: unknown, message: string): void => {
 		try {
-			const state = store.of<State>(session, () => ({ warned: false }));
+			const state = store.of<State>(session, () => ({ warned: false, blockCounts: new Map() }));
 			if (state.warned) return;
 			state.warned = true;
 			warn(`noogenesis ${message}`);
@@ -125,11 +132,25 @@ export function createLintFeedbackPolicies(config: RepoRootConfig, deps: LintFee
 				return;
 			}
 			const diagnostics = runLint({ bin, config: lintConfig, file: abs, cwd: repoRoot });
-			if (diagnostics.length === 0) return;
+			if (diagnostics.length === 0) {
+				// 干净写码：复位该文件计数（成功即解除死锁降级）。
+				const state = store.of<State>(exec.agent?.session, () => ({ warned: false, blockCounts: new Map() }));
+				state.blockCounts.delete(abs);
+				return;
+			}
 			const rel = path.relative(repoRoot, abs);
 			const lines = diagnostics.slice(0, MAX_FEEDBACK_LINES).map((d) => `${rel}:${d.line}:${d.column} ${d.rule}: ${d.message}`);
 			if (diagnostics.length > MAX_FEEDBACK_LINES) lines.push(`…(+${diagnostics.length - MAX_FEEDBACK_LINES} more)`);
-			return { kind: "context", lines };
+			const state = store.of<State>(exec.agent?.session, () => ({ warned: false, blockCounts: new Map() }));
+			const blockCount = (state.blockCounts.get(abs) ?? 0) + 1;
+			state.blockCounts.set(abs, blockCount);
+			// 死锁降级：同文件连续 block 达上限后稳定降级 context（不清计数——
+			// 保持降级态），直到一次干净写码复位（上方零诊断分支 delete 重武装）。
+			if (blockCount > MAX_BLOCK_PER_FILE) {
+				return { kind: "context", lines };
+			}
+			// 升格档（lint-block-and-staged-hook ADR）：机器可判违规 → block 拦回。
+			return { kind: "block", feedback: lines.join("\n") };
 		} catch (cause) {
 			warnOnce(exec.agent?.session, `lint feedback failed: ${cause instanceof Error ? cause.message : String(cause)}`);
 			return;
