@@ -3,16 +3,18 @@
  * A8 投影撤除批退役——ADR 2026-09-08-a8-session-record-projection-removal，
  * 撤除后能力面 = A2–A5）。
  *
- * 六挂载点（A2–A6 + A8）各一组策略接口 + 一个合并器——hook-protocol 判定
+ * 四挂载点（A2–A5）各一组策略接口 + 一个合并器——hook-protocol 判定
  * 语义的本地蒸馏（蓝图 §7 边界：不建两方言桥，deny→A3 阻断并回消息 /
  * block→A4 结果面拦回 / additionalContexts→A4 上下文附加 / 非阻断→降级日志）。
- * 策略件（M1/M2/M3）在 mount-policies.mts；宿主 ctx.on 胶水与消息构造在
- * index.mts。本模块零宿主依赖（防火墙规则 2，selftest 机器扫描）——宿主
- * payload 只取本地窄结构面（同 engine-bridge AgentCarrier 口径）。
+ * 策略件在 mount-policies.mts（现存留件 = A2 开场地图，记录件面已随撤除批
+ * 退役）；宿主 ctx.on 胶水与消息构造在 index.mts。本模块零宿主依赖（防火墙
+ * 规则 2，selftest 机器扫描）——宿主 payload 只取本地窄结构面（同
+ * engine-bridge AgentCarrier 口径）。
  *
  * 档位纪律（B4 ADR Decision 7）：合并器提供 deny/block 能力（A3/A4 的阻断
- * 语义单源在案），但首批策略件全部建议/记录档，不使用阻断路径；升格逐件
- * 过 HERO 另案。宿主事件与决策形态实证记录见 B4 ADR Problem 节。
+ * 语义单源在案），但首批策略件全部建议档（记录档面已撤——撤除 ADR），不
+ * 使用阻断路径；升格逐件过 HERO 另案。宿主事件与决策形态实证记录见 B4
+ * ADR Problem 节。
  */
 import type { AgentCarrier } from "./engine-bridge.mjs";
 
@@ -75,9 +77,10 @@ export type SessionStartPolicy = (payload: SessionStartPayload) => SessionStartP
 /**
  * 每会话键控状态存储（WeakMap，GC 自清）：键 = 宿主 session 对象（dsh-goal
  * 同款键位——会话对象身份跨 agent 稳定）。策略件各自持有实例；残留状态仅
- * A2 地图的单门布尔（投影状态与其 drain 面已随撤除批退役）。
+ * A2 地图的单门布尔（投影状态与其显式清态 drain 面已随撤除批退役——GC
+ * 自清兜底，撤除 ADR Decision 1）。
  */
-export function createSessionStore(): { of<T>(key: unknown, init: () => T): T; drop(key: unknown): boolean } {
+export function createSessionStore(): { of<T>(key: unknown, init: () => T): T } {
 	const store = new WeakMap<object, unknown>();
 	return {
 		of<T>(key: unknown, init: () => T): T {
@@ -88,11 +91,6 @@ export function createSessionStore(): { of<T>(key: unknown, init: () => T): T; d
 			const created = init();
 			store.set(objectKey, created);
 			return created;
-		},
-		drop(key: unknown): boolean {
-			const objectKey = key as object | null | undefined;
-			if (objectKey === null || objectKey === undefined) return false;
-			return store.delete(objectKey);
 		},
 	};
 }

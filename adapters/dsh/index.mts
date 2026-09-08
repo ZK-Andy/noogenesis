@@ -145,9 +145,10 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 
 	registerNooTools(ctx, { defineTool, runEngine, repoRoot: repoRootFor });
 
-	// ── 挂载面接线（B4 ADR Decision 1–5：能力层 mount.mts 合并器 + 策略层
-	// mount-policies.mts；全部建议/记录档，零阻断路径——A3/A4 的 deny/block
-	// 能力由合并器单源承载，首批策略件不使用）。每挂载点恰一个 ctx.on
+	// ── 挂载面接线（B4 ADR Decision 1–2 + Decision 7 档位纪律：能力层
+	// mount.mts 合并器 + 策略层 mount-policies.mts；首批全部建议档——记录档
+	// 面已随撤除批退役（撤除 ADR），零阻断路径——A3/A4 的 deny/block 能力
+	// 由合并器单源承载，首批策略件不使用）。每挂载点恰一个 ctx.on
 	// listener，策略件增挂只动 mount-policies.mts，不复制宿主接线。 ──
 	const mounts = createMountPolicies(cfg);
 
@@ -196,8 +197,8 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 	});
 
 	// A4 工具后（tools/post-execute waterfall）：block/附加上下文由合并器单源
-	// 承载（首批只有 M3 观测策略，零决策输出）；上下文行合一条消息前置。
-	// 合并异常 → warn 降级返回下游结果（观测失败不吞工具结果）。
+	// 承载（首批零策略能力位）；上下文行合一条消息前置。
+	// 合并异常 → warn 降级返回下游结果。
 	ctx.on("tools/post-execute", async (exec: ToolExecLike, result: ToolResultLike, next: () => Promise<{ kind: string; additionalContexts?: unknown[] }>) => {
 		let merged;
 		try {

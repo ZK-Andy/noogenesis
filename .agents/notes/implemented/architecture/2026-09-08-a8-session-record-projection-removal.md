@@ -35,7 +35,7 @@ Related: [2026-09-08-b4-mount-wiring](2026-09-08-b4-mount-wiring.md)（撤其 De
 
 ## Consequences
 
-- **行为面**：插件不再向宿主 session 写任何自定义事件类型；新会话历史在装机宿主可正常 observe。A2 开场地图、三工具、solidify、pull、技能面全部不变。
+- **行为面**：插件不再向宿主 session 写任何自定义事件类型；新会话历史在装机宿主可正常 observe。A2 开场地图、三工具、solidify、pull、技能面在正常新会话路径（新 session 对象）不变；会话对象复用/恢复语义下开场地图不再随 drain 清态重放（drain 面已撤，WeakMap GC 自清兜底——最坏差异 = 同名义会话少一次地图重投，场景标注见 B4 ADR Risks「WeakMap 会话键生命周期」条）。
 - **保留面**：mount 能力层 A2–A5 合并器不变；`ToolExecLike.arguments` 字段名修复仍有效（A3/A4 升格时的宿主合同单源）；M2 拦截升格候选判据不受影响（其观测面恢复成本 = 一次 diff）。
 - **存量日志**：已含 `noogenesis/*` 事件的既有会话日志在本机仍不可 observe——修复须改写持久日志（给信封补 ignorable 标记），属危险操作，本批不执行、另案拍板。
 - **对账面**：B4 重验批「持久化容忍度 ✅」结论以勘误撤回（B4 ADR Erratum 在案）；0.2.1 重装重验 todos 条目的清账判据（skill-usage/subtree-touch 投影落盘）作废改写。

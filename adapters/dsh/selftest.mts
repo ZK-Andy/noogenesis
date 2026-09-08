@@ -695,7 +695,8 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.deepEqual(mergeSessionStart([() => ({ kind: "inject" as const, lines: ["a", "b"] })], {}), ["a", "b"]);
 	ok("mounts: session-start merge — inject lines accumulate (non-blocking)");
 
-	// 会话键控存储：同键共享实例、异键隔离、drop 清态、无键降级为即席实例。
+	// 会话键控存储：同键共享实例、异键隔离、无键降级为即席实例（显式清态
+	// drain 面已随撤除批退役——GC 自清兜底）。
 	{
 		const store = createSessionStore();
 		const keyA = {};
@@ -703,10 +704,7 @@ function writeFixtureGene(repoRoot: string): void {
 		store.of<{ n: number }>(keyA, () => ({ n: 1 })).n = 3;
 		assert.equal(store.of<{ n: number }>(keyA, () => ({ n: 2 })).n, 3);
 		assert.equal(store.of<{ n: number }>(keyB, () => ({ n: 9 })).n, 9);
-		assert.equal(store.drop(keyA), true);
-		assert.equal(store.of<{ n: number }>(keyA, () => ({ n: 7 })).n, 7);
-		assert.equal(store.drop(undefined), false);
-		ok("mounts: session store — per-key state, drop clears, keyless degrades to fresh");
+		ok("mounts: session store — per-key state, keyless degrades to fresh");
 	}
 
 	// M2：开场地图每会话一次（subagent / 零布点仓跳过）。
@@ -788,14 +786,14 @@ function writeFixtureGene(repoRoot: string): void {
 		assert.equal(rejected.kind, "reject");
 		ok("mounts: A2 wiring — opening map appended once; later steps and reject passthrough");
 
-		// A3：首批零 deny/ask → next 透传（能力位在场，观测面已随投影撤除）。
+		// A3：首批零 deny/ask → next 透传（能力位在场；exec 形状 = 宿主合同冒烟，无观测语义）。
 		const passthroughMarker = { marker: true };
-		assert.equal(await toolPre({ name: "skill", arguments: { name: "noo-select" }, agent }, async () => passthroughMarker), passthroughMarker);
+		assert.equal(await toolPre({ name: "read", arguments: { file_path: "/tmp/x.ts" }, agent }, async () => passthroughMarker), passthroughMarker);
 		ok("mounts: A3 wiring — no first-batch denial; passthrough preserved");
 
 		// A4：首批零策略 → 透传（能力位在场）。
 		const postDownstream = { kind: "accept" };
-		assert.equal(await toolPost({ agent }, { content: [{ type: "text", text: "node scripts/verify-review-brief.mts" }] }, async () => postDownstream), postDownstream);
+		assert.equal(await toolPost({ agent }, { content: [{ type: "text", text: "ok" }] }, async () => postDownstream), postDownstream);
 		ok("mounts: A4 wiring — zero-policy post lane passes result through");
 
 		// A5：零策略件 → 无注入不抛（能力位在场即冒烟）。
