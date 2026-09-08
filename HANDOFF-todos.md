@@ -30,7 +30,8 @@
 - [x] （D）B3 钩子与安装面批 2026-09-08（FULL 三审全采纳收口；tier 触发集对账；C2 部分/C4/C6 部分/C13 部分），ADR [2026-09-08-b3-hooks-install](.agents/notes/implemented/architecture/2026-09-08-b3-hooks-install.md)。
 - [x] （D）B4 挂载面接线批 2026-09-08（FULL 三审全采纳收口；C7/C8/C15 落账 + C9 逐批核过；实机重验 = todos B 条），ADR [2026-09-08-b4-mount-wiring](.agents/notes/implemented/architecture/2026-09-08-b4-mount-wiring.md)。
 - [x] （B）B4 实机重验 + 0.2.0 消费面 2026-09-08（真机探针，journal 在案）：持久化容忍度 ✅（review-surface 一等事件落宿主层、turn 级增量精确对账）+ A2 地图/A6→A8 通道 ✅ + dist/pull ✅（cache HEAD=远端）；M1/M2 零投影缺陷实锤 → 新（B）修复轮。
-- [ ] （B）M1/M2 A3 观测面真机缺陷修复轮（2026-09-08 实锤，根因与复现细节在 journal）：宿主 exec 载荷字段 = `arguments`（dsh-tools createExecution 铸造，`.args` 全库零命中），策略件读 `exec.args?.*` 恒 undefined → skill-usage/subtree-touch 静默零记录；修法 = mount-policies 两处改读 `exec.arguments` + selftest 夹具同批改字段（假绿根因 = 夹具复刻错误假设）+ bug-fix ADR（同步 B4 ADR 风险线容忍度结果）。
+- [x] （B）M1/M2 exec 载荷字段修复 2026-09-08（FULL 三审 R1 1B/R2 1B/1S/R3 0B 全采纳收口；0.2.1 发版 + B4 ADR 同步/勘误落账），ADR [2026-09-08-mount-exec-arguments-field](.agents/notes/implemented/bug-fix/2026-09-08-mount-exec-arguments-field.md)。
+- [ ] （B）0.2.1 重装重验（修复 ADR 残余边界）：用户更新插件至 0.2.1 后新会话真机探针——skill 调用 + 子树写探针 → `noogenesis/skill-usage` / `noogenesis/subtree-touch` 投影落宿主 session 持久层即清账（M3 对照组同行核）。
 - [x] （C）engine/bin.ts pull guard 合并 2026-09-08 随 B5 兑现（B2 R1 延后项，同文案 fail 合一 + 不可达 continue 消除，行为零变化）；B5 ADR Decision 6。
 - [x] （A）框架重建立项收口 2026-09-06（推倒重建/先框架后协作层/原地重建；FULL 三审 R1 0B/5S、R2 2B/6S、R3 1B/3S 全采纳），ADR [2026-09-06-framework-rebuild-charter](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md)。
 - [x] （C）main 领先包体出包 2026-09-08 随 B5 0.2.0 断点销账（git 前置条件 + ENOENT 诊断 `b5fcb2e`→`10745e2` 已带出；tag `v0.2.0` + npm latest 在案）。
