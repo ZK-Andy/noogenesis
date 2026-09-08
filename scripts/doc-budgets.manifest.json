@@ -12,6 +12,7 @@
     { "path": "docs/method/ai-collaboration-method.md", "max_words": 2000 },
     { "path": "docs/method/doc-standards.md", "max_words": 1200 },
     { "path": "docs/method/review.md", "max_words": 1500 },
-    { "path": "docs/method/standard-authoring.md", "max_words": 800 }
+    { "path": "docs/method/standard-authoring.md", "max_words": 800 },
+    { "path": "docs/method/code-standards.md", "max_words": 1500 }
   ]
 }
