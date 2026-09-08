@@ -201,7 +201,7 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 	});
 
 	// A4 工具后（tools/post-execute waterfall）：block/附加上下文由合并器单源
-	// 承载（首批零策略能力位）；上下文行合一条消息前置。
+	// 承载（现存策略件用 context 档，block 能力位零使用）；上下文行合一条消息前置。
 	// 合并异常 → warn 降级返回下游结果。
 	ctx.on("tools/post-execute", async (exec: ToolExecLike, result: ToolResultLike, next: () => Promise<{ kind: string; additionalContexts?: unknown[] }>) => {
 		let merged;

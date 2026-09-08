@@ -37,7 +37,7 @@
 1. **文档纪律语义面**：单源（同一事实一个家）、写当前状态不写变更史 — [doc-standards](docs/method/doc-standards.md)。
 2. **ADR 口径一致性**：决策与实现/README/头注对同一事实的表述一致；证据严肃性三件套（现象/机制分离 · 数值标强度 · 勘误通道）— [.agents/notes/README.md](.agents/notes/README.md)。
 3. **胶囊内容域与门禁判据口径一致** — [doc-standards](docs/method/doc-standards.md) tier 表 + [standard-authoring](docs/method/standard-authoring.md)。
-4. **编码规范语义面**：机器面已盖（导出函数/类注释存在性、TODO/FIXME 词面、未用变量、`as const`、写码当轮 lint 反馈）——评审核对注释**内容**（契约是否说清、变更史/推理转写/控制流复述、命名是否揭示意图）与格式约定（头注三要素/尾随注释/中英混杂）— [code-standards](docs/method/code-standards.md) 各「[R] 留评审」档条目。
+4. **编码规范语义面**：机器面已盖（导出函数/类注释存在性、TODO/FIXME 词面、未用变量、`as const`；写码当轮 lint 反馈为建议档、不阻断）——评审核对注释**内容**（契约是否说清、变更史/推理转写/控制流复述、命名是否揭示意图）与格式约定（头注三要素/尾随注释/中英混杂）— [code-standards](docs/method/code-standards.md) 各「[R] 留评审」档条目。
 
 ## 质量门
 

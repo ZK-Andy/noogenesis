@@ -36,7 +36,7 @@ import { validateConfig, DEFAULT_GENE_BANK_URL } from "./config.mjs";
 import { createSessionStore, mergePreStep, mergeSessionStart, mergeToolPost, mergeToolPre } from "./mount.mjs";
 import { createMountPolicies, createSubtreeRulesPolicies } from "./mount-policies.mjs";
 import { createLintFeedbackPolicies } from "./lint-feedback.mjs";
-import type { LintDiagnostic } from "./lint-feedback.mjs";
+import type { LintDiagnostic, LintRunContext } from "./lint-feedback.mjs";
 import { apply } from "./index.mjs";
 
 const ADAPTER_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -716,6 +716,8 @@ function writeFixtureGene(repoRoot: string): void {
 			fs.mkdirSync(path.join(repo, subtree), { recursive: true });
 			fs.writeFileSync(path.join(repo, subtree, "AGENTS.md"), `# ${subtree}\n`);
 		}
+		fs.mkdirSync(path.join(repo, "docs", "method"), { recursive: true });
+		fs.writeFileSync(path.join(repo, "docs", "method", "code-standards.md"), "# code-standards\n");
 		const subtreePolicies = createSubtreeRulesPolicies({ repoRoot: repo });
 		const agent = { session: { header: { cwd: repo } } };
 		const advice = subtreePolicies.preStep({ agent, turn: 1, step: 1 });
@@ -724,7 +726,7 @@ function writeFixtureGene(repoRoot: string): void {
 			"Noogenesis subtree rules map — read a subtree's AGENTS.md before working in it:",
 			"- engine/ → engine/AGENTS.md",
 			"- scripts/ → scripts/AGENTS.md",
-			"- 写码规范：docs/method/code-standards.md（机器面 lint/export-docs 写码后自动反馈）",
+			"- 写码规范：docs/method/code-standards.md（机器面 lint 写码后自动反馈；export-docs 在门禁面）",
 		]);
 		assert.equal(subtreePolicies.preStep({ agent, turn: 1, step: 2 }), undefined);
 		const subagent = { session: { header: { cwd: repo, origin: "subagent" } } };
@@ -736,7 +738,15 @@ function writeFixtureGene(repoRoot: string): void {
 		assert.ok(lateAdvice && lateAdvice.kind === "advice", "first pre-step triggers regardless of turn/step");
 		const bare = createSubtreeRulesPolicies({ repoRoot: tempRepo("mount-m2-bare") });
 		assert.equal(bare.preStep({ agent: { session: { header: { cwd: path.join(os.tmpdir(), "mount-m2-bare-missing") } } }, turn: 1, step: 1 }), undefined);
-		ok("mounts: M2 — opening map once per session (subagent/zero-subtree skipped)");
+		// 指针行存在性过滤：有布点件但无判据单源件的仓不追加（否则指向不存在文件）。
+		const noPointer = tempRepo("mount-m2-nopointer");
+		fs.mkdirSync(path.join(noPointer, "engine"), { recursive: true });
+		fs.writeFileSync(path.join(noPointer, "engine", "AGENTS.md"), "# engine\n");
+		const noPointerAdvice = createSubtreeRulesPolicies({ repoRoot: noPointer }).preStep({ agent: { session: { header: { cwd: noPointer } } }, turn: 1, step: 1 });
+		assert.ok(noPointerAdvice && noPointerAdvice.kind === "advice");
+		assert.equal(noPointerAdvice.lines.length, 2);
+		assert.ok(!noPointerAdvice.lines.some((line) => line.includes("code-standards")));
+		ok("mounts: M2 — opening map once per session (subagent/zero-subtree skipped; pointer line gated on file presence)");
 	}
 
 	// 策略件组装：A2 地图件 + A4 写码在环反馈件 + A3/A5 零策略能力位
@@ -818,7 +828,7 @@ function writeFixtureGene(repoRoot: string): void {
 	fs.symlinkSync(path.join(REPO_ROOT, "node_modules"), path.join(repo, "node_modules"), "dir");
 	const agent = { session: { header: { cwd: repo } } };
 	const writeExec = { name: "write", arguments: { file_path: "sample.ts" }, agent };
-	const stubCalls: Array<{ bin: string; config: string; file: string; cwd: string }> = [];
+	const stubCalls: LintRunContext[] = [];
 	const withStub = (diagnostics: LintDiagnostic[]) =>
 		createLintFeedbackPolicies(
 			{ repoRoot: repo },
@@ -843,9 +853,28 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.equal(single.toolPost({ name: "read", arguments: { file_path: "sample.ts" }, agent }, {}), undefined);
 	assert.equal(single.toolPost(writeExec, { isError: true }), undefined);
 	assert.equal(single.toolPost({ name: "write", arguments: { file_path: "../outside.ts" }, agent }, {}), undefined);
+	assert.equal(single.toolPost({ name: "write", arguments: { file_path: "/etc/outside.ts" }, agent }, {}), undefined);
 	assert.equal(single.toolPost({ name: "write", arguments: { file_path: "notes.md" }, agent }, {}), undefined);
 	assert.equal(single.toolPost({ name: "write", arguments: { file_path: 42 }, agent }, {}), undefined);
-	ok("lint-feedback: non-write / isError / outside-repo / non-TS / bad file_path → void");
+	assert.equal(single.toolPost({ name: "write", arguments: { file_path: "" }, agent }, {}), undefined);
+	ok("lint-feedback: non-write / isError / outside-repo (rel+abs) / non-TS / bad file_path → void");
+
+	// row 7 空诊断分支：桩被调用且返回空 → void（与「桩抛错」同结果但路径不同）。
+	{
+		let called = 0;
+		const empty = createLintFeedbackPolicies(
+			{ repoRoot: repo },
+			{
+				runLint: () => {
+					called += 1;
+					return [];
+				},
+			},
+		);
+		assert.equal(empty.toolPost({ name: "write", arguments: { file_path: "sample.mts" }, agent }, {}), undefined);
+		assert.equal(called, 1);
+		ok("lint-feedback: zero diagnostics → void (stub invoked; .mts extension accepted)");
+	}
 
 	const throwing = createLintFeedbackPolicies(
 		{ repoRoot: repo },
@@ -872,7 +901,8 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.equal(degraded.toolPost({ name: "write", arguments: { file_path: "a.ts" }, agent: bareAgent }, {}), undefined);
 	assert.equal(degraded.toolPost({ name: "write", arguments: { file_path: "a.ts" }, agent: bareAgent }, {}), undefined);
 	assert.equal(warns.length, 1);
-	ok("lint-feedback: missing oxlint infra → void + one warn per session");
+	assert.match(warns[0]!, /lint feedback offline: .*\.oxlintrc\.json or node_modules/);
+	ok("lint-feedback: missing oxlint infra → void + one warn per session (message pinned)");
 
 	const real = createLintFeedbackPolicies({ repoRoot: repo });
 	fs.writeFileSync(path.join(repo, "sample.ts"), "export function bad(): number { var x = 1; return x; }\n");

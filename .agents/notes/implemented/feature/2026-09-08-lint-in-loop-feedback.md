@@ -27,14 +27,14 @@ Related: 实施计划 [coding-enforcement-impl-plan](../../../../docs/research/c
    | 7 | 诊断空 / 非空 | `void` / `{kind:"context", lines}`（≤10 行 + `…(+N more)` 尾行） |
    | 8 | 任何异常 | `void` + 每会话至多一条 warn（策略件自身永不抛） |
 
-   - `RunLint = (ctx: { bin; config; file; cwd }) => LintDiagnostic[]` 为执行面注入缝；默认实现 `spawnSync(process.execPath, [bin, "--config", config, "--deny-warnings", "-f", "json", file])`（timeout 5s，`cwd` = 仓根），解析 oxlint JSON 的 `diagnostics[].labels[0].span`（行/列 1 基）。
-   - 状态键 = `exec.agent?.session`（`createSessionStore`，同 M2 口径）；无会话键时降级为即席状态（warn 可能重复，与 M2 同款边界）。
+   - `RunLint = (ctx: LintRunContext) => LintDiagnostic[]`（`LintRunContext` = `{ bin; config; file; cwd }`）为执行面注入缝；默认实现 `spawnSync(process.execPath, [bin, "--config", config, "--deny-warnings", "-f", "json", file])`（timeout 5s，`cwd` = 仓根），解析 oxlint JSON 的 `diagnostics[].labels[0].span`（行/列 1 基）。
+   - 状态键 = `exec.agent?.session`（`createSessionStore`，同 M2 口径）；无会话键时降级为即席状态（warn 可能重复，与 M2 同款边界）。降级提示自身经 try/catch 自保（注入的 `warn` 抛错不得逃出策略件）。
 
 2. **接线**：`createMountPolicies(config, deps)` 组装 `toolPost: [lintFeedback.toolPost]`；`index.mts` 只把既有 `logger.warn` 透传进 deps。**这偏离实施计划 §1-A2「`index.mts` 零改动」的字面**：计划同条要求「每会话 warn 一次」，而策略层若无 logger 注入则该要求不可达；透传既有 logger 不触宿主接线面（不新增 listener、不改注入声明），形态同 `registerBankSkills(ctx, {config, logger})` / `createBankPullScheduler({... logger ...})` 既有两件。计划该句的括号理由（每挂载点恰一个 listener）仍然成立。
 
-3. **A2 指针行**：`createSubtreeRulesPolicies` 的开场地图在布点件存在时追加一行 `- 写码规范：docs/method/code-standards.md（机器面 lint/export-docs 写码后自动反馈）`——地图已承载「动工前先读哪份规则」，写码规范指针与 A4 反馈同批落地；零布点件仓不加（非心源形态仓零注入）。
+3. **A2 指针行**：`createSubtreeRulesPolicies` 的开场地图在 `docs/method/code-standards.md` 实存时追加一行 `- 写码规范：docs/method/code-standards.md（机器面 lint 写码后自动反馈；export-docs 在门禁面）`——地图已承载「动工前先读哪份规则」，写码规范指针与 A4 反馈同批落地；零布点件或判据单源件缺席的仓不加（指针行与布点件同款存在性过滤）。
 
-4. **测试**：`adapters/dsh/selftest.mts` 追加夹具组——①–⑦ 逐条合同（注入桩，含截断与尾行）、缺基建 warn-once、默认 `runLint` 真件 e2e（临时仓 + `.oxlintrc.json` + `node_modules` 符号链接 + 含 `var` 的 `.ts` → `context`；干净文件 → `void`）、index 接线面 warn-once 冒烟。防火墙自测（import 面机器断言）同批全绿。
+4. **测试**：`adapters/dsh/selftest.mts` 追加夹具组——①–⑧ 逐条合同（注入桩，含空诊断、`.mts` 正例、绝对出仓、截断与尾行）、缺基建 warn-once（文案钉死）、默认 `runLint` 真件 e2e（临时仓 + `.oxlintrc.json` + `node_modules` 符号链接 + 含 `var` 的 `.ts` → `context`；干净文件 → `void`）、index 接线面 warn-once 冒烟、A2 指针行存在性正负两例。防火墙自测（import 面机器断言）同批全绿。
 
 5. **不做（升格触发条件照实施计划 §1-A4）**：A3 写入前阻断（`PreToolDecision` 无 context 通道；`edit` 是 diff，写入前需模拟应用）、自动 `--fix`（静默改文件致模型心智模型漂移）、A6 停止前扫描（git 边界已覆盖推送面）。
 
@@ -46,6 +46,7 @@ Related: 实施计划 [coding-enforcement-impl-plan](../../../../docs/research/c
 - **自动 `--fix`**：落败——静默改写让模型对文件状态的心智模型漂移；触发 = 用户显式要求。
 - **只报首条诊断**：落败——oxlint 单文件诊断本就是写码粒度，10 行上限 + 尾行已控噪，截到 1 条反而放大往返轮次。
 - **只对写码面报变更行**：落败——需要 diff 行映射（`edit` 的 old/new 位置），判据复杂度远超收益；整文件诊断与门禁面判据同口径。
+- **A4 合同改 async 以消除事件循环阻塞**：本批落败——改 `ToolPostPolicy` / 合并器 / index 接线三处合同面超出轨道 A 范围，而同步 ~0.1s 与写码往返同量级；升格触发 = 观测到可感知卡顿（会话/流式输出受影响）。
 
 ## Consequences
 
@@ -54,3 +55,6 @@ Related: 实施计划 [coding-enforcement-impl-plan](../../../../docs/research/c
 - 泛化边界：v1 只对 `repoRoot` 内、仓根带 `.oxlintrc.json` + oxlint 的仓生效（self-hosting 面）；按文件所属仓找 lint 配置列为后续（实施计划 §5 同口径）。
 - 判据零新增：与 `lint` 闸消费同一 `.oxlintrc.json`；`export-docs` 不入在环面（其判据是声明面整体，写码中途不成立）。
 - 不触碰阻断路径：A4 的 `block` 能力仍在合并器单源承载，本策略只用 `context`（建议档纪律）。
+- **同步面代价**：`spawnSync` 在 A4 listener 的同步段、早于 `next()` 执行——每次 write/edit 阻塞宿主事件循环 ~0.1s（非仅该会话往返；流式输出同受影响）。异步化见 Alternatives 升格触发。
+- **出仓判定语义**：`path.relative` 三段判据（`..` 自身 / `..<sep>` 前缀 / 绝对路径）；仓内经 symlink 指向仓外的文件按仓内处理（v1 无 realpath 解析）。
+- 评审收口（2026-09-08 FULL 三审）：R1 抓出指针行「export-docs 在环」口径矛盾（改文案）+ 三处可简化（`rel === ""` 冗余、运行入参类型三写、空串校验冗余）；R2 抓出 A4「零策略」口径五处未同步（`README.md` / `mount.mts` ×3 / `index.mts`）、`warnOnce` 未自保、出仓前缀判定过宽、指针行缺存在性过滤、夹具五处弱断言/缺正例；**全采纳**。

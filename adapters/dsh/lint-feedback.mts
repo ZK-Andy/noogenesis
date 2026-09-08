@@ -25,8 +25,16 @@ export interface LintDiagnostic {
 	message: string;
 }
 
+/** lint 一次执行的入参（仓根定位面：二进制 / 配置 / 目标文件 / 工作目录）。 */
+export interface LintRunContext {
+	bin: string;
+	config: string;
+	file: string;
+	cwd: string;
+}
+
 /** lint 执行面（默认实现跑仓根 oxlint；测试注入桩）。 */
-export type RunLint = (ctx: { bin: string; config: string; file: string; cwd: string }) => LintDiagnostic[];
+export type RunLint = (ctx: LintRunContext) => LintDiagnostic[];
 
 /** 策略件注入缝：`runLint` = 执行面替换；`warn` = 降级提示落点（默认静默）。 */
 export interface LintFeedbackDeps {
@@ -50,7 +58,7 @@ interface OxlintJson {
 }
 
 /** 默认执行面：仓根 oxlint 单文件 JSON 模式；启动失败/无 JSON 输出即抛（策略层统一降级）。 */
-function defaultRunLint({ bin, config, file, cwd }: { bin: string; config: string; file: string; cwd: string }): LintDiagnostic[] {
+function defaultRunLint({ bin, config, file, cwd }: LintRunContext): LintDiagnostic[] {
 	const result = spawnSync(process.execPath, [bin, "--config", config, "--deny-warnings", "-f", "json", file], {
 		cwd,
 		encoding: "utf8",
@@ -70,10 +78,10 @@ function defaultRunLint({ bin, config, file, cwd }: { bin: string; config: strin
 	});
 }
 
-/** 路径归属判定：`abs` 在 `repoRoot` 内（含根自身），出仓面不反馈。 */
+/** 路径归属判定：`abs` 在 `repoRoot` 内（含根自身）；出仓面不反馈。 */
 function isInsideRepo(repoRoot: string, abs: string): boolean {
 	const rel = path.relative(repoRoot, abs);
-	return rel === "" || (!rel.startsWith("..") && !path.isAbsolute(rel));
+	return rel !== ".." && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel);
 }
 
 /**
@@ -88,16 +96,20 @@ export function createLintFeedbackPolicies(config: RepoRootConfig, deps: LintFee
 		warned: boolean;
 	}
 	const warnOnce = (session: unknown, message: string): void => {
-		const state = store.of<State>(session, () => ({ warned: false }));
-		if (state.warned) return;
-		state.warned = true;
-		warn(`noogenesis ${message}`);
+		try {
+			const state = store.of<State>(session, () => ({ warned: false }));
+			if (state.warned) return;
+			state.warned = true;
+			warn(`noogenesis ${message}`);
+		} catch {
+			// 降级提示面自身不得抛出（策略件永不抛合同）。
+		}
 	};
 	const toolPost: ToolPostPolicy = (exec, result) => {
 		try {
 			if (exec.name !== "write" && exec.name !== "edit") return;
 			const filePath = exec.arguments?.file_path;
-			if (typeof filePath !== "string" || filePath.length === 0) return;
+			if (typeof filePath !== "string") return;
 			if (result.isError === true) return;
 			const sessionCwd = sessionWorkspaceOf(exec);
 			const repoRoot = resolveRepoRoot(config, sessionCwd);

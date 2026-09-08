@@ -6,8 +6,8 @@
  * 四挂载点（A2–A5）各一组策略接口 + 一个合并器——hook-protocol 判定
  * 语义的本地蒸馏（蓝图 §7 边界：不建两方言桥，deny→A3 阻断并回消息 /
  * block→A4 结果面拦回 / additionalContexts→A4 上下文附加 / 非阻断→降级日志）。
- * 策略件在 mount-policies.mts（现存留件 = A2 开场地图，记录件面已随撤除批
- * 退役）；宿主 ctx.on 胶水与消息构造在 index.mts。本模块零宿主依赖（防火墙
+ * 策略件在 mount-policies.mts（现存留件 = A2 开场地图 + A4 写码在环 lint
+ * 反馈，记录件面已随撤除批退役）；宿主 ctx.on 胶水与消息构造在 index.mts。本模块零宿主依赖（防火墙
  * 规则 2，selftest 机器扫描）——宿主 payload 只取本地窄结构面（同
  * engine-bridge AgentCarrier 口径）。
  *
@@ -44,7 +44,7 @@ export interface ToolExecLike extends AgentCarrier {
 	signal?: unknown;
 }
 
-/** A4 工具结果窄面（content 文本抽取面；isError 只作观测不消费）。 */
+/** A4 工具结果窄面（content 文本抽取面；isError 供策略判定失败调用）。 */
 export interface ToolResultLike {
 	isError?: boolean;
 	content?: Array<{ type?: string; text?: string }>;
@@ -68,7 +68,7 @@ export type ToolPostPolicyDecision = { kind: "block"; feedback: string } | { kin
 /** A5 策略决策：inject = 会话开始注入上下文行（非阻塞）。 */
 export type SessionStartPolicyDecision = { kind: "inject"; lines: string[] };
 
-/** 策略接口四件（A6/A8 记录投影面已撤——撤除 ADR；A3/A4/A5 首批零策略件）。 */
+/** 策略接口四件（A6/A8 记录投影面已撤——撤除 ADR；A3/A5 首批零策略件）。 */
 export type PreStepPolicy = (payload: PreStepPayload) => PreStepPolicyDecision | void;
 export type ToolPrePolicy = (exec: ToolExecLike) => ToolPrePolicyDecision | void;
 export type ToolPostPolicy = (exec: ToolExecLike, result: ToolResultLike) => ToolPostPolicyDecision | void;
