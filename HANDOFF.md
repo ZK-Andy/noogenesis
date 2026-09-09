@@ -5,11 +5,13 @@
 
 > **⚡ 最高优先级（框架重建）：charter ADR + 七层蓝图 → [.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md) · [docs/research/framework-rebuild-blueprint.md](docs/research/framework-rebuild-blueprint.md)**——用户拍板推倒重建（先框架后协作层、本仓原地重建），蓝图定稿（七层三段式 + A1–A8 挂载面 + M1–M3 + C1–C15）；**B0–B5 全批闭环（协作层重建收官，C1–C15 全绿）**——B5 切换批（gates.json cmd 全量重指 TS + 旧机器件零残留 + CI/钩子单轨 + 发版 0.2.0；实现 ADR [.agents/notes/implemented/architecture/2026-09-08-b5-switch.md](.agents/notes/implemented/architecture/2026-09-08-b5-switch.md)，批次表 [.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md](.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md)）；优化轮问题池余项（技能清单补全/记忆库）随重建后进行（规范展开 c1/c2 已交付；行动区仍在 [docs/research/capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)）。
 
-> **⏭ 下一步：批 1 真机复验已闭环（todo B 勾账 2026-09-09，全判据命中，journal 在案）**——**宿主基线已升 `@deepseek-ai/dsh@0.1.5-alpha.1`**（用户 2026-09-09 主动升级并确认；npm12 安装脚本放行规避见 [docs/cookbook.md](docs/cookbook.md)「npm ≥12 默认不跑依赖树安装脚本」）。候选下一步：优化轮问题池余项（技能守卫方案设计 / 技能清单补全 / 记忆库开题 / 防过度设计）行动区 [capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)；随手待办见 [HANDOFF-todos.md](HANDOFF-todos.md)。
+> **⏭ 下一步：发布形态对齐上游批已闭环（ADR `2026-09-09-release-shape-alignment` implemented；FULL 三审收口，journal 在案）**——README 自我指称统一 DSH（首现全称+括号、后续缩写）、License 修辞正面化、tag 切 `dsh-vX.Y.Z` 前缀、release 工具族就位（`release:bump` / `release:note`：双语 body + @作者 + Full Changelog）。**宿主基线 `@deepseek-ai/dsh@0.1.5-alpha.1`**（用户 2026-09-09 主动升级；npm12 放行见 cookbook [环境] 条）。候选下一步：优化轮问题池余项（技能守卫 / 技能清单补全 / 记忆库开题 / 防过度设计）行动区 [capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)；随手待办 [HANDOFF-todos.md](HANDOFF-todos.md)。
 
 ## 交接更新记录（摘要滚动窗）
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
+
+- 2026-09-09｜**发布形态对齐上游批（FULL 三审全采纳收口；ADR `2026-09-09-release-shape-alignment` implemented；`71601e7`→`1b6c25b`）**：README 引用统一 DSH + License 修辞正面化（免责句 DeepSeek→DSH 维护方）；release 工具族（bump/release-note 双语 body+@作者）+ tag 切 `dsh-v` + lock 漂移修复。**节点：下一发版用新工具族。**
 
 - 2026-09-09｜**批 1 真机复验（todo B 勾账；0.2.3 实机判据全命中，journal 在案）**：var 写码同轮 block 拦回 / 修正重写零反馈 / 连续 ×3 后第 4 次降级 context 不死锁 / 干净写码复位 / edit 同拦 / 非 .ts 零反馈 / staged 红。**节点：0.2.3 实机生效；宿主基线已升 0.1.5-alpha.1（用户确认主动升级）。** README 无漂移。
 
@@ -46,8 +48,6 @@
 - 2026-09-06｜**优化轮清账批（FULL 三审 R1 0B/1S、R2 0B/4S、R3 1B/3S 全采纳；ADR `2026-09-06-doc-single-sourcing`；`376e868`→`133d2d2`）**：问题池十条落账；门禁清单/计数单源化 gates.json、评审检查项补位根 AGENTS、开始步骤并入 session-open、搬迁计划下沉 journal、gates.mts `--list` 占位两态。**节点：清账批闭环；下批 = 问题池逐项。**
 
 - 2026-09-06｜**pre-push tag 缺口修复 + 根 README 双语化（FULL 三审 0B 全采纳；ADR `2026-09-06-pre-push-tag-outgoing` + `2026-09-06-bilingual-root-readme`；commits `fb155c0`→`fea1714`）**：可达 tag 跳过档位强制，发版豁免前提消失；README 转英文主文件 + 中文镜像（对齐上游 harness）。README 核对无漂移。
-
-- 2026-09-06｜**桌面部署缺陷修复 + 0.1.3 发版（FULL 三审全采纳；ADR `2026-09-06-bank-pull-session-trigger` implemented；commits `ec360ab`→`528f2e8`）**：0.1.2 重验暴露装载期 pull 错位 → 触发点随会话工作区 + `geneBankUrl` 缺省官方库/`false` 禁用；npm latest + tag `v0.1.3`。**节点：重装重验通过；下一轮 = 胶囊 01 优化轮。**
 
 ## 背景
 
