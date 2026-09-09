@@ -108,7 +108,7 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.ok(hitsSectionText({ stdout: `signals: x\n${long}\n` }, { maxSummaryChars: 160 }).includes("…"));
 	ok("section: per-line summary truncated");
 
-	// `{{` 中性化（R2-B1）：宿主 interpolate 对未知 {{name}} 抛错且每模型步调用
+	// `{{` 中性化：宿主 interpolate 对未知 {{name}} 抛错且每模型步调用
 	// renderPrompt——模板语法基因 summary 不得原样进 system-prompt 节。
 	const templated = hitsSectionText({ stdout: "signals: x\ndemo/tmpl  prefer {{placeholder}} tokens\n" });
 	assert.ok(!templated.includes("{{"), "literal {{ must not survive into section text");
@@ -259,7 +259,7 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.match(failedWarn, /solidify failed for 1 candidate/);
 	ok("solidify: gate red → failed list via warn (write refused, engine semantics)");
 
-	// ask 兜底超时（R2-S9）：answerer 永久挂起 → 超时按"仅提醒"降级，不挂死触发体。
+	// ask 兜底超时：answerer 永久挂起 → 超时按"仅提醒"降级，不挂死触发体。
 	// keep-alive 句柄：降级定时器 unref（生产语义——不拖住宿主关停），自测进程
 	// 需自备存活窗让 20ms 超时先于事件循环排空触发。
 	const keepAlive = setTimeout(() => {}, 200);
@@ -464,7 +464,8 @@ function writeFixtureGene(repoRoot: string): void {
 		ok("bank-pull: scheduler — shared gate dedupes per repo (never released); missing session cwd skipped");
 
 		// 显式锚定 → 装载期触发（0.1.2 显式配置部署行为不变）；相对 repoRoot 过
-		// resolveRepoRoot 归一化——装载与会话两路径闸键同空间（R1-B1 回归）
+		// resolveRepoRoot 归一化——装载与会话两路径闸键同空间（闸键不同空间
+		// 则共享闸去重失效，同一仓重复 pull）
 		schedPulls.length = 0;
 		const rel = "rel-pinned-repo";
 		const pinned = createBankPullScheduler({ config: { ...schedCfg, repoRoot: rel }, runEngine, logger: schedLogger });
@@ -522,10 +523,12 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.ok(good);
 	assert.deepEqual(good.meta, { name: "alpha-skill", description: "Alpha does things", whenToUse: "when alpha" });
 	assert.match(good.content, /^# Alpha/);
-	assert.equal(parseSkillFile("---\nname: alpha-skill\n---\nbody\n"), null); // 缺 description
-	assert.equal(parseSkillFile("---\nname: Bad Name\ndescription: x\n---\nbody\n"), null); // 非 kebab-case
+	// 四类 frontmatter 违约都返回 null：缺 description / 非 kebab-case /
+	// 无围栏 / 围栏未闭合
+	assert.equal(parseSkillFile("---\nname: alpha-skill\n---\nbody\n"), null);
+	assert.equal(parseSkillFile("---\nname: Bad Name\ndescription: x\n---\nbody\n"), null);
 	assert.equal(parseSkillFile("no frontmatter\n"), null);
-	assert.equal(parseSkillFile("---\nname: x\ndescription: y\n"), null); // 围栏未闭合
+	assert.equal(parseSkillFile("---\nname: x\ndescription: y\n"), null);
 	ok("skills: frontmatter — kebab name + required description, quotes stripped, malformed → null");
 
 	// 夹具仓：缓存镜像内 1 合规技能 + 1 坏 frontmatter 技能
@@ -554,7 +557,8 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.match(warns.join("\n"), /bad-skill\/SKILL\.md/);
 	ok("skills: cache dir lists curated skill at rank 600; bad frontmatter skipped with warn");
 
-	// list 级 CRLF：CRLF 收录的库缓存不得整技能面静默清空（R2-B1 回归）
+	// list 级 CRLF：CRLF 收录的库缓存不得整技能面静默清空（回归：行尾归一化
+	// 缺失时 fence 识别失败 → 解析返回 null → 面被清空）
 	const crlfDir = path.join(skillsDir, "crlf-skill");
 	fs.mkdirSync(crlfDir, { recursive: true });
 	fs.writeFileSync(path.join(crlfDir, "SKILL.md"), "---\r\nname: crlf-skill\r\ndescription: Survives CRLF\r\n---\r\n\r\n# CRLF body\r\n");
@@ -596,7 +600,7 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.ok(crlf);
 	assert.equal(crlf.meta.name, "crlf-skill");
 	assert.match(crlf.content, /^# Body\nline\n$/);
-	ok("skills: CRLF SKILL.md parses — entry normalization, body \\r stripped (R2-B1 regression)");
+	ok("skills: CRLF SKILL.md parses — entry normalization, body \\r stripped (CRLF regression)");
 
 	// 降级：无缓存目录 → 空数组，绝不抛。cwd 钉在 tmpdir——真实仓根可能已有
 	// 0.1.3+ 装载时拉下的 genes-cache，夹具不得依赖「环境缓存缺席」这一
@@ -697,8 +701,8 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.deepEqual(mergeSessionStart([() => ({ kind: "inject" as const, lines: ["a", "b"] })], {}), ["a", "b"]);
 	ok("mounts: session-start merge — inject lines accumulate (non-blocking)");
 
-	// 会话键控存储：同键共享实例、异键隔离、无键降级为即席实例（显式清态
-	// drain 面已随撤除批退役——GC 自清兜底）。
+	// 会话键控存储：同键共享实例、异键隔离、无键降级为即席实例（残留面仅
+	// 单门布尔，GC 自清兜底）。
 	{
 		const store = createSessionStore();
 		const keyA = {};
@@ -733,7 +737,7 @@ function writeFixtureGene(repoRoot: string): void {
 		assert.equal(subtreePolicies.preStep({ agent, turn: 1, step: 2 }), undefined);
 		const subagent = { session: { header: { cwd: repo, origin: "subagent" } } };
 		assert.equal(subtreePolicies.preStep({ agent: subagent, turn: 1, step: 1 }), undefined);
-		// 单门语义（R2-S1）：首个 pre-step 不限 turn/step——被拒后下一会话步仍可触发。
+		// 单门语义：首个 pre-step 不限 turn/step——被拒后下一会话步仍可触发。
 		const late = createSubtreeRulesPolicies({ repoRoot: repo });
 		const lateAgent = { session: { header: { cwd: repo } } };
 		const lateAdvice = late.preStep({ agent: lateAgent, turn: 3, step: 2 });
@@ -753,7 +757,7 @@ function writeFixtureGene(repoRoot: string): void {
 	}
 
 	// 策略件组装：A2 地图件 + A4 写码在环反馈件 + A3/A5 零策略能力位
-	//（A6/A8 投影面已撤——撤除 ADR）。
+	//（A6/A8 投影面不挂——撤除 ADR）。
 	{
 		const set = createMountPolicies({ repoRoot: "/tmp/assembly" });
 		assert.equal(set.preStep.length, 1);
@@ -926,9 +930,11 @@ function writeFixtureGene(repoRoot: string): void {
 			},
 		);
 		for (let i = 0; i < 4; i++) flipper.toolPost(writeExec, {});
-		flip = false; // 下次干净
+		// 下次干净
+		flip = false;
 		assert.equal(flipper.toolPost(writeExec, {}), undefined, "clean write after demotion → void (delete resets)");
-		flip = true; // 再违规
+		// 再违规
+		flip = true;
 		const re = flipper.toolPost(writeExec, {});
 		assert.ok(re && re.kind === "block", "after clean reset, next violation re-arms block");
 		ok("lint-feedback: deadlock demotion to context after N; clean write resets to block");

@@ -6,7 +6,7 @@ import * as path from 'path';
 import { EngineError, KEBAB_RE } from './util.js';
 
 // 载入并结构校验 gates.json。repoRoot 用于条目脚本存在性校验（引用 scripts/** 的实存文件）。
-// doc / 条目保持 any（不可信 JSON 面，形状由运行时 typeof/Array.isArray 逐项守卫——机械移植原 js 的鸭子校验）。
+// doc / 条目保持 any：不可信 JSON 面，形状由运行时 typeof/Array.isArray 逐项守卫。
 function loadGates(engineRoot: string, repoRoot: string) {
   const p = path.join(engineRoot, 'gates.json');
   let raw;

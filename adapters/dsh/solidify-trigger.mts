@@ -18,8 +18,8 @@ export interface TriggerLogger {
 }
 
 /**
- * 逐仓 in-flight 闸工厂（简化收口 R1-S1 单源：solidify 与 bank-pull 各自实例化
- * ——生命周期不同故不共享实例，形状相同故共用工厂）：
+ * 逐仓 in-flight 闸工厂（solidify 与 bank-pull 各自实例化——生命周期不同故
+ * 不共享实例，形状相同故共用工厂）：
  * acquire = 该仓无 in-flight 时占用并放行；release = settle 后释放。
  * 纯函数面，selftest 直测。
  */

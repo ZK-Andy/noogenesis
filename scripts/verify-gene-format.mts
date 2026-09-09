@@ -47,6 +47,9 @@ type JSONVal = null | boolean | number | bigint | string | JSONVal[] | { [key: s
 const KEBAB_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const SHA_RE = /^[0-9a-f]{64}$/;
 const VOL_RE = /^(\d{4}-\d{2})\.jsonl$/;
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+const MS_PER_HOUR = 60 * 60 * 1000;
+const MS_PER_MINUTE = 60 * 1000;
 const KINDS = ["gene.added", "gene.updated", "gene.retired"];
 const KINDS_REPR = `(${KINDS.map((k) => `'${k}'`).join(", ")})`;
 const EVENT_KEYS = "actor evidence gene gene_sha kind outcome ts".split(" ").sort().join("|");
@@ -230,13 +233,15 @@ function parseValue(s: string, i: number): [JSONVal, number] {
     if (m === null) fail(s, "Expecting value", i);
     const next = i + m[0].length;
     if (m[2] === undefined && m[3] === undefined) {
-      const big = BigInt(m[1]!); // 整数分支下组 1 必在（m[2]/m[3] 均未参与）
+      // 整数分支下组 1 必在（m[2]/m[3] 均未参与）
+      const big = BigInt(m[1]!);
       if (big >= BigInt(Number.MIN_SAFE_INTEGER) && big <= BigInt(Number.MAX_SAFE_INTEGER)) {
         return [Number(big), next];
       }
       return [big, next];
     }
-    return [Number(m[0]), next]; // 溢出 → ±Infinity（py float 同为 inf）
+    // 溢出 → ±Infinity（py float 同为 inf）
+    return [Number(m[0]), next];
   }
   if (s.startsWith("NaN", i)) return [NaN, i + 3];
   if (s.startsWith("Infinity", i)) return [Infinity, i + 8];
@@ -387,7 +392,8 @@ function isLeap(y: number): boolean {
 
 function hasIsoWeek53(y: number): boolean {
   const j1 = new Date(Date.UTC(y, 0, 1));
-  const dw = ((j1.getUTCDay() + 6) % 7) + 1; // 1 = 周一
+  // ISO 平日序：1 = 周一
+  const dw = ((j1.getUTCDay() + 6) % 7) + 1;
   return dw === 4 || (dw === 3 && isLeap(y));
 }
 
@@ -399,7 +405,8 @@ function parseFrac(s: string, j: number): { us: number; next: number } | null {
   if (s[j] !== "." && s[j] !== ",") return null;
   const m = /^\d+/.exec(s.slice(j + 1));
   if (m === null) return null;
-  const us = Number(((m[0].slice(0, 6) + "000000").slice(0, 6))); // py：截断到微秒
+  // py：截断到微秒
+  const us = Number(((m[0].slice(0, 6) + "000000").slice(0, 6)));
   return { us, next: j + 1 + m[0].length };
 }
 
@@ -481,7 +488,7 @@ function parseIsoOffset(s: string, j: number): { ms: number; next: number } | nu
     }
   }
   if (oh > 23 || om > 59 || offsetSec > 59) return null;
-  return { ms: sign * (oh * 3600000 + om * 60000 + offsetSec * 1000 + ous / 1000), next: k };
+  return { ms: sign * (oh * MS_PER_HOUR + om * MS_PER_MINUTE + offsetSec * 1000 + ous / 1000), next: k };
 }
 
 /** py datetime.fromisoformat(ts.replace("Z", "+00:00")) 的等价实现；naive 视为 UTC。 */
@@ -509,7 +516,7 @@ function pyFromIso(ts: unknown): PyDT | null {
     const wd = m[3] === undefined ? 1 : Number(m[3]);
     if (wk < 1 || wk > 53 || (wk === 53 && !hasIsoWeek53(y)) || wd < 1 || wd > 7) return null;
     const dowJan4 = ((new Date(Date.UTC(y, 0, 4)).getUTCDay() + 6) % 7) + 1;
-    const target = Date.UTC(y, 0, 4) - (dowJan4 - 1) * 86400000 + (wk - 1) * 7 * 86400000 + (wd - 1) * 86400000;
+    const target = Date.UTC(y, 0, 4) - (dowJan4 - 1) * MS_PER_DAY + (wk - 1) * 7 * MS_PER_DAY + (wd - 1) * MS_PER_DAY;
     const td = new Date(target);
     y = td.getUTCFullYear();
     mo = td.getUTCMonth() + 1;
@@ -523,9 +530,10 @@ function pyFromIso(ts: unknown): PyDT | null {
   let ss = 0;
   let us = 0;
   let offMs = 0;
-  let rollover = false;
+  let isRollover = false;
   if (i < s.length) {
-    i += 1; // py 3.11+：日期与时刻间的分隔符可为任意单字符
+    // py 3.11+：日期与时刻间的分隔符可为任意单字符
+    i += 1;
     const t = parseIsoTime(s, i);
     if (t === null) return null;
     hh = t.hh;
@@ -535,8 +543,9 @@ function pyFromIso(ts: unknown): PyDT | null {
     i = t.next;
     if (hh === 24) {
       if (mm !== 0 || ss !== 0 || us !== 0) return null;
-      rollover = true;
-      hh = 0; // 24:00 → 次日 00:00，baseDay 已翻日，时刻归零
+      isRollover = true;
+      // 24:00 → 次日 00:00，baseDay 已翻日，时刻归零
+      hh = 0;
     } else if (hh > 23) return null;
     if (mm > 59 || ss > 59) return null;
     if (i < s.length && (s[i] === "+" || s[i] === "-")) {
@@ -545,11 +554,12 @@ function pyFromIso(ts: unknown): PyDT | null {
       offMs = o.ms;
       i = o.next;
     }
-    if (i < s.length) return null; // 未消费尾段
+    // 未消费尾段
+    if (i < s.length) return null;
   }
   let baseDay = Date.UTC(y, mo - 1, d);
-  if (rollover) baseDay += 86400000;
-  const ms = baseDay + hh * 3600000 + mm * 60000 + ss * 1000 + us / 1000 - offMs;
+  if (isRollover) baseDay += MS_PER_DAY;
+  const ms = baseDay + hh * MS_PER_HOUR + mm * MS_PER_MINUTE + ss * 1000 + us / 1000 - offMs;
   const dd = new Date(baseDay);
   const dateStr = `${String(dd.getUTCFullYear()).padStart(4, "0")}-${String(dd.getUTCMonth() + 1).padStart(2, "0")}-${String(dd.getUTCDate()).padStart(2, "0")}`;
   return { ms, dateStr };
@@ -679,11 +689,12 @@ function checkEvents(display: string, fsPath: string, errors: string[]): EventRo
   const ym = m[1]!;
   const vy = Number(ym.slice(0, 4));
   const vm = Number(ym.slice(5, 7));
-  if (vm < 1 || vm > 12) throw new Error(`ValueError parity: invalid volume month ${ym}`); // py date.fromisoformat 未捕获崩溃路径
+  // py date.fromisoformat 未捕获崩溃路径
+  if (vm < 1 || vm > 12) throw new Error(`ValueError parity: invalid volume month ${ym}`);
   const volFirstMs = Date.UTC(vy, vm - 1, 1);
   const lastDay = new Date(Date.UTC(vy, vm, 0)).getUTCDate();
-  const winLo = volFirstMs - 86400000;
-  const winHi = volFirstMs + lastDay * 86400000;
+  const winLo = volFirstMs - MS_PER_DAY;
+  const winHi = volFirstMs + lastDay * MS_PER_DAY;
   const text = readTextFatal(fsPath);
   const rows: EventRow[] = [];
   let prev: number | null = null;
@@ -723,7 +734,8 @@ function checkEvents(display: string, fsPath: string, errors: string[]): EventRo
     }
     if (!isKebab(ev.gene)) errors.push(`${display}:${lineno}: gene must be a kebab-case id`);
     const gsv = ev.gene_sha ? ev.gene_sha : "";
-    if (typeof gsv !== "string") throw new Error("TypeError parity: re.match on non-string gene_sha"); // py 未捕获崩溃路径
+    // py 未捕获崩溃路径
+    if (typeof gsv !== "string") throw new Error("TypeError parity: re.match on non-string gene_sha");
     if (!SHA_RE.test(gsv)) errors.push(`${display}:${lineno}: gene_sha must be 64-hex sha256`);
     const outcome = ev.outcome;
     if (outcome !== "ok" && !(typeof outcome === "string" && outcome.startsWith("fail: "))) {
@@ -802,8 +814,10 @@ function scan(base: string): { checked: number; errors: string[] } {
       checked += rows.length;
       volumes.push([vol, rows]);
       for (const r of rows) {
-        const g = r.ev.gene ?? null; // 缺键归一 null = py None 键（Map 键面与 py dict 一致）
-        if (typeof g === "object" && g !== null) throw new Error("TypeError parity: unhashable gene key"); // py dict 键崩溃路径
+        // 缺键归一 null = py None 键（Map 键面与 py dict 一致）
+        const g = r.ev.gene ?? null;
+        // py dict 键崩溃路径
+        if (typeof g === "object" && g !== null) throw new Error("TypeError parity: unhashable gene key");
         let arr = perGene.get(g);
         if (arr === undefined) {
           arr = [];
@@ -848,7 +862,8 @@ function scan(base: string): { checked: number; errors: string[] } {
       if (target !== null) errors.push(`${pyJoin(base, target)}: latest event is gene.retired but the file still exists`);
       continue;
     }
-    const post = evs.slice(lastRetired + 1); // 最后一次 retire 之后的事件决定工作树期望
+    // 最后一次 retire 之后的事件决定工作树期望
+    const post = evs.slice(lastRetired + 1);
     const okAdds = post.filter((e) => e.ev.outcome === "ok" && (e.ev.kind === "gene.added" || e.ev.kind === "gene.updated"));
     if (okAdds.length > 0) {
       const latestOk = okAdds[okAdds.length - 1]!;
@@ -913,13 +928,15 @@ function shaOf(t: string, rel: string): string {
 function selfTest(): number {
   const WHITELIST = '{"version": 1, "gates": [{"name": "stub", "cmd": "python3", "args": ["scripts/stub.py"]}]}';
   const fileSha = (t: string): string => shaOf(t, "genes/process/sample-gene.json");
-  const cases: Array<[(t: string) => void, string[], string]> = []; // [tree-builder, expected_violation_substrings, desc]
+  // [tree-builder, expected_violation_substrings, desc]
+  const cases: Array<[(t: string) => void, string[], string]> = [];
 
   const conforming = (t: string): void => {
     mk(t, "engine/gates.json", WHITELIST);
     mk(t, "scripts/stub.py", "print('ok')\n");
     mk(t, "genes/process/sample-gene.json", geneDoc("sample-gene", "process", { validation: ["stub"] }));
-    mk(t, "events/2026-09.jsonl", `${eventLine()}\n`); // sha 占位，下方替换为真值
+    // sha 占位，下方替换为真值
+    mk(t, "events/2026-09.jsonl", `${eventLine()}\n`);
   };
   const fixSha = (t: string): void => {
     // 让事件 sha 与文件一致（conforming 用）
@@ -1117,7 +1134,8 @@ function main(argv: string[]): number {
   let base = ".";
   const idx = argv.indexOf("--repo");
   if (idx !== -1) {
-    if (idx + 1 >= argv.length) throw new Error("IndexError parity: --repo requires a value"); // py 未捕获崩溃路径
+    // py 未捕获崩溃路径
+    if (idx + 1 >= argv.length) throw new Error("IndexError parity: --repo requires a value");
     base = pyNorm(argv[idx + 1]!);
   }
   const { checked, errors } = scan(base);

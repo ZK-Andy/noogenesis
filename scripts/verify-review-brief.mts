@@ -198,7 +198,8 @@ function listContentIsNonempty(text: string, keyRe: RegExp): boolean {
   for (const ln of splitLines(rest)) {
     if (ln.trim() === "") continue;
     if (ln.startsWith("- ") || ln.startsWith("* ") || ln.startsWith("## ") || !pyIsSpace(ln[0])) {
-      break; // 下一顶级条目/标题——清单结束
+      // 下一顶级条目/标题——清单结束
+      break;
     }
     const stripped = ln.trim().replace(/^[-* ]+/, "").trim();
     if (stripped !== "" && stripped !== "无" && !stripped.startsWith("无。")) return true;
@@ -218,7 +219,7 @@ function briefPaths(repo: string): { paths: Record<string, string>; duplicates: 
   if (fs.existsSync(briefsDir) && fs.statSync(briefsDir).isDirectory()) {
     const names = fs.readdirSync(briefsDir)
       .filter((n) => /^R[123]-.*\.md$/.test(n))
-      .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)); // Python sorted：码点序
+      .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)); // UTF-16 码元序（泳道名 ASCII，与 py sorted 同序）
     for (const n of names) {
       const lane = n.slice(0, 2);
       if (found[lane] !== undefined) {
@@ -262,7 +263,8 @@ function lanesFromBriefRange(repo: string, briefs: Record<string, string>): stri
     const { full } = classify(changed, repo);
     return full ? [...LANES] : ["R2"];
   } catch {
-    return [...LANES]; // 保守：三条全要
+    // 保守：三条全要
+    return [...LANES];
   }
 }
 
@@ -608,7 +610,8 @@ function selfTest(): number {
   const root11 = briefsDirOf(repo);
   fs.mkdirSync(root11);
   fs.writeFileSync(path.join(root11, "R2-a.md"), briefText("R2", base, head), "utf-8");
-  const vsFull = checkRepo(repo); // 泳道由自报的 FULL 范围推导
+  // 泳道由自报的 FULL 范围推导
+  const vsFull = checkRepo(repo);
   assertOk(anyMatch(vsFull, (s) => s.includes("R1: missing brief")),
     `fixture 11a (FULL range) should derive three lanes, got ${reprList(vsFull)}`);
   assertOk(!anyMatch(vsFull, (s) => s.includes("R2")),

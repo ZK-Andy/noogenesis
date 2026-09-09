@@ -14,7 +14,7 @@
  */
 import { defineTool } from "@deepseek-ai/dsh-tools";
 import { createUserMessage } from "@deepseek-ai/dsh-llm";
-import { runEngine, runEngineSync, resolveRepoRoot, sessionWorkspaceOf } from "./engine-bridge.mjs";
+import { runEngine, runEngineSync, resolveRepoRoot, sessionWorkspaceOf, EXIT } from "./engine-bridge.mjs";
 import type { AgentCarrier } from "./engine-bridge.mjs";
 import { registerNooTools } from "./tools.mjs";
 import type { ToolHost } from "./tools.mjs";
@@ -48,7 +48,7 @@ const PLUGIN_SOURCE = { kind: "plugin", plugin: "noogenesis" } as const;
 
 /**
  * 建议档消息构造（A2 追加 / A4 附加上下文 / A5 会话开始注入共用；A4 拦回
-	 * 档 block 的消息由 index 直接构造，不走本工厂）：
+ * 档 block 的消息由 index 直接构造，不走本工厂）：
  * createUserMessage（宿主工厂）+ 多行合一条消息（多行多消息会放大模型面
  * 噪音；单条多 text part 与 hooks 桥 contextFrom 同形态）。
  */
@@ -139,20 +139,39 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 	});
 
 	ctx.systemPrompt.section({ name: "tool:noogenesis", order: cfg.sectionOrder, text: BASE_SECTION });
+	// select 故障期去重旗标：命中节 provider 每模型步都会跑，逐条 warn 会刷屏——
+	// 每次故障期至多一条 warn，成功即复位（下轮故障重新留痕）。
+	let selectDownWarned = false;
 	ctx.systemPrompt.section({
 		name: "tool:noogenesis:hits",
 		order: cfg.sectionOrder + 1,
 		// 空 injectSignals 短路：未声明信号就不喂引擎（select 空键必 exit 2，
 		// 纯浪费一子进程/每次 prompt 组装）。
-		text: () => (cfg.injectSignals.length ? hitsSectionText(runEngineSync(["select", ...cfg.injectSignals], { repoRoot }), { maxGenes: cfg.maxIndexGenes }) : ""),
+		text: () => {
+			if (!cfg.injectSignals.length) return "";
+			const r = runEngineSync(["select", ...cfg.injectSignals], { repoRoot });
+			// select 失败（dist 未构建/node 缺失等）→ stdout 空 → 命中节渲染 ""：
+			// 渲染面降级为缺席（命中节缺席 ≠ 会话阻断），但必须 warn 留痕——
+			// 无痕吞错会让引擎持续故障整段会话无人知晓。
+			if (r.code !== EXIT.OK) {
+				if (!selectDownWarned) {
+					selectDownWarned = true;
+					const reason = r.stderr.trim().split("\n")[0] || "(no stderr)";
+					logger.warn(`noogenesis select failed (exit ${r.code}) — hits section degraded to empty: ${reason}`);
+				}
+			} else {
+				selectDownWarned = false;
+			}
+			return hitsSectionText(r, { maxGenes: cfg.maxIndexGenes });
+		},
 	});
 
 	registerNooTools(ctx, { defineTool, runEngine, repoRoot: repoRootFor });
 
 	// ── 挂载面接线（B4 ADR Decision 1–2 + Decision 7 档位纪律：能力层
 	// mount.mts 合并器 + 策略层 mount-policies.mts；A4 lint 反馈用 block 拦回档
-	// ——升格批 2026-09-09-lint-block-and-staged-hook；A3 deny 仍零策略件；记录档
-	// 面已随撤除批退役（撤除 ADR）。每挂载点恰一个 ctx.on listener，策略件增挂只动
+	// ——升格批 2026-09-09-lint-block-and-staged-hook；A3 deny 仍零策略件；
+	// 记录投影不挂（撤除 ADR）。每挂载点恰一个 ctx.on listener，策略件增挂只动
 	// mount-policies.mts，不复制宿主接线；logger 透传给策略层降级提示（A4 写码
 	// 反馈缺 lint 基建时每会话至多一条 warn）。 ──
 	const mounts = createMountPolicies(cfg, { warn: (message) => logger.warn(message) });
@@ -219,9 +238,9 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 		return { ...downstream, additionalContexts: [adviceMessage(merged.context), ...(downstream.additionalContexts ?? [])] };
 	});
 
-	// 挂载面 A6/A8 记录投影已撤（ADR 2026-09-08-a8-session-record-projection-removal：
+	// 存留挂载面 = A2/A3/A4/A5 四点 + 挂载点各自降级；A6/A8 记录投影不挂——
 	// 宿主读路径对未标 ignorable 的下游插件事件类型 fail-closed，Session.append
-	// 无 ignorable 写入口）；存留挂载面 = A2/A3/A4/A5 四点 + 挂载点各自降级。
+	// 无 ignorable 写入口（撤除 ADR 2026-09-08-a8-session-record-projection-removal）。
 
 	// 写路径唯一触发点：agent/disposed。repoRoot 按 dispose 的那个 agent 逐次
 	// 解析（payload 携带 { agent }，与 auto 触发面同款实证）——异仓会话各归

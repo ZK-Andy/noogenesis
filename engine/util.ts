@@ -7,6 +7,7 @@ import { spawnSync } from 'child_process';
 const KEBAB_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 
 class EngineError extends Error {
+  // engine 真值 = CLI 层 exit 2 分流判据（bin.ts 捕获后 fail(msg, 2)）；面向调用方的失败一律抛此类型。
   engine: boolean;
   constructor(msg: string) { super(msg); this.engine = true; }
 }
@@ -27,9 +28,12 @@ function gateEnv(): NodeJS.ProcessEnv {
   return env;
 }
 
+// gate 输出上限：256 MiB——门禁输出超限时 spawnSync 以 error/返回空收场，不致引擎内存失控。
+const SPAWN_MAX_BUFFER = 256 * 1024 * 1024;
+
 // 结构化 spawn：参数数组直传，永不 shell 拼接；工作目录锁死 repoRoot。
 function run(cmd: string, args: string[], cwd: string) {
-  const r = spawnSync(cmd, args, { cwd, env: gateEnv(), encoding: 'utf8', maxBuffer: 256 * 1024 * 1024 });
+  const r = spawnSync(cmd, args, { cwd, env: gateEnv(), encoding: 'utf8', maxBuffer: SPAWN_MAX_BUFFER });
   return {
     code: r.status === null || r.status === undefined ? -1 : r.status,
     stdout: r.stdout || '',
@@ -55,7 +59,7 @@ function deriveSlots(repoRoot: string) {
     if (root.code !== 0) throw new EngineError(`cannot derive outgoing_base: git rev-list failed (${root.stderr.trim()})`);
     const lines = root.stdout.trim().split('\n').filter(Boolean);
     const last = lines[lines.length - 1];
-    // 一次 guard 覆盖原 js 的空集 throw：空数组（含过滤后）取尾必为 undefined。
+    // 空集（含过滤后）取尾必 undefined——显式 guard 防 undefined 溜进槽值。
     if (last === undefined) throw new EngineError('cannot derive outgoing_base: repository has no commits');
     base = last;
   }

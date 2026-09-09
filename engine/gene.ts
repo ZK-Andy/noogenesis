@@ -6,7 +6,7 @@ import { EngineError, KEBAB_RE } from './util.js';
 
 // S1 字段表：4 必选 + 3 可选（constraints/validation/avoid）+ 目录锚点 domain。
 // 封闭 schema：未知顶层字段即违约。
-// obj 保持 any（不可信 JSON 面，逐字段运行时守卫——机械移植原 js 的鸭子校验）。
+// obj 保持 any：不可信 JSON 面，逐字段运行时守卫。
 function validateGene(obj: any, opts: { fileName: string; parentDir: string | null }) {
   const errors: string[] = [];
   const { fileName, parentDir } = opts;
@@ -94,14 +94,14 @@ function readGene(filePath: string, opts: { skipDirAnchor?: boolean } = {}) {
   return obj;
 }
 
-// P2 缓存落点单源（简化收口 R1-S4）：pull.js 与合并扫描共用此事实。
+// P2 缓存落点单源：pull 与合并扫描共用此事实。
 function defaultCacheDir(repoRoot: string) {
   return path.join(repoRoot, '.noogenesis', 'genes-cache');
 }
 
 // 扫描 genes/ 目录（P1 无 manifest——engine 直接扫目录，schema ADR S1）。
 // 只认域子目录下一层；返回 [{ path, ref, obj }]，目录不存在或为空返回空数组。
-// P2 合并扫描（A/A/A 拍板）：<repoRoot>/.noogenesis/genes-cache/genes（基因库缓存）
+// P2 合并扫描：缓存 <repoRoot>/.noogenesis/genes-cache/genes（基因库缓存）
 // 在场即并入扫描根——只读路径（select/propose）经此消费共享基因；同名 ref 本仓
 // 优先（先扫本仓、缓存同 ref 丢弃，不报错）。写路径（solidify/evaluate）不走本函数
 // 的缓存分支（evaluate 传 { cache: false }），仓库资产语义不变。
@@ -118,19 +118,20 @@ function scanGenes(repoRoot: string, opts: { cache?: boolean } = {}) {
   for (const root of roots) {
     if (!fs.existsSync(root)) continue;
     for (const ent of fs.readdirSync(root, { withFileTypes: true }).sort((a, b) => a.name < b.name ? -1 : 1)) {
-      if (!ent.isDirectory()) continue; // genes/ 下只认域子目录；散文件无视（第十门禁拦其协议面）
+      // genes/ 下只认域子目录；散文件无视（入档闸拦其协议面）
+      if (!ent.isDirectory()) continue;
       for (const f of fs.readdirSync(path.join(root, ent.name), { withFileTypes: true }).sort((a, b) => a.name < b.name ? -1 : 1)) {
         if (!f.isFile() || !f.name.endsWith('.json')) continue;
         const ref = `${ent.name}/${f.name.slice(0, -5)}`;
-        if (seen.has(ref)) continue; // 本仓优先：缓存同名 ref 被遮蔽
+        if (seen.has(ref)) continue;
         const p = path.join(root, ent.name, f.name);
         let obj;
         try {
           obj = readGene(p);
         } catch (e) {
-          if (root === roots[0]) throw e; // 本仓侧 fail-closed
+          if (root === roots[0]) throw e;
           process.stderr.write(`engine: cache gene skipped (unparseable): ${p}\n`);
-          continue; // 缓存侧降级：跳过不红
+          continue;
         }
         seen.add(ref);
         out.push({ path: p, ref, obj });

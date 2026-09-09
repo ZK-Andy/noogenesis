@@ -14,10 +14,10 @@ import { evaluateGeneObj, checkConstraints } from './evaluate.js';
 import { solidify, retire } from './solidify.js';
 import { genePath, scanGenes, defaultCacheDir } from './gene.js';
 
-let failed = 0;
+let hasFailure = false;
 function ok(cond: unknown, msg: string) {
   if (cond) { console.log(`  ok: ${msg}`); }
-  else { console.error(`  FAIL: ${msg}`); failed = 1; }
+  else { console.error(`  FAIL: ${msg}`); hasFailure = true; }
 }
 
 function throwsEngine(fn: () => unknown): boolean {
@@ -25,13 +25,13 @@ function throwsEngine(fn: () => unknown): boolean {
   return false;
 }
 
-// CLI 级退码断言助手（execFileSync 非 0 退出抛错，折叠三处 try/catch 样板）
+// CLI 级退码断言助手：execFileSync 非 0 退出抛错，取抛物的 .status 透传为退出码。
 function spawnCode(nodeArgs: string[], cwd: string): number | null {
   try {
     execFileSync('node', nodeArgs, { cwd, encoding: 'utf8', stdio: 'pipe' });
     return 0;
   } catch (e) {
-    // execFileSync 的失败抛物携带 .status（number | null）；窄化为与原 js 相同的透传。
+    // execFileSync 的失败抛物携带 .status（number | null）。
     return (e as { status?: number | null }).status ?? null;
   }
 }
@@ -249,13 +249,13 @@ function selfTest() {
 
     // retire：删除 + retired 事件（gene_sha = 最后内容 SHA）
     const beforeSha = sha256Hex(fs.readFileSync(target));
-    retire(td, gatesDir, 'process/sol-gene', 'tester');
+    retire(td, 'process/sol-gene', 'tester');
     ok(!fs.existsSync(target), 'retire: gene removed from genes/');
     const ev4 = readEvents(td);
     const last4 = ev4[ev4.length - 1];
     ok(last4.kind === 'gene.retired' && last4.gene_sha === beforeSha && last4.outcome === 'ok',
       'retire: gene.retired event records last content sha');
-    ok(throwsEngine(() => retire(td, gatesDir, 'process/sol-gene', 'tester')),
+    ok(throwsEngine(() => retire(td, 'process/sol-gene', 'tester')),
       'retire: retiring a missing gene refused');
 
     // 夹具：跨树 id 唯一性（同 id 异域拒入档）
@@ -329,7 +329,7 @@ function selfTest() {
     // git 二进制缺失（PATH 清空 → 子进程内 spawn 'git' ENOENT）必须指名 git，
     // 不得误报「not inside a git repository」；exit 2 fail-closed 与非 git 仓
     // 同档。node 必须以 process.execPath 绝对路径 spawn——裸名 'node' 也按被
-    // 清空的 PATH 解析，引擎根本不会启动（R2-B1 实证）。
+    // 清空的 PATH 解析，引擎根本不会启动。
     const tdNoGit = mkTemp();
     mkRepo(tdNoGit);
     let gitMissingMsg = '';
@@ -395,7 +395,7 @@ function selfTest() {
       'bin e2e: evaluate fail-closed (referenced script missing) -> exit 2');
   }
 
-  // --- 6) P2 共享客户端：pull + 合并扫描（A/A/A 拍板：本仓优先遮蔽 / 读路径合并）---
+  // --- 6) P2 共享客户端：pull + 合并扫描（本仓优先遮蔽 / 读路径合并）---
   {
     const bank = mkTemp();
     mkRepo(bank);
@@ -432,13 +432,13 @@ function selfTest() {
     ok(hit && hit.obj.summary === 'local wins' && hit.path.startsWith(td),
       'merge: repo gene shadows same-ref cache copy (repo-first)');
 
-    // 缓存侧坏 JSON → warn-skip（降级不红）；本仓坏 JSON 仍 fail-closed（§5.1 spawnCode 夹具）
+    // 缓存侧坏 JSON → warn-skip（降级不红）；本仓坏 JSON 仍 fail-closed。
     fs.writeFileSync(path.join(defaultCacheDir(td), 'genes', 'doc', 'broken.json'), '{not json');
     const withBad = selectGenes(td, ['bank signal']);
     ok(withBad.hits.length === 1 && withBad.hits[0]?.ref === 'doc/bank-gene',
       'merge: unparseable CACHE gene skipped (degrade, not red)');
 
-    // 换库 URL 撞已有缓存 → fail-closed 指引（评审 R2-S3）
+    // 换库 URL 撞已有缓存 → fail-closed 指引
     const bank2 = mkTemp();
     mkRepo(bank2);
     ok(throwsEngine(() => pullBank(td, bank2)), 'pull: different bank URL on existing cache refused');
@@ -478,7 +478,7 @@ function selfTest() {
     ok(scanGenes(clean).length === 0, 'merge: no cache dir → scan identical to offline (default)');
   }
 
-  if (failed === 0) {
+  if (hasFailure === false) {
     console.log('== engine self-test passed ==');
     return 0;
   }

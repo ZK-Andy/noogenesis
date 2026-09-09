@@ -77,8 +77,10 @@ function realRun(repoRoot: string, staged: boolean): number {
   }
   if (!staged) return runOxlint(invocation, ["."], repoRoot, true);
   const targets = stagedTargets(repoRoot);
-  if (targets === null) return 2; // git 失败（fail-closed）
-  if (targets.length === 0) return 0; // 无暂存 .ts/.mts → 快检零噪音
+  // git 失败（fail-closed）
+  if (targets === null) return 2;
+  // 无暂存 .ts/.mts → 快检零噪音
+  if (targets.length === 0) return 0;
   return runOxlint(invocation, targets, repoRoot, true);
 }
 

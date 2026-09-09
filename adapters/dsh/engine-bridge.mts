@@ -35,7 +35,7 @@ export interface EngineResult {
 export type EngineRunner = (args: string[], opts?: { repoRoot?: string; timeoutMs?: number }) => Promise<EngineResult>;
 
 /** 透传给引擎进程的 env 白名单（engine 自身对孙进程同款纪律）。 */
-const PASS_THROUGH_ENV = ["PATH", "HOME", "LANG"];
+const PASS_THROUGH_ENV = ["PATH", "HOME", "LANG"] as const;
 
 function minimalEnv(): Record<string, string> {
 	const env: Record<string, string> = {};
@@ -87,11 +87,15 @@ export function resolveRepoRoot(config: RepoRootConfig = {}, sessionCwd?: string
 	return path.resolve(explicitRepoRootOf(config) || sessionCwd || process.cwd());
 }
 
+/** 引擎执行兜底超时（async/sync 两面各一档；超时 kill → FAIL_CLOSED）。 */
+const ASYNC_TIMEOUT_MS = 120_000;
+const SYNC_TIMEOUT_MS = 60_000;
+
 /**
  * 异步执行引擎命令（模型面工具用）：结构化参数数组直传，永不 shell 拼接。
  * 超时 kill 后以 timedOut 标记返回（不抛异常——退出码语义由调用方映射）。
  */
-export function runEngine(args: string[], { repoRoot, timeoutMs = 120_000 }: { repoRoot?: string; timeoutMs?: number } = {}): Promise<EngineResult & { timedOut: boolean }> {
+export function runEngine(args: string[], { repoRoot, timeoutMs = ASYNC_TIMEOUT_MS }: { repoRoot?: string; timeoutMs?: number } = {}): Promise<EngineResult & { timedOut: boolean }> {
 	return new Promise((resolve) => {
 		const child = spawn(process.execPath, [ENGINE_ENTRY, ...args], {
 			cwd: repoRoot,
@@ -126,8 +130,6 @@ export function runEngine(args: string[], { repoRoot, timeoutMs = 120_000 }: { r
 		});
 	});
 }
-
-const SYNC_TIMEOUT_MS = 60_000;
 
 /**
  * 同步执行引擎命令（system-prompt 节 provider 用——宿主 text provider 是同步

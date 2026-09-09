@@ -9,7 +9,8 @@ import { readGene, genePath } from './gene.js';
 import { evaluateGeneObj, formatReport } from './evaluate.js';
 
 function eventsPath(repoRoot: string, ts: string) {
-  const vol = ts.slice(0, 7); // YYYY-MM，月卷与 journal 同节奏
+  // YYYY-MM，月卷与 journal 同节奏
+  const vol = ts.slice(0, 7);
   return path.join(repoRoot, 'events', `${vol}.jsonl`);
 }
 
@@ -118,7 +119,7 @@ function solidify(repoRoot: string, engineRoot: string, candidatePath: string, a
 
 // retire：从 genes/ 删除 + gene.retired 事件（gene_sha = 退役时最后内容 SHA）；git 历史仍可溯。
 // 退役不引入前沿内容，无需 evaluate（入档闸只守新增/更新）。
-function retire(repoRoot: string, engineRoot: string, ref: string, actor: string) {
+function retire(repoRoot: string, ref: string, actor: string) {
   if (!actor || !actor.trim()) throw new EngineError('retire requires --actor <name> (audit trail)');
   const [domain, id] = ref.split('/');
   if (!domain || !id) throw new EngineError('retire ref must be <domain>/<id>');

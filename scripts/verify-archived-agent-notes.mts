@@ -136,7 +136,8 @@ function loadHeadFreeze(freezeRel: string): FreezeList {
   } catch (e) {
     const stderr = String((e as { stderr?: string }).stderr ?? "");
     if (/exists on disk, but not in HEAD|does not exist|unknown revision/.test(stderr)) {
-      return { version: 1, files: {} }; // 清单尚不在 HEAD = 首次提交，旧集为空
+      // 清单尚不在 HEAD = 首次提交，旧集为空
+      return { version: 1, files: {} };
     }
     throw new Error(`HEAD:${freezeRel} 读取失败（fail-closed）：${stderr.trim() || e}`, { cause: e });
   }

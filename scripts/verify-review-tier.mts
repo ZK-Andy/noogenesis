@@ -128,8 +128,8 @@ function validDate(s: string): boolean {
   const mo = Number(s.slice(5, 7));
   const d = Number(s.slice(8, 10));
   if (y < 1 || mo < 1 || mo > 12 || d < 1) return false;
-  const leap = y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0);
-  const daysInMonth = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mo - 1]!;
+  const isLeap = y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0);
+  const daysInMonth = [31, isLeap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mo - 1]!;
   return d <= daysInMonth;
 }
 
@@ -267,11 +267,14 @@ function fileDiff(repo: string, rel: string, stagedOnly: boolean, since: string 
  *  行不在本变更集 diff 内，不得给本批 FULL 变更搭车（HANDOFF-todos L45）。 */
 function diffIntroducesReview(repo: string, rel: string, stagedOnly: boolean, since: string | null,
   untracked: ReadonlySet<string>): boolean {
-  if (untracked.has(rel)) return true; // 未跟踪 ADR = 整文件新增，Review 行即本变更引入
+  // 未跟踪 ADR = 整文件新增，Review 行即本变更引入
+  if (untracked.has(rel)) return true;
   const d = fileDiff(repo, rel, stagedOnly, since);
-  if (d === null) return false; // fail-closed：diff 不可解析 → 证据不成立
+  // fail-closed：diff 不可解析 → 证据不成立
+  if (d === null) return false;
   for (const line of pySplitlines(d)) {
-    if (!line.startsWith("+") || line.startsWith("+++")) continue; // 只认新增行，跳过文件头
+    // 只认新增行，跳过 diff 文件头
+    if (!line.startsWith("+") || line.startsWith("+++")) continue;
     const m = REVIEW_LINE_RE.exec(line.slice(1).trim());
     if (m !== null && validDate(m[1]!)) return true;
   }
@@ -299,7 +302,8 @@ function evidenceInChange(paths: string[], repo: string, stagedOnly: boolean, si
     const text = readTextReplace(adr);
     if (text === null) continue;
     const head = pySplitlines(text).slice(0, 15);
-    if (!head.join("\n").includes("Status: implemented")) continue; // proposed 不能自证
+    // proposed 不能自证
+    if (!head.join("\n").includes("Status: implemented")) continue;
     const hasValidReview = head.some((line) => {
       const m = REVIEW_LINE_RE.exec(line.trim());
       return m !== null && validDate(m[1]!);

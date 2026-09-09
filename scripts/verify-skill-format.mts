@@ -105,7 +105,7 @@ function checkSkill(p: string, errors: string[]): void {
     errors.push(`${p}: frontmatter 'description' missing/empty`);
   }
 
-  // directory bundle: dir basename == name
+  // 目录捆绑：目录名 == 技能名
   if (name) {
     const dirname = path.basename(path.dirname(p));
     if (dirname !== name) {
@@ -113,15 +113,14 @@ function checkSkill(p: string, errors: string[]): void {
     }
   }
 
-  // relative md links resolve
+  // 相对 md 链接可解析
   checkRelativeLinks(text, p, ROOT, errors);
 
-  // structure guards: positioning + workflow
-  const body = text;
-  if (!POSITIONING_RE.test(body) && !POSITIONING_ZH_RE.test(body)) {
+  // 结构守卫：定位行 + Workflow 节
+  if (!POSITIONING_RE.test(text) && !POSITIONING_ZH_RE.test(text)) {
     errors.push(`${p}: missing 'guidance, not a script' positioning line`);
   }
-  if (!WORKFLOW_RE.test(body)) {
+  if (!WORKFLOW_RE.test(text)) {
     errors.push(`${p}: missing '## Workflow' section`);
   }
 
@@ -131,7 +130,7 @@ function checkSkill(p: string, errors: string[]): void {
   if (fs.existsSync(refsDir) && fs.statSync(refsDir).isDirectory()) {
     if (fs.readdirSync(refsDir).length === 0) {
       errors.push(`${p}: references/ 目录为空（预铺空目录；用不上不写）`);
-    } else if (!REFS_LINK_RE.test(body)) {
+    } else if (!REFS_LINK_RE.test(text)) {
       errors.push(`${p}: 存在 references/ 但 SKILL.md 无指向其中的相对链接（正文提及不算链接）`);
     }
   }
@@ -142,7 +141,7 @@ function scan(errors: string[]): number {
     errors.push(`${SKILLS_DIR}: skills dir missing`);
     return 1;
   }
-  // no root-level README.md in skills/ (DSH parses flat .md)
+  // skills/ 根层禁 .md（DSH 把平铺 .md 解析为技能）
   for (const ent of fs.readdirSync(SKILLS_DIR, { withFileTypes: true })) {
     if (ent.name.endsWith(".md")) {
       errors.push(`${path.join(SKILLS_DIR, ent.name)}: root-level README/\`.md\` parsed as flat skill`);
@@ -267,7 +266,7 @@ function selfTest(): number {
     fs.rmSync(td, { recursive: true, force: true });
   }
 
-  // --- real-scan smoke: the actual skills dir must be green ---
+  // 真实扫描冒烟：实际 skills/ 目录必须全绿
   const errs: string[] = [];
   const n = scan(errs);
   check(n >= 7, `expected >=7 skills, got ${n}`);

@@ -5,8 +5,8 @@
  */
 
 function isNatural(value: unknown): value is number {
-	// typeof 前置是 TS 对 unknown 的收窄要求——Number.isInteger 对非 number 本就
-	// 返回 false，运行时行为与旧实现逐值等价。
+	// typeof 前置是 TS 对 unknown 的收窄要求——Number.isInteger 对非 number
+	// 本就返回 false，前置只是收窄类型。
 	return typeof value === "number" && Number.isInteger(value) && value > 0;
 }
 
@@ -17,8 +17,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-// 逐字段收窄助手（TS strict 化的行为等价窄化：检查条件、抛错文案、字段求值
-// 顺序与旧实现逐一对齐——每个助手只在其字段违约时抛同一诊断串）。
+// 逐字段收窄助手（每个助手只在其字段违约时抛同一诊断串；检查条件、
+// 抛错文案、字段求值顺序构成校验契约）。
 function optNonEmptyString(value: unknown, field: "repoRoot" | "stagingDir" | "actor"): string | undefined {
 	if (value === undefined) return undefined;
 	if (typeof value !== "string" || value.length === 0) {

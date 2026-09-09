@@ -10,7 +10,7 @@
  * 胶囊过滤不在此实现——provider 的 list 形状以「成员集」为输入，过滤随
  * capsules/ 原语立项落地（ADR Decision 6）。
  *
- * 缓存刷新（R2-B1 收口）：宿主按 (cwd, scope, revision) 缓存 list 结果，
+ * 缓存刷新：宿主按 (cwd, scope, revision) 缓存 list 结果，
  * revision 只由 control.invalidate/dispose bump——工厂留持 control，
  * registerBankSkills 返回 invalidate 钩子，pull 成功后由 index.mjs 调用，
  * pull 前已被 list 过的 cwd 无需重启会话即重发现技能面。
@@ -52,7 +52,7 @@ function stripPairedQuotes(value: string): string {
 /**
  * frontmatter 极简解析：仅接受 `---` 围栏块内的单行 `key: value`（name 必须
  * kebab-case、description 必填、whenToUse 可选）。CRLF 行尾入口归一化为 LF
- * （换任何 CRLF 收录的库缓存不得整技能面静默清空——R2-B1 实证）。返回 null =
+ * （换任何 CRLF 收录的库缓存不得整技能面静默清空）。返回 null =
  * 不可用——调用方 warn 跳过（坏文件绝不炸整个技能面）。目录式布局
  * `<name>/SKILL.md` 之外的形式不支持。
  */
@@ -102,7 +102,8 @@ async function listSkillsDir(skillsDir: string, { logger }: { logger?: ProviderL
 		try {
 			raw = await readFile(skillPath, "utf8");
 		} catch {
-			continue; // 无 SKILL.md 的目录静默跳过（缓存是全仓镜像，杂目录是常态）
+			// 无 SKILL.md 的目录静默跳过（缓存是全仓镜像，杂目录是常态）
+			continue;
 		}
 		const parsed = parseSkillFile(raw);
 		if (!parsed) {
@@ -137,7 +138,8 @@ export function createBankSkillProvider({ config = {}, logger }: { config?: { re
 				if ((cause as NodeJS.ErrnoException | undefined)?.code !== "ENOENT") {
 					logger?.warn?.(`noogenesis-bank: bank skills dir unreadable at ${root} (${cause instanceof Error ? cause.message : String(cause)}); empty surface`);
 				}
-				return []; // 缓存未拉（ENOENT）静默；其余读错误 warn 留痕——均空技能面，绝不抛
+				// 缓存未拉（ENOENT）静默；其余读错误 warn 留痕——均空技能面，绝不抛
+				return [];
 			}
 		},
 		async get(candidate?: { provider?: string; name?: string; locator?: { path?: string; directory?: string } }) {
@@ -167,8 +169,8 @@ export function createBankSkillProvider({ config = {}, logger }: { config?: { re
 export function registerBankSkills(ctx: unknown, { config = {}, logger }: { config?: { repoRoot?: string }; logger?: ProviderLogger } = {}): { ok: boolean; invalidate: () => void } {
 	const state: { control: { invalidate: () => void } | null } = { control: null };
 	try {
-		// 直接属性访问（非可选链）保留旧实现语义：ctx 非对象时抛 TypeError，
-		// 落入 catch 的「registration skipped」降级分支。
+		// 直接属性访问（非可选链）——ctx 非对象时抛 TypeError，落入 catch 的
+		// 「registration skipped」降级分支（降级面与宿主合同自检共用）。
 		const skills = (ctx as { skills?: SkillsSurface }).skills;
 		if (skills?.registerProvider) {
 			skills.registerProvider((control) => {

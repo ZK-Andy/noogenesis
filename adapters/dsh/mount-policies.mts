@@ -1,9 +1,8 @@
 /**
- * mount-policies.mts — 挂载策略件组装（A2 开场地图 + A4 写码在环 lint 拦回；
- * M1/M2 记录件与 M3 已随 A8 投影撤除批整体退役——ADR
- * 2026-09-08-a8-session-record-projection-removal：宿主 Session.append 无
- * ignorable 写入口，下游插件自定义事件类型会令会话历史在读路径 fail-closed
- * 不可加载）。
+ * mount-policies.mts — 挂载策略件组装（存留挂载面 = A2 开场地图 + A4 写码在环
+ * lint 拦回；记录投影不挂 M1/M2/M3 事件位——宿主 Session.append 无 ignorable
+ * 写入口，下游插件自定义事件类型会令会话历史在读路径 fail-closed 不可加载，
+ * ADR 2026-09-08-a8-session-record-projection-removal）。
  *
  * 档位：A4 lint 反馈 = block 拦回（升格批 2026-09-09-lint-block-and-staged-hook；
  * 同文件连续 block 达上限降级 context 防死锁）；A3/A5 零策略件；降级 = 异常由
@@ -39,8 +38,8 @@ export function createSubtreeRulesPolicies(config: RepoRootConfig): { preStep: P
 	}
 	const initState = (): MapState => ({ mapShown: false });
 	const preStep: PreStepPolicy = (payload) => {
-		// 每会话首个 pre-step 触发（mapShown 单门去重）——R2-S1：turn/step 双门
-		// 在首步被拒时永久丢地图（turn≥2 不再命中 turn===1）。
+		// 每会话首个 pre-step 触发（mapShown 单门去重——双门在首步被拒时
+		// turn≥2 不再命中，地图会永久缺席）。
 		if (payload.agent?.session?.header?.origin === "subagent") return;
 		const state = store.of<MapState>(payload.agent?.session, initState);
 		if (state.mapShown) return;

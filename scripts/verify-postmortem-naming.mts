@@ -21,13 +21,19 @@ interface Violation { entry: string; reason: string }
 
 const NAME_RE = /^\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
 
+/** 码点序比较器：编号递增判据依赖确定序——localeCompare 随运行环境 locale 漂移，
+ *  家族纪律钉码点序（同 change-scope/gen-manifest/verify-manifest 口径）。 */
+function cmpByCodepoint(a: { name: string }, b: { name: string }): number {
+  return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
+}
+
 /** 对 postmortem 目录做命名校验；dir 不存在或空 → 无违规（零约束）。 */
 function checkPostmortemDir(dir: string): Violation[] {
   if (!fs.existsSync(dir)) return [];
   const entries = fs.readdirSync(dir, { withFileTypes: true });
   const violations: Violation[] = [];
   let prev = -1;
-  for (const ent of entries.sort((a, b) => a.name.localeCompare(b.name))) {
+  for (const ent of entries.sort(cmpByCodepoint)) {
     if (ent.isDirectory()) {
       violations.push({ entry: ent.name, reason: "postmortem/ 只收扁平叙事文件，不收子目录" });
       continue;

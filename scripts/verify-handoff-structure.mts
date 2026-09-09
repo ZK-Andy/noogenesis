@@ -285,7 +285,8 @@ function selfTest(): number {
   // 卷名确定性：由模块级单时钟派生（无二次读数 → 无跨午夜抖动）：存在的
   // 过去月份 / 不存在的过去月份 / 当前月份（允许缺卷）。
   const first = Date.UTC(NOW.getUTCFullYear(), NOW.getUTCMonth(), 1);
-  const prev = new Date(first - 24 * 60 * 60 * 1000);
+  const MS_PER_DAY = 24 * 60 * 60 * 1000;
+  const prev = new Date(first - MS_PER_DAY);
   const fmt = (d: Date) => `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}`;
   const prevMonth = fmt(prev);
   const volExists = `${prevMonth}.md`;

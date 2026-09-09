@@ -58,8 +58,7 @@ function failClosed(tool: string, result: EngineResult): never {
  * repoRootFor 是单形态函数——吃 execute(args, exec) 的 exec，走四级回退链
  * （config → env → 会话工作区 → cwd）返回本次调用的目标仓根。逐次解析是
  * 正确性要求：多 agent 异仓的工具体各归各仓，装载时固化会互相污染。
- * （评审收口 R1-S1/R2-S1：静态字符串形态零消费者，已折叠——调用方要静态
- * 锚定就传 `(exec) => "path"`。）
+ * repoRootFor 单形态——调用方要静态锚定就传 `(exec) => "path"`。
  */
 function repoRootOf(repoRootFor: RepoRootFor, exec: AgentCarrier | null | undefined): string {
 	return repoRootFor(exec);

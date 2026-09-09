@@ -35,8 +35,8 @@ const CODE_BLOCK_RE = /```[\s\S]*?```/g;
 const TABLE_LINE_RE = /(?<=^|\n)\s*\|[^\n]*\|\s*$/gm;
 
 function countWords(text: string): number {
-  let body = text.replace(CODE_BLOCK_RE, ""); // 剔除代码块
-  body = body.replace(TABLE_LINE_RE, ""); // 剔除表格行
+  let body = text.replace(CODE_BLOCK_RE, "");
+  body = body.replace(TABLE_LINE_RE, "");
   return (body.match(WORD_RE) ?? []).length;
 }
 

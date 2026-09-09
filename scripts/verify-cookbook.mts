@@ -35,6 +35,8 @@ import { splitLines } from "./mdref.mts";
 
 const DEFAULT_PATH = "docs/cookbook.md";
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
 // 封闭阶段集（canonical home = 本集合 + docs/cookbook.md 头注）。
 const STAGE_SET: string[] = ["演化", "门禁", "文档", "协作", "环境", "上游", "产品"];
 
@@ -78,8 +80,8 @@ function parsePyIsoDate(s: string): number | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
   const [y, mo, d] = s.split("-").map(Number) as [number, number, number];
   if (y < 1 || y > 9999 || mo < 1 || mo > 12) return null;
-  const leap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
-  const daysInMonth = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mo - 1]!;
+  const isLeap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
+  const daysInMonth = [31, isLeap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mo - 1]!;
   if (d < 1 || d > daysInMonth) return null;
   return Date.UTC(y, mo - 1, d);
 }
@@ -127,7 +129,7 @@ function validateEntry(line: string, label: string): string[] {
   // 时区容差：作者本地日期可领先/落后 UTC 至多 1 天，故允许 note_date ≤ today_utc+1。
   // 对齐 verify-adr-format.py 先例（97a702f），保留"不晚于今日"意图同时容忍合法时区跨日。
   const todayUtc = todayUtcMs();
-  if (noteDate > todayUtc + 24 * 60 * 60 * 1000) {
+  if (noteDate > todayUtc + MS_PER_DAY) {
     errors.push(`${label}: date '${dateStr}' is after today (${fmtUtcDate(todayUtc)})`);
   }
   if (Number(dateStr.slice(0, 4)) < 1970) {
@@ -216,7 +218,7 @@ function selfTest(): number {
 
   // 未来日期：UTC 今日 +2 —— 恒超出 +1 容差，与本地时区无关，确定性 FAIL。
   const todayUtc = todayUtcMs();
-  const future = fmtUtcDate(todayUtc + 2 * 24 * 60 * 60 * 1000);
+  const future = fmtUtcDate(todayUtc + 2 * MS_PER_DAY);
   const futureBody = `# Cookbook\n\n## 演化\n\n- **[演化] 示例主题（${future} 实机）**：正文。\n`;
   cases.push([futureBody, 1, "future date -> fail"]);
 

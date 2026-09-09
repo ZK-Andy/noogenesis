@@ -12,7 +12,8 @@
  *   4. implemented 笔记不得出现 spec 语汇标题
  *      （## Proposal / ## Plan / ## Migration plan / ## Acceptance criteria）；
  *   5. 文件/路径命名（ADR 命名规则单源 .agents/notes/README.md）：
- *        - 路径恰为 <lifecycle>/<class>/<name>.md（顶层 README 免检）
+ *        - 路径恰为 <lifecycle>/<class>/<name>.md（顶层仅 README.md 与 AGENTS.md
+ *          免检——豁免面封闭集合，其余任何 .md 路径一律按违约报告，绝不静默跳过）
  *        - lifecycle ∈ {proposed, implemented, rejected} —— 与 Status 同值（复用）
  *        - class ∈ {feature, bug-fix, simplification, architecture, process, testing}
  *        - <name> = yyyy-mm-dd-<slug>.md，日期为真实日历日且不晚于 UTC 今日+1
@@ -44,12 +45,13 @@ const REQUIRED_ALL = ["## Problem", "## Alternatives considered"];
 const REQUIRED_IMPLEMENTED = ["## Decision", "## Consequences"];
 const REQUIRED_PROPOSED = ["## Proposal"];
 
-// --- ADR naming rule (machine-checked) ---
+// --- ADR 命名规则（机器校验）---
 const CLASS_SET = ["feature", "bug-fix", "simplification", "architecture", "process", "testing"];
 // Python \d 是 unicode 十进制数字（≡ \p{Nd}）；JS \d 只匹配 ASCII——用 \p{Nd} + u flag 对齐。
 const NAME_RE = /^(\p{Nd}{4}-\p{Nd}{2}-\p{Nd}{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$/u;
-// 顶层 README 直接位于 notes root 下；其余一律三层深。
-const TOP_LEVEL_EXEMPT = ["README.md"];
+// 顶层豁免面 = 封闭集：notes 子树常设件（索引 README + 子树规则 AGENTS）；其余一律三层深，
+// 任何不识别路径都必须报违约（fail-closed）——静默跳过会让杂散笔记逃过全部检查面。
+const TOP_LEVEL_EXEMPT = ["README.md", "AGENTS.md"];
 
 /** Python str 比较的 codepoint 序（JS 默认 sort 是 UTF-16 码元序，增补平面字符不同序）。 */
 function cmpCodepoints(a: string, b: string): number {
@@ -134,7 +136,7 @@ function validateName(rel: string): string[] {
   const errors: string[] = [];
   const parts = rel.split("/");
   if (parts.length !== 3) {
-    errors.push(`${rel}: path must be exactly <lifecycle>/<class>/<name>.md (3 segments; got {len(parts)})`);
+    errors.push(`${rel}: path must be exactly <lifecycle>/<class>/<name>.md (3 segments; got ${parts.length})`);
     return errors;
   }
 
@@ -191,13 +193,11 @@ function scan(root: string): ScanResult {
     if (TOP_LEVEL_EXEMPT.includes(name)) {
       continue;
     }
-    const lifecycle = parts[0]!;
-    if (!LIFECYCLE_SET.includes(lifecycle)) {
-      continue;
-    }
     checked++;
 
-    // 5. file/path naming rule (independent of the content checks below)
+    const lifecycle = parts[0]!;
+
+    // 5. 文件/路径命名规则（独立于下方内容检查；lifecycle 判据在 validateName 内）
     errors.push(...validateName(rel));
 
     const text = readNote(path.join(root, rel));
@@ -266,19 +266,19 @@ function selfTest(): number {
   const cases: Array<[string, number, string]> = []; // (notes_root, expected_exit, description)
   const t = fs.mkdtempSync(path.join(os.tmpdir(), "adr-format-"));
 
-  // case A: fully conforming tree → exit 0
+  // case A: 全合规树 → exit 0
   const conform = path.join(t, "conform");
   fs.mkdirSync(path.join(conform, "implemented", "feature"), { recursive: true });
   writeStatus(path.join(conform, "implemented", "feature"), "2026-08-27-naming-ok.md", "implemented");
   cases.push([conform, 0, "conforming tree -> pass"]);
 
-  // case B: bad class segment → exit 1
+  // case B: class 段不在封闭集 → exit 1
   const badclass = path.join(t, "badclass");
   fs.mkdirSync(path.join(badclass, "implemented", "refactor"), { recursive: true });
   writeStatus(path.join(badclass, "implemented", "refactor"), "2026-08-27-naming-ok.md", "implemented");
   cases.push([badclass, 1, "invalid class 'refactor' -> fail"]);
 
-  // case C: uppercase in slug → exit 1
+  // case C: slug 含大写 → exit 1
   const badslug = path.join(t, "badslug");
   fs.mkdirSync(path.join(badslug, "implemented", "feature"), { recursive: true });
   writeStatus(path.join(badslug, "implemented", "feature"), "2026-08-27-Naming-Ok.md", "implemented");
@@ -293,17 +293,23 @@ function selfTest(): number {
   writeStatus(path.join(futuredate, "implemented", "feature"), `${futureStr}-naming-ok.md`, "implemented");
   cases.push([futuredate, 1, "date after today -> fail"]);
 
-  // case E: invalid calendar day → exit 1
+  // case E: 非真日历日 → exit 1
   const baddate = path.join(t, "baddate");
   fs.mkdirSync(path.join(baddate, "implemented", "feature"), { recursive: true });
   writeStatus(path.join(baddate, "implemented", "feature"), "2026-02-31-naming-ok.md", "implemented");
   cases.push([baddate, 1, "invalid calendar date -> fail"]);
 
-  // case F: wrong segment count (class dir missing) → exit 1
+  // case F: 段数错（class 目录缺位）→ exit 1
   const badcount = path.join(t, "badcount");
   fs.mkdirSync(path.join(badcount, "implemented"), { recursive: true });
   writeStatus(path.join(badcount, "implemented"), "2026-08-27-naming-ok.md", "implemented");
   cases.push([badcount, 1, "path not 3 segments -> fail"]);
+
+  // case G: lifecycle 树外的杂散顶层笔记 → exit 1（fail-closed：豁免面仅封闭集两件）
+  const stray = path.join(t, "stray");
+  fs.mkdirSync(stray, { recursive: true });
+  fs.writeFileSync(path.join(stray, "drafts-scratch.md"), "# Agent Note: scratch\n\nStatus: implemented\n");
+  cases.push([stray, 1, "stray note outside lifecycle tree -> fail"]);
 
   let failed = 0;
   for (const [notesRoot, expected, desc] of cases) {
@@ -315,6 +321,14 @@ function selfTest(): number {
       console.log(`  ✗ ${desc}: expected exit ${expected}, got ${actual} (${errors.join("; ")})`);
       failed = 1;
     }
+  }
+  // case F 文案钉死：段数实测值必须内插（夹具只断退出码时，文案残缺无人看见）
+  const fErrors = scan(badcount).errors.filter((e) => e.includes("3 segments"));
+  if (fErrors.length === 1 && /got 2\)/.test(fErrors[0]!)) {
+    console.log("  ok: segment-count message interpolates actual count");
+  } else {
+    console.log(`  ✗ segment-count message: ${fErrors.join("; ")}`);
+    failed = 1;
   }
   if (failed === 0) {
     console.log("== verify-adr-format self-test passed ==");

@@ -31,9 +31,8 @@ function gitRoot(start: string): string | null {
     return execFileSync('git', ['-C', start, 'rev-parse', '--show-toplevel'], { encoding: 'utf8' }).trim();
   } catch (e) {
     // 诊断分流（bug-fix ADR 2026-09-06-git-prerequisite-and-diagnosis）：
-    // git 二进制缺失（spawn ENOENT）≠ cwd 不在 git 仓——两者曾共用同一句
-    // 「not inside a git repository」，git 没装时误导诊断。exit 2 fail-closed
-    // 与退出码三档不变，仅 stderr 文案指名失败主体。
+    // git 二进制缺失（spawn ENOENT）≠ cwd 不在 git 仓——无此分流时 git 没装会
+    // 误报「not inside a git repository」；stderr 文案指名失败主体，exit 2 fail-closed。
     if (e && (e as { code?: unknown }).code === 'ENOENT') fail('git binary not found — install git (the engine requires a git repository and the git CLI)');
     return null;
   }
@@ -57,7 +56,7 @@ function main(argv: string[]): number {
     try {
       out = runSelect(repoRoot, signals);
     } catch (e) {
-      // 原 js 的鸭子判据（e.engine 真值）原样保留：EngineError 是唯一携带 .engine 的抛物。
+      // 鸭子判据：EngineError 是唯一携带 .engine 真值的抛物 → CLI 层 exit 2；其余抛物向上重抛（→ exit 1）。
       if ((e as { engine?: unknown }).engine) return fail((e as Error).message, 2);
       throw e;
     }
@@ -66,8 +65,11 @@ function main(argv: string[]): number {
   }
 
   if (cmd === 'propose') {
+    // 用法错误与 pull --cache / solidify --actor 同口径：旗标在末尾缺值 → exit 2 fail-loud，
+    // 绝不无痕降级为 stdout 打印（显式 --out 被吞是调用方拿不到的失败）。
     const outIdx = rest.indexOf('--out');
-    const outFile: string | null | undefined = outIdx >= 0 ? rest[outIdx + 1] : null;
+    if (outIdx >= 0 && rest[outIdx + 1] === undefined) fail('propose: --out needs a file path');
+    const outFile: string | null = outIdx >= 0 ? rest[outIdx + 1]! : null;
     const ref = rest.find((a) => a !== '--out' && a !== outFile);
     if (!ref) fail('propose needs <domain>/<id>');
     const { scanGenes } = require('./gene.js');
@@ -116,10 +118,10 @@ function main(argv: string[]): number {
     if (!actor) fail('solidify needs --actor <name>');
     let r;
     try {
-      // rest[retireIdx + 1] as string：保留原 js 的 undefined-ref 未捕获 TypeError（→ exit 1）路径——
-      // 收窄为 EngineError 会改写这一极端 token 序列（如 `--actor t --retire` 收尾）的退出档位。
+      // `--retire` 收尾（旗标后无 ref token）按未捕获 TypeError 落 exit 1——不收窄为
+      // EngineError（那会把该 token 序列从 exit 1 改写为 exit 2）。
       r = retireIdx >= 0
-        ? retire(repoRoot, engineRoot, rest[retireIdx + 1] as string, actor)
+        ? retire(repoRoot, rest[retireIdx + 1] as string, actor)
         : solidify(repoRoot, engineRoot, path.resolve(candidate), actor);
     } catch (e) {
       if ((e as { engine?: unknown }).engine) return fail((e as Error).message, 2);
@@ -130,7 +132,7 @@ function main(argv: string[]): number {
   }
 
   if (cmd === 'pull') {
-    // 解析：--cache <dir> 至多一次（缺值/重复 → exit 2，评审 R2-S1/S2）；
+    // 解析：--cache <dir> 至多一次（缺值/重复 → exit 2）；
     // 其余 token 必须恰为 <bank-url> 一个（未知旗标落进 url 计数 → 干净报错）。
     const cacheVals: string[] = [];
     const rest2: string[] = [];
@@ -146,8 +148,9 @@ function main(argv: string[]): number {
     }
     if (cacheVals.length > 1) fail('pull accepts --cache at most once');
     if (rest2.length !== 1) fail('pull needs exactly one <bank-url>');
+    // 上一行已保证恰一个——防御性窄化（noUncheckedIndexedAccess 不随数组长度收窄）。
     const bankUrl = rest2[0];
-    if (bankUrl === undefined) fail('pull needs exactly one <bank-url>'); // 不可达窄化（上一行已保证恰一个）
+    if (bankUrl === undefined) fail('pull needs exactly one <bank-url>');
     const { pullBank } = require('./pull.js');
     let r;
     try {

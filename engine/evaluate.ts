@@ -21,6 +21,10 @@ function checkConstraints(gene: any, changed: string[]): string[] {
   return violations;
 }
 
+// 失败报告只取尾部（门禁输出头部长且与根因无关；4 行/600 字符截断足够定位）。
+const TAIL_LINES = 4;
+const TAIL_CHARS = 600;
+
 // 白名单子集检查单源在此：readGene/scanGenes 不再重复。
 function evaluateGeneObj(repoRoot: string, engineRoot: string, gene: any, ref: string) {
   const gates = loadGates(engineRoot, repoRoot);
@@ -37,11 +41,14 @@ function evaluateGeneObj(repoRoot: string, engineRoot: string, gene: any, ref: s
   for (const g of gates.gates) {
     const inst = instantiate(g, slots);
     const r = run(inst.cmd, inst.args, repoRoot);
-    const out = (r.stderr || r.stdout).trim();
+    let out = (r.stderr || r.stdout).trim();
+    // code = -1 = spawn 失败（二进制缺失等）——stderr 常为空，根因只在 spawnError；
+    // 不并入报告则调用方只看到 exit -1 零诊断。
+    if (r.code === -1 && r.spawnError) out = out ? `${out}\nspawn error: ${r.spawnError}` : `spawn error: ${r.spawnError}`;
     results.push({
       name: g.name,
       code: r.code,
-      tail: out ? out.split('\n').slice(-4).join('\n').slice(0, 600) : '',
+      tail: out ? out.split('\n').slice(-TAIL_LINES).join('\n').slice(0, TAIL_CHARS) : '',
     });
   }
   const ok = !violations.length && results.every((r) => r.code === 0);

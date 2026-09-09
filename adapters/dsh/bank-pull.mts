@@ -55,8 +55,7 @@ export function createBankPullScheduler({ config = {}, runEngine, logger, gate =
 	gate?: InFlightGate;
 	onPulled?: () => void;
 } = {} as never) {
-	// 缺省 `{}` 仅在零参调用时生效（与旧实现同形：runEngine 缺席的崩溃面一致，
-	// 生产/selftest 均恒传完整注入面）。
+	// 缺省 `{}` 仅在零参调用时生效；生产/selftest 均恒传完整注入面。
 	const url = config.geneBankUrl;
 	const pullAt = async (repoRoot: string): Promise<{ pulled: boolean; reason?: string }> => {
 		if (!url) return { pulled: false, reason: "disabled" };

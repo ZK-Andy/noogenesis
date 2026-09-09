@@ -1,25 +1,26 @@
 /**
- * mount.mts — 挂载面能力层（B4 ADR Decision 1；A6 记录位与 A8 落点已随
- * A8 投影撤除批退役——ADR 2026-09-08-a8-session-record-projection-removal，
- * 撤除后能力面 = A2–A5）。
+ * mount.mts — 挂载面能力层（B4 ADR Decision 1；能力面 = A2–A5，A6 记录位与
+ * A8 落点不挂——宿主 Session.append 无 ignorable 写入口，下游插件自定义事件
+ * 类型会令会话历史在读路径 fail-closed 不可加载，撤除 ADR
+ * 2026-09-08-a8-session-record-projection-removal）。
  *
  * 四挂载点（A2–A5）各一组策略接口 + 一个合并器——hook-protocol 判定
  * 语义的本地蒸馏（蓝图 §7 边界：不建两方言桥，deny→A3 阻断并回消息 /
  * block→A4 结果面拦回 / additionalContexts→A4 上下文附加 / 非阻断→降级日志）。
- * 策略件在 mount-policies.mts（现存留件 = A2 开场地图 + A4 写码在环 lint
- * 反馈，记录件面已随撤除批退役）；宿主 ctx.on 胶水与消息构造在 index.mts。本模块零宿主依赖（防火墙
+ * 策略件在 mount-policies.mts（存留件 = A2 开场地图 + A4 写码在环 lint
+ * 反馈，记录件不挂——撤除 ADR）；宿主 ctx.on 胶水与消息构造在 index.mts。本模块零宿主依赖（防火墙
  * 规则 2，selftest 机器扫描）——宿主 payload 只取本地窄结构面（同
  * engine-bridge AgentCarrier 口径）。
  *
  * 档位纪律（B4 ADR Decision 7 + 升格批 2026-09-09-lint-block-and-staged-hook）：
  * 合并器提供 deny/block 能力（A3/A4 的阻断语义单源在案）；A4 lint 反馈已用
  * block 拦回档（同文件连续 block 达上限降级 context 防死锁），A3 deny/ask 仍
- * 零策略件（记录档面已撤——撤除 ADR）；其余升格逐件过 HERO 另案。宿主事件与
+ * 零策略件（记录档不挂——撤除 ADR）；其余升格逐件过 HERO 另案。宿主事件与
  * 决策形态实证记录见 B4 ADR Problem 节。
  */
 import type { AgentCarrier } from "./engine-bridge.mjs";
 
-/** 宿主 agent 的最小结构面（会话身份键；A6/A8 的 append 落点已撤——撤除 ADR）。 */
+/** 宿主 agent 的最小结构面（会话身份键；A6/A8 的 append 落点不挂——撤除 ADR）。 */
 export interface AgentRef {
 	session?: {
 		header?: { cwd?: string; origin?: string };
@@ -72,7 +73,7 @@ export type ToolPostPolicyDecision = { kind: "block"; feedback: string } | { kin
 /** A5 策略决策：inject = 会话开始注入上下文行（非阻塞）。 */
 export type SessionStartPolicyDecision = { kind: "inject"; lines: string[] };
 
-/** 策略接口四件（A6/A8 记录投影面已撤——撤除 ADR；A3/A5 首批零策略件）。 */
+/** 策略接口四件（A6/A8 记录投影面不挂——撤除 ADR；A3/A5 首批零策略件）。 */
 export type PreStepPolicy = (payload: PreStepPayload) => PreStepPolicyDecision | void;
 export type ToolPrePolicy = (exec: ToolExecLike) => ToolPrePolicyDecision | void;
 export type ToolPostPolicy = (exec: ToolExecLike, result: ToolResultLike) => ToolPostPolicyDecision | void;
@@ -81,8 +82,7 @@ export type SessionStartPolicy = (payload: SessionStartPayload) => SessionStartP
 /**
  * 每会话键控状态存储（WeakMap，GC 自清）：键 = 宿主 session 对象（dsh-goal
  * 同款键位——会话对象身份跨 agent 稳定）。策略件各自持有实例；残留状态仅
- * A2 地图的单门布尔（投影状态与其显式清态 drain 面已随撤除批退役——GC
- * 自清兜底，撤除 ADR Decision 1）。
+ * A2 地图的单门布尔，GC 自清兜底（撤除 ADR Decision 1）。
  */
 export function createSessionStore(): { of<T>(key: unknown, init: () => T): T } {
 	const store = new WeakMap<object, unknown>();

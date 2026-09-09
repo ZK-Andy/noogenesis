@@ -44,7 +44,8 @@ function collectMd(rootArg: string): MdFile[] {
     try {
       entries = fs.readdirSync(dir, { withFileTypes: true });
     } catch {
-      return; // Python: rglob 对不可进入目录产出空
+      // Python: rglob 对不可进入目录产出空
+      return;
     }
     for (const ent of entries) {
       const child = [...parts, ent.name];

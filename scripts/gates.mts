@@ -54,6 +54,8 @@ import { fileURLToPath } from "node:url";
 const PROGRAM = "gates.mts";
 const GATES_REL = path.join("engine", "gates.json");
 const SLOT_RE = /\{\{\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*\}\}/g;
+// shell 约定：命令未找到——spawn 失败复用该退出码（close 事件缺失时报告仍指向环境问题）
+const SPAWN_FAILURE_EXIT = 127;
 const MAX_JOBS_CAP = 8;
 
 interface Gate {
@@ -243,7 +245,8 @@ function runGates(repoRoot: string, gates: Gate[], opts: RunOptions): Promise<nu
         emitLine(`-> ${g.name}`);
         const { command } = instantiate(g, opts.slots, "fail");
         const child = spawn(command[0]!, command.slice(1), { cwd: repoRoot, stdio: "inherit" });
-        let settledOnce = false; // error/close 可能都触发：只结算一次
+        // error/close 可能都触发：只结算一次
+        let settledOnce = false;
         const settleChild = (code: number, spawnError?: string): void => {
           if (settledOnce) return;
           settledOnce = true;
@@ -258,7 +261,7 @@ function runGates(repoRoot: string, gates: Gate[], opts: RunOptions): Promise<nu
           // 自带「无可发射且无在飞」的 settle 收口。
           launchReady();
         };
-        child.on("error", (err) => settleChild(127, `${PROGRAM}: gate ${g.name} failed to spawn: ${err.message}`));
+        child.on("error", (err) => settleChild(SPAWN_FAILURE_EXIT, `${PROGRAM}: gate ${g.name} failed to spawn: ${err.message}`));
         child.on("close", (code) => settleChild(code ?? 1));
       }
       if (inFlight === 0) settle();

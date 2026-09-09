@@ -78,7 +78,8 @@ function headingSlugs(p: string): Set<string> {
   try {
     text = fs.readFileSync(p, "utf-8");
   } catch {
-    return slugs; // Python: OSError -> 空集
+    // Python: OSError -> 空集
+    return slugs;
   }
   for (const line of splitLines(text)) {
     const hm = line.match(HEADING_RE);
