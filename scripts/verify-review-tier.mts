@@ -146,31 +146,69 @@ function runGit(args: string[], cwd: string): { ok: boolean; stdout: string } {
   }
 }
 
-/** 所选 git 时刻的变更路径集：
- * --staged => index vs HEAD；--since => <base>..HEAD；默认 => 工作树。
- * git 命令失败返回 null——fail-closed：不可解析的 diff 绝不读成「无 FULL 变更」。 */
-function repoChangedPaths(repo: string, stagedOnly: boolean, since: string | null): string[] | null {
+/** 三态 git 时刻 → diff 面参数的单源映射：`repoChangedPaths` 与 `fileDiff` 的三态
+ *  分支同构重复折叠于此，改模式语义只动本表。
+ *  staged => index vs HEAD；since => <base>..HEAD；默认 => 工作树（paths 收集含
+ *  untracked 面；逐文件 diff 用 HEAD 合并视图，staged 改动已含，无需双跑）。 */
+interface DiffMoment {
+  /** 路径收集命令组（--name-only）。 */
+  pathsCmds: string[][];
+  /** 逐文件 diff 参数（"diff" 之后的全部 token）。 */
+  fileDiffArgs(rel: string): string[];
+  /** untracked 收集命令；staged/since 模式无此面 = null。 */
+  untrackedCmd: string[] | null;
+}
+
+function diffMoment(stagedOnly: boolean, since: string | null): DiffMoment {
+  if (stagedOnly) {
+    return {
+      pathsCmds: [["diff", "--cached", "--name-only"]],
+      fileDiffArgs: (rel) => ["diff", "--cached", "--", rel],
+      untrackedCmd: null,
+    };
+  }
+  if (since !== null) {
+    return {
+      pathsCmds: [["diff", "--name-only", `${since}..HEAD`]],
+      fileDiffArgs: (rel) => ["diff", `${since}..HEAD`, "--", rel],
+      untrackedCmd: null,
+    };
+  }
+  return {
+    // 双命令与 py 对账批的调用序列逐一相同（HEAD 合并视图 + index 单视图）。
+    pathsCmds: [["diff", "--name-only", "HEAD"], ["diff", "--cached", "--name-only"]],
+    fileDiffArgs: (rel) => ["diff", "HEAD", "--", rel],
+    untrackedCmd: ["ls-files", "--others", "--exclude-standard"],
+  };
+}
+
+/** 所选 git 时刻的变更路径集 + untracked 集（默认模式单次收集，evidenceInChange
+ *  复用，不再二次 ls-files）：
+ *  --staged => index vs HEAD；--since => <base>..HEAD；默认 => 工作树。
+ *  git 命令失败返回 null——fail-closed：不可解析的 diff 绝不读成「无 FULL 变更」。 */
+function repoChangedPaths(repo: string, stagedOnly: boolean, since: string | null):
+    { paths: string[]; untracked: Set<string> } | null {
+  const moment = diffMoment(stagedOnly, since);
   const paths = new Set<string>();
-  const cmds: string[][] = stagedOnly
-    ? [["diff", "--cached", "--name-only"]]
-    : since !== null
-      ? [["diff", "--name-only", `${since}..HEAD`]]
-      : [["diff", "--name-only", "HEAD"], ["diff", "--cached", "--name-only"]];
-  for (const cmd of cmds) {
+  for (const cmd of moment.pathsCmds) {
     const r = runGit(cmd, repo);
     if (!r.ok) return null;
     for (const x of pySplitlines(r.stdout)) {
       if (x.trim() !== "") paths.add(x);
     }
   }
-  if (!stagedOnly && since === null) {
-    const r = runGit(["ls-files", "--others", "--exclude-standard"], repo);
+  const untracked = new Set<string>();
+  if (moment.untrackedCmd !== null) {
+    const r = runGit(moment.untrackedCmd, repo);
     if (!r.ok) return null;
     for (const x of pySplitlines(r.stdout)) {
-      if (x.trim() !== "") paths.add(x);
+      if (x.trim() !== "") {
+        untracked.add(x);
+        paths.add(x);
+      }
     }
   }
-  return Array.from(paths).sort(cmpPyStr);
+  return { paths: Array.from(paths).sort(cmpPyStr), untracked };
 }
 
 /** 变更集中的 proposed ADR 正文自诺 full 评审 → 判 FULL。 */
@@ -216,15 +254,11 @@ export function classify(paths: string[], repo: string): { full: boolean; reason
 
 /** 该 git 时刻下 <rel> 的变更 diff 文本；git 失败返回 null（fail-closed：
  *  证据判定依赖 diff，不可解析绝不当作证据成立）。
- *  stagedOnly => index vs HEAD；since => <base>..HEAD；默认 => 工作树 vs HEAD
- *  （含 staged + unstaged 对已跟踪文件的全部改动；未跟踪文件由 untracked 集覆盖）。 */
+ *  参数形态由 diffMoment 单源给出（staged => index vs HEAD；since => <base>..HEAD；
+ *  默认 => 工作树 vs HEAD，含 staged + unstaged 对已跟踪文件的全部改动，
+ *  未跟踪文件由 untracked 集覆盖）。 */
 function fileDiff(repo: string, rel: string, stagedOnly: boolean, since: string | null): string | null {
-  const args: string[] = stagedOnly
-    ? ["diff", "--cached", "--", rel]
-    : since !== null
-      ? ["diff", `${since}..HEAD`, "--", rel]
-      : ["diff", "HEAD", "--", rel];
-  const r = runGit(args, repo);
+  const r = runGit(diffMoment(stagedOnly, since).fileDiffArgs(rel), repo);
   return r.ok ? r.stdout : null;
 }
 
@@ -232,7 +266,7 @@ function fileDiff(repo: string, rel: string, stagedOnly: boolean, since: string 
  *  或本变更集向既有 ADR 补加了 Review 行）→ 证据成立。旧 ADR 自带的历史 Review
  *  行不在本变更集 diff 内，不得给本批 FULL 变更搭车（HANDOFF-todos L45）。 */
 function diffIntroducesReview(repo: string, rel: string, stagedOnly: boolean, since: string | null,
-  untracked: Set<string>): boolean {
+  untracked: ReadonlySet<string>): boolean {
   if (untracked.has(rel)) return true; // 未跟踪 ADR = 整文件新增，Review 行即本变更引入
   const d = fileDiff(repo, rel, stagedOnly, since);
   if (d === null) return false; // fail-closed：diff 不可解析 → 证据不成立
@@ -246,15 +280,12 @@ function diffIntroducesReview(repo: string, rel: string, stagedOnly: boolean, si
 
 /** 变更集缺合法评审证据时返回违约文案，否则 null。证据 = 变更集**引入**（新增行）
  * 的 implemented ADR Review: FULL/<date>/R1=ok R2=ok R3=ok 行（真实日历日）——
- * 同变更集触碰旧已评审 ADR 时其历史 Review 行不算本批证据。 */
-function evidenceInChange(paths: string[], repo: string, stagedOnly: boolean, since: string | null): string | null {
-  // 默认（工作树）模式下未跟踪文件 = 整文件新增，其头部 Review 行即本变更引入；
-  // staged/since 模式只 diff 已跟踪面，无需 untracked 集。
-  const untracked = new Set<string>();
-  if (!stagedOnly && since === null) {
-    const r = runGit(["ls-files", "--others", "--exclude-standard"], repo);
-    if (r.ok) for (const x of pySplitlines(r.stdout)) if (x.trim() !== "") untracked.add(x);
-  }
+ * 同变更集触碰旧已评审 ADR 时其历史 Review 行不算本批证据。
+ * untracked 集由 repoChangedPaths 单次收集传入（默认模式为实际集，staged/since
+ * 模式为空集——其 diff 面只覆盖已跟踪文件，与「staged 态未 add 的 ADR 不算证据」
+ * 判据一致）。 */
+function evidenceInChange(paths: string[], repo: string, stagedOnly: boolean, since: string | null,
+  untracked: ReadonlySet<string>): string | null {
   for (const rel of paths) {
     if (!rel.startsWith(NOTES_DIR + "/") || !rel.endsWith(".md")) continue;
     const adr = path.join(repo, rel);
@@ -281,15 +312,15 @@ function evidenceInChange(paths: string[], repo: string, stagedOnly: boolean, si
 }
 
 function scan(repo: string, stagedOnly = false, since: string | null = null): string[] {
-  const paths = repoChangedPaths(repo, stagedOnly, since);
-  if (paths === null) {
+  const moment = repoChangedPaths(repo, stagedOnly, since);
+  if (moment === null) {
     return ["review-tier: git moment failed (bad ref or git error) — "
       + "fail-closed, refusing to classify an unparsable diff"];
   }
-  if (paths.length === 0) return [];
-  const { full, reasons } = classify(paths, repo);
+  if (moment.paths.length === 0) return [];
+  const { full, reasons } = classify(moment.paths, repo);
   if (!full) return [];
-  const bad = evidenceInChange(paths, repo, stagedOnly, since);
+  const bad = evidenceInChange(moment.paths, repo, stagedOnly, since, moment.untracked);
   if (bad === null) return [];
   return [`FULL-tier change lacks review evidence (${reasons.length} trigger(s)): `
     + reasons.join("; ") + ` | ${bad}`];
