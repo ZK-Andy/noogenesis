@@ -5,11 +5,13 @@
 
 > **⚡ 最高优先级（框架重建）：charter ADR + 七层蓝图 → [.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md) · [docs/research/framework-rebuild-blueprint.md](docs/research/framework-rebuild-blueprint.md)**——用户拍板推倒重建（先框架后协作层、本仓原地重建），蓝图定稿（七层三段式 + A1–A8 挂载面 + M1–M3 + C1–C15）；**B0–B5 全批闭环（协作层重建收官，C1–C15 全绿）**——B5 切换批（gates.json cmd 全量重指 TS + 旧机器件零残留 + CI/钩子单轨 + 发版 0.2.0；实现 ADR [.agents/notes/implemented/architecture/2026-09-08-b5-switch.md](.agents/notes/implemented/architecture/2026-09-08-b5-switch.md)，批次表 [.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md](.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md)）；优化轮问题池余项（技能清单补全/记忆库）随重建后进行（规范展开 c1/c2 已交付；行动区仍在 [docs/research/capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)）。
 
-> **⏭ 下一步：C 类随手候选批已收口（mdref 折叠 + review-tier 证据须本变更引入；FULL 三审 0B，ADR ×2 implemented，journal 在案）**——节点：C 类随手全清，todos 余 B/D 类（下一发版走新 release 工具族见 B 条）。**宿主基线 `@deepseek-ai/dsh@0.1.5-alpha.1`**（用户 2026-09-09 主动升级；npm12 放行见 cookbook [环境] 条）。候选下一步：优化轮问题池余项（技能守卫 / 技能清单补全 / 记忆库开题 / 防过度设计）行动区 [capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)；随手待办 [HANDOFF-todos.md](HANDOFF-todos.md)。
+> **⏭ 下一步：review-tier 去重随手批已收口（C 类随手全清，todos 余 B/D 类）**——下一发版走新 release 工具族（B 条）；**用户已定向下一批 = 架构规范立项**（D 条：`docs/method/` 缺分层约束/blast-radius/依赖边界一篇，先讨论拍板再实现）。其余候选：优化轮问题池余项行动区 [capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)；随手待办 [HANDOFF-todos.md](HANDOFF-todos.md)。
 
 ## 交接更新记录（摘要滚动窗）
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
+
+- 2026-09-10｜**review-tier 去重随手批收口（FULL 三审 R1 0B/1S、R2 0B/2S、R3 1B/2S 全采纳；ADR 2026-09-10-review-tier-diff-moment-dedup implemented；`479edf2`→收口批）**：diffMoment 三态映射单源 + untracked 单收集传递（子进程 −1）；R3 实证瞬时角 tracked 子角判定翻转、更 fail-closed。**节点：C 类随手全清。** README 无漂移。
 
 - 2026-09-10｜**C 类随手候选批收口（FULL 三审 0B、8S 采纳 2 转办；ADR `2026-09-10-mdref-py-primitives-fold` + `2026-09-10-review-tier-evidence-ride-along`；`907d1a8`→`93483f5`）**：mdref 增补 pyStrip 导出 + 四件删副本；review-tier 证据收紧「Review 行须本变更引入」（12→17）。**节点：C 类随手全清。** README 无漂移。
 
@@ -46,8 +48,6 @@
 - 2026-09-06｜**框架重建立项收口（FULL 三审 R1 0B/5S、R2 2B/6S、R3 1B/3S 全采纳；ADR `2026-09-06-framework-rebuild-charter` implemented；commits `025b822`→`94d0259`）**：拍板推倒重建 + 先框架后协作层 + 本仓原地重建；蓝图定稿（A1–A8 + M1–M3 + C1–C15）。**节点：设计轮闭环，下一轮 = 协作层实现轮。** README 无漂移。
 
 - 2026-09-06｜**优化轮启动：问题池落账 + 上游 DSH 调研 + 语言统一定调（调研轮，无 ADR；行动区 = `docs/research/capsule-01-optimization-round.md`，头部门针）**：清账批三审收口（ADR `2026-09-06-doc-single-sourcing`）；上游克隆+索引缓存（SOP 全图/作用域规则/零损失实验/HERO 实证）；定调全栈 TS 统一；收尾信号：框架可能参考 DSH 推倒重建。README 核对无变更。
-
-- 2026-09-06｜**优化轮清账批（FULL 三审 R1 0B/1S、R2 0B/4S、R3 1B/3S 全采纳；ADR `2026-09-06-doc-single-sourcing`；`376e868`→`133d2d2`）**：问题池十条落账；门禁清单/计数单源化 gates.json、评审检查项补位根 AGENTS、开始步骤并入 session-open、搬迁计划下沉 journal、gates.mts `--list` 占位两态。**节点：清账批闭环；下批 = 问题池逐项。**
 
 ## 背景
 

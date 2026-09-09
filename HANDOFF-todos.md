@@ -43,7 +43,7 @@
 - [x] （C）编码规范 c1 评审恢复与收口 2026-09-08（FULL 三审恢复重跑：R1 1B/4S、R2 1B/4S、R3 2B/3S 全采纳收口），ADR [2026-09-08-coding-standards](.agents/notes/implemented/architecture/2026-09-08-coding-standards.md) implemented。
 - [x] （C）mdref 共享件副本折叠 2026-09-10：mdref 增补 pyStrip 导出 + 四消费方删本地 split/pyStrip 副本（净 −2 行，豁免 7→3）；ADR [2026-09-10-mdref-py-primitives-fold](.agents/notes/implemented/simplification/2026-09-10-mdref-py-primitives-fold.md)。
 - [x] （C）review-tier 证据继承弱点修复 2026-09-10：Review 行须由本变更引入（旧 ADR 不搭车），fixtures 12→17；ADR [2026-09-10-review-tier-evidence-ride-along](.agents/notes/implemented/bug-fix/2026-09-10-review-tier-evidence-ride-along.md)。
-- [ ] （C）verify-review-tier 模式→git 参数映射与 untracked 集传递去重（R1 评审 2026-09-10 S1/S2）：`fileDiff` 三态三元与 `repoChangedPaths` 同构重复；`evidenceInChange` 重复跑 `ls-files --others`（可自 scan 传下）。零行为重构；触发 = 下批门禁判据改动同变更处理。
+- [x] （C）verify-review-tier 三态映射单源 + untracked 集传递去重 2026-09-10（零行为重构独立批；FULL 三审全采纳），ADR [2026-09-10-review-tier-diff-moment-dedup](.agents/notes/implemented/simplification/2026-09-10-review-tier-diff-moment-dedup.md)。
 - [x] （A）编码强制两轨闭环：批 1（`2026-09-08-lint-in-loop-feedback`）+ 批 2（`2026-09-08-coding-enforcement-track-b`）均 implemented + FULL 三审全采纳（R1/R2 各 2B、R3 1B，全修）；批 3 测量 → 延后。
 - [x] （A）编码规范机器拦升格批 2026-09-09（FULL 三审 0B 全采纳），ADR [2026-09-09-lint-block-and-staged-hook](.agents/notes/implemented/architecture/2026-09-09-lint-block-and-staged-hook.md)；0.2.3 发版含本批。
 - [x] （B）批 1 真机复验 2026-09-09（用户重装 0.2.3 + 重启；全判据命中，journal 在案）：var 写码同轮 block / 修正零反馈 / 连续 ×3 第 4 次降级 context / 干净写码复位 / edit 同拦 / 非 .ts 零反馈 / staged 红。宿主基线已升 0.1.5-alpha.1（用户确认主动升级）。
