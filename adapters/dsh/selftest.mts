@@ -718,6 +718,7 @@ function writeFixtureGene(repoRoot: string): void {
 		}
 		fs.mkdirSync(path.join(repo, "docs", "method"), { recursive: true });
 		fs.writeFileSync(path.join(repo, "docs", "method", "code-standards.md"), "# code-standards\n");
+		fs.writeFileSync(path.join(repo, "docs", "method", "architecture-standards.md"), "# architecture-standards\n");
 		const subtreePolicies = createSubtreeRulesPolicies({ repoRoot: repo });
 		const agent = { session: { header: { cwd: repo } } };
 		const advice = subtreePolicies.preStep({ agent, turn: 1, step: 1 });
@@ -727,6 +728,7 @@ function writeFixtureGene(repoRoot: string): void {
 			"- engine/ → engine/AGENTS.md",
 			"- scripts/ → scripts/AGENTS.md",
 			"- 写码规范：docs/method/code-standards.md（机器面 lint 写码后自动反馈；export-docs 在门禁面）",
+			"- 架构规范：docs/method/architecture-standards.md（分层/依赖/影响面；新目录先过准入四问）",
 		]);
 		assert.equal(subtreePolicies.preStep({ agent, turn: 1, step: 2 }), undefined);
 		const subagent = { session: { header: { cwd: repo, origin: "subagent" } } };
@@ -746,6 +748,7 @@ function writeFixtureGene(repoRoot: string): void {
 		assert.ok(noPointerAdvice && noPointerAdvice.kind === "advice");
 		assert.equal(noPointerAdvice.lines.length, 2);
 		assert.ok(!noPointerAdvice.lines.some((line) => line.includes("code-standards")));
+		assert.ok(!noPointerAdvice.lines.some((line) => line.includes("architecture-standards")));
 		ok("mounts: M2 — opening map once per session (subagent/zero-subtree skipped; pointer line gated on file presence)");
 	}
 

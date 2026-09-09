@@ -26,6 +26,8 @@
 
 **证据随变更**（机械强制，ADR [2026-09-05-review-mechanical-gate](../../.agents/notes/implemented/process/2026-09-05-review-mechanical-gate.md)）：FULL 档变更的评审证据 = 同变更集内 implemented ADR 头部 `Review: FULL/<日期>/R1=ok R2=ok R3=ok` 行（真实日历日；R 值严格 =ok；proposed ADR 不得自证）。push 前 `verify-review-tier --since <远端 sha> --enforce` 拒推缺证据的 FULL 变更；无 ADR 可承载的 FULL 批次加一枚最小 process 笔记。
 
+改动前的**影响面识别通则**（合同/机器/数据/散文四类清单 + 同变更义务）的家 = [architecture-standards](architecture-standards.md) §2.4——定档判据单源在本节，识别通则彼处不重抄。
+
 ## 2. 范围收窄（审的范围，不审整仓）
 
 - 一次只审一个逻辑单元：评审代理拿精确 diff（`scripts/change-scope.mts` 界定），**只读** diff 触及的文件 + 一层以内相邻件 + 与本 diff 直接相关的契约/标准段落（如 [doc-standards](doc-standards.md) 对应节、相关 ADR 的 Consequences）。

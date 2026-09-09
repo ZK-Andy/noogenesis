@@ -10,7 +10,7 @@
 
 ## 2. 实现
 
-按 ADR 范围动 src/docs/scripts；越界想法记 TODO 不顺手做。
+按 ADR 范围动 src/docs/scripts；越界想法记 TODO 不顺手做。动码/动目录前读对应规范面：[code-standards](../../docs/method/code-standards.md)（编码/注释）+ [architecture-standards](../../docs/method/architecture-standards.md)（分层/依赖/新目录准入四问）；机器可判面 lint 写码当轮已拦。
 
 ## 3. 测试与门禁
 

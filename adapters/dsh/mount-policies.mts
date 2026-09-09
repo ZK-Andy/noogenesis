@@ -52,9 +52,12 @@ export function createSubtreeRulesPolicies(config: RepoRootConfig): { preStep: P
 			"Noogenesis subtree rules map — read a subtree's AGENTS.md before working in it:",
 			...present.map((subtree) => `- ${subtree}/ → ${subtree}/AGENTS.md`),
 		];
-		// 写码规范指针行与布点件同款存在性过滤：指向不存在文件的指针行是噪音。
+		// 规范指针行与布点件同款存在性过滤：指向不存在文件的指针行是噪音。
 		if (fs.existsSync(path.join(repoRoot, "docs/method/code-standards.md"))) {
 			lines.push("- 写码规范：docs/method/code-standards.md（机器面 lint 写码后自动反馈；export-docs 在门禁面）");
+		}
+		if (fs.existsSync(path.join(repoRoot, "docs/method/architecture-standards.md"))) {
+			lines.push("- 架构规范：docs/method/architecture-standards.md（分层/依赖/影响面；新目录先过准入四问）");
 		}
 		return { kind: "advice", lines };
 	};
