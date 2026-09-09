@@ -5,11 +5,13 @@
 
 > **⚡ 最高优先级（框架重建）：charter ADR + 七层蓝图 → [.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md) · [docs/research/framework-rebuild-blueprint.md](docs/research/framework-rebuild-blueprint.md)**——用户拍板推倒重建（先框架后协作层、本仓原地重建），蓝图定稿（七层三段式 + A1–A8 挂载面 + M1–M3 + C1–C15）；**B0–B5 全批闭环（协作层重建收官，C1–C15 全绿）**——B5 切换批（gates.json cmd 全量重指 TS + 旧机器件零残留 + CI/钩子单轨 + 发版 0.2.0；实现 ADR [.agents/notes/implemented/architecture/2026-09-08-b5-switch.md](.agents/notes/implemented/architecture/2026-09-08-b5-switch.md)，批次表 [.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md](.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md)）；优化轮问题池余项（技能清单补全/记忆库）随重建后进行（规范展开 c1/c2 已交付；行动区仍在 [docs/research/capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)）。
 
-> **⏭ 下一步：review-tier 去重随手批已收口（C 类随手全清，todos 余 B/D 类）**——下一发版走新 release 工具族（B 条）；**用户已定向下一批 = 架构规范立项**（D 条：`docs/method/` 缺分层约束/blast-radius/依赖边界一篇，先讨论拍板再实现）。其余候选：优化轮问题池余项行动区 [capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)；随手待办 [HANDOFF-todos.md](HANDOFF-todos.md)。
+> **⏭ 下一步：架构规范立项已收口（charter ADR proposed，`1f8a483`）——下一批 = 实现轮**：按 charter 写 `docs/method/architecture-standards.md` + manifest 预算条目 + code-standards §4 改指，FULL 三审后 charter 翻 implemented。其余候选：release 工具族首验（B 条，随下一发版）/ 优化轮问题池余项 [capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)；随手待办 [HANDOFF-todos.md](HANDOFF-todos.md)。
 
 ## 交接更新记录（摘要滚动窗）
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
+
+- 2026-09-10｜**架构规范立项收口（讨论轮，无实现；charter ADR 2026-09-10-architecture-standards-charter proposed；`1f8a483`）**：基准蒸馏四源 + 本仓专属例外；四题拍板（TS 实写+通则 / blast-radius 判据互链 review.md / content-only+触发条件 / §4 互链）；现状地图不另立。**节点：实现批待开。** README 无漂移。
 
 - 2026-09-10｜**review-tier 去重随手批收口（FULL 三审 R1 0B/1S、R2 0B/2S、R3 1B/2S 全采纳；ADR 2026-09-10-review-tier-diff-moment-dedup implemented；`479edf2`→收口批）**：diffMoment 三态映射单源 + untracked 单收集传递（子进程 −1）；R3 实证瞬时角 tracked 子角判定翻转、更 fail-closed。**节点：C 类随手全清。** README 无漂移。
 
@@ -46,8 +48,6 @@
 - 2026-09-08｜**B0 框架结构面批收口（FULL 三审全采纳；ADR `2026-09-08-b0-framework-structure` implemented）**：五件子树 AGENTS.md + archived/postmortem 两件 TS 门禁（node 原生 stripping 零依赖）+ references/ 形态规则。**节点：C11/C12 转绿，下一批 = B1 TS 化。** README 有变更已同步（AGENTS 分层/scripts 语言栈表述）。
 
 - 2026-09-06｜**框架重建立项收口（FULL 三审 R1 0B/5S、R2 2B/6S、R3 1B/3S 全采纳；ADR `2026-09-06-framework-rebuild-charter` implemented；commits `025b822`→`94d0259`）**：拍板推倒重建 + 先框架后协作层 + 本仓原地重建；蓝图定稿（A1–A8 + M1–M3 + C1–C15）。**节点：设计轮闭环，下一轮 = 协作层实现轮。** README 无漂移。
-
-- 2026-09-06｜**优化轮启动：问题池落账 + 上游 DSH 调研 + 语言统一定调（调研轮，无 ADR；行动区 = `docs/research/capsule-01-optimization-round.md`，头部门针）**：清账批三审收口（ADR `2026-09-06-doc-single-sourcing`）；上游克隆+索引缓存（SOP 全图/作用域规则/零损失实验/HERO 实证）；定调全栈 TS 统一；收尾信号：框架可能参考 DSH 推倒重建。README 核对无变更。
 
 ## 背景
 
