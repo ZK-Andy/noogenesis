@@ -25,6 +25,7 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { normPyPath } from "./pypara.mts";
 
 // Python \w 是 unicode 词字符（含 CJK）；JS \w 只匹配 ASCII，必须等价展开 + u flag。
 const WORD_RE = /[\p{L}\p{N}_\u4e00-\u9fff]+/gu;
@@ -38,16 +39,6 @@ function countWords(text: string): number {
   let body = text.replace(CODE_BLOCK_RE, "");
   body = body.replace(TABLE_LINE_RE, "");
   return (body.match(WORD_RE) ?? []).length;
-}
-
-/** Python PurePosixPath 字符串规范化（f"{Path}" 的显示形态）。 */
-function normPyPath(p: string): string {
-  if (p === "") return ".";
-  const absolute = p.startsWith("/");
-  const parts = p.split("/").filter((s) => s !== "" && s !== ".");
-  const joined = parts.join("/");
-  if (joined === "") return absolute ? "/" : ".";
-  return (absolute ? "/" : "") + joined;
 }
 
 function isFile(p: string): boolean {

@@ -27,6 +27,7 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { cmpPyStr, normPyPath } from "./pypara.mts";
 
 const KEBAB_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const ENTRY_FIELDS = ["ref", "path", "summary", "signals"];
@@ -46,7 +47,9 @@ function pyEq(a: unknown, b: unknown): boolean {
   return false;
 }
 
-/** Python repr() 对常用标量的近似（字符串带引号转义；None/bool/数字的字面形态）。 */
+/** Python repr() 对常用标量的近似（字符串带引号转义；None/bool/数字的字面形态）。
+ *  与 pypara pyRepr 的差异：标量近似版——对象/数组走 JSON.stringify 兜底，
+ *  非容器非标量的 repr 形态不同（错误文案面按本门禁夹具钉死），有意不换。 */
 function pyRepr(v: unknown): string {
   if (v === undefined || v === null) return "None";
   if (typeof v === "boolean") return v ? "True" : "False";
@@ -60,29 +63,6 @@ function pyRepr(v: unknown): string {
 
 function pyListRepr(xs: unknown[]): string {
   return `[${xs.map(pyRepr).join(", ")}]`;
-}
-
-/** 码点序比较（Python 字符串排序语义）。 */
-function pyCmp(a: string, b: string): number {
-  const ca = Array.from(a);
-  const cb = Array.from(b);
-  const n = Math.min(ca.length, cb.length);
-  for (let i = 0; i < n; i++) {
-    const x = ca[i]!.codePointAt(0)!;
-    const y = cb[i]!.codePointAt(0)!;
-    if (x !== y) return x < y ? -1 : 1;
-  }
-  return ca.length - cb.length;
-}
-
-/** Python PurePosixPath 字符串规范化。 */
-function normPyPath(p: string): string {
-  if (p === "") return ".";
-  const absolute = p.startsWith("/");
-  const parts = p.split("/").filter((s) => s !== "" && s !== ".");
-  const joined = parts.join("/");
-  if (joined === "") return absolute ? "/" : ".";
-  return (absolute ? "/" : "") + joined;
 }
 
 function isFile(p: string): boolean {
@@ -110,10 +90,10 @@ function scanTree(repo: string): Record<string, Record<string, unknown>> {
   for (const domainDir of fs.readdirSync(root, { withFileTypes: true })
       .filter((e) => e.isDirectory())
       .map((e) => e.name)
-      .sort(pyCmp)) {
+      .sort(cmpPyStr)) {
     for (const fname of fs.readdirSync(path.join(root, domainDir))
         .filter((f) => f.endsWith(".json"))
-        .sort(pyCmp)) {
+        .sort(cmpPyStr)) {
       const ref = `${domainDir}/${fname.slice(0, -".json".length)}`;
       const rel = normPyPath(path.relative(path.resolve(repo), path.resolve(path.join(root, domainDir, fname))).split(path.sep).join("/"));
       let data: any;
@@ -219,16 +199,16 @@ function verify(repo: string): [number, string[]] {
   const refs = genes
     .filter((e: unknown) => typeof e === "object" && e !== null && !Array.isArray(e) && typeof (e as Record<string, unknown>)["ref"] === "string")
     .map((e: any) => e["ref"] as string);
-  const sortedRefs = [...refs].sort(pyCmp);
+  const sortedRefs = [...refs].sort(cmpPyStr);
   if (JSON.stringify(refs) !== JSON.stringify(sortedRefs)) {
     errors.push("manifest.json: genes must be sorted by ref");
   }
   const treeKeys = Object.keys(tree);
   const rowKeys = Object.keys(rows);
-  for (const ref of treeKeys.filter((r) => !rowKeys.includes(r)).sort(pyCmp)) {
+  for (const ref of treeKeys.filter((r) => !rowKeys.includes(r)).sort(cmpPyStr)) {
     errors.push(`manifest.json: missing gene ${ref} (run scripts/gen-manifest.mts)`);
   }
-  for (const ref of rowKeys.filter((r) => !treeKeys.includes(r)).sort(pyCmp)) {
+  for (const ref of rowKeys.filter((r) => !treeKeys.includes(r)).sort(cmpPyStr)) {
     errors.push(`manifest.json: stale entry ${ref} (file absent from genes/)`);
   }
   for (const info of Object.values(tree)) {
@@ -260,7 +240,7 @@ function selfTest(): number {
     fs.writeFileSync(path.join(t, "genes/process/alpha.json"), gene("process", "alpha"), "utf-8");
     fs.writeFileSync(path.join(t, "genes/doc/beta.json"), gene("doc", "beta"), "utf-8");
     fs.writeFileSync(path.join(t, "manifest.json"), manifestOf(
-      [entry("doc/beta"), entry("process/alpha")].sort((a, b) => pyCmp(a["ref"] as string, b["ref"] as string))), "utf-8");
+      [entry("doc/beta"), entry("process/alpha")].sort((a, b) => cmpPyStr(a["ref"] as string, b["ref"] as string))), "utf-8");
   };
 
   const cases: Array<[(t: string) => void, string[], string]> = [];
@@ -275,7 +255,7 @@ function selfTest(): number {
   const summaryDrift = (t: string): void => {
     conforming(t);
     fs.writeFileSync(path.join(t, "manifest.json"), manifestOf(
-      [entry("doc/beta"), entry("process/alpha", "edited")].sort((a, b) => pyCmp(a["ref"] as string, b["ref"] as string))), "utf-8");
+      [entry("doc/beta"), entry("process/alpha", "edited")].sort((a, b) => cmpPyStr(a["ref"] as string, b["ref"] as string))), "utf-8");
   };
   cases.push([summaryDrift, ["summary drift"], "manifest summary drift -> fail"]);
 

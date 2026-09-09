@@ -28,6 +28,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 import { checkRelativeLinks, slugify } from "./mdref.mts";
+import { cmpPyStr } from "./pypara.mts";
 
 const PROG = "verify-md-links.mts";
 const USAGE = `usage: ${PROG} [-h] [root]\n`;
@@ -71,19 +72,9 @@ function collectMd(rootArg: string): MdFile[] {
   return files;
 }
 
-function cmpCodePoints(a: string, b: string): number {
-  const A = Array.from(a);
-  const B = Array.from(b);
-  for (let i = 0; i < Math.min(A.length, B.length); i++) {
-    const d = A[i]!.codePointAt(0)! - B[i]!.codePointAt(0)!;
-    if (d !== 0) return d;
-  }
-  return A.length - B.length;
-}
-
 function cmpParts(a: string[], b: string[]): number {
   for (let i = 0; i < Math.min(a.length, b.length); i++) {
-    const c = cmpCodePoints(a[i]!, b[i]!);
+    const c = cmpPyStr(a[i]!, b[i]!);
     if (c !== 0) return c;
   }
   return a.length - b.length;

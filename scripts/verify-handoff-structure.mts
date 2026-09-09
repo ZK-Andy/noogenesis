@@ -34,7 +34,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
-import { pyStrip, splitLines } from "./mdref.mts";
+import { pyStrip, splitLines, normPyPath } from "./pypara.mts";
 
 const DEFAULT_HANDOFF = "HANDOFF.md";
 const DEFAULT_TODOS = "HANDOFF-todos.md";
@@ -69,16 +69,6 @@ function cpLen(s: string): number {
   return [...s].length;
 }
 
-/** pathlib str(Path(p)) 等价：去掉空段与「.」段、保留「..」、折叠重复斜杠、
- *  去尾斜杠；绝对路径保留前导「/」。 */
-function pyPathStr(p: string): string {
-  const isAbs = p.startsWith("/");
-  const segs = p.split("/").filter((seg) => seg !== "" && seg !== ".");
-  let out = segs.join("/");
-  if (isAbs) out = "/" + out;
-  return out === "" ? "." : out;
-}
-
 /** Path(p).parent 等价（字符串形态）。 */
 function pyParentDir(p: string): string {
   const isAbs = p.startsWith("/");
@@ -96,7 +86,7 @@ function pyBasename(p: string): string {
 
 /** Path(parent) / child 等价（parent 为 "." 时直接取 child）。 */
 function joinPy(parent: string, child: string): string {
-  return pyPathStr(parent === "." ? child : `${parent}/${child}`);
+  return normPyPath(parent === "." ? child : `${parent}/${child}`);
 }
 
 function isFile(p: string): boolean {
@@ -475,7 +465,7 @@ function parseArgs(argv: string[]): Args {
 function realRun(): number {
   const args = parseArgs(process.argv.slice(2));
   // 与 py 同口径：todos 相对 HANDOFF 自身父目录解析，非 cwd。
-  const handoff = pyPathStr(args.handoff);
+  const handoff = normPyPath(args.handoff);
   const todos = joinPy(pyParentDir(args.handoff), args.todos);
   const { count, errors } = scan(handoff, todos, args.maxWindow, args.maxEntry,
     args.maxOpen, args.maxTotal, args.maxOpenChars, args.maxClosedChars);

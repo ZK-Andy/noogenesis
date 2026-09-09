@@ -26,6 +26,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
+import { cmpPyStr, normPyPath } from "./pypara.mts";
 
 const KEBAB_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
@@ -42,29 +43,6 @@ function isDir(p: string): boolean {
   }
 }
 
-/** 码点序比较（Python 字符串排序语义；JS 默认序对星面字符不同）。 */
-function pyCmp(a: string, b: string): number {
-  const ca = Array.from(a);
-  const cb = Array.from(b);
-  const n = Math.min(ca.length, cb.length);
-  for (let i = 0; i < n; i++) {
-    const x = ca[i]!.codePointAt(0)!;
-    const y = cb[i]!.codePointAt(0)!;
-    if (x !== y) return x < y ? -1 : 1;
-  }
-  return ca.length - cb.length;
-}
-
-/** Python PurePosixPath 字符串规范化。 */
-function normPyPath(p: string): string {
-  if (p === "") return ".";
-  const absolute = p.startsWith("/");
-  const parts = p.split("/").filter((s) => s !== "" && s !== ".");
-  const joined = parts.join("/");
-  if (joined === "") return absolute ? "/" : ".";
-  return (absolute ? "/" : "") + joined;
-}
-
 /** 扫描 genes/<domain>/<id>.json → 每基因一条 {ref, path, summary, signals}，按 ref 排序。
  *  协议违约抛 GeneProtocolError（realRun 转 exit 1）。 */
 function scanGenes(repo: string): GeneEntry[] {
@@ -74,10 +52,10 @@ function scanGenes(repo: string): GeneEntry[] {
   for (const domainDir of fs.readdirSync(root, { withFileTypes: true })
       .filter((e) => e.isDirectory())
       .map((e) => e.name)
-      .sort(pyCmp)) {
+      .sort(cmpPyStr)) {
     for (const fname of fs.readdirSync(path.join(root, domainDir))
         .filter((f) => f.endsWith(".json"))
-        .sort(pyCmp)) {
+        .sort(cmpPyStr)) {
       const f = path.join(root, domainDir, fname);
       const stem = fname.slice(0, -".json".length);
       const rel = normPyPath(path.relative(path.resolve(repo), path.resolve(f)).split(path.sep).join("/"));
@@ -109,7 +87,7 @@ function scanGenes(repo: string): GeneEntry[] {
       entries.push({ ref: `${domainDir}/${stem}`, path: rel, summary, signals });
     }
   }
-  entries.sort((a, b) => pyCmp(a.ref, b.ref));
+  entries.sort((a, b) => cmpPyStr(a.ref, b.ref));
   return entries;
 }
 

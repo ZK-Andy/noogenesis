@@ -31,11 +31,9 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { splitLines } from "./mdref.mts";
+import { splitLines, cmpPyStr, normPyPath, MS_PER_DAY } from "./pypara.mts";
 
 const DEFAULT_PATH = "docs/cookbook.md";
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 // 封闭阶段集（canonical home = 本集合 + docs/cookbook.md 头注）。
 const STAGE_SET: string[] = ["演化", "门禁", "文档", "协作", "环境", "上游", "产品"];
@@ -51,29 +49,6 @@ const ENTRY_RE = /^- \*\*\[(?<stage>[^\]]+)\]\s+(?<title>.+?)\*\*[：，；](?<b
 // Python \d 是 unicode 十进制数字（Nd）——JS 需 \p{Nd} + u flag 才语义等价。
 const DATE_RE = /(?<date>\p{Nd}{4}-\p{Nd}{2}-\p{Nd}{2})/u;
 const HEADING_RE = /^## (?<stage>.+?)\s*$/;
-
-/** 码点序比较（Python 字符串排序语义；JS 默认序对星面字符不同）。 */
-function pyCmp(a: string, b: string): number {
-  const ca = Array.from(a);
-  const cb = Array.from(b);
-  const n = Math.min(ca.length, cb.length);
-  for (let i = 0; i < n; i++) {
-    const x = ca[i]!.codePointAt(0)!;
-    const y = cb[i]!.codePointAt(0)!;
-    if (x !== y) return x < y ? -1 : 1;
-  }
-  return ca.length - cb.length;
-}
-
-/** Python PurePosixPath 字符串规范化（折叠 //、去 ./、尾斜杠、空串 → "."）。 */
-function normPyPath(p: string): string {
-  if (p === "") return ".";
-  const absolute = p.startsWith("/");
-  const parts = p.split("/").filter((s) => s !== "" && s !== ".");
-  const joined = parts.join("/");
-  if (joined === "") return absolute ? "/" : ".";
-  return (absolute ? "/" : "") + joined;
-}
 
 /** date.fromisoformat（限 yyyy-mm-dd ASCII 数字形）等价：非法日历日返回 null。 */
 function parsePyIsoDate(s: string): number | null {
@@ -196,7 +171,7 @@ function scan(p: string): { checked: number; errors: string[] } {
 /** 离线夹具自检：构造合规与违约 cookbook，断言校验器只命中预期项。 */
 function selfTest(): number {
   // 展示顺序必须是封闭集的置换（漂移护栏）——与 py assert 同语义（失败即非零退出）。
-  if ([...STAGE_ORDER].sort(pyCmp).join("\u0000") !== [...STAGE_SET].sort(pyCmp).join("\u0000")) {
+  if ([...STAGE_ORDER].sort(cmpPyStr).join("\u0000") !== [...STAGE_SET].sort(cmpPyStr).join("\u0000")) {
     throw new Error("STAGE_ORDER drifted from STAGE_SET");
   }
 

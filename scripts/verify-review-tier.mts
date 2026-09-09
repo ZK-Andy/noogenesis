@@ -54,7 +54,7 @@ import * as path from "node:path";
 import * as os from "node:os";
 import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
-import { splitLines as pySplitlines } from "./mdref.mts";
+import { splitLines as pySplitlines, cmpPyStr } from "./pypara.mts";
 
 const NOTES_DIR = ".agents/notes";
 // FULL/<date>/R1=ok R2=ok R3=ok — 值严格校验（fail/abort 不算数）。
@@ -105,19 +105,6 @@ function readTextReplace(file: string): string | null {
   } catch {
     return null;
   }
-}
-
-/** py sorted(str)：Unicode 码点序（JS 默认序按 UTF-16 码元，非 BMP 字符上会分叉）。 */
-function cmpPyStr(a: string, b: string): number {
-  const ca = Array.from(a);
-  const cb = Array.from(b);
-  const n = Math.min(ca.length, cb.length);
-  for (let i = 0; i < n; i++) {
-    const x = ca[i]!.codePointAt(0)!;
-    const y = cb[i]!.codePointAt(0)!;
-    if (x !== y) return x < y ? -1 : 1;
-  }
-  return ca.length === cb.length ? 0 : ca.length < cb.length ? -1 : 1;
 }
 
 /** 真实日历日（proleptic Gregorian，闰年规则与 py date.fromisoformat 一致；

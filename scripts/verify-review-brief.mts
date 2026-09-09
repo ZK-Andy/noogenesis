@@ -42,7 +42,7 @@ import * as path from "node:path";
 import * as os from "node:os";
 import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
-import { splitLines } from "./mdref.mts";
+import { splitLines, cmpPyStr } from "./pypara.mts";
 import { classify } from "./verify-review-tier.mts";
 
 const BRIEFS_DIR = ".review-briefs";
@@ -219,7 +219,7 @@ function briefPaths(repo: string): { paths: Record<string, string>; duplicates: 
   if (fs.existsSync(briefsDir) && fs.statSync(briefsDir).isDirectory()) {
     const names = fs.readdirSync(briefsDir)
       .filter((n) => /^R[123]-.*\.md$/.test(n))
-      .sort((a, b) => (a < b ? -1 : a > b ? 1 : 0)); // UTF-16 码元序（泳道名 ASCII，与 py sorted 同序）
+      .sort(cmpPyStr); // 泳道名 ASCII——码点序与码元序同序；归口 pypara 家族单源
     for (const n of names) {
       const lane = n.slice(0, 2);
       if (found[lane] !== undefined) {

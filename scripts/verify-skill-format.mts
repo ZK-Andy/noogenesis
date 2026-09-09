@@ -32,7 +32,8 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 import { fileURLToPath } from "node:url";
-import { checkRelativeLinks, splitLines } from "./mdref.mts";
+import { checkRelativeLinks } from "./mdref.mts";
+import { splitLines, cmpPyStr } from "./pypara.mts";
 
 const PROG = "verify-skill-format.mts";
 const USAGE = `usage: ${PROG} [-h] [--self-test]\n`;
@@ -155,16 +156,8 @@ function scan(errors: string[]): number {
       skills.push(skill);
     }
   }
-  // Python sorted(Path)：逐段码点比较（码点序与 UTF-16 序的差异仅在增补区段）
-  skills.sort((a, b) => {
-    const A = Array.from(a);
-    const B = Array.from(b);
-    for (let i = 0; i < Math.min(A.length, B.length); i++) {
-      const d = A[i]!.codePointAt(0)! - B[i]!.codePointAt(0)!;
-      if (d !== 0) return d;
-    }
-    return A.length - B.length;
-  });
+  // Python sorted(Path)：逐段码点比较（单源 = pypara cmpPyStr）
+  skills.sort(cmpPyStr);
   for (const skill of skills) {
     checkSkill(skill, errors);
   }

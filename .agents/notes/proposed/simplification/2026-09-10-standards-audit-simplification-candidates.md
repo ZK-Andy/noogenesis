@@ -9,7 +9,7 @@ Review: pending
 
 三族审计（engine/adapters/scripts 按架构与代码规范 `[R]` 清单逐行核对）在缺陷之外发现六处可简化/需拍板面，均不构成行为缺陷、但有真实的维护或漂移成本：
 
-1. **py 兼容原语多副本未归口 mdref**：码点序比较器 9 处副本（gen-manifest / verify-cookbook / verify-manifest / verify-adr-format `cmpCodepoints` / verify-md-links / verify-review-tier `cmpPyStr` / verify-skill-format / verify-review-brief 内联 / verify-postmortem-naming `cmpByStringOrder`——末者实为 UTF-16 码元序，对被 NAME_RE 钉死 ASCII 的 postmortem 名与码点序同序）；路径归一 7 处变体（`normPyPath` ×4 + `pathNorm` + `pyNorm` + `pyPathStr`，其中 pyNorm/pyPathStr 语义略异——保留 `..`）。2026-09-10 mdref 归口批只收了 splitLines/pyStrip。
+1. ~~**py 兼容原语多副本未归口**~~——**已收口**（[pypara 归口批 ADR](../../implemented/simplification/2026-09-10-pypara-fold-responsibility-split.md)：`scripts/pypara.mts` 立 py 兼容原语单源，比较器 9 副本 + 路径归一同语义副本 + gene-format 内 JSON/ISO/repr 族 ~420 行全部归口；语义有意变体（pyNorm 保 `//`、verify-manifest 标量版 pyRepr/pyEq）保留并头注注明；mdref 收窄回链接/锚点域）。
 2. **ADR class 六类封闭集双源**：verify-adr-format.mts `CLASS_SET` 与 verify-archived-agent-notes.mts `CLASSES` 各存一份，漂移无闸；规则单源是散文（.agents/notes/README.md）。
 3. **门禁自测临时目录清理纪律不一致**：7 件无有效清理（gen-manifest / verify-cookbook / verify-doc-budgets / verify-manifest / verify-archived-agent-notes / verify-postmortem-naming ×7 / verify-review-brief）——其中 archived-agent-notes 有一个 rmSync 但只清夹具 scripts 子目录，两个 mkdtemp 根（L204/L263）不清理；其余 9 件有完整 rmSync 清理。
 4. **模型面字符串语言无单源拍板**：mount-policies 注入消息中英混排、工具 description/诊断串全英文、solidify 提醒英文；注释面全中文合规——模型可见字符串的语言口径没有一次显式拍板。
@@ -18,9 +18,8 @@ Review: pending
 
 ## Proposal
 
-逐项拍板后一个 LIGHT 批收口（1/2/5/6 是代码归口，3 是纪律统一，4 是拍板+归档）：
+逐项拍板后一个 LIGHT 批收口（2/5/6 是代码归口，3 是纪律统一，4 是拍板+归档；1 已由 pypara 归口批先行收口）：
 
-- **1**：先逐处对齐比较器语义（全部是「Python str 序 = 码点序」——8 处可直接归口 mdref 单件）；路径归一先对账 pyNorm/pyPathStr 与 normPyPath 的 `..` 语义差异，能统一则统一，不能则各保留并头注写明差异。
 - **2**：class 封闭集提为共享常量件（或最小成本：给两件各加双源一致性自测断言）。
 - **3**：统一为 try/finally rmSync（与已清理的 9 件同款）。
 - **4**：拍板一次（中文 or 英文 or 按宿主面），结论归档 adapters/dsh/README 配置/语义节。
@@ -34,5 +33,5 @@ Review: pending
 
 ## Consequences
 
-- 拍板前零代码变动；拍板后 1/2/3/5/6 全部是行为等价重构（各自 --self-test + tsc 盖住），4 是散文拍板面。
-- 归口后 mdref 成为 py 兼容原语唯一家（splitLines/pyStrip/码点比较器/路径归一），后续门禁新件不再复制原语。
+- 拍板前零代码变动；拍板后 2/3/5/6 全部是行为等价重构（各自 --self-test + tsc 盖住），4 是散文拍板面。
+- py 兼容原语唯一家 = pypara（已收口，见第 1 项）；后续门禁新件不再复制原语。

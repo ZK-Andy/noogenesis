@@ -35,7 +35,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 import { TextDecoder } from "node:util";
-import { pyStrip, splitLines } from "./mdref.mts";
+import { pyStrip, splitLines, cmpPyStr } from "./pypara.mts";
 
 const HEADER_RE = /^# Agent Note: .+$/;
 const STATUS_RE = /^Status: (proposed|implemented|rejected(?: — .+)?)$/;
@@ -52,20 +52,6 @@ const NAME_RE = /^(\p{Nd}{4}-\p{Nd}{2}-\p{Nd}{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md
 // 顶层豁免面 = 封闭集：notes 子树常设件（索引 README + 子树规则 AGENTS）；其余一律三层深，
 // 任何不识别路径都必须报违约（fail-closed）——静默跳过会让杂散笔记逃过全部检查面。
 const TOP_LEVEL_EXEMPT = ["README.md", "AGENTS.md"];
-
-/** Python str 比较的 codepoint 序（JS 默认 sort 是 UTF-16 码元序，增补平面字符不同序）。 */
-function cmpCodepoints(a: string, b: string): number {
-  if (a === b) return 0;
-  const A = Array.from(a);
-  const B = Array.from(b);
-  const n = Math.min(A.length, B.length);
-  for (let i = 0; i < n; i++) {
-    const ca = A[i]!.codePointAt(0)!;
-    const cb = B[i]!.codePointAt(0)!;
-    if (ca !== cb) return ca < cb ? -1 : 1;
-  }
-  return A.length < B.length ? -1 : A.length > B.length ? 1 : 0;
-}
 
 /** Python datetime.date.fromisoformat 等价面：仅 ASCII 数字 YYYY-MM-DD；
  *  年 0 / 月日越界 / 非真日历日 → null（与 ValueError 分支一致）。 */
@@ -120,7 +106,7 @@ function listNotes(root: string): string[] {
     }
   };
   walk(root, "");
-  out.sort(cmpCodepoints);
+  out.sort(cmpPyStr);
   return out;
 }
 
@@ -348,7 +334,9 @@ function selfTest(): number {
 }
 
 /** 等价 Python Path(arg) 的轻量字符串规范化（折叠 "//" 与 "/./" 及尾斜杠；
- *  保留前导斜杠——Python Path("/tmp/x") 仍是绝对路径）。 */
+ *  保留前导斜杠——Python Path("/tmp/x") 仍是绝对路径）。
+ *  与 pypara normPyPath 的差异：纯根路径（"/"、"//"）本地版归 "."（把根参数
+ *  当 cwd 而非扫文件系统根），pypara 版保 "/"——argv 归一面有意保守，不换。 */
 function pathNorm(arg: string): string {
   const abs = arg.startsWith("/");
   const parts = arg.split("/").filter((p) => p !== "" && p !== ".");

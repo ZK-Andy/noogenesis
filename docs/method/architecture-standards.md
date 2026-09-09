@@ -59,7 +59,7 @@
 
 > 立闸判据 = HERO（检测出什么具体的失败？真出现了下一步做什么不同的事？）；候选按 C15 先例（[B4 ADR Decision 6](../../.agents/notes/implemented/architecture/2026-09-08-b4-mount-wiring.md)）评估，不过者理由与数据在案。测量口径：population = 主链三族全部 TS 源文件（engine/*.ts + adapters/dsh/*.mts + scripts/**/*.mts，排除 dist/node_modules/缓存）；环/边数字实测方法 = 相对 import 静态建图（`.js`/`.mjs` 发射名 → 源名映射）+ DFS 环检测（一次性脚本，2026-09-10，n=46）。
 
-- **上帝类闸（单文件行数/依赖扇出上限）——判不立**：实测分布（2026-09-08，B4 ADR 在案；population = 当时全仓源码 .ts/.mts，n=38：行数 p50=152 / p90=516 / max=1158；扇出 max=15）无自然拐点、零失控件。触发 = 真实失控件出现（改写困难/评审反复抓同一文件）→ 以届时 max × 1.5 为候选阈值再过判据。
+- **上帝类闸（单文件行数/依赖扇出上限）——判不立**：实测分布（2026-09-08，B4 ADR 在案；population = 当时全仓源码 .ts/.mts，n=38：行数 p50=152 / p90=516 / max=1158；扇出 max=15）无自然拐点、零失控件。**行数不是失控的度量——职责 = 一句话可述；大体积的合法来源 = 夹具同件纪律与 py 对齐原语单源（pypara）**。真失控信号判别式 = 一句话说不清职责 / 改写困难 / 评审反复抓同一件（三有其一才触发本条评估）。触发 = 真实失控件出现 → 以届时 max × 1.5 为候选阈值再过判据。
 - **import 环检测闸——判不立**：实测（2026-09-10，口径见节首）：81 条相对 import 边，环 = 0、跨族边 = 0、全部可解析——无实证对象，立闸 = 防 speculative。触发 = 真实 import 环出现 → 立环检测闸（本批实测脚本面复用）。
 - **层方向 lint——未立**：机器面现状 = adapters 宿主允许集闭集（R1a）；跨族互斥无闸（R1b）。触发 = 家族间违规 import 真实出现（R1b 判据命中）→ 评估穷尽三族的层方向 lint 候选。
 - **project references 拆分——不现在做**：现状单 tsconfig 对（`tsconfig.json` noEmit 全仓 + `tsconfig.build.json` 发射面）健康。触发 = 构建/类型检查墙钟实测恶化到阻塞日常迭代 → 按 TS Handbook Project References 评估拆分。
