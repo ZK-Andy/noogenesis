@@ -5,13 +5,13 @@
 
 > **⚡ 最高优先级（框架重建）：charter ADR + 七层蓝图 → [.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md) · [docs/research/framework-rebuild-blueprint.md](docs/research/framework-rebuild-blueprint.md)**——用户拍板推倒重建（先框架后协作层、本仓原地重建），蓝图定稿（七层三段式 + A1–A8 挂载面 + M1–M3 + C1–C15）；**B0–B5 全批闭环（协作层重建收官，C1–C15 全绿）**——B5 切换批（gates.json cmd 全量重指 TS + 旧机器件零残留 + CI/钩子单轨 + 发版 0.2.0；实现 ADR [.agents/notes/implemented/architecture/2026-09-08-b5-switch.md](.agents/notes/implemented/architecture/2026-09-08-b5-switch.md)，批次表 [.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md](.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md)）；优化轮问题池余项（技能清单补全/记忆库）随重建后进行（规范展开 c1/c2 已交付；行动区仍在 [docs/research/capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)）。
 
-> **⏭ 下一步：发布形态对齐上游批已闭环（ADR `2026-09-09-release-shape-alignment` implemented；FULL 三审收口，journal 在案）**——README 自我指称统一 DSH（首现全称+括号、后续缩写）、License 修辞正面化、tag 切 `dsh-vX.Y.Z` 前缀、release 工具族就位（`release:bump` / `release:note`：双语 body + @作者 + Full Changelog）。**宿主基线 `@deepseek-ai/dsh@0.1.5-alpha.1`**（用户 2026-09-09 主动升级；npm12 放行见 cookbook [环境] 条）。候选下一步：优化轮问题池余项（技能守卫 / 技能清单补全 / 记忆库开题 / 防过度设计）行动区 [capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)；随手待办 [HANDOFF-todos.md](HANDOFF-todos.md)。
+> **⏭ 下一步：C 类随手候选批已收口（mdref 折叠 + review-tier 证据须本变更引入；FULL 三审 0B，ADR ×2 implemented，journal 在案）**——节点：C 类随手全清，todos 余 B/D 类（下一发版走新 release 工具族见 B 条）。**宿主基线 `@deepseek-ai/dsh@0.1.5-alpha.1`**（用户 2026-09-09 主动升级；npm12 放行见 cookbook [环境] 条）。候选下一步：优化轮问题池余项（技能守卫 / 技能清单补全 / 记忆库开题 / 防过度设计）行动区 [capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)；随手待办 [HANDOFF-todos.md](HANDOFF-todos.md)。
 
 ## 交接更新记录（摘要滚动窗）
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-10｜**C 类随手候选批收口（FULL 三审全采纳；ADR `2026-09-10-mdref-py-primitives-fold` + `2026-09-10-review-tier-evidence-ride-along`；`907d1a8`→`93483f5`）**：mdref 增补 pyStrip 导出 + 四件删副本（净 −2 行）；review-tier 证据收紧「Review 行须本变更引入」（12→17）。**节点：C 类随手全清。** README 无漂移。
+- 2026-09-10｜**C 类随手候选批收口（FULL 三审 0B、8S 采纳 2 转办；ADR `2026-09-10-mdref-py-primitives-fold` + `2026-09-10-review-tier-evidence-ride-along`；`907d1a8`→`93483f5`）**：mdref 增补 pyStrip 导出 + 四件删副本；review-tier 证据收紧「Review 行须本变更引入」（12→17）。**节点：C 类随手全清。** README 无漂移。
 
 - 2026-09-09｜**发布形态对齐上游批（FULL 三审全采纳收口；ADR `2026-09-09-release-shape-alignment` implemented；`71601e7`→`1b6c25b`）**：README 引用统一 DSH + License 修辞正面化（免责句 DeepSeek→DSH 维护方）；release 工具族（bump/release-note 双语 body+@作者）+ tag 切 `dsh-v` + lock 漂移修复。**节点：下一发版用新工具族。**
 
