@@ -2,9 +2,11 @@
 
 Status: implemented
 
+Review: FULL/2026-09-09/R1=ok R2=ok R3=ok
+
 ## Problem
 
-- 对外 README（`README.md` / `README.zh.md`）对上游的引用不一致：正文首行写「[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)」，License 节又写「not affiliated with DeepSeek」——用户明确「对本人项目的引用只说 DSH 就好」：项目名统一引用为 **DSH**（不重复脑后「DeepSeek」品牌全名），只在必要处保留首次全称 + 括号缩写。
+- 对外 README（`README.md` / `README.zh.md`）对上游的引用不一致：正文首行写「[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness)」，License 节又写「not affiliated with DeepSeek」——用户明确「对本人项目的引用只说 DSH 就好」：项目名统一引用为 **DSH**（不反复出现「DeepSeek」品牌全名），只在必要处保留首次全称 + 括号缩写。
 - 发布工具化缺口：本仓发版目前靠手工（`release-flow.md`：手工 bump + `vX.Y.Z` tag + GitHub Release 正文手工编），门禁清单无 release 生成器。上游 `deepseek-ai/deepseek-harness` 的发布形态（本地镜像 `c389f96bf` 实证）为：`scripts/release/bump.ts`（`release:dsh`）commit 版本 + 人建 tag、CI 永不写仓；tag 带 `dsh-v` 前缀（实拍 `dsh-v0.1.5-alpha.1`）；Release 正文 = 中英双语分节（`[中文](#cn-<ver>) | [English](#en-<ver>)` 锚点 + `<h3 id="cn-…">新增功能</h3>` / `<h3 id="en-…">New Features</h3>` 等）+ 每条变更尾缀 `@提交者`（中文）或 `by @提交者`（英文）+ 末尾 `Full Changelog: <compare 链接>`。本仓 tag 现为无前缀 `vX.Y.Z`，与上游不一致。
 - License 节修辞欠佳（用户指正）：`README.zh.md` 写「被排除的是不履行源码提供义务的分发与网络服务形态（含 SaaS）」——「被排除」措辞不当（易误读为排除商用），英文版同样含糊（`excluded are distribution and network-service forms ... that fail the source-provision obligation`）。
 
@@ -12,10 +14,10 @@ Status: implemented
 
 **对齐上游 DSH 的发布形态（单仓适配），改对外 README 引用与 License 修辞。**
 
-1. **README 引用统一 DSH**：`README.md` / `README.zh.md` 全仓正文对上游的引用统一为 **DSH**：首次出现写 `DeepSeek Harness (DSH)`（保留链接），此后只写 `DSH`；不出现额外「DeepSeek」品牌名。`AGENTS.md` 与 `.agents/notes`、`docs/` 内对「上游 deepseek-harness 血统」的引用属 provenance 记录，**保持原名不缩写**（血统可查性优先；用户指令「对本人项目的引用」= 对外 README 面）。`adapters/dsh/README.md` 已是 DSH 命名，核对无遗漏。
+1. **README 引用统一 DSH**：`README.md` / `README.zh.md` 全仓正文对上游的引用统一为 **DSH**：首次出现写 `DeepSeek Harness (DSH)`（保留链接），此后只写 `DSH`；不出现额外「DeepSeek」品牌名。范围界线（2026-09-09 用户拍板，journal 在案）：对外 README 面（README.md/zh.md/package.json description）统一缩写；`AGENTS.md` 与 `.agents/notes`、`docs/` 内对「上游 deepseek-harness 血统」的引用属 provenance 记录，**保持原名不缩写**（血统可查性优先）。`adapters/dsh/README.md` 已是 DSH 命名，核对无遗漏。
 2. **release 脚本族（单仓适配）**：新增 `scripts/release/bump.mts`（bump package.json version + `npm install --package-lock-only` 同步 lock + `chore(release): noogenesis-dsh <ver>——<主题>` commit；零依赖、node 原生）与 `scripts/release/release-note.mts`（从 `git log <前tag>..HEAD` 按 conventional commits 分节，生成双语 release body：`[中文](#cn-<ver>) | [English](#en-<ver>)` 锚点 + 分节 + 每条 `@作者`；作者 = git author 经映射表（`zhangkun → ZK-Andy`，本仓唯一作者）转 GitHub login；末尾 `Full Changelog: https://github.com/ZK-Andy/noogenesis/compare/<前tag>...<新tag>`）。`package.json` 增 `release:bump` / `release:note` 两 script（不引第三方依赖，zero-dep 纪律）。CI 永不写仓、tag 人建（对齐上游哲学）。
 3. **tag 前缀 `dsh-v`**：发版 release-flow 改打 `dsh-vX.Y.Z`；历史 `v0.1.0~v0.2.3` 老 tag 不动（不重写历史）。`pre-push.mts` 的 tag 可达性逻辑是通用 `refs/tags/*`，无 `v` 前缀假设，天然兼容新前缀（代码零改动，只需在 release-flow 文档写明）。
-4. **License 修辞重写**（中英对齐，不改变 AGPL-3.0 判定）：英文 `excluded are distribution and network-service forms (including SaaS) that fail the source-provision obligation` 改为 `distribution or network-service use (including SaaS) must comply with the source-provision obligation of AGPL-3.0`；中文「被排除的是不履行源码提供义务的分发与网络服务形态（含 SaaS）」改为「分发与网络服务形态（含 SaaS）须履行 AGPL-3.0 的源码提供义务」。
+4. **License 修辞重写**（中英对齐，不改变 AGPL-3.0 判定）：① 义务句——英文 `excluded are distribution and network-service forms (including SaaS) that fail the source-provision obligation` 改为 `distribution or network-service use (including SaaS) must comply with the source-provision obligation of AGPL-3.0`，且 `Commercial use is not excluded` 一并改为 `Commercial use is allowed`（正面肯定）；中文「被排除的是不履行源码提供义务的分发与网络服务形态（含 SaaS）」改为「分发与网络服务形态（含 SaaS）须履行 AGPL-3.0 的源码提供义务」，「商用不被排除」改为「商用允许」。② **免责句实体改写**：英文 `An independent project — not affiliated with DeepSeek` → `An independent project, not affiliated with the DSH maintainers`；中文「独立项目——与 DeepSeek 无关联」→「独立项目——与 DSH 维护方无关联」。免责实体从「公司（DeepSeek）」换成「项目维护方（DSH maintainers）」——理由：本仓对上游的自我指称统一为 DSH（Decision 1），免责句指称同步，且「与 DSH 维护方无关联」语义更精确（独立于上游项目及其维护方，而不只是公司实体）。许可判定不变；license-agpl-3 ADR 同变更同步（implemented 笔记与上线现实同步规则）。
 
 ## Alternatives considered
 
@@ -36,13 +38,20 @@ Status: implemented
 
 - README 中英全文只出现一次 `DeepSeek Harness (DSH)`（首行，带链接），其余只用 DSH；License 节修辞改为正面义务表述（商用允许 + 分发/SaaS 须履行源码义务），中英一致。
 - `package.json` description 同步改 DSH（npm 发布面无 DeepSeek 品牌名）。
-- `scripts/release/bump.mts`（版本推进校验 + 工作树/main fail-closed + lock 同步 + `chore(release)` commit，人建 tag/CI 不写仓）+ `scripts/release/release-note.mts`（`git log <base>..HEAD` 按 conventional commits 分节 → 双语 body：`[中文](#cn-v) | [English](#en-v)` 锚点 + `<h3>` 分节 + 每条 `@作者`（git author→login 映射表）+ `Full Changelog` 尾行；剥离 `type(scope):` 前缀；跳过 `chore(release)` 自身）。`package.json` 增 `release:bump` / `release:note` scripts。
+- `scripts/release/bump.mts`（semver 优先序版本护栏 + 工作树/main fail-closed + lock 同步失败回滚 + `chore(release)` commit，人建 tag/CI 不写仓）+ `scripts/release/release-note.mts`（`git log <base>..HEAD` 按 conventional commits 分节 → 双语 body：`[中文](#cn-v) | [English](#en-v)` 锚点 + 首节带 `<h3 id>` 锚、后续节 `###`（对齐上游）末节英文 Chores + `EN_POLISH_HINT` 润色提示行 + 每条 `@作者`（git author→login 映射表）+ `Full Changelog`（remote.origin.url 推导，兜底 ZK-Andy/noogenesis）；剥离 `type(scope):` 前缀；跳过 `chore(release)` 自身）。`package.json` 增 `release:bump` / `release:note` scripts。
 - `release-flow.md` 更新：tag 打 `dsh-vX.Y.Z`（历史 v0.x 不动）、步骤 4 引用 release-note。
 - 实机验证：`release-note.mts v0.2.3 0.2.4` 输出双语分节 + @ZK-Andy + compare 链；bump 错误路径（工作树不净）fail-closed 实证；tsc / lint / gates 16 条全绿。
 - **lock 漂移修复**：bump 脚本实现时发现 package.json 0.2.3 vs package-lock.json 0.2.2（0.2.3 发版漏同步）——`npm install --package-lock-only` 对齐 0.2.3，同批提交（cookbook [环境] 版本 bump 漏连动 lock 教训实例）。
 
 ## Risks
 
-- **双语 body 手工对齐漂移**：release-note 脚本输出的中英两节由同一 git log 派生，但中文节措辞需人工润色——保持「脚本生成骨架 + 发布者润色」分工，避免脚本硬编码翻译。
+- **双语 body 手工对齐漂移**：release-note 脚本输出的英文节逐字镜像 commit 标题（本仓 commit 标题为中文）——英文节需发布者翻译润色；保持「脚本生成骨架 + 发布者润色」分工，脚本输出含 `EN_POLISH_HINT` 提示行防照贴即发。
 - **@作者映射失真**：git author 字符串 ≠ GitHub login（当前仅 zhangkun ↔ ZK-Andy 一项，单人仓无歧义）；多人协作时映射表需随贡献者扩展，脚本注释标注边界。
 - **tag 前缀切换期**：历史 v0.x 与未来 dsh-v 并存，compare 链接用 tag 名精确拼接（release-note 只拼 `前tag...新tag`，不假设前缀）。
+
+## 评审收口（2026-09-09 FULL 三审）
+
+- **R1（简化）1B/7S**：B1 = 两脚本头注 ADR 路径指 proposed（已翻 implemented）→ 改 implemented 路径（采纳）；S 采纳版本数值窗改逐段比较、usage 文案抽单点、tagGuess 空 tag 提示、prefix 正则共用常量、中英两节抽 emitSection、补尾换行；**S6（git wrapper 共享）不采纳留证**——各件自持 git 子进程形态是本仓既有惯例（change-scope/pre-push 同），两文件独立工具共享需第三件或 import，零依赖独立可跑优先。
+- **R2（code-review）1B/8S**：B1 = 版本护栏遇预发布段 NaN 静默失效（`Number("3-rc.1")=NaN`，`0.2.3→0.2.3-rc.1`/`0.2.3→0.2.2-rc.1` 均误放行）→ 改完整 semver 优先序比较（parseVersion 拆 core+预发布、逐段/数值/字典序，16 用例实证全过）；S 采纳 lock 同步失败回滚、VERSION_RE 严格化（禁 `0.2.4-`/`--rc`）、h3 id 只首节带锚（对齐上游 `<h3 id>`+`###` 形态）、英文节加 EN_POLISH_HINT、GITHUB_REPO 改 remote.origin.url 推导（兜底常量）；S3 数值碰撞经逐段比较根除。
+- **R3（ADR 面）1B/8S**：B1 = License 免责句实体改写（DeepSeek→DSH maintainers）未记录 + license-agpl-3 ADR 失同步 → Decision 4 补免责句改写与理由 + license-agpl-3 ADR 同变更同步（采纳）；S 采纳 Risk 语言侧标反修正、末节 Chores 对齐上游、README 血统行界线讲全、笔误修正、release-flow 类型映射纪律传承；S6（落地验证/Risks 顶格节）**不采纳留证**——既有 implemented ADR（09-09 lint-block 等）同款节形态、verify-adr-format 过、Risks 独立价值 > 骨架纯化。
+- **全采纳收口**；三路各复跑门禁全绿；Review: FULL/2026-09-09/R1=ok R2=ok R3=ok。

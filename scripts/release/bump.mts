@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * bump.mts — 发布版本 bump（单仓适配；ADR
- * .agents/notes/proposed/process/2026-09-09-release-shape-alignment.md）。
+ * .agents/notes/implemented/process/2026-09-09-release-shape-alignment.md）。
  *
  * 对齐上游 deepseek-ai/deepseek-harness `scripts/release/bump.ts` 语义：
  * - 版本单一来源 = 本仓 package.json；bump 后同步 package-lock.json（npm
@@ -29,7 +29,8 @@ import * as fs from "node:fs";
 
 const PKG = "package.json";
 const LOCK = "package-lock.json";
-const VERSION_RE = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$/;
+/** 严格 semver（core 三数字 + 可选预发布，点段非空字母数字）。 */
+const VERSION_RE = /^\d+\.\d+\.\d+(?:-[0-9A-Za-z]+(?:\.[0-9A-Za-z]+)*)?$/;
 
 /** 运行 git 命令，非零退出即抛（fail-closed）。 */
 function git(...args: string[]): string {
@@ -54,7 +55,7 @@ function syncLock(): void {
   }
 }
 
-/** 校验新版本号合法。 */
+/** 校验新版本号合法（严格 semver）。 */
 function checkVersion(version: string): void {
   if (!VERSION_RE.test(version)) {
     throw new Error(`invalid version '${version}' (expected semver like 0.2.4 or 0.3.0-rc.1)`);
@@ -73,6 +74,47 @@ function checkPrereqs(): void {
   }
 }
 
+/** 解析 semver 为比较元组：core [maj,min,pat] + 预发布点段数组（无预发布 = null）。 */
+function parseVersion(version: string): { core: number[]; prerelease: string[] | null } {
+  const [corePart, prePart] = version.split("-", 2) as [string, string | undefined];
+  const core = corePart.split(".").map(Number) as [number, number, number];
+  const prerelease = prePart === undefined ? null : prePart.split(".");
+  return { core, prerelease };
+}
+
+/** semver 优先序：返回 a > b 是否成立（不相等时）。 */
+function isHigher(a: string, b: string): boolean {
+  const va = parseVersion(a);
+  const vb = parseVersion(b);
+  for (let i = 0; i < 3; i++) {
+    const diff = (va.core[i] ?? 0) - (vb.core[i] ?? 0);
+    if (diff !== 0) return diff > 0;
+  }
+  // core 相等：无预发布 > 有预发布；都有则逐点段比较（数字段数值比、其余字典序）。
+  if (va.prerelease === null && vb.prerelease === null) return false;
+  if (va.prerelease === null) return true;
+  if (vb.prerelease === null) return false;
+  const pa = va.prerelease;
+  const pb = vb.prerelease;
+  for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+    const xa = pa[i];
+    const xb = pb[i];
+    if (xa === undefined) return false; // 较短预发布 = 较低
+    if (xb === undefined) return true;
+    const na = /^\d+$/.test(xa) ? Number(xa) : NaN;
+    const nb = /^\d+$/.test(xb) ? Number(xb) : NaN;
+    const aNum = !Number.isNaN(na);
+    const bNum = !Number.isNaN(nb);
+    if (aNum !== bNum) return !aNum; // 数字段 < 字母段（semver）：数字侧(a)非更高
+    if (aNum && bNum) {
+      if (na !== nb) return na > nb; // 两数字段数值比
+    } else if (xa !== xb) {
+      return xa > xb; // 两字母段字典序（含相等字母段继续下一段）
+    }
+  }
+  return false;
+}
+
 /**
  * 执行 bump：更新 package.json + lock + 生成 chore(release) commit。
  * @param version - 新版本（semver）。
@@ -86,28 +128,34 @@ export function bump(version: string, msg: string): void {
   const parsed = JSON.parse(pkg) as { version?: unknown };
   const current = typeof parsed.version === "string" ? parsed.version : "";
   if (current === "") throw new Error(`cannot read version from ${PKG}`);
+  if (!VERSION_RE.test(current)) throw new Error(`current version '${current}' is not semver`);
 
-  // 版本推进校验：新版本应高于当前（防止误降）。
-  const major = (v: string): number => Number(v.split(".")[0] ?? "0");
-  const minor = (v: string): number => Number(v.split(".")[1] ?? "0");
-  const patch = (v: string): number => Number(v.split(".")[2] ?? "0");
-  const cur = major(current) * 1e6 + minor(current) * 1e3 + patch(current);
-  const next = major(version) * 1e6 + minor(version) * 1e3 + patch(version);
-  if (next <= cur) {
+  // 版本推进校验：新版本应高于当前（semver 优先序，防预发布段/数字降级误放行）。
+  if (!isHigher(version, current)) {
     throw new Error(`version ${version} must be higher than current ${current}`);
   }
 
-  // 写 package.json（JSON 保持 2 空格缩进 + 尾换行）。
+  // 写 package.json（JSON 保持 2 空格缩进 + 尾换行）。若 lock 同步失败则回滚。
   const updated = JSON.stringify({ ...parsed, version }, null, 2) + "\n";
-  fs.writeFileSync(PKG, updated);
-  syncLock();
+  try {
+    fs.writeFileSync(PKG, updated);
+    syncLock();
+  } catch (cause) {
+    fs.writeFileSync(PKG, pkg); // 回滚 package.json（lock 未动或 npm 失败）
+    throw cause;
+  }
 
   git("add", PKG, LOCK);
   const subject = `chore(release): noogenesis-dsh ${version}——${msg}`;
   git("commit", "-m", subject);
   console.log(`bumped ${current} → ${version}; commit created`);
-  console.log(`next: tag as dsh-v${version}, then run:`);
-  console.log(`  node scripts/release/release-note.mts ${tagGuess()} ${version} > RELEASE_BODY.md`);
+  const prev = tagGuess();
+  if (prev === "") {
+    console.log(`next: tag as dsh-v${version}; no previous tag found — release-note covers full history, consider narrowing base`);
+  } else {
+    console.log(`next: tag as dsh-v${version}, then run:`);
+    console.log(`  node scripts/release/release-note.mts ${prev} ${version} > RELEASE_BODY.md`);
+  }
 }
 
 /** 上一版 tag 猜测（用于提示；取最近 dsh-v* 或 v* tag）。 */
@@ -120,16 +168,17 @@ function tagGuess(): string {
 
 /** CLI 入口：node scripts/release/bump.mts <new-version> --msg <主题> */
 function main(): void {
+  const usage = "usage: node scripts/release/bump.mts <new-version> --msg <主题>";
   const args = process.argv.slice(2);
   const msgIdx = args.indexOf("--msg");
   if (msgIdx < 1) {
-    console.error("usage: node scripts/release/bump.mts <new-version> --msg <主题>");
+    console.error(usage);
     process.exit(1);
   }
   const version = args[0]!;
   const msg = args[msgIdx + 1];
   if (msg === undefined || msg === "") {
-    console.error("usage: node scripts/release/bump.mts <new-version> --msg <主题>");
+    console.error(usage);
     process.exit(1);
   }
   try {

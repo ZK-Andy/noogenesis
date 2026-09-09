@@ -1,28 +1,26 @@
 #!/usr/bin/env node
 /**
  * release-note.mts — 生成双语 GitHub Release 正文（对齐 DSH 上游 release 形态；
- * ADR .agents/notes/proposed/process/2026-09-09-release-shape-alignment.md）。
+ * ADR .agents/notes/implemented/process/2026-09-09-release-shape-alignment.md）。
  *
- * 从 `git log <base-tag>..HEAD` 按 conventional commit 类型分节，输出与上游
- * deepseek-ai/deepseek-harness Release（如 dsh-v0.1.5-alpha.1）同构的正文：
+ * 从 `git log <base-tag>..HEAD` 按 conventional commit 类型分节，输出借鉴上游
+ * deepseek-ai/deepseek-harness Release（如 dsh-v0.1.5-alpha.1）的正文：
  *   [中文](#cn-<版本>) | [English](#en-<版本>)
- *   <h3 id="cn-…">…</h3> 中文分节（新增功能 / 体验优化 / 问题修复 / 其他变更）
- *     每条：<说明> @<作者>
- *   <h3 id="en-…">…</h3> 英文分节（New Features / Improvements / Bug Fixes / Other Changes）
- *     每条：<说明> by @<作者>
+ *   首分节标题带锚点：<h3 id="cn-…">新增功能</h3> / <h3 id="en-…">New Features</h3>
+ *   后续分节：### 体验优化 / ### 问题修复 / ### 其他变更（锚点 id 保持唯一）
+ *     中文每条：<说明> @<作者>；英文每条：<说明> by @<作者>
  *   Full Changelog: https://github.com/<owner>/<repo>/compare/<base-tag>...dsh-v<版本>
  *
  * 作者 = git author 经映射表转 GitHub login（@ 前缀）。映射表默认只有本仓唯一
  * 贡献者（git author 字符串 → login）；多人协作时在映射表补项即可。commit 标题
- * 即说明（conventional commits 的 scope 剔除后保留正文）；英文说明 = 标题原文，
- * 中文说明 = 标题本身（本仓 commit 标题已中文——中英两节的措辞分工：中文节用
- * commit 标题，英文节标注需发布者润色，脚本不硬编码翻译）。
+ * 剥离 conventional 前缀后即说明；英文节在 commit 标题为中文时逐字输出中文，脚本
+ * 不硬编码翻译——输出顶部加一行提示发布者润色英文节（见下方 `EN-POLISH-HINT`）。
  *
- * 类型→分节映射（conventional commits）：
+ * 类型→分节映射（conventional commits；未知类型归末节）：
  *   feat → 新增功能 / New Features
- *   fix → 问题修复 / Bug Fixes
  *   perf | refactor → 体验优化 / Improvements
- *   docs | chore | test | build | style | ci | release 等 → 其他变更 / Other Changes
+ *   fix → 问题修复 / Bug Fixes
+ *   其余（docs/chore/test/build/style/ci 等）→ 其他变更 / Chores
  *
  * 用法（仓库根运行）：
  *   node scripts/release/release-note.mts <base-tag> <new-version>   # 输出正文到 stdout
@@ -32,32 +30,38 @@
  */
 import * as childProcess from "node:child_process";
 
-const GITHUB_REPO = "ZK-Andy/noogenesis";
+/** git remote 读取失败时的兜底仓库（github 主仓写法）。 */
+const GITHUB_REPO_FALLBACK = "ZK-Andy/noogenesis";
 
-/** 分节标题（中 / 英）——与上游 dsh release body 分节同名。 */
+/** 英文节润色提示（commit 标题为中文时英文节需人工翻译，非逐字发布）。 */
+const EN_POLISH_HINT = "> Note: English section mirrors commit titles verbatim; polish translation before publishing.";
+
+/** 分节定义（title = 中文标题、en = 英文标题；types 命中该节，末节 catch-all）。 */
 const SECTIONS = [
-  { types: new Set(["feat"]), cn: "新增功能", en: "New Features" },
-  { types: new Set(["perf", "refactor"]), cn: "体验优化", en: "Improvements" },
-  { types: new Set(["fix"]), cn: "问题修复", en: "Bug Fixes" },
-  { types: new Set(), cn: "其他变更", en: "Other Changes" },
+  { title: "新增功能", en: "New Features", types: new Set(["feat"]) },
+  { title: "体验优化", en: "Improvements", types: new Set(["perf", "refactor"]) },
+  { title: "问题修复", en: "Bug Fixes", types: new Set(["fix"]) },
+  { title: "其他变更", en: "Chores", types: new Set() },
 ] as const;
+
+/** conventional commit 前缀（type(scope)!: 或 type:）；剥离与分类共用单一口径。 */
+const CONVENTION_RE = /^([a-z]+)(?:\([^)]*\))?!?:\s*/;
 
 /** git author 字符串 → GitHub login 映射（当前唯一贡献者）。多人时在此补项。 */
 const AUTHOR_LOGIN: Record<string, string> = {
   zhangkun: "ZK-Andy",
 };
 
-/** conventional commit 类型判定（默认归其他变更）。 */
+/** conventional commit 类型判定（未知类型归末节 catch-all）。 */
 function sectionOf(subject: string): (typeof SECTIONS)[number] {
-  const match = /^([a-z]+)(?:\([^)]*\))?!?:/.exec(subject);
-  const type = match?.[1];
+  const type = CONVENTION_RE.exec(subject)?.[1];
   if (type === undefined) return SECTIONS[3]!;
   return SECTIONS.find((s) => s.types.has(type)) ?? SECTIONS[3]!;
 }
 
 /** 剥离 conventional commit 前缀（`docs: …` / `feat(x): …` → `…`），留纯说明。 */
 function bodyOf(subject: string): string {
-  return subject.replace(/^[a-z]+(?:\([^)]*\))?!?:\s*/, "");
+  return subject.replace(CONVENTION_RE, "");
 }
 
 /** 取 commit 作者 login（映射表缺失时退化为 git author 名）。 */
@@ -73,6 +77,36 @@ function gitLines(...args: string[]): string[] {
     throw new Error(`git ${args[0]} failed: ${err || `exit ${out.status}`}`);
   }
   return out.stdout.split("\n").filter((line) => line !== "");
+}
+
+/** 仓库引用名（owner/repo）——读 remote.origin.url 推导，读不到用兜底。 */
+function repoFromRemote(): string {
+  const url = gitLines("config", "--get", "remote.origin.url")[0] ?? "";
+  const m = /github\.com[:/]([^/]+\/[^/]+?)(?:\.git)?$/.exec(url);
+  return m?.[1] ?? GITHUB_REPO_FALLBACK;
+}
+
+/** 追加一个分节的条目（首节标题带锚点 id，后续节用 `###`；两种语言共用）。 */
+function emitSection(
+  lines: string[],
+  section: (typeof SECTIONS)[number],
+  title: string,
+  anchorId: string | undefined,
+  items: Array<{ body: string; author: string }>,
+  suffix: "zh" | "en",
+): void {
+  if (items.length === 0) return;
+  lines.push(
+    anchorId === undefined
+      ? `### ${title}`
+      : `<h3 id="${anchorId}">${title}</h3>`,
+    "",
+  );
+  const marker = suffix === "zh" ? "@" : "by @";
+  for (const item of items) {
+    lines.push(`- ${item.body} ${marker}${item.author}`);
+  }
+  lines.push("");
 }
 
 /**
@@ -95,35 +129,38 @@ export function buildReleaseNote(baseTag: string, newVersion: string): string {
   const lines: string[] = [];
   lines.push(`[中文](#cn-${newVersion}) | [English](#en-${newVersion})`, "");
 
-  const cnAnchor = `<h3 id="cn-${newVersion}">`;
-  const enAnchor = `<h3 id="en-${newVersion}">`;
-
-  // 中文节
-  for (const section of SECTIONS) {
+  // 中文节：首节（SECTIONS[0]）标题带锚点 id，后续节 `###`。
+  for (const [index, section] of SECTIONS.entries()) {
     const items = entries.filter((e) => e.section === section);
     if (items.length === 0) continue;
-    lines.push(`${cnAnchor}${section.cn}</h3>`, "");
-    for (const item of items) {
-      lines.push(`- ${item.body} @${item.author}`);
-    }
-    lines.push("");
+    emitSection(
+      lines,
+      section,
+      section.title,
+      index === 0 ? `cn-${newVersion}` : undefined,
+      items,
+      "zh",
+    );
   }
 
-  // 英文节
-  for (const section of SECTIONS) {
+  // 英文节：结构同中文节，含润色提示（防逐字发布中文 commit 标题）。
+  lines.push(EN_POLISH_HINT, "");
+  for (const [index, section] of SECTIONS.entries()) {
     const items = entries.filter((e) => e.section === section);
     if (items.length === 0) continue;
-    lines.push(`${enAnchor}${section.en}</h3>`, "");
-    for (const item of items) {
-      // 英文措辞 = commit 标题正文；commit 标题为中文时需发布者润色英文（脚本不硬编码翻译）。
-      lines.push(`- ${item.body} by @${item.author}`);
-    }
-    lines.push("");
+    emitSection(
+      lines,
+      section,
+      section.en,
+      index === 0 ? `en-${newVersion}` : undefined,
+      items,
+      "en",
+    );
   }
 
   if (baseTag !== "") {
     lines.push(
-      `Full Changelog: https://github.com/${GITHUB_REPO}/compare/${baseTag}...dsh-v${newVersion}`,
+      `Full Changelog: https://github.com/${repoFromRemote()}/compare/${baseTag}...dsh-v${newVersion}`,
     );
   }
 

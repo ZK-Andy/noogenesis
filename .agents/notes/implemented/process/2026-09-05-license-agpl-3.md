@@ -32,4 +32,4 @@ Review: FULL/2026-09-05/R1=ok R2=ok R3=ok
 - **npm 分发面承接**：已发布的占位包（`noogenesis@0.0.0`、`@noogenesis/genesis@0.0.0`）与后续首发包以 AGPL-3.0 发布（占位包 license 字段已标 `AGPL-3.0-only`），上游出处按本 Decision 的 THIRD-PARTY-NOTICES 承接；npm 分发是 AGPL 义务最易被触发的形态，首发包发布时逐项对账。
 - 未来接 GEP 生态（GPL/source-available 代码）需单独评审兼容性——AGPLv3 §13 允许并入 GPLv3 代码（单向），反向不行；与既有"不链接 GPL 时代代码"纪律同向。
 - MIT 蒸馏上游的版权与许可文本义务由根 THIRD-PARTY-NOTICES.md 承担，新增蒸馏资产沿用同一纪律（provenance 行标注血统，NOTICES 集中许可文本）。
-- README 已声明"独立项目——与 DeepSeek 无关联"，不受上游 deepseek-harness（MIT）许可传染。
+- README 已声明"独立项目——与 DSH 维护方无关联"，不受上游 deepseek-harness（MIT）许可传染。（2026-09-09 同步：免责实体由「与 DeepSeek 无关联」改「与 DSH 维护方无关联」——本仓对上游指称统一为 DSH，见 [2026-09-09-release-shape-alignment](2026-09-09-release-shape-alignment.md)；许可判定不变。）
