@@ -1,6 +1,6 @@
 # 架构规范（architecture-standards）
 
-> Provenance：自建（2026-09-10，立项 ADR [2026-09-10-architecture-standards-charter](../../.agents/notes/proposed/architecture/2026-09-10-architecture-standards-charter.md)）；基准 = 蒸馏权威与上游实证——Google TS Style Guide 组织面、TS Handbook（模块语义 / Project References 编译边界）、Node ESM package exports 发布面契约、dotnet-deepseek-harness-desktop `architecture-standards.md` 体裁（MIT，提炼后搬迁）——采纳原理，不搬分项目模板。本仓形状 = 单仓三族（engine/adapters/scripts）+ docs 面与门禁面。
+> Provenance：自建（2026-09-10，立项 ADR [2026-09-10-architecture-standards-charter](../../.agents/notes/implemented/architecture/2026-09-10-architecture-standards-charter.md)）；基准 = 蒸馏权威与上游实证——Google TS Style Guide 组织面、TS Handbook（模块语义 / Project References 编译边界）、Node ESM package exports 发布面契约、dotnet-deepseek-harness-desktop `architecture-standards.md` 体裁（MIT，提炼后搬迁）——采纳原理，不搬分项目模板。本仓形状 = 单仓三族（engine/adapters/scripts）+ docs 面与门禁面。
 > 现状地图不另立文件：仓库结构单源 = [README](../../README.md)「Structure」节；本篇只写「怎么被组织」（规范与现状分离，[standard-authoring](standard-authoring.md) §2）。子树专属失败各有家（[engine](../../engine/AGENTS.md)/[adapters](../../adapters/AGENTS.md)/[scripts](../../scripts/AGENTS.md) 三件 AGENTS.md），本篇写跨树通则与方向图，不重抄。档位 `[M]`/`[W]`/`[I]`/`[R]` 定义单源 = [standard-authoring](standard-authoring.md) §1。
 
 ## 1. 强制力度分档
@@ -19,7 +19,7 @@
 
 - **R3 `[M]` type-only 分野**：type-only 引用必须 `import type` / `export type`，且 type-only import 不携带运行时副作用——lint `typescript/consistent-type-imports` + `typescript/no-import-type-side-effects`（[.oxlintrc.json](../../.oxlintrc.json)）；adapters 族 type-only 宿主依赖闭集由防火墙 selftest 机器断言（闭集单源 = [adapters/AGENTS.md](../../adapters/AGENTS.md)）。判别式：类型引用未带 type 修饰、或闭集件出现值耦合 = 违反。
 - **R4 `[M]`（namespace）/ `[R]`（顶层 require）**：禁 `namespace`（lint `typescript/no-namespace`）；禁模块顶层运行时 `require`（跨模块消费走 ES import）。require 子句停 `[R]` 理由：判别式字面可判，但 lint 白名单无对应规则（无失败类不预立），真实第三方 require 出现即触发白名单评估。判别式：`namespace` 声明、模块顶层 `require` = 违反。
-- **R5 `[R]` named-only 导出**：零 `export default`，显式 named 导出，导出即公共契约。判别式：源码出现 default 导出 = 违反。停档理由：判别式字面可判，但 lint 白名单无 default 禁用规则且现状零真实 default 导出（2026-09-10 实测：主链三族源码 grep 字面全扫，唯一命中 = export-docs 违约夹具字符串，非导出声明）——无失败类预立禁令 = speculative（C2 白名单 HERO 判据）；export-docs 已拒无契约注释的默认导出函数（部分机器面），真实 default 导出出现即触发白名单评估。导出函数/类的契约注释存在性 `[M]` 判据单源 = [code-standards](code-standards.md) §2.1，不重抄。
+- **R5 `[R]` named-only 导出**：零 `export default`，显式 named 导出，导出即公共契约。判别式：源码出现 default 导出 = 违反。停档理由：判别式字面可判，但 lint 白名单无 default 禁用规则且现状零真实 default 导出（2026-09-10 实测：population = §4 节首 n=46 的主链三族源码，grep 字面全扫，唯一命中 = export-docs 违约夹具字符串，非导出声明）——无失败类预立禁令 = speculative（C2 白名单 HERO 判据）；export-docs 已拒无契约注释的默认导出函数（部分机器面），真实 default 导出出现即触发白名单评估。导出函数/类的契约注释存在性 `[M]` 判据单源 = [code-standards](code-standards.md) §2.1，不重抄。
 
 ### 2.3 运行形态与发布面
 
