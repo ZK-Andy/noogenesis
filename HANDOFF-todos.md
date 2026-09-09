@@ -41,8 +41,8 @@
 - [x] （D）P2 实现轮 2026-09-06（FULL 三审 R1 1B/5S、R2 1B/8S、R3 0B/6S 全采纳），ADR [2026-09-06-p2-shared-consumer](.agents/notes/implemented/architecture/2026-09-06-p2-shared-consumer.md) implemented。
 - [ ] （D）痕迹提炼面归融合轮（2026-09-06 用户拍板：记录但不急）：「纪律留痕→无人提炼→下会话考古」缺口在案，解法随 dsh-continual-evolve 融合轮再议（触发 = 架构定稿，设计稿 §13.5）；旧项目 OBSERVATION 观察生命周期协议为实物参照（work 区）。边界：非自动沉淀复刻（#18 负面清单有效）、不让引擎扫会话，只议 session-close 摩擦点落点是否可寻址。
 - [x] （C）编码规范 c1 评审恢复与收口 2026-09-08（FULL 三审恢复重跑：R1 1B/4S、R2 1B/4S、R3 2B/3S 全采纳收口），ADR [2026-09-08-coding-standards](.agents/notes/implemented/architecture/2026-09-08-coding-standards.md) implemented。
-- [ ] （C）mdref 共享件副本折叠（R1 评审 2026-09-08 发现）：`splitLines` 在 verify-adr-format / verify-cookbook / verify-gene-format / verify-handoff-structure 各有手搓副本（3 份与 `scripts/mdref.mts` 等价、cookbook 缺尾部空行剔除已分叉），`pyStrip` 另有 3 份同集副本——折叠可删实现 + 7 条 `no-control-regex` 豁免中的 5 条；跨件判据行为面，另批立项。
-- [ ] （C）verify-review-tier 证据继承弱点（C2 批发现）：`evidenceInChange` 只要变更集内**任一** implemented ADR 带合法 `Review:` 行即放行——本批 c2 ADR 未加证据行时 `--enforce` 已过（同批触碰了已评审的 c1 ADR）= FULL 变更可搭旧 ADR 证据车。修法候选 = 证据须落在本变更集**新增/改动**的 ADR；触发 = 下批门禁判据改动同变更处理。
+- [x] （C）mdref 共享件副本折叠 2026-09-10：mdref 增补 pyStrip 导出 + 四消费方删本地 split/pyStrip 副本（净 −2 行，豁免 7→3）；ADR [2026-09-10-mdref-py-primitives-fold](.agents/notes/implemented/simplification/2026-09-10-mdref-py-primitives-fold.md)。
+- [x] （C）review-tier 证据继承弱点修复 2026-09-10：Review 行须由本变更引入（旧 ADR 不搭车），fixtures 12→17；ADR [2026-09-10-review-tier-evidence-ride-along](.agents/notes/implemented/bug-fix/2026-09-10-review-tier-evidence-ride-along.md)。
 - [x] （A）编码强制两轨闭环：批 1（`2026-09-08-lint-in-loop-feedback`）+ 批 2（`2026-09-08-coding-enforcement-track-b`）均 implemented + FULL 三审全采纳（R1/R2 各 2B、R3 1B，全修）；批 3 测量 → 延后。
 - [x] （A）编码规范机器拦升格批 2026-09-09（FULL 三审 0B 全采纳），ADR [2026-09-09-lint-block-and-staged-hook](.agents/notes/implemented/architecture/2026-09-09-lint-block-and-staged-hook.md)；0.2.3 发版含本批。
 - [x] （B）批 1 真机复验 2026-09-09（用户重装 0.2.3 + 重启；全判据命中，journal 在案）：var 写码同轮 block / 修正零反馈 / 连续 ×3 第 4 次降级 context / 干净写码复位 / edit 同拦 / 非 .ts 零反馈 / staged 红。宿主基线已升 0.1.5-alpha.1（用户确认主动升级）。

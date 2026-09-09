@@ -11,6 +11,8 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-10｜**C 类随手候选批收口（FULL 三审全采纳；ADR `2026-09-10-mdref-py-primitives-fold` + `2026-09-10-review-tier-evidence-ride-along`；`907d1a8`→`93483f5`）**：mdref 增补 pyStrip 导出 + 四件删副本（净 −2 行）；review-tier 证据收紧「Review 行须本变更引入」（12→17）。**节点：C 类随手全清。** README 无漂移。
+
 - 2026-09-09｜**发布形态对齐上游批（FULL 三审全采纳收口；ADR `2026-09-09-release-shape-alignment` implemented；`71601e7`→`1b6c25b`）**：README 引用统一 DSH + License 修辞正面化（免责句 DeepSeek→DSH 维护方）；release 工具族（bump/release-note 双语 body+@作者）+ tag 切 `dsh-v` + lock 漂移修复。**节点：下一发版用新工具族。**
 
 - 2026-09-09｜**批 1 真机复验（todo B 勾账；0.2.3 实机判据全命中，journal 在案）**：var 写码同轮 block 拦回 / 修正重写零反馈 / 连续 ×3 后第 4 次降级 context 不死锁 / 干净写码复位 / edit 同拦 / 非 .ts 零反馈 / staged 红。**节点：0.2.3 实机生效；宿主基线已升 0.1.5-alpha.1（用户确认主动升级）。** README 无漂移。
@@ -46,8 +48,6 @@
 - 2026-09-06｜**优化轮启动：问题池落账 + 上游 DSH 调研 + 语言统一定调（调研轮，无 ADR；行动区 = `docs/research/capsule-01-optimization-round.md`，头部门针）**：清账批三审收口（ADR `2026-09-06-doc-single-sourcing`）；上游克隆+索引缓存（SOP 全图/作用域规则/零损失实验/HERO 实证）；定调全栈 TS 统一；收尾信号：框架可能参考 DSH 推倒重建。README 核对无变更。
 
 - 2026-09-06｜**优化轮清账批（FULL 三审 R1 0B/1S、R2 0B/4S、R3 1B/3S 全采纳；ADR `2026-09-06-doc-single-sourcing`；`376e868`→`133d2d2`）**：问题池十条落账；门禁清单/计数单源化 gates.json、评审检查项补位根 AGENTS、开始步骤并入 session-open、搬迁计划下沉 journal、gates.mts `--list` 占位两态。**节点：清账批闭环；下批 = 问题池逐项。**
-
-- 2026-09-06｜**pre-push tag 缺口修复 + 根 README 双语化（FULL 三审 0B 全采纳；ADR `2026-09-06-pre-push-tag-outgoing` + `2026-09-06-bilingual-root-readme`；commits `fb155c0`→`fea1714`）**：可达 tag 跳过档位强制，发版豁免前提消失；README 转英文主文件 + 中文镜像（对齐上游 harness）。README 核对无漂移。
 
 ## 背景
 
