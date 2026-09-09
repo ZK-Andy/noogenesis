@@ -27,7 +27,7 @@ import { isBuiltin } from "node:module";
 import { fileURLToPath } from "node:url";
 import type { defineTool, ToolDefinition } from "@deepseek-ai/dsh-tools";
 import { runEngineSync, resolveRepoRoot, sessionWorkspaceOf, explicitRepoRootOf, EXIT } from "./engine-bridge.mjs";
-import { hitsSectionText } from "./section.mjs";
+import { hitsSectionText, createHitsSection } from "./section.mjs";
 import { registerNooTools } from "./tools.mjs";
 import { listStagingCandidates, buildSolidifyArgs, solidifyNotice, runSolidifyTrigger, createInFlightGate, ASK_TIMEOUT_MS } from "./solidify-trigger.mjs";
 import { buildPullArgs, pullBankOnce, createBankPullScheduler } from "./bank-pull.mjs";
@@ -114,6 +114,31 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.ok(!templated.includes("{{"), "literal {{ must not survive into section text");
 	assert.ok(templated.includes("{\u200b{placeholder}"), "neutralized form keeps visible content");
 	ok("section: '{{' neutralized (interpolate cannot throw on gene summaries)");
+}
+
+// ── 2b) hits provider：select 失败 warn 留痕（每故障期恰一条、成功复位）──
+{
+	const warnings: string[] = [];
+	let selectFails = true;
+	const provider = createHitsSection({
+		injectSignals: ["s"],
+		maxGenes: 12,
+		repoRoot: undefined,
+		runSelectSync: () => (selectFails
+			? { code: 2, stdout: "", stderr: "engine: boom\n" }
+			: { code: 0, stdout: "signals: s\ndemo/x  hit\n", stderr: "" }),
+		warn: (m) => warnings.push(m),
+	});
+	assert.equal(provider(), "", "failure renders empty section (degrade, never throw)");
+	assert.equal(warnings.length, 1, "first outage warns once");
+	assert.equal(provider(), "", "same outage still renders empty");
+	assert.equal(warnings.length, 1, "same outage does not re-warn (per-outage latch)");
+	selectFails = false;
+	assert.match(provider(), /demo\/x/, "recovery renders hits again");
+	selectFails = true;
+	assert.equal(provider(), "", "next outage degrades again");
+	assert.equal(warnings.length, 2, "success resets latch — next outage warns again");
+	ok("hits provider: select failure warns once per outage, success resets");
 }
 
 // ── 3) tools：依赖注入面（假 defineTool + 假引擎，退出码映射全路径） ──────

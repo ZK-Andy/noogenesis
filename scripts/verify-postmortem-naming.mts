@@ -21,9 +21,10 @@ interface Violation { entry: string; reason: string }
 
 const NAME_RE = /^\d{4}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
 
-/** 码点序比较器：编号递增判据依赖确定序——localeCompare 随运行环境 locale 漂移，
- *  家族纪律钉码点序（同 change-scope/gen-manifest/verify-manifest 口径）。 */
-function cmpByCodepoint(a: { name: string }, b: { name: string }): number {
+/** JS 字符串序比较器（UTF-16 码元序）：编号递增判据依赖确定序——localeCompare
+ *  随运行环境 locale 漂移。postmortem 名被 NAME_RE 钉死 ASCII，码元序与 py sorted
+ *  同序；真码点序比较器归口 mdref 是独立简化候选（见 proposed ADR 登记清单）。 */
+function cmpByStringOrder(a: { name: string }, b: { name: string }): number {
   return a.name < b.name ? -1 : a.name > b.name ? 1 : 0;
 }
 
@@ -33,7 +34,7 @@ function checkPostmortemDir(dir: string): Violation[] {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
   const violations: Violation[] = [];
   let prev = -1;
-  for (const ent of entries.sort(cmpByCodepoint)) {
+  for (const ent of entries.sort(cmpByStringOrder)) {
     if (ent.isDirectory()) {
       violations.push({ entry: ent.name, reason: "postmortem/ 只收扁平叙事文件，不收子目录" });
       continue;

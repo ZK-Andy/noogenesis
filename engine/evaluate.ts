@@ -44,11 +44,12 @@ function evaluateGeneObj(repoRoot: string, engineRoot: string, gene: any, ref: s
     let out = (r.stderr || r.stdout).trim();
     // code = -1 = spawn 失败（二进制缺失等）——stderr 常为空，根因只在 spawnError；
     // 不并入报告则调用方只看到 exit -1 零诊断。
-    if (r.code === -1 && r.spawnError) out = out ? `${out}\nspawn error: ${r.spawnError}` : `spawn error: ${r.spawnError}`;
+    if (r.code === -1 && r.spawnError) out = `${out ? `${out}\n` : ""}spawn error: ${r.spawnError}`;
     results.push({
       name: g.name,
       code: r.code,
-      tail: out ? out.split('\n').slice(-TAIL_LINES).join('\n').slice(0, TAIL_CHARS) : '',
+      // 字符截断取尾部（slice(-N)）：根因行追加在输出末尾——保头会把要保的根因切掉。
+      tail: out ? out.split('\n').slice(-TAIL_LINES).join('\n').slice(-TAIL_CHARS) : '',
     });
   }
   const ok = !violations.length && results.every((r) => r.code === 0);

@@ -192,6 +192,12 @@ function selfTest() {
     ok(ev2.ok === false && ev2.violations.some((v) => v.includes('forbidden_paths')),
       'evaluate: forbidden_paths violation -> FAIL');
     ok(checkConstraints({ constraints: {} }, ['a.txt']).length === 0, 'constraints: none set -> no violation');
+
+    // spawn 失败根因并入 tail（code=-1 时 stderr 常空——二进制缺失只在此可见）
+    writeGates(gatesDir, [{ name: 'ghost-bin', cmd: 'no-such-binary-xyz', args: ['--version'] }]);
+    const evGhost = evaluateGeneObj(td, gatesDir, { ...gene, validation: ['ghost-bin'] }, 'x');
+    ok(evGhost.ok === false, 'evaluate: unspawnable gate -> FAIL');
+    ok((evGhost.results[0]?.tail ?? '').includes('spawn error'), 'evaluate: spawn error root cause surfaced in tail');
   }
 
   // --- 5) solidify：原子提交（genes/ + events/ 同 commit）与 gene_sha 可复算 ---
@@ -364,6 +370,15 @@ function selfTest() {
     const pout = execFileSync('node', [bin, 'propose', 'process/e2e-gene'], { cwd: td, encoding: 'utf8', stdio: 'pipe' });
     ok(pout.includes('[noo-gene process/e2e-gene] e2e fixture'),
       'bin e2e: propose happy path renders injection text via real CLI wiring');
+
+    // propose --out 用法错误钉 exit 2（缺值/空串值同档——空串不防会静默降级 stdout 回潮）
+    ok(spawnCode([bin, 'propose', 'process/e2e-gene', '--out'], td) === 2, 'bin: --out without value -> exit 2 (usage)');
+    ok(spawnCode([bin, 'propose', 'process/e2e-gene', '--out', ''], td) === 2, 'bin: --out with empty value -> exit 2 (usage)');
+    // --out 正常路径：写文件且报告，stdout 不承载注入文本
+    const renderedPath = path.join(td, 'rendered.txt');
+    const wcode = spawnCode([bin, 'propose', 'process/e2e-gene', '--out', renderedPath], td);
+    ok(wcode === 0 && fs.readFileSync(renderedPath, 'utf8').includes('[noo-gene process/e2e-gene]'),
+      'bin: propose --out writes injection text to file');
 
     // solidify 全链 e2e：引擎目录复制到沙箱（gates.json 可换成 stub），CLI 真装配
     const engineCopy = path.join(td, 'engine-copy');

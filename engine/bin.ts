@@ -65,10 +65,10 @@ function main(argv: string[]): number {
   }
 
   if (cmd === 'propose') {
-    // 用法错误与 pull --cache / solidify --actor 同口径：旗标在末尾缺值 → exit 2 fail-loud，
-    // 绝不无痕降级为 stdout 打印（显式 --out 被吞是调用方拿不到的失败）。
+    // 用法错误与 pull --cache / solidify --actor 同口径：旗标在末尾缺值（含空串值）→
+    // exit 2 fail-loud，绝不无痕降级为 stdout 打印（显式 --out 被吞是调用方拿不到的失败）。
     const outIdx = rest.indexOf('--out');
-    if (outIdx >= 0 && rest[outIdx + 1] === undefined) fail('propose: --out needs a file path');
+    if (outIdx >= 0 && !rest[outIdx + 1]) fail('propose: --out needs a file path');
     const outFile: string | null = outIdx >= 0 ? rest[outIdx + 1]! : null;
     const ref = rest.find((a) => a !== '--out' && a !== outFile);
     if (!ref) fail('propose needs <domain>/<id>');

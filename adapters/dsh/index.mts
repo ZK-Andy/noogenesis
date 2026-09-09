@@ -14,11 +14,11 @@
  */
 import { defineTool } from "@deepseek-ai/dsh-tools";
 import { createUserMessage } from "@deepseek-ai/dsh-llm";
-import { runEngine, runEngineSync, resolveRepoRoot, sessionWorkspaceOf, EXIT } from "./engine-bridge.mjs";
+import { runEngine, runEngineSync, resolveRepoRoot, sessionWorkspaceOf } from "./engine-bridge.mjs";
 import type { AgentCarrier } from "./engine-bridge.mjs";
 import { registerNooTools } from "./tools.mjs";
 import type { ToolHost } from "./tools.mjs";
-import { BASE_SECTION, hitsSectionText } from "./section.mjs";
+import { BASE_SECTION, createHitsSection } from "./section.mjs";
 import { runSolidifyTrigger, listStagingCandidates, createInFlightGate, ASK_TIMEOUT_MS } from "./solidify-trigger.mjs";
 import { createBankPullScheduler } from "./bank-pull.mjs";
 import { registerBankSkills } from "./skill-provider.mjs";
@@ -139,31 +139,17 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 	});
 
 	ctx.systemPrompt.section({ name: "tool:noogenesis", order: cfg.sectionOrder, text: BASE_SECTION });
-	// select 故障期去重旗标：命中节 provider 每模型步都会跑，逐条 warn 会刷屏——
-	// 每次故障期至多一条 warn，成功即复位（下轮故障重新留痕）。
-	let selectDownWarned = false;
 	ctx.systemPrompt.section({
 		name: "tool:noogenesis:hits",
 		order: cfg.sectionOrder + 1,
-		// 空 injectSignals 短路：未声明信号就不喂引擎（select 空键必 exit 2，
-		// 纯浪费一子进程/每次 prompt 组装）。
-		text: () => {
-			if (!cfg.injectSignals.length) return "";
-			const r = runEngineSync(["select", ...cfg.injectSignals], { repoRoot });
-			// select 失败（dist 未构建/node 缺失等）→ stdout 空 → 命中节渲染 ""：
-			// 渲染面降级为缺席（命中节缺席 ≠ 会话阻断），但必须 warn 留痕——
-			// 无痕吞错会让引擎持续故障整段会话无人知晓。
-			if (r.code !== EXIT.OK) {
-				if (!selectDownWarned) {
-					selectDownWarned = true;
-					const reason = r.stderr.trim().split("\n")[0] || "(no stderr)";
-					logger.warn(`noogenesis select failed (exit ${r.code}) — hits section degraded to empty: ${reason}`);
-				}
-			} else {
-				selectDownWarned = false;
-			}
-			return hitsSectionText(r, { maxGenes: cfg.maxIndexGenes });
-		},
+		// select 失败 warn 留痕 + 渲染降级纪律单源 = section.mts createHitsSection（可脱离宿主自测）。
+		text: createHitsSection({
+			injectSignals: cfg.injectSignals,
+			maxGenes: cfg.maxIndexGenes,
+			repoRoot,
+			runSelectSync: runEngineSync,
+			warn: (message) => logger.warn(message),
+		}),
 	});
 
 	registerNooTools(ctx, { defineTool, runEngine, repoRoot: repoRootFor });

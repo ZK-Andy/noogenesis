@@ -190,7 +190,9 @@ function scan(root: string): ScanResult {
     if (parts.includes("archived") || name.endsWith(".zh.md")) {
       continue;
     }
-    if (TOP_LEVEL_EXEMPT.includes(name)) {
+    // 顶层豁免只认一层深度：深位同名件（如 implemented/feature/README.md）不是
+    // 子树常设件，必须照常过检查——basename 匹配不限深会让豁免面变成逃逸通道。
+    if (parts.length === 1 && TOP_LEVEL_EXEMPT.includes(name)) {
       continue;
     }
     checked++;
@@ -310,6 +312,12 @@ function selfTest(): number {
   fs.mkdirSync(stray, { recursive: true });
   fs.writeFileSync(path.join(stray, "drafts-scratch.md"), "# Agent Note: scratch\n\nStatus: implemented\n");
   cases.push([stray, 1, "stray note outside lifecycle tree -> fail"]);
+
+  // case H: 深位同名豁免件（README.md 不在顶层）→ exit 1（豁免只认一层深度）
+  const deepreadme = path.join(t, "deepreadme");
+  fs.mkdirSync(path.join(deepreadme, "implemented", "feature"), { recursive: true });
+  fs.writeFileSync(path.join(deepreadme, "implemented", "feature", "README.md"), "# Agent Note: stray\n\nStatus: implemented\n");
+  cases.push([deepreadme, 1, "deep-position same-name exempt file -> fail"]);
 
   let failed = 0;
   for (const [notesRoot, expected, desc] of cases) {
