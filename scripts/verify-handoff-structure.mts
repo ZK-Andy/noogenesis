@@ -34,6 +34,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
+import { pyStrip, splitLines } from "./mdref.mts";
 
 const DEFAULT_HANDOFF = "HANDOFF.md";
 const DEFAULT_TODOS = "HANDOFF-todos.md";
@@ -61,31 +62,7 @@ const VOLUME_RE = /^(\d{4})-(\d{2})\.md$/;
 const NOW = new Date();
 const CURRENT_MONTH = NOW.toISOString().slice(0, 7);
 
-// --- Python→JS 语义等价原语 -------------------------------------------------
-
-// Python \s 全集（str.strip 同口径）：JS \s 缺 \x1c-\x1f 与 \x85，多 \ufeff。
-const PY_WS = "\\t\\n\\v\\f\\r \\u0085\\u00a0\\u1680\\u2000-\\u200a\\u2028\\u2029\\u202f\\u205f\\u3000\\x1c-\\x1f";
-const PY_WS_LEAD_RE = new RegExp(`^[${PY_WS}]+`);
-const PY_WS_TAIL_RE = new RegExp(`[${PY_WS}]+$`);
-
-/** str.strip() 等价（Python 空白字符集）。 */
-function pyStrip(s: string): string {
-  return s.replace(PY_WS_LEAD_RE, "").replace(PY_WS_TAIL_RE, "");
-}
-
-// str.splitlines() 等价：Python 按全量边界（\r\n/\r/\n/\v/\f/\x1c-\x1e/\x85/
-// \u2028/\u2029）切分且结尾边界不产生空尾元素；split("\n") 会留 \r、漏边界。
-// oxlint-disable-next-line no-control-regex -- py str.splitlines 边界集含控制字符（有意匹配）
-const SPLIT_RE = /\r\n|\r|\n|\v|\f|\x1c|\x1d|\x1e|\x85|\u2028|\u2029/;
-// oxlint-disable-next-line no-control-regex -- 同上，结尾边界判定用
-const ENDS_SPLIT_RE = /(?:\r\n|\r|\n|\v|\f|\x1c|\x1d|\x1e|\x85|\u2028|\u2029)$/;
-
-function pySplitlines(text: string): string[] {
-  if (text === "") return [];
-  const parts = text.split(SPLIT_RE);
-  if (ENDS_SPLIT_RE.test(text) && parts.length > 0 && parts[parts.length - 1] === "") parts.pop();
-  return parts;
-}
+// --- Python→JS 语义等价原语（空白与 splitlines 归口 mdref） -------------------
 
 /** Python len() = unicode 码点数（JS .length 是 UTF-16 码元数，增补区差 2 倍）。 */
 function cpLen(s: string): number {
@@ -148,7 +125,7 @@ function scan(handoff: string, todosPath: string, maxWindow: number, maxEntry: n
 
   const errors: string[] = [];
   const text = fs.readFileSync(handoff, "utf-8");
-  const lines = pySplitlines(text);
+  const lines = splitLines(text);
 
   // 1) 必备正文小节在位
   const seenSections = new Set<string>();
@@ -252,7 +229,7 @@ function scan(handoff: string, todosPath: string, maxWindow: number, maxEntry: n
 function scanTodos(p: string, maxOpen: number, maxTotal: number, maxOpenChars: number,
                    maxClosedChars: number): string[] {
   const errors: string[] = [];
-  const lines = pySplitlines(fs.readFileSync(p, "utf-8"));
+  const lines = splitLines(fs.readFileSync(p, "utf-8"));
   let openCount = 0;
   let closedCount = 0;
   for (let i = 0; i < lines.length; i++) {

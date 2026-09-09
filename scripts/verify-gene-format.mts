@@ -40,6 +40,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 import * as crypto from "node:crypto";
+import { pyStrip, splitLines } from "./mdref.mts";
 
 type JSONVal = null | boolean | number | bigint | string | JSONVal[] | { [key: string]: JSONVal };
 
@@ -54,34 +55,7 @@ const KNOWN_GENE_FIELDS = new Set([
   "id", "domain", "summary", "signals", "strategy", "constraints", "validation", "avoid",
 ]);
 
-// ---------- py 兼容小件：空白 / splitlines / repr / 路径显示 ----------
-
-// py str.strip() 的空白集（含 \x1c-\x1f、\x85 等，JS trim() 集不同，须自实现）
-const PY_SPACE = " \t\n\r\v\f\x1c\x1d\x1e\x1f\x85\u00a0\u1680\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u2028\u2029\u202f\u205f\u3000";
-
-function pyStrip(s: string): string {
-  let a = 0;
-  let b = s.length;
-  while (a < b && PY_SPACE.includes(s[a]!)) a++;
-  while (b > a && PY_SPACE.includes(s[b - 1]!)) b--;
-  return s.slice(a, b);
-}
-
-// py str.splitlines() 全集（\r\n 计一处，含 \v \f \x1c-\x1e \x85 \u2028 \u2029）
-// oxlint-disable-next-line no-control-regex -- py 边界集含控制字符（有意匹配）
-const SPLIT_RE = /\r\n|[\n\r\v\f\x1c\x1d\x1e\x85\u2028\u2029]/g;
-
-function pySplitlines(s: string): string[] {
-  const out: string[] = [];
-  let last = 0;
-  for (const m of s.matchAll(SPLIT_RE)) {
-    out.push(s.slice(last, m.index));
-    last = m.index + m[0].length;
-  }
-  // py splitlines：字符串非空时末段必含（末尾分隔符不产生空尾行）
-  if (s.length > 0 && (out.length === 0 || last < s.length)) out.push(s.slice(last));
-  return out;
-}
+// ---------- py 兼容小件：repr / 路径显示（空白与 splitlines 归口 mdref） ----------
 
 /** py repr(str)：默认单引号；含 `'` 无 `"` 时换双引号；控制字符 \xHH / \uNNNN。 */
 function pyReprStr(s: string): string {
@@ -713,7 +687,7 @@ function checkEvents(display: string, fsPath: string, errors: string[]): EventRo
   const text = readTextFatal(fsPath);
   const rows: EventRow[] = [];
   let prev: number | null = null;
-  const lines = pySplitlines(text);
+  const lines = splitLines(text);
   for (let idx = 0; idx < lines.length; idx++) {
     const lineno = idx + 1;
     const line = lines[idx]!;

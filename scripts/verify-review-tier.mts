@@ -9,11 +9,13 @@
  *                     任意深度的 AGENTS.md、.agents/workflows/**
  * 另：.agents/notes 下 Status: proposed 的 ADR 正文自诺「三重审核」亦判 FULL——
  * ADR 自己承诺的 tier 优先于默认。触碰任一 FULL 路径的 diff 必须随变更携带评审证据
- * 才可 push：证据 = 同一变更集（同 base..HEAD 范围 / staged 集）内一个 implemented
- * ADR，头部带合法 `Review: FULL/<yyyy-mm-dd>/R1=ok R2=ok R3=ok` 行（日期须为真实
- * 日历日；R1/R2/R3 严格取值，fail/abort 不算）。格式与严格度规则单源 review.md §1。
- * proposed ADR 不能自证。git 时刻不可解析（坏 ref / git 失败）即违约，绝不静默按
- * 「无 FULL 变更」放行（fail-closed：逃逸防护闸不得把不可解析 diff 读成无变更）。
+ * 才可 push：证据 = 同一变更集内一个 implemented ADR 的 `Review:
+ * FULL/<yyyy-mm-dd>/R1=ok R2=ok R3=ok` 行（真实日历日；R1/R2/R3 严格取值，fail/abort
+ * 不算），且该行须由本变更集**引入**（diff 内为新增行 / ADR 整文件新增）——同变更集
+ * 触碰旧已评审 ADR 时其历史 Review 行不算本批证据（防搭车，2026-09-10）。
+ * 格式与严格度规则单源 review.md §1。proposed ADR 不能自证。git 时刻不可解析
+ * （坏 ref / git 失败）即违约，绝不静默按「无 FULL 变更」放行（fail-closed：
+ * 逃逸防护闸不得把不可解析 diff 读成无变更）。
  *
  * diff 范围（调用方按 git 时刻选模式）：
  *   --staged            index vs HEAD            -> pre-commit（仅报告）
@@ -212,9 +214,47 @@ export function classify(paths: string[], repo: string): { full: boolean; reason
   return { full, reasons };
 }
 
-/** 变更集缺合法评审证据时返回违约文案，否则 null。证据 = 变更集内一个 implemented
- * ADR，头部带 Review: FULL/<date>/R1=ok R2=ok R3=ok 且日期为真实日历日。 */
-function evidenceInChange(paths: string[], repo: string): string | null {
+/** 该 git 时刻下 <rel> 的变更 diff 文本；git 失败返回 null（fail-closed：
+ *  证据判定依赖 diff，不可解析绝不当作证据成立）。
+ *  stagedOnly => index vs HEAD；since => <base>..HEAD；默认 => 工作树 vs HEAD
+ *  （含 staged + unstaged 对已跟踪文件的全部改动；未跟踪文件由 untracked 集覆盖）。 */
+function fileDiff(repo: string, rel: string, stagedOnly: boolean, since: string | null): string | null {
+  const args: string[] = stagedOnly
+    ? ["diff", "--cached", "--", rel]
+    : since !== null
+      ? ["diff", `${since}..HEAD`, "--", rel]
+      : ["diff", "HEAD", "--", rel];
+  const r = runGit(args, repo);
+  return r.ok ? r.stdout : null;
+}
+
+/** 变更集内一个 implemented ADR 的合法 Review 行若为新增行（ADR 整文件新增，
+ *  或本变更集向既有 ADR 补加了 Review 行）→ 证据成立。旧 ADR 自带的历史 Review
+ *  行不在本变更集 diff 内，不得给本批 FULL 变更搭车（HANDOFF-todos L45）。 */
+function diffIntroducesReview(repo: string, rel: string, stagedOnly: boolean, since: string | null,
+  untracked: Set<string>): boolean {
+  if (untracked.has(rel)) return true; // 未跟踪 ADR = 整文件新增，Review 行即本变更引入
+  const d = fileDiff(repo, rel, stagedOnly, since);
+  if (d === null) return false; // fail-closed：diff 不可解析 → 证据不成立
+  for (const line of pySplitlines(d)) {
+    if (!line.startsWith("+") || line.startsWith("+++")) continue; // 只认新增行，跳过文件头
+    const m = REVIEW_LINE_RE.exec(line.slice(1).trim());
+    if (m !== null && validDate(m[1]!)) return true;
+  }
+  return false;
+}
+
+/** 变更集缺合法评审证据时返回违约文案，否则 null。证据 = 变更集**引入**（新增行）
+ * 的 implemented ADR Review: FULL/<date>/R1=ok R2=ok R3=ok 行（真实日历日）——
+ * 同变更集触碰旧已评审 ADR 时其历史 Review 行不算本批证据。 */
+function evidenceInChange(paths: string[], repo: string, stagedOnly: boolean, since: string | null): string | null {
+  // 默认（工作树）模式下未跟踪文件 = 整文件新增，其头部 Review 行即本变更引入；
+  // staged/since 模式只 diff 已跟踪面，无需 untracked 集。
+  const untracked = new Set<string>();
+  if (!stagedOnly && since === null) {
+    const r = runGit(["ls-files", "--others", "--exclude-standard"], repo);
+    if (r.ok) for (const x of pySplitlines(r.stdout)) if (x.trim() !== "") untracked.add(x);
+  }
   for (const rel of paths) {
     if (!rel.startsWith(NOTES_DIR + "/") || !rel.endsWith(".md")) continue;
     const adr = path.join(repo, rel);
@@ -229,13 +269,15 @@ function evidenceInChange(paths: string[], repo: string): string | null {
     if (text === null) continue;
     const head = pySplitlines(text).slice(0, 15);
     if (!head.join("\n").includes("Status: implemented")) continue; // proposed 不能自证
-    for (const line of head) {
+    const hasValidReview = head.some((line) => {
       const m = REVIEW_LINE_RE.exec(line.trim());
-      if (m !== null && validDate(m[1]!)) return null;
-    }
+      return m !== null && validDate(m[1]!);
+    });
+    if (hasValidReview && diffIntroducesReview(repo, rel, stagedOnly, since, untracked)) return null;
   }
-  return "no implemented ADR in the change set carries a valid "
-    + "Review: FULL/<date>/R1=ok R2=ok R3=ok line";
+  return "no implemented ADR whose Review: FULL/<date>/R1=ok R2=ok R3=ok line is "
+    + "introduced by this change set (an already-reviewed ADR's historical Review line "
+    + "does not certify a new FULL change)";
 }
 
 function scan(repo: string, stagedOnly = false, since: string | null = null): string[] {
@@ -247,7 +289,7 @@ function scan(repo: string, stagedOnly = false, since: string | null = null): st
   if (paths.length === 0) return [];
   const { full, reasons } = classify(paths, repo);
   if (!full) return [];
-  const bad = evidenceInChange(paths, repo);
+  const bad = evidenceInChange(paths, repo, stagedOnly, since);
   if (bad === null) return [];
   return [`FULL-tier change lacks review evidence (${reasons.length} trigger(s)): `
     + reasons.join("; ") + ` | ${bad}`];
@@ -384,12 +426,41 @@ function selfTest(): number {
     rows = scan(r, false, "no-such-ref");
     ok(rows.some((x) => x.includes("git moment failed")),
       "--since with an unparsable ref fails closed");
+
+    // 12) 搭车防线：范围含已评审 ADR（Review 行历史引入）+ 本批新 FULL 变更
+    //     ——旧 ADR 的 Review 行不在本变更集 diff 内，不得给新变更搭车（L45）。
+    r = newRepo(td, "f12");
+    writeIn(r, NOTES_DIR + "/implemented/process/2026-09-05-x.md", EVIDENCE);
+    writeIn(r, "scripts/verify-x.py", "# gate v1\n");
+    commitAll(r, "base w/ reviewed adr");
+    // 本批：新 FULL 变更 + 仅「触碰」旧 ADR（改一行正文，不新增 Review 行）
+    writeIn(r, NOTES_DIR + "/implemented/process/2026-09-05-x.md", EVIDENCE.replace("## Consequences\n\nx", "## Consequences\n\nx\n- touched by a new batch\n"));
+    writeIn(r, "scripts/verify-x.py", "# gate v2\n");
+    commitAll(r, "new FULL change touching old reviewed adr");
+    rows = scan(r, false, "HEAD~1");
+    ok(rows.some((x) => x.includes("FULL-tier change lacks review evidence")
+      && x.includes("introduced by this change set")),
+      "old ADR's historical Review line does not certify a new FULL change");
+
+    // 13) --since 范围跨多 commit：本批新增 Review 行（即使与 ADR 翻转分 commit）
+    //     仍算证据——diff 是范围的累积视图，非单 commit 粒度（对齐 d4b8aa2→1b6c25b）。
+    r = newRepo(td, "f13");
+    commitAll(r, "base");
+    writeIn(r, NOTES_DIR + "/implemented/process/2026-09-05-x.md",
+      "# Agent Note: x\n\nStatus: implemented\n\n## Problem\n\nx\n\n## Decision\n\nx\n\n## Alternatives considered\n\n- a\n\n## Consequences\n\nx\n");
+    writeIn(r, "scripts/verify-x.py", "# new gate v1\n");
+    commitAll(r, "flip ADR w/o review line (d4b8aa2 形态)");
+    writeIn(r, NOTES_DIR + "/implemented/process/2026-09-05-x.md", EVIDENCE);
+    writeIn(r, "scripts/verify-x.py", "# new gate v2\n");
+    commitAll(r, "add review line in later commit (1b6c25b 形态)");
+    rows = scan(r, false, "HEAD~2");
+    ok(rows.length === 0, "--since range pass when the Review line is added anywhere in the range (not per-commit)");
   } finally {
     fs.rmSync(td, { recursive: true, force: true });
   }
 
   if (failed === 0) {
-    out("verify-review-tier --self-test OK (12 fixtures: triggers/evidence/modes/fail-closed)");
+    out("verify-review-tier --self-test OK (14 fixtures: triggers/evidence/modes/fail-closed/ride-along)");
   } else {
     errOut("verify-review-tier --self-test FAIL");
   }

@@ -31,6 +31,7 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
+import { splitLines } from "./mdref.mts";
 
 const DEFAULT_PATH = "docs/cookbook.md";
 
@@ -48,12 +49,6 @@ const ENTRY_RE = /^- \*\*\[(?<stage>[^\]]+)\]\s+(?<title>.+?)\*\*[：，；](?<b
 // Python \d 是 unicode 十进制数字（Nd）——JS 需 \p{Nd} + u flag 才语义等价。
 const DATE_RE = /(?<date>\p{Nd}{4}-\p{Nd}{2}-\p{Nd}{2})/u;
 const HEADING_RE = /^## (?<stage>.+?)\s*$/;
-
-/** Python str.splitlines 边界集（\n \r \r\n \v \f \x1c-\x1e \x85 U+2028 U+2029）。 */
-function splitPyLines(text: string): string[] {
-  // oxlint-disable-next-line no-control-regex -- py str.splitlines 边界集含控制字符（有意匹配）
-  return text.split(/\r\n|[\n\r\v\f\x1c\x1d\x1e\x85\u2028\u2029]/);
-}
 
 /** 码点序比较（Python 字符串排序语义；JS 默认序对星面字符不同）。 */
 function pyCmp(a: string, b: string): number {
@@ -159,7 +154,7 @@ function scan(p: string): { checked: number; errors: string[] } {
   let checked = 0;
   let currentStage: string | null = null;
   const seenStages: string[] = [];
-  const lines = splitPyLines(fs.readFileSync(p, "utf-8"));
+  const lines = splitLines(fs.readFileSync(p, "utf-8"));
   for (let i = 0; i < lines.length; i++) {
     const lineno = i + 1;
     const line = lines[i]!;

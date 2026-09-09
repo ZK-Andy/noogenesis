@@ -6,6 +6,10 @@
  * 相对链接解析循环，供 verify-md-links.mts 与 verify-skill-format.mts 共用；本库
  * 无 CLI，行为由消费方的 --self-test 覆盖（verify-skill-format --self-test 经
  * check_skill 走死链路径）。
+ * 2026-09-10 起亦为 py 兼容小件（splitLines / pyStrip）的共享单源——原散在
+ * verify-adr-format / verify-cookbook / verify-gene-format / verify-handoff-structure
+ * 的手搓副本经行为等价差分（n=23 边界用例）归口本件（ADR
+ * 2026-09-10-mdref-py-primitives-fold）；新增导出须同时更新消费方与夹具。
  *
  * checkRelativeLinks 合同：
  *   - 相对目标以其所属文件父目录解析；前导 `/` 目标以 root（扫描根）解析；
@@ -43,6 +47,17 @@ export function splitLines(text: string): string[] {
   const parts = text.split(/\r\n|[\n\v\f\r\x1c\x1d\x1e\x85\u2028\u2029]/);
   if (parts[parts.length - 1] === "") parts.pop();
   return parts;
+}
+
+// Python str.strip() 的空白集（比 JS trim 多 \x1c-\x1f \x85 \u00a0 \u1680
+// \u2000-\u200a \u202f \u205f \u3000 等；少 \ufeff——按 Python 口径对齐）。
+const PY_STRIP_RE =
+  // oxlint-disable-next-line no-control-regex -- py str.strip 空白集含控制字符（有意匹配）
+  /^[ \t\n\r\v\f\x1c\x1d\x1e\x1f\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+|[ \t\n\r\v\f\x1c\x1d\x1e\x1f\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+$/g;
+
+/** Python str.strip() 等价：掐头去尾的 Python 空白字符集（非 JS trim 集）。 */
+export function pyStrip(s: string): string {
+  return s.replace(PY_STRIP_RE, "");
 }
 
 /** GitHub 风格标题 slug：小写、去标点（保 unicode 词字符与 CJK）、空白折叠为连字符。 */

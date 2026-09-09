@@ -34,6 +34,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 import { TextDecoder } from "node:util";
+import { pyStrip, splitLines } from "./mdref.mts";
 
 const HEADER_RE = /^# Agent Note: .+$/;
 const STATUS_RE = /^Status: (proposed|implemented|rejected(?: — .+)?)$/;
@@ -49,40 +50,6 @@ const CLASS_SET = ["feature", "bug-fix", "simplification", "architecture", "proc
 const NAME_RE = /^(\p{Nd}{4}-\p{Nd}{2}-\p{Nd}{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$/u;
 // 顶层 README 直接位于 notes root 下；其余一律三层深。
 const TOP_LEVEL_EXEMPT = ["README.md"];
-
-// Python str.splitlines() 的边界全集：\n \r \r\n \v \f \x1c \x1d \x1e \x85 \u2028 \u2029
-// （JS split("\n") 只认 \n——逐字对账必须用全集中文/控制字符行为一致）。
-function splitlines(s: string): string[] {
-  const out: string[] = [];
-  let start = 0;
-  for (let i = 0; i < s.length; i++) {
-    const c = s[i]!;
-    let sep = 0;
-    if (c === "\r") {
-      sep = s[i + 1] === "\n" ? 2 : 1;
-    } else if (c === "\n" || c === "\v" || c === "\f" || c === "\x1c" || c === "\x1d" ||
-               c === "\x1e" || c === "\u0085" || c === "\u2028" || c === "\u2029") {
-      sep = 1;
-    }
-    if (sep > 0) {
-      out.push(s.slice(start, i));
-      i += sep - 1;
-      start = i + 1;
-    }
-  }
-  // Python：结尾恰为行边界时不追加空尾行；无任何边界且非空时整串为唯一一行。
-  if (start < s.length) out.push(s.slice(start));
-  return out;
-}
-
-// Python str.strip() 的空白集（比 JS trim 多 \x1c-\x1f \x85，少 \ufeff）。
-const PY_STRIP_RE =
-  // oxlint-disable-next-line no-control-regex -- py str.strip 空白集含控制字符（有意匹配）
-  /^[ \t\n\r\v\f\x1c\x1d\x1e\x1f\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+|[ \t\n\r\v\f\x1c\x1d\x1e\x1f\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+$/g;
-
-function pyStrip(s: string): string {
-  return s.replace(PY_STRIP_RE, "");
-}
 
 /** Python str 比较的 codepoint 序（JS 默认 sort 是 UTF-16 码元序，增补平面字符不同序）。 */
 function cmpCodepoints(a: string, b: string): number {
@@ -234,7 +201,7 @@ function scan(root: string): ScanResult {
     errors.push(...validateName(rel));
 
     const text = readNote(path.join(root, rel));
-    const lines = splitlines(text);
+    const lines = splitLines(text);
 
     if (lines.length === 0 || !HEADER_RE.test(lines[0]!)) {
       errors.push(`${rel}: line 1 must be '# Agent Note: <title>'`);
