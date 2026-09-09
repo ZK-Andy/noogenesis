@@ -46,3 +46,4 @@
 - [x] （A）编码强制两轨闭环：批 1（`2026-09-08-lint-in-loop-feedback`）+ 批 2（`2026-09-08-coding-enforcement-track-b`）均 implemented + FULL 三审全采纳（R1/R2 各 2B、R3 1B，全修）；批 3 测量 → 延后。
 - [x] （A）编码规范机器拦升格批 2026-09-09（FULL 三审 0B 全采纳），ADR [2026-09-09-lint-block-and-staged-hook](.agents/notes/implemented/architecture/2026-09-09-lint-block-and-staged-hook.md)；0.2.3 发版含本批。
 - [x] （B）批 1 真机复验 2026-09-09（用户重装 0.2.3 + 重启；全判据命中，journal 在案）：var 写码同轮 block / 修正零反馈 / 连续 ×3 第 4 次降级 context / 干净写码复位 / edit 同拦 / 非 .ts 零反馈 / staged 红。宿主基线已升 0.1.5-alpha.1（用户确认主动升级）。
+- [ ] （B）release 工具族首次实发验证（ADR [2026-09-09-release-shape-alignment](.agents/notes/implemented/process/2026-09-09-release-shape-alignment.md)）：下一发版走 `release:bump` + tag `dsh-v<版本>` + `release:note`（双语 body+@作者）；验收 bump 产 chore(release)+lock 同步、dsh-v tag 过 pre-push。触发 = 下一发版轮。
