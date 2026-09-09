@@ -42,6 +42,9 @@
 - [ ] （D）痕迹提炼面归融合轮（2026-09-06 用户拍板：记录但不急）：「纪律留痕→无人提炼→下会话考古」缺口在案，解法随 dsh-continual-evolve 融合轮再议（触发 = 架构定稿，设计稿 §13.5）；旧项目 OBSERVATION 观察生命周期协议为实物参照（work 区）。边界：非自动沉淀复刻（#18 负面清单有效）、不让引擎扫会话，只议 session-close 摩擦点落点是否可寻址。
 - [x] （C）编码规范 c1 评审恢复与收口 2026-09-08（FULL 三审恢复重跑：R1 1B/4S、R2 1B/4S、R3 2B/3S 全采纳收口），ADR [2026-09-08-coding-standards](.agents/notes/implemented/architecture/2026-09-08-coding-standards.md) implemented。
 - [x] （C）mdref 共享件副本折叠 2026-09-10：mdref 增补 pyStrip 导出 + 四消费方删本地 split/pyStrip 副本（净 −2 行，豁免 7→3）；ADR [2026-09-10-mdref-py-primitives-fold](.agents/notes/implemented/simplification/2026-09-10-mdref-py-primitives-fold.md)。
+- [x] （B）规范语义面审计修复批 2026-09-10（FULL 三审 0B 全采纳；行为 7 处 + 注释批），ADR [2026-09-10-standards-audit-fix-batch](.agents/notes/implemented/bug-fix/2026-09-10-standards-audit-fix-batch.md)。
+- [x] （C）pypara 原语归口 + 职责下分 2026-09-10（FULL 三审全采纳；gene-format 1151→656；夹具同件拍板），ADR [2026-09-10-pypara-fold-responsibility-split](.agents/notes/implemented/simplification/2026-09-10-pypara-fold-responsibility-split.md)。
+- [ ] （C）D 批简化候选剩余 5 项（2026-09-10）：class 封闭集双源 / 7 件自测临时目录不清理 / 模型面字符串语言口径拍板 / archived 裸 `split("\n")` / maxGenes 缺省双写——逐项拍板后一个 LIGHT 批收口；明细 [候选 ADR](.agents/notes/proposed/simplification/2026-09-10-standards-audit-simplification-candidates.md)。
 - [x] （C）review-tier 证据继承弱点修复 2026-09-10：Review 行须由本变更引入（旧 ADR 不搭车），fixtures 12→17；ADR [2026-09-10-review-tier-evidence-ride-along](.agents/notes/implemented/bug-fix/2026-09-10-review-tier-evidence-ride-along.md)。
 - [x] （C）verify-review-tier 三态映射单源 + untracked 集传递去重 2026-09-10（零行为重构独立批；FULL 三审全采纳），ADR [2026-09-10-review-tier-diff-moment-dedup](.agents/notes/implemented/simplification/2026-09-10-review-tier-diff-moment-dedup.md)。
 - [x] （A）编码强制两轨闭环：批 1（`2026-09-08-lint-in-loop-feedback`）+ 批 2（`2026-09-08-coding-enforcement-track-b`）均 implemented + FULL 三审全采纳（R1/R2 各 2B、R3 1B，全修）；批 3 测量 → 延后。

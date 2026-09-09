@@ -5,11 +5,13 @@
 
 > **⚡ 最高优先级（框架重建）：charter ADR + 七层蓝图 → [.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md) · [docs/research/framework-rebuild-blueprint.md](docs/research/framework-rebuild-blueprint.md)**——用户拍板推倒重建（先框架后协作层、本仓原地重建），蓝图定稿（七层三段式 + A1–A8 挂载面 + M1–M3 + C1–C15）；**B0–B5 全批闭环（协作层重建收官，C1–C15 全绿）**——B5 切换批（gates.json cmd 全量重指 TS + 旧机器件零残留 + CI/钩子单轨 + 发版 0.2.0；实现 ADR [.agents/notes/implemented/architecture/2026-09-08-b5-switch.md](.agents/notes/implemented/architecture/2026-09-08-b5-switch.md)，批次表 [.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md](.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md)）；优化轮问题池余项（技能清单补全/记忆库）随重建后进行（规范展开 c1/c2 已交付；行动区仍在 [docs/research/capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)）。
 
-> **⏭ 下一步：两篇规范（编码/架构）连接已闭合（G1–G6 收口 + 12 面审计零缺口，`72e2e12`）**。其余候选：release 工具族首验（B 条，随下一发版）/ 护栏延后收口（D 条，触发 = 胶囊优化后）/ 优化轮问题池余项 [capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)；随手待办 [HANDOFF-todos.md](HANDOFF-todos.md)。
+> **⏭ 下一步：规范语义面审计 + pypara 归口两批已收口（`e32143f`）**。其余候选：D 批简化候选剩余 5 项（[候选 ADR](.agents/notes/proposed/simplification/2026-09-10-standards-audit-simplification-candidates.md)，LIGHT 批可收）/ release 工具族首验（B 条，随下一发版）/ 护栏延后收口（D 条，触发 = 胶囊优化后）/ 优化轮问题池余项 [capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)；随手待办 [HANDOFF-todos.md](HANDOFF-todos.md)。
 
 ## 交接更新记录（摘要滚动窗）
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
+
+- 2026-09-10｜**规范语义面审计修复批 + pypara 归口批（FULL 三审全采纳；ADR `standards-audit-fix-batch` + `pypara-fold-responsibility-split`；`086a1ce`/`fd0e4b9`+`a8d43e0`/`e32143f`）**：三族 `[R]` 审计行为 7 处 + 注释批全修；pypara 立原语七族单源、夹具同件拍板、职责判别式入文档。**节点：D 批剩 5 项。** README 无漂移。
 
 - 2026-09-10｜**规范连接收紧批收口（FULL 三审三轮全采纳；ADR `2026-09-10-standards-crosslink-closure` implemented；`72e2e12`）**：G1–G6——A2 地图架构指针行 + review §1 回指 + §4 改指 R6 + §2.4 两链 + 问题池/feature-flow 指针；反向审计 12 面零缺口落档。**节点：两篇规范连接闭合。** README 无漂移。
 
@@ -47,7 +49,6 @@
 
 - 2026-09-08｜**B2 引擎+适配层 TS 化批收口（FULL 三审 0B 全采纳；ADR `2026-09-08-b2-engine-adapter-ts` implemented；`f0bddfa`→`181b752`）**：engine 10 件 .ts + adapters 9 件 .mts 双跑对账零 diff；npm 发布面切 dist；js/mjs 权威并存至 B5。**节点：C3/C10 转绿 + C9 过，下一批 = B3。** README 核对有变更已同步（结构树）。
 
-- 2026-09-08｜**B1 门禁族 TS 化批收口（FULL 三审全采纳；ADR `2026-09-08-collab-rebuild-b1-gates-ts` implemented）**：13 件 .mts（verify-*×10 + DAG runner + gen-manifest + mdref）+ 对账 12 件零 diff + tsc 工具链 + ts-typecheck 入白名单；py 权威并存、B5 切换。**节点：C5 转绿 + C6 基线回填，下一批 = B2。**
 
 ## 背景
 
