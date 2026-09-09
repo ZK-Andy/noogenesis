@@ -71,6 +71,7 @@
 | 门禁 `--self-test` 夹具纪律 / gates.json 登记 / TS 单轨 import 形态 | [scripts/AGENTS.md](../../scripts/AGENTS.md) |
 | 宿主合同形状（`exec.arguments` 非 `exec.args` 教训） | [bug-fix ADR 2026-09-08-mount-exec-arguments-field](../../.agents/notes/implemented/bug-fix/2026-09-08-mount-exec-arguments-field.md) |
 | TS 两族 import 形态分野（源跑 .mts vs dist 跑 .ts） | [B2 ADR](../../.agents/notes/implemented/architecture/2026-09-08-b2-engine-adapter-ts.md) |
+| 分层约束 / 依赖方向 / blast-radius 影响面 / TS 导出与发布面 | [architecture-standards](architecture-standards.md) |
 
 ## 5. 评审清单兜底
 
