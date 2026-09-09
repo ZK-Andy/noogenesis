@@ -5,11 +5,13 @@
 
 > **⚡ 最高优先级（框架重建）：charter ADR + 七层蓝图 → [.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md) · [docs/research/framework-rebuild-blueprint.md](docs/research/framework-rebuild-blueprint.md)**——用户拍板推倒重建（先框架后协作层、本仓原地重建），蓝图定稿（七层三段式 + A1–A8 挂载面 + M1–M3 + C1–C15）；**B0–B5 全批闭环（协作层重建收官，C1–C15 全绿）**——B5 切换批（gates.json cmd 全量重指 TS + 旧机器件零残留 + CI/钩子单轨 + 发版 0.2.0；实现 ADR [.agents/notes/implemented/architecture/2026-09-08-b5-switch.md](.agents/notes/implemented/architecture/2026-09-08-b5-switch.md)，批次表 [.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md](.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md)）；优化轮问题池余项（技能清单补全/记忆库）随重建后进行（规范展开 c1/c2 已交付；行动区仍在 [docs/research/capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)）。
 
-> **⏭ 下一步：批 1 真机复验（0.2.3 已发版含 A4 block 拦回；宿主维持 0.1.3-alpha.2，不碰 alpha 升级）**——**用户重装 `noogenesis-dsh@0.2.3` 后**：新会话写含 `var` 的 `.ts` → 同轮被 block 拦回（修正后重写才通过）；干净代码零反馈；连续拦回第 4 次起降级 context 防死锁。行动区 [HANDOFF-todos.md](HANDOFF-todos.md)；优化轮 [capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)。
+> **⏭ 下一步：批 1 真机复验已闭环（todo B 勾账 2026-09-09，全判据命中，journal 在案）**——**宿主基线已升 `@deepseek-ai/dsh@0.1.5-alpha.1`**（用户 2026-09-09 主动升级并确认；npm12 安装脚本放行规避见 [docs/cookbook.md](docs/cookbook.md)「npm ≥12 默认不跑依赖树安装脚本」）。候选下一步：优化轮问题池余项（技能守卫方案设计 / 技能清单补全 / 记忆库开题 / 防过度设计）行动区 [capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)；随手待办见 [HANDOFF-todos.md](HANDOFF-todos.md)。
 
 ## 交接更新记录（摘要滚动窗）
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
+
+- 2026-09-09｜**批 1 真机复验（todo B 勾账；0.2.3 实机判据全命中，journal 在案）**：var 写码同轮 block 拦回 / 修正重写零反馈 / 连续 ×3 后第 4 次降级 context 不死锁 / 干净写码复位 / edit 同拦 / 非 .ts 零反馈 / staged 红。**节点：0.2.3 实机生效；宿主基线已升 0.1.5-alpha.1（用户确认主动升级）。** README 无漂移。
 
 - 2026-09-09｜**noogenesis-dsh 0.2.3 发版（release-flow；tag `v0.2.3`，npm latest）**：A4 在环 lint block 拦回 + pre-commit `--staged` 收窄（09-09 升格批）；GitHub Release 建（Latest 非 draft）。**节点：真机复验待用户重装。** README 无漂移。
 
@@ -46,8 +48,6 @@
 - 2026-09-06｜**pre-push tag 缺口修复 + 根 README 双语化（FULL 三审 0B 全采纳；ADR `2026-09-06-pre-push-tag-outgoing` + `2026-09-06-bilingual-root-readme`；commits `fb155c0`→`fea1714`）**：可达 tag 跳过档位强制，发版豁免前提消失；README 转英文主文件 + 中文镜像（对齐上游 harness）。README 核对无漂移。
 
 - 2026-09-06｜**桌面部署缺陷修复 + 0.1.3 发版（FULL 三审全采纳；ADR `2026-09-06-bank-pull-session-trigger` implemented；commits `ec360ab`→`528f2e8`）**：0.1.2 重验暴露装载期 pull 错位 → 触发点随会话工作区 + `geneBankUrl` 缺省官方库/`false` 禁用；npm latest + tag `v0.1.3`。**节点：重装重验通过；下一轮 = 胶囊 01 优化轮。**
-
-- 2026-09-06｜**git 前置条件写明 + 引擎诊断分流（LIGHT 档 R2 单路；ADR `2026-09-06-git-prerequisite-and-diagnosis` implemented；commits `b5fcb2e`→`10745e2`）**：前置条件入两 README；gitRoot ENOENT 分流；R2 抓出夹具误伤 + selftest 直跑 no-op 假绿（入 cookbook）。落 main 未发包。
 
 ## 背景
 

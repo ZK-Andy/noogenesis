@@ -45,4 +45,4 @@
 - [ ] （C）verify-review-tier 证据继承弱点（C2 批发现）：`evidenceInChange` 只要变更集内**任一** implemented ADR 带合法 `Review:` 行即放行——本批 c2 ADR 未加证据行时 `--enforce` 已过（同批触碰了已评审的 c1 ADR）= FULL 变更可搭旧 ADR 证据车。修法候选 = 证据须落在本变更集**新增/改动**的 ADR；触发 = 下批门禁判据改动同变更处理。
 - [x] （A）编码强制两轨闭环：批 1（`2026-09-08-lint-in-loop-feedback`）+ 批 2（`2026-09-08-coding-enforcement-track-b`）均 implemented + FULL 三审全采纳（R1/R2 各 2B、R3 1B，全修）；批 3 测量 → 延后。
 - [x] （A）编码规范机器拦升格批 2026-09-09（FULL 三审 0B 全采纳），ADR [2026-09-09-lint-block-and-staged-hook](.agents/notes/implemented/architecture/2026-09-09-lint-block-and-staged-hook.md)；0.2.3 发版含本批。
-- [ ] （B）批 1 真机复验（判据随 09-09 升格）：重装 `noogenesis-dsh@0.2.3` 后新会话写含 `var` 的 `.ts` → **同轮被 block 拦回**（工具结果替换为纠正消息，修正后重写才通过）；干净代码零反馈；同文件连续拦回第 4 次起降级 context（不死锁）。前置 = 用户重装 0.2.3。
+- [x] （B）批 1 真机复验 2026-09-09（用户重装 0.2.3 + 重启；全判据命中，journal 在案）：var 写码同轮 block / 修正零反馈 / 连续 ×3 第 4 次降级 context / 干净写码复位 / edit 同拦 / 非 .ts 零反馈 / staged 红。宿主基线已升 0.1.5-alpha.1（用户确认主动升级）。
