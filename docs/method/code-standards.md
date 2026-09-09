@@ -57,7 +57,7 @@
 
 - **命名揭示意图而非类型**：`signals`（是什么）优于 `arr`（是什么类型）；布尔用 `is`/`has`/`can` 前缀；动词开头 = 函数，名词 = 数据。判别式：读名不知其意 = 改名，不是加注释。
 - **一个函数一个职责**：能说出「它做什么」一句话；说不出的拆。判别式：函数名含 `and` = 拆。
-- **文件组织**：一个文件一个主题模块（职责 = 一句话可述——行数不是拆分判据，失控信号判别式单源 = [architecture-standards](architecture-standards.md) §4 上帝类闸条目）；公共符号集中在文件顶部导出；内部 helper 放下方或独立件（scripts 门禁族显式 `.mts` 扩展 import 纪律见 [scripts/AGENTS.md](../../scripts/AGENTS.md)；py 兼容原语诉求 import [pypara](../../scripts/pypara.mts)，不再手搓副本）。
+- **文件组织**：一个文件一个主题模块（职责 = 一句话可述——行数不是拆分判据，失控信号判别式单源 = [architecture-standards](architecture-standards.md) §4 上帝类闸条目）；公共符号集中在文件顶部导出；内部 helper 放下方或独立件（scripts 门禁族显式 `.mts` 扩展 import 纪律与共享件消费规则见 [scripts/AGENTS.md](../../scripts/AGENTS.md)）。
 - **闭集常量**：魔法数字/字符串必须命名常量；封闭集用 `as const` 数组（实例：`adapters/dsh/mount-policies.mts` 的 `SUBTREE_AGENTS`）；需收窄为联合类型时以 `typeof SUBTREE_AGENTS[number]` 派生（本仓暂无消费实例，不作硬性要求）。
 
 ## 4. 工程纪律（链接，不重抄）

@@ -30,7 +30,7 @@ Review: FULL/2026-09-10/R1=ok R2=ok R3=ok
 
 - **维持 fail-open、仅头注登记豁免面**：落败——杂散笔记逃过全部检查面正是门禁存在意义的反面；显式豁免两件常设件后无合法逃逸需求，而「登记了所以可以漏」把例外从机器可判降级为文档约定。
 - **命中节 select 失败改为抛错/阻塞**：落败——宿主 prompt 节 provider 是同步面，阻塞 = 会话阻断，违反「降级面绝不变成阻断」纪律；warn 留痕已满足「调用方必须感知」。
-- **家族共享 `MS_PER_DAY` 归口 mdref 同批做**：落败——码点比较器 8 处副本、路径归一 7 处变体需先逐处对齐语义（pyNorm/pyPathStr 语义略异），跨件归口是独立 simplification 候选，混入行为批会放大爆炸半径。
+- **家族共享 `MS_PER_DAY` 归口 mdref 同批做**：落败——码点比较器 8 处副本、路径归一 7 处变体需先逐处对齐语义（语义略异者仅 pyNorm——保 `//` 前缀；pyPathStr 与 normPyPath 同语义），跨件归口是独立 simplification 候选，混入行为批会放大爆炸半径。
 - **retire 未用的 `engineRoot` 参数保留对称签名**：落败——lint 参数类豁免盖不住语义面：零使用的参数暗示引擎根参与退役路径，误导读者；调用点仅 3 处，删参成本低于歧义成本。
 
 ## Consequences
@@ -39,4 +39,4 @@ Review: FULL/2026-09-10/R1=ok R2=ok R3=ok
 - **行为面变化**：`propose --out` 缺值（含空串值）从静默成功改为 exit 2（CLI 合同面唯一变化，engine self-test 夹具钉死两态 + `--out` 写文件路径）；`evaluate` spawn 失败报告多一行根因（tail 字符截断取尾部——根因行在输出末尾，保头会切掉它）；命中节故障期每会话至多一条新 warn（warn-once/复位纪律单源 = section.mts `createHitsSection`，adapters selftest 夹具钉死）；verify-adr-format 现在会拦 lifecycle 树外杂散笔记与深位同名豁免件（豁免只认一层深度；本仓树现况零命中，真实扫描 OK）。
 - **评审核对补遗（R1/R2 收口批）**：R2 判定五条 Suggestion 全采纳——`--out` 空串残面（falsy 守卫盖住）、spawnError 与 `--out` 行为面夹具补钉、tail 字符截断改取尾、深位同名豁免洞（case H 钉死）、命中节 warn 行为提取为可测工厂；R1 判定两薄建议采纳其一（spawnError 模板收敛；比较器第 9 副本口径改准并补登 simplification 候选 ADR）。
 - **判据面**：verify-adr-format 豁免面从隐式（lifecycle 过滤）变显式封闭集（fail-closed）；postmortem 排序确定化。两件 self-test 均含新夹具。
-- **遗留候选（本批不做）**：py 原语归口 mdref、ADR class 封闭集双源、7 个门禁自测临时目录不清理、模型面字符串语言口径拍板——立 simplification 候选另行拍板。
+- **遗留候选（本批不做）**：py 原语归口（落点 pypara，见 [pypara 归口批 ADR](../simplification/2026-09-10-pypara-fold-responsibility-split.md)）、ADR class 封闭集双源、7 个门禁自测临时目录不清理、模型面字符串语言口径拍板——立 simplification 候选另行拍板。

@@ -28,6 +28,8 @@ function checkPostmortemDir(dir: string): Violation[] {
   const entries = fs.readdirSync(dir, { withFileTypes: true });
   const violations: Violation[] = [];
   let prev = -1;
+  // 排序序与 py sorted 在非 ASCII 名上可不同（码元序 vs 码点序），但违规集合与
+  // 退出码不变：匹配名被 NAME_RE 钉死 ASCII（prev 递增判据同序），不匹配名恒违规。
   for (const ent of entries.sort((a, b) => cmpPyStr(a.name, b.name))) {
     if (ent.isDirectory()) {
       violations.push({ entry: ent.name, reason: "postmortem/ 只收扁平叙事文件，不收子目录" });

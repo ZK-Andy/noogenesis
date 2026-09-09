@@ -26,9 +26,8 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
-import { cmpPyStr, normPyPath } from "./pypara.mts";
+import { cmpPyStr, normPyPath, KEBAB_RE } from "./pypara.mts";
 
-const KEBAB_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 interface GeneEntry { ref: string; path: string; summary: string; signals: string[] }
 

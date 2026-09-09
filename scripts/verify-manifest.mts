@@ -27,9 +27,8 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { cmpPyStr, normPyPath } from "./pypara.mts";
+import { cmpPyStr, normPyPath, KEBAB_RE } from "./pypara.mts";
 
-const KEBAB_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const ENTRY_FIELDS = ["ref", "path", "summary", "signals"];
 
 /** Python == 语义（跨 bool/number：True==1、False==0；对象/数组按值深度比较）。 */

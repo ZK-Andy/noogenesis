@@ -54,7 +54,7 @@ import * as path from "node:path";
 import * as os from "node:os";
 import { spawnSync } from "node:child_process";
 import { pathToFileURL } from "node:url";
-import { splitLines as pySplitlines, cmpPyStr } from "./pypara.mts";
+import { splitLines as pySplitlines, cmpPyStr, isLeap } from "./pypara.mts";
 
 const NOTES_DIR = ".agents/notes";
 // FULL/<date>/R1=ok R2=ok R3=ok — 值严格校验（fail/abort 不算数）。
@@ -115,8 +115,7 @@ function validDate(s: string): boolean {
   const mo = Number(s.slice(5, 7));
   const d = Number(s.slice(8, 10));
   if (y < 1 || mo < 1 || mo > 12 || d < 1) return false;
-  const isLeap = y % 4 === 0 && (y % 100 !== 0 || y % 400 === 0);
-  const daysInMonth = [31, isLeap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mo - 1]!;
+  const daysInMonth = [31, isLeap(y) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mo - 1]!;
   return d <= daysInMonth;
 }
 

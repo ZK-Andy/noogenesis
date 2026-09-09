@@ -34,5 +34,5 @@ Review: FULL/2026-09-10/R1=ok R2=ok R3=ok
 
 - **采用面（已落地）**：`docs/method/architecture-standards.md` + manifest 增条目 + `code-standards.md` §4 增一行改指 + 根 AGENTS「评审检查项」第 3 条增架构域语义面指针；实现批 `7cf4fa1`，R1/R2 评审修复批 `4fa0e1d`。
 - **评审面**：`docs/method/**` = behavior-surface FULL（verify-review-tier 机械触发）；本批 FULL 三审已收口（R1 3B/3S + R2 2B/4S + R3 2B/2S 全采纳修复），证据行在头部。
-- **触发条件集（已写入 architecture-standards §4）**：上帝类闸——真实失控件出现（改写困难/评审反复抓同一文件）→ 以**届时实测** max × 1.5 为候选阈值再过判据（重测为有意决策，不用 B4 回填定数 1158×1.5：population 随演化漂移，触发时点的分布才是有效基线）；import 环检测闸——真实环出现 → 立环检测闸（实施批实测脚本面复用）；层方向 lint——家族间违规 import 出现 → 候选；project references——单 tsconfig 构建墙钟成为瓶颈 → 拆分评估；文件名契约闸——真实产物入库 → 翻案再立（C15 Decision 6 双候选之一）。
+- **触发条件集（已写入 architecture-standards §4）**：上帝类闸——真实失控件出现（一句话说不清职责 / 改写困难 / 评审反复抓同一件）→ 以**届时实测** max × 1.5 为候选阈值再过判据（重测为有意决策，不用 B4 回填定数 1158×1.5：population 随演化漂移，触发时点的分布才是有效基线）；import 环检测闸——真实环出现 → 立环检测闸（实施批实测脚本面复用）；层方向 lint——家族间违规 import 出现 → 候选；project references——单 tsconfig 构建墙钟成为瓶颈 → 拆分评估；文件名契约闸——真实产物入库 → 翻案再立（C15 Decision 6 双候选之一）。
 - **后续内容域**：async/生命周期行为契约细则、性能面（设计稿 §10「优雅高效实现」域）不在本篇——留待真实需要时另立。

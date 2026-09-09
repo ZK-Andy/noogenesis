@@ -9,7 +9,7 @@ Review: pending
 
 三族审计（engine/adapters/scripts 按架构与代码规范 `[R]` 清单逐行核对）在缺陷之外发现六处可简化/需拍板面，均不构成行为缺陷、但有真实的维护或漂移成本：
 
-1. ~~**py 兼容原语多副本未归口**~~——**已收口**（[pypara 归口批 ADR](../../implemented/simplification/2026-09-10-pypara-fold-responsibility-split.md)：`scripts/pypara.mts` 立 py 兼容原语单源，比较器 9 副本 + 路径归一同语义副本 + gene-format 内 JSON/ISO/repr 族 ~420 行全部归口；语义有意变体（pyNorm 保 `//`、verify-manifest 标量版 pyRepr/pyEq）保留并头注注明；mdref 收窄回链接/锚点域）。
+1. ~~**py 兼容原语多副本未归口**~~——**已收口**（[pypara 归口批 ADR](../../implemented/simplification/2026-09-10-pypara-fold-responsibility-split.md)：`scripts/pypara.mts` 立 py 兼容原语单源，比较器 9 副本 + 路径归一同语义副本 + gene-format 内 JSON/ISO/repr 族 ~420 行全部归口；语义有意变体（pyNorm 保 `//`、verify-manifest 标量版 `pyRepr`）保留并头注注明差异；`pyEq` 无 pypara 对应物、本就不涉归口；mdref 域收窄回链接/锚点）。
 2. **ADR class 六类封闭集双源**：verify-adr-format.mts `CLASS_SET` 与 verify-archived-agent-notes.mts `CLASSES` 各存一份，漂移无闸；规则单源是散文（.agents/notes/README.md）。
 3. **门禁自测临时目录清理纪律不一致**：7 件无有效清理（gen-manifest / verify-cookbook / verify-doc-budgets / verify-manifest / verify-archived-agent-notes / verify-postmortem-naming ×7 / verify-review-brief）——其中 archived-agent-notes 有一个 rmSync 但只清夹具 scripts 子目录，两个 mkdtemp 根（L204/L263）不清理；其余 9 件有完整 rmSync 清理。
 4. **模型面字符串语言无单源拍板**：mount-policies 注入消息中英混排、工具 description/诊断串全英文、solidify 提醒英文；注释面全中文合规——模型可见字符串的语言口径没有一次显式拍板。

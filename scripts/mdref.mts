@@ -6,9 +6,8 @@
  * 相对链接解析循环，供 verify-md-links.mts 与 verify-skill-format.mts 共用；本库
  * 无 CLI，行为由消费方的 --self-test 覆盖（verify-skill-format --self-test 经
  * check_skill 走死链路径）。
- * 2026-09-10 起 py 兼容原语单源 = pypara.mts（str/path/cmp/json/datetime/常量
- * 六族）——splitLines/pyStrip 原在本件（ADR 2026-09-10-mdref-py-primitives-fold），
- * 随归口批迁出，本件收窄回链接/锚点域；新增导出须同时更新消费方与夹具。
+ * py 兼容原语单源 = pypara.mts（str/path/cmp/json/datetime/io/常量族）；本件域 =
+ * 链接/锚点原语。新增导出须同时更新消费方与夹具。
  *
  * checkRelativeLinks 合同：
  *   - 相对目标以其所属文件父目录解析；前导 `/` 目标以 root（扫描根）解析；

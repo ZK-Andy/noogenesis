@@ -156,7 +156,7 @@ function scan(errors: string[]): number {
       skills.push(skill);
     }
   }
-  // Python sorted(Path)：逐段码点比较（单源 = pypara cmpPyStr）
+  // 整串码点序（单源 = pypara cmpPyStr；py sorted(str) 语义，非逐段路径序）
   skills.sort(cmpPyStr);
   for (const skill of skills) {
     checkSkill(skill, errors);

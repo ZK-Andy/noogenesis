@@ -219,7 +219,7 @@ function briefPaths(repo: string): { paths: Record<string, string>; duplicates: 
   if (fs.existsSync(briefsDir) && fs.statSync(briefsDir).isDirectory()) {
     const names = fs.readdirSync(briefsDir)
       .filter((n) => /^R[123]-.*\.md$/.test(n))
-      .sort(cmpPyStr); // 泳道名 ASCII——码点序与码元序同序；归口 pypara 家族单源
+      .sort(cmpPyStr); // 泳道前缀 ASCII；非 ASCII 后缀上行序可变，但重复泳道判定与退出码不变
     for (const n of names) {
       const lane = n.slice(0, 2);
       if (found[lane] !== undefined) {

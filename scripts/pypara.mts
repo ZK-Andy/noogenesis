@@ -2,28 +2,30 @@
 /**
  * pypara — verify-* 门禁的 py 兼容原语单源（import 消费，非独立工具）。
  *
- * 六族原语（与 CPython 对应行为逐字对齐，体不得随手改写——错误文案被各门禁
+ * 原语族（与 CPython 对应行为逐字对齐，体不得随手改写——错误文案被各门禁
  * 夹具钉死）：
  *   str      splitLines / pyStrip / pyReprStr / pyRepr / pyStr
  *   path     normPyPath / pyNorm / pyJoin / segCompare / pyStem
  *   cmp      cmpPyStr（Python str 排序语义 = 码点序）
  *   json     pyJSONParse（CPython json 错误文案逐字镜像）/ pyDumps / jsonDumpStr
  *   datetime pyFromIso（3.11+ 全量口径实用子集）
+ *   io       readTextFatal（fatal 解码 + 保 BOM）/ pyOsErrMsg（errno 文案）
  *   常量     KEBAB_RE / MS_PER_DAY / MS_PER_HOUR / MS_PER_MINUTE
  *
  * 判别式（归口纪律）：语义逐字相同的副本才归口本件；语义有意的变体（如 pyNorm
  * 保 `//` 前缀 vs normPyPath 折叠、verify-manifest 的标量近似 pyRepr vs 本件容器
- * 版）各自保留并在头注写明差异，绝不静默统一。
+ * 版、verify-adr-format 的 pathNorm argv 归一面）各自保留并在头注写明差异，
+ * 绝不静默统一。导出面按 R5 最小化：仅外部有消费者的成员导出。
  *
- * 单源沿革：splitLines/pyStrip 原单源 = mdref（ADR 2026-09-10-mdref-py-primitives-fold，
- * 已被本件取代——mdref 收窄回链接/锚点域）；repr/path/json/iso 族原散在
- * verify-gene-format 单件内（2026-09-10 职责下分批归口）。行为由消费方
- * --self-test 覆盖（本件无 CLI、无自有夹具）。
- *
+ * 行为由消费方 --self-test 覆盖（本件无 CLI、无自有夹具）；新增导出须同时更新
+ * 消费方与夹具。
  * 用法：消费方 import 消费；node ≥22.18 原生 type stripping 直跑，零依赖。
  *
- * Provenance: original to Noogenesis（原语体逐字迁自 verify-gene-format.mts 与
- * mdref.mts 的既有实现，2026-09-10 归口批；语义合同随体携带）。
+ * Provenance: original to Noogenesis（原语体逐字迁自各门禁既有实现——str/path/cmp
+ * 族来自 verify-gene-format / verify-manifest / gen-manifest / verify-cookbook /
+ * verify-doc-budgets / verify-handoff-structure / verify-adr-format / verify-md-links /
+ * verify-review-tier / verify-skill-format / verify-review-brief 的散置副本；
+ * splitLines/pyStrip 自 mdref。语义合同随体携带）。
  */
 import * as fs from "node:fs";
 
@@ -50,7 +52,7 @@ export function pyStrip(s: string): string {
 }
 
 /** py repr(str)：默认单引号；含 `'` 无 `"` 时换双引号；控制字符 \xHH / \uNNNN。 */
-export function pyReprStr(s: string): string {
+function pyReprStr(s: string): string {
   const hasS = s.includes("'");
   const hasD = s.includes('"');
   const q = hasS && !hasD ? '"' : "'";
@@ -195,7 +197,7 @@ export function cmpPyStr(a: string, b: string): number {
 export type JSONVal = null | boolean | number | bigint | string | JSONVal[] | { [key: string]: JSONVal };
 
 /** py json.JSONDecodeError 的 message 形态载体（调用方按需 catch）。 */
-export class PyJSONError extends Error {}
+class PyJSONError extends Error {}
 
 function jsonPosMsg(text: string, msg: string, pos: number): string {
   let line = 1;
@@ -341,8 +343,8 @@ function parseArray(s: string, i: number): [JSONVal[], number] {
   }
 }
 
-/** py json.dumps 兼容字符串转义（夹具构造与 pyDumps 共用）。 */
-export function jsonDumpStr(s: string): string {
+/** py json.dumps 兼容字符串转义（pyDumps 私有件）。 */
+function jsonDumpStr(s: string): string {
   let out = '"';
   for (const ch of s) {
     if (ch === '"') out += '\\"';
@@ -392,10 +394,10 @@ export function pyDumps(v: JSONVal, indent: number | null): string {
 // ---------- datetime：py datetime.fromisoformat 兼容（3.11+ 实用子集） ----------
 
 export const MS_PER_DAY = 24 * 60 * 60 * 1000;
-export const MS_PER_HOUR = 60 * 60 * 1000;
-export const MS_PER_MINUTE = 60 * 1000;
+const MS_PER_HOUR = 60 * 60 * 1000;
+const MS_PER_MINUTE = 60 * 1000;
 
-export interface PyDT { ms: number; dateStr: string }
+interface PyDT { ms: number; dateStr: string }
 
 /** py 闰年判据（calendar.isleap 等价：四年一闰、百年不闰、四百年再闰）。 */
 export function isLeap(y: number): boolean {
@@ -403,7 +405,7 @@ export function isLeap(y: number): boolean {
 }
 
 /** 该年是否含 ISO 8601 第 53 周（平年首日周四或闰年首日周三才可能有 W53）。 */
-export function hasIsoWeek53(y: number): boolean {
+function hasIsoWeek53(y: number): boolean {
   const j1 = new Date(Date.UTC(y, 0, 1));
   // ISO 平日序：1 = 周一
   const dw = ((j1.getUTCDay() + 6) % 7) + 1;
@@ -411,7 +413,7 @@ export function hasIsoWeek53(y: number): boolean {
 }
 
 /** 真日历日的月天数（py calendar.monthrange 的 days 面；mo = 1–12）。 */
-export function daysInMonth(y: number, mo: number): number {
+function daysInMonth(y: number, mo: number): number {
   return new Date(Date.UTC(y, mo, 0)).getUTCDate();
 }
 

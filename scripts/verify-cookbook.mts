@@ -31,7 +31,7 @@
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
-import { splitLines, cmpPyStr, normPyPath, MS_PER_DAY } from "./pypara.mts";
+import { splitLines, cmpPyStr, normPyPath, isLeap, MS_PER_DAY } from "./pypara.mts";
 
 const DEFAULT_PATH = "docs/cookbook.md";
 
@@ -55,8 +55,8 @@ function parsePyIsoDate(s: string): number | null {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null;
   const [y, mo, d] = s.split("-").map(Number) as [number, number, number];
   if (y < 1 || y > 9999 || mo < 1 || mo > 12) return null;
-  const isLeap = (y % 4 === 0 && y % 100 !== 0) || y % 400 === 0;
-  const daysInMonth = [31, isLeap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mo - 1]!;
+  // daysInMonth 数组版为有意保留：仅返回月天数且免 Date 构造（pypara 版走 UTC Date）
+  const daysInMonth = [31, isLeap(y) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][mo - 1]!;
   if (d < 1 || d > daysInMonth) return null;
   return Date.UTC(y, mo - 1, d);
 }

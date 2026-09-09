@@ -10,5 +10,5 @@
 - **TS 两族 import 形态分野（B2）**：scripts 族 .mts = type stripping **源跑**，相对导入带 `.mts` 扩展；engine/adapters 族 .ts/.mts = tsc 构建 **dist 跑**（`npm run build`），相对导入带发射名 `.js`/`.mjs` 扩展。新件先归族再选形态，混用即两头跑不起来（[B2 ADR](../.agents/notes/implemented/architecture/2026-09-08-b2-engine-adapter-ts.md) §Decision 点 2）。
 - **lint / export-docs / package-invariants（C2/B2）**：判据单源 = 根 `.oxlintrc.json` + `verify-export-docs.mts`（导出函数/类须紧邻 JSDoc）+ `verify-package-invariants.mts`（发布面不变量；缺 dist → fail-closed）；改判据即改夹具与 [code-standards](../docs/method/code-standards.md) 档位。
 - 范围收窄判据与纪律单源：根 [AGENTS.md](../AGENTS.md)「Git 纪律」（工具 = `scripts/change-scope.mts`）。
-- **mdref 共享件单源**：`scripts/mdref.mts`（链接/锚点原语库，显式扩展 import 消费）；链接/锚点正则语义改动即改判据，夹具同批核。
+- **共享件单源**：`mdref.mts`（链接/锚点）、`pypara.mts`（py 兼容原语，新件不再手搓副本）——消费规则见各件头注；语义改动即改判据、夹具同批核。
 - 生成物与校验件成对：`gen-manifest` 产出、`verify-manifest` 校验；改 manifest 格式四件同变更。
