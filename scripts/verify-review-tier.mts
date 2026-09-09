@@ -175,7 +175,7 @@ function diffMoment(stagedOnly: boolean, since: string | null): DiffMoment {
     };
   }
   return {
-    // 双命令与 py 对账批的调用序列逐一相同（HEAD 合并视图 + index 单视图）。
+    // 双命令：HEAD 合并视图 + index 单视图（对账不变量）。
     pathsCmds: [["diff", "--name-only", "HEAD"], ["diff", "--cached", "--name-only"]],
     fileDiffArgs: (rel) => ["diff", "HEAD", "--", rel],
     untrackedCmd: ["ls-files", "--others", "--exclude-standard"],
@@ -183,7 +183,7 @@ function diffMoment(stagedOnly: boolean, since: string | null): DiffMoment {
 }
 
 /** 所选 git 时刻的变更路径集 + untracked 集（默认模式单次收集，evidenceInChange
- *  复用，不再二次 ls-files）：
+ *  复用）：
  *  --staged => index vs HEAD；--since => <base>..HEAD；默认 => 工作树。
  *  git 命令失败返回 null——fail-closed：不可解析的 diff 绝不读成「无 FULL 变更」。 */
 function repoChangedPaths(repo: string, stagedOnly: boolean, since: string | null):
