@@ -455,12 +455,45 @@ function selfTest(): number {
     commitAll(r, "add review line in later commit (1b6c25b 形态)");
     rows = scan(r, false, "HEAD~2");
     ok(rows.length === 0, "--since range pass when the Review line is added anywhere in the range (not per-commit)");
+
+    // 14) --staged 搭车防线（pre-commit 消费面）：staged 集含历史已评审 ADR（Review
+    //     行非本次引入）+ 本批新 FULL 变更 → 必须拦（R2 评审补夹具，S1）。
+    r = newRepo(td, "f14");
+    writeIn(r, NOTES_DIR + "/implemented/process/2026-09-05-x.md", EVIDENCE);
+    commitAll(r, "base w/ reviewed adr");
+    writeIn(r, NOTES_DIR + "/implemented/process/2026-09-05-x.md", EVIDENCE.replace("## Consequences\n\nx", "## Consequences\n\nx\n- touched\n"));
+    writeIn(r, "scripts/verify-x.py", "# gate v2\n");
+    rows = scan(r, true);
+    ok(rows.some((x) => x.includes("FULL-tier change lacks review evidence")
+      && x.includes("introduced by this change set")),
+      "--staged blocks when the staged set touches an already-reviewed ADR without introducing a Review line");
+
+    // 15) --staged 新增（staged 前未跟踪→已 add 的 ADR）带 Review 行 → 放行（staged
+    //     态 diff --cached 可见整文件新增行；untracked 兜底不适用于本态）。
+    r = newRepo(td, "f15");
+    commitAll(r, "base");
+    writeIn(r, NOTES_DIR + "/implemented/process/2026-09-05-x.md", EVIDENCE);
+    writeIn(r, "scripts/verify-x.py", "# gate\n");
+    rows = scan(r, true);
+    ok(rows.length === 0, "--staged passes when a newly-added implemented ADR in the index carries the Review line");
+
+    // 16) --staged 排除 untracked：未 add 的 ADR（不进 staged 集）不算证据——即使其
+    //     工作树文件带合法 Review 行，--staged 下也无从引入（R2 S1 场景 3）。
+    r = newRepo(td, "f16");
+    commitAll(r, "base");
+    writeIn(r, "scripts/verify-x.py", "# gate\n");
+    const strayAdr = path.join(r, NOTES_DIR, "implemented", "process", "2026-09-05-stray.md");
+    fs.mkdirSync(path.dirname(strayAdr), { recursive: true });
+    fs.writeFileSync(strayAdr, EVIDENCE); // 不 git add——保持 untracked
+    rows = scan(r, true);
+    ok(rows.some((x) => x.includes("FULL-tier change lacks review evidence")),
+      "--staged ignores an untracked ADR (not in the index) as evidence");
   } finally {
     fs.rmSync(td, { recursive: true, force: true });
   }
 
   if (failed === 0) {
-    out("verify-review-tier --self-test OK (14 fixtures: triggers/evidence/modes/fail-closed/ride-along)");
+    out("verify-review-tier --self-test OK (17 fixtures: triggers/evidence/modes/fail-closed/ride-along/staged)");
   } else {
     errOut("verify-review-tier --self-test FAIL");
   }

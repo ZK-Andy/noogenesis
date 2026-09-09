@@ -23,7 +23,7 @@
 1. `scripts/mdref.mts`：增补 `pyStrip` 导出（JSDoc 契约：Python `str.strip()` 空白集等价），与 splitLines 同哲学（py 兼容小件单源化）。
 2. 四件消费方删除本地 split/pyStrip 副本，改 `import { pyStrip, splitLines } from "./mdref.mts"`。
 3. 调用点改名：adr `splitlines(`→`splitLines(`；cookbook `splitPyLines(`→`splitLines(`；gene `pySplitlines(`→`splitLines(`；handoff `pySplitlines(`→`splitLines(`。
-4. 收益：删 4 处实现 + 7 条 `no-control-regex` 豁免中的 5 条（mdref 保留 1 条、review-brief 的 isspace 另一语义保留 1 条）→ 归口后剩 2 条。
+4. 收益：删 4 处实现 + 7 条 `no-control-regex` 豁免 → 归口后剩 3 条（mdref 内 2 条承载 splitLines/pyStrip 真实语义 + review-brief 1 条为独立 isspace 语义；实装逐文件清点）。
 5. 判据面：所有夹具照旧（行为等价），新增 splitLines/pyStrip 边界夹具已在差分探针实证。
 
 ## 任务 B：verify-review-tier 证据继承弱点
@@ -32,13 +32,12 @@
 
 `evidenceInChange`（L217-239）：变更集内**任一** implemented ADR 头部带合法 Review 行即放行。`--since` 范围 = base..HEAD 全部提交——若本批同时触碰了**上一批已评审的 ADR**（改动它的 Consequence 或伴随提交），旧 ADR 的 Review 行就会给本批全新 FULL 变更搭车（HANDOFF-todos L45 实证：c2 ADR 未加证据行时 `--enforce` 已过）。
 
-### 修法
+### 修法（实装口径，2026-09-10 定稿）
 
-- `--since` 模式改为**同 commit 粒度**：范围内每个 FULL 触发的 commit 必须在该 commit 自身文件集内携带含合法 Review 行的 implemented ADR；否则该 commit 违约。
-- 匹配本仓「一批一提交」惯例（变更史：实现批 = ADR + 代码同批提交）；比「AD 在范围内任一 commit」严格，关闭搭旧车缝隙。
-- 工作树 / `--staged` 模式维持集合级校验（报告态 / ad-hoc，不 enforce——AD 2026-09-05-review-mechanical-gate Decision 3）。
-- `repoChangedPaths` 的 `--since` 路径改由 `git log --name-status` 建 commit→files 映射。
-- 新增夹具：范围内两 commit = 旧已评审 ADR + 新 FULL 变更（无证据）→ 必须 FAIL（旧车不遮新变）。
+- 证据须由本变更集**引入**（diff 内为新增行 / ADR 整文件新增）——旧已评审 ADR 的历史 Review 行不算本批证据，关闭搭车洞。
+- 三种模式各自 diff：stagedOnly→`--cached`、since→`<base>..HEAD`、默认→`HEAD`（覆盖 staged+unstaged）；未跟踪 ADR（默认模式）整文件视为引入。
+- **范围 = 累积 diff，非单 commit**：`--since` 用 `<base>..HEAD` 累积视图——本仓真实批次序里证据行常由**收口 commit** 补加（先例 `d4b8aa2` 翻转无证据 → `1b6c25b` 补 Review 行），单 commit 粒度会误伤真实批次序；范围内任一 commit 补加即算（ADR Decision 3 + fixture 13 钉死）。
+- 新增夹具：范围内历史已评审 ADR + 本批新 FULL 变更（仅触碰旧 ADR 不加 Review 行）→ 必须拦；范围内跨两 commit 补 Review 行 → 放行。fixtures 12→14。
 
 ## 验证
 

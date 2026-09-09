@@ -1,8 +1,10 @@
 # Agent Note: mdref 收编 py 兼容小件（splitLines/pyStrip 副本折叠）
 
 Status: implemented
+Review: FULL/2026-09-10/R1=ok R2=ok R3=ok
 
 > Provenance：本仓原创简化（2026-09-10，C 类随手候选批）。候选出处：HANDOFF-todos（C）「mdref 共享件副本折叠」（R1 评审 2026-09-08 发现）。
+> Related：「另批立项」决定见 [2026-09-08-c2-lint-enforcement](../architecture/2026-09-08-c2-lint-enforcement.md)（该件 L59 记录「未采纳：mdref splitLines 四份副本折叠（跨件行为面，另批）」——本件即该另批的落地，非取代）。
 
 ## Problem
 

@@ -49,8 +49,9 @@ export function splitLines(text: string): string[] {
   return parts;
 }
 
-// Python str.strip() 的空白集（比 JS trim 多 \x1c-\x1f \x85 \u00a0 \u1680
-// \u2000-\u200a \u202f \u205f \u3000 等；少 \ufeff——按 Python 口径对齐）。
+// Python str.strip() 的空白集（与 JS trim 的差集仅 \x1c-\x1f 与 \x85——ECMAScript
+// WhiteSpace+LineTerminator 已含 \u00a0 \u1680 \u2000-\u200a \u2028\u2029 \u202f
+// \u205f \u3000；且 JS trim 会去掉 \ufeff 而 Python strip 保留之——按 Python 口径对齐）。
 const PY_STRIP_RE =
   // oxlint-disable-next-line no-control-regex -- py str.strip 空白集含控制字符（有意匹配）
   /^[ \t\n\r\v\f\x1c\x1d\x1e\x1f\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+|[ \t\n\r\v\f\x1c\x1d\x1e\x1f\u0085\u00a0\u1680\u2000-\u200a\u2028\u2029\u202f\u205f\u3000]+$/g;
