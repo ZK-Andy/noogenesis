@@ -2,7 +2,7 @@
 
 English | [中文](README.zh.md)
 
-Noogenesis is a **swarm evolution framework** built on the [DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) plugin architecture. It turns an AI collaboration methodology into an **evolution capsule** — genes, process cards, and machine gates that a group can evolve together, with every evolution step validated by reproducible machine gates. The north star is AGI: it sets direction only, never the current scope.
+Noogenesis is a **swarm evolution framework** built on the [DeepSeek Harness (DSH)](https://github.com/deepseek-ai/deepseek-harness) plugin architecture. It turns an AI collaboration methodology into an **evolution capsule** — genes, process cards, and machine gates that a group can evolve together, with every evolution step validated by reproducible machine gates. The north star is AGI: it sets direction only, never the current scope.
 
 *Noogenesis* means the emergence and continuous growth of mind — the collective evolution of knowledge in the Teilhard de Chardin lineage: gene → genesis → Noogenesis.
 
@@ -49,7 +49,7 @@ node dist/engine/bin.js self-test  # engine self-test (consumes prebuilt dist)
 │   ├── method/             # methodology body (the content domain being evolved)
 │   ├── cookbook.md         # pitfalls single source of truth (atomic entries)
 │   └── research/           # design docs (swarm framework / shared layer / JIT-Agent research) + reference engine teardowns
-├── scripts/                # verify-* machine gates (.mts, node ≥22.18 native type stripping; the lint/export-docs gates use the oxlint/typescript devDependencies) + gates.mts DAG runner (list single-sourced in engine/gates.json)
+├── scripts/                # verify-* machine gates (.mts, node ≥22.18 native type stripping; the lint/export-docs gates use the oxlint/typescript devDependencies) + gates.mts DAG runner (list single-sourced in engine/gates.json) + release/ (bump.mts + release-note.mts, dsh-v tag + bilingual release body)
 ├── engine/                 # evolution engine (zero-dependency five commands + gates.json whitelist; pull = read-only bank consumption; TS source, run form = tsc dist)
 ├── adapters/dsh/           # DSH adapter layer (plugin shell wiring: system-prompt section / noo_* tools / solidify confirmation / geneBankUrl lazy pull / bank-distributed skills / four-point mount wiring A2–A5 with the A2 opening map (A6/A8 record projection removed, see the [removal ADR](.agents/notes/implemented/architecture/2026-09-08-a8-session-record-projection-removal.md)); TS source since B2, npm package = tsc dist)
 ├── genes/                  # gene bank (<domain>/<id>.json, archived via solidify; this repo is the bank)
@@ -81,4 +81,4 @@ Reviews follow the [triple-review contract](docs/method/review.md). For agents, 
 
 ## License
 
-**AGPL-3.0** ([LICENSE](LICENSE), repository-wide). Commercial use is not excluded; excluded are distribution and network-service forms (including SaaS) that fail the source-provision obligation. Copyright and license text of upstream MIT assets live in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), with per-asset lineage carried by each asset's provenance line. An independent project — not affiliated with DeepSeek.
+**AGPL-3.0** ([LICENSE](LICENSE), repository-wide). Commercial use is allowed; any distribution or network-service use (including SaaS) must comply with AGPL-3.0's source-provision obligation. Copyright and license text of upstream MIT assets live in [THIRD-PARTY-NOTICES.md](THIRD-PARTY-NOTICES.md), with per-asset lineage carried by each asset's provenance line. An independent project, not affiliated with the DSH maintainers.

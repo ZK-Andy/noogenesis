@@ -1,7 +1,7 @@
 {
   "name": "noogenesis-dsh",
   "version": "0.2.3",
-  "description": "Noogenesis (心源) DSH adapter — swarm evolution framework on DeepSeek Harness: zero-dependency evolution engine (P1) wired into the session lifecycle.",
+  "description": "Noogenesis (心源) DSH adapter — swarm evolution framework on the DSH plugin architecture: zero-dependency evolution engine (P1) wired into the session lifecycle.",
   "license": "AGPL-3.0-only",
   "repository": {
     "type": "git",
@@ -24,7 +24,9 @@
     "THIRD-PARTY-NOTICES.md"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && node -e \"require('fs').copyFileSync('engine/gates.json','dist/engine/gates.json')\""
+    "build": "tsc -p tsconfig.build.json && node -e \"require('fs').copyFileSync('engine/gates.json','dist/engine/gates.json')\"",
+    "release:bump": "node scripts/release/bump.mts",
+    "release:note": "node scripts/release/release-note.mts"
   },
   "dsh": {
     "bundle": {
