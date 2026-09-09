@@ -57,7 +57,7 @@ export function createSubtreeRulesPolicies(config: RepoRootConfig): { preStep: P
 			lines.push("- 写码规范：docs/method/code-standards.md（机器面 lint 写码后自动反馈；export-docs 在门禁面）");
 		}
 		if (fs.existsSync(path.join(repoRoot, "docs/method/architecture-standards.md"))) {
-			lines.push("- 架构规范：docs/method/architecture-standards.md（分层/依赖/影响面；新目录先过准入四问）");
+			lines.push("- 架构规范：docs/method/architecture-standards.md（分层/依赖/影响面；新顶层目录先过准入四问）");
 		}
 		return { kind: "advice", lines };
 	};

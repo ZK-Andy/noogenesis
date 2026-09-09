@@ -728,7 +728,7 @@ function writeFixtureGene(repoRoot: string): void {
 			"- engine/ → engine/AGENTS.md",
 			"- scripts/ → scripts/AGENTS.md",
 			"- 写码规范：docs/method/code-standards.md（机器面 lint 写码后自动反馈；export-docs 在门禁面）",
-			"- 架构规范：docs/method/architecture-standards.md（分层/依赖/影响面；新目录先过准入四问）",
+			"- 架构规范：docs/method/architecture-standards.md（分层/依赖/影响面；新顶层目录先过准入四问）",
 		]);
 		assert.equal(subtreePolicies.preStep({ agent, turn: 1, step: 2 }), undefined);
 		const subagent = { session: { header: { cwd: repo, origin: "subagent" } } };
