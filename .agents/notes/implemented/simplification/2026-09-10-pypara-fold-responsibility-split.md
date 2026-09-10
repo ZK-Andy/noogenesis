@@ -3,7 +3,7 @@
 Status: implemented
 Review: FULL/2026-09-10/R1=ok R2=ok R3=ok
 
-> Provenance：本仓原创（2026-09-10，规范审计简化候选批的落地实施）。候选出处 = [2026-09-10-standards-audit-simplification-candidates](../../proposed/simplification/2026-09-10-standards-audit-simplification-candidates.md) 第 1 项 + 用户拍板「职责往下分」。
+> Provenance：本仓原创（2026-09-10，规范审计简化候选批的落地实施）。候选出处 = [2026-09-10-standards-audit-simplification-candidates](2026-09-10-standards-audit-simplification-candidates.md) 第 1 项 + 用户拍板「职责往下分」。
 > Related：超车取代 [2026-09-10-mdref-py-primitives-fold](2026-09-10-mdref-py-primitives-fold.md) 的单源落点（splitLines/pyStrip 从 mdref 迁入本批 pypara；mdref 收窄回链接/锚点域）——相关非否定：该批的「行为等价差分归口」方法与 mdref 单件收窄沿用。
 
 ## Problem

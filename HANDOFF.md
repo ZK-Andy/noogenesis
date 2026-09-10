@@ -5,7 +5,7 @@
 
 > **⚡ 最高优先级（框架重建）：charter ADR + 七层蓝图 → [.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md) · [docs/research/framework-rebuild-blueprint.md](docs/research/framework-rebuild-blueprint.md)**——用户拍板推倒重建（先框架后协作层、本仓原地重建），蓝图定稿（七层三段式 + A1–A8 挂载面 + M1–M3 + C1–C15）；**B0–B5 全批闭环（协作层重建收官，C1–C15 全绿）**——B5 切换批（gates.json cmd 全量重指 TS + 旧机器件零残留 + CI/钩子单轨 + 发版 0.2.0；实现 ADR [.agents/notes/implemented/architecture/2026-09-08-b5-switch.md](.agents/notes/implemented/architecture/2026-09-08-b5-switch.md)，批次表 [.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md](.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md)）；优化轮问题池余项（技能清单补全/记忆库）随重建后进行（规范展开 c1/c2 已交付；行动区仍在 [docs/research/capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)）。
 
-> **⏭ 下一步：规范语义面审计 + pypara 归口两批已收口（`e32143f`）**。其余候选：D 批简化候选剩余 5 项（[候选 ADR](.agents/notes/proposed/simplification/2026-09-10-standards-audit-simplification-candidates.md)，LIGHT 批可收）/ release 工具族首验（B 条，随下一发版）/ 护栏延后收口（D 条，触发 = 胶囊优化后）/ 优化轮问题池余项 [capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)；随手待办 [HANDOFF-todos.md](HANDOFF-todos.md)。
+> **⏭ 下一步：规范语义面审计 + pypara 归口两批已收口（`e32143f`）**。其余候选：D 批简化候选剩余 5 项（[候选 ADR](.agents/notes/implemented/simplification/2026-09-10-standards-audit-simplification-candidates.md)，LIGHT 批可收）/ release 工具族首验（B 条，随下一发版）/ 护栏延后收口（D 条，触发 = 胶囊优化后）/ 优化轮问题池余项 [capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)；随手待办 [HANDOFF-todos.md](HANDOFF-todos.md)。
 
 ## 交接更新记录（摘要滚动窗）
 

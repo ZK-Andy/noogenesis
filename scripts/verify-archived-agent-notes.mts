@@ -22,8 +22,9 @@ import * as os from "node:os";
 import * as crypto from "node:crypto";
 import { execFileSync, spawnSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-
-const CLASSES = ["feature", "bug-fix", "simplification", "architecture", "process", "testing"];
+import { splitLines } from "./pypara.mts";
+// class 封闭集单源在 verify-adr-format（其入口分发带守卫，import 安全）；本件只消费。
+import { CLASS_SET as CLASSES } from "./verify-adr-format.mts";
 const FILE_RE = /^\d{4}-\d{2}-\d{2}-[a-z0-9]+(?:-[a-z0-9]+)*\.md$/;
 const STATUS_RE = /^Status: (implemented|rejected(?: — .+)?)\s*$/;
 const ARCHIVED_RE = /^Archived: (\d{4}-\d{2}-\d{2})\s*$/;
@@ -74,7 +75,7 @@ function checkTree(archivedDir: string): { violations: Violation[]; files: strin
         continue;
       }
       const text = fs.readFileSync(path.join(archivedDir, rel), "utf-8");
-      const lines = text.split("\n");
+      const lines = splitLines(text);
       // 与 verify-adr-format 同口径：Status = 标题后第一个非空行；Archived 行紧随其下。
       const statusIdx = lines.slice(1).findIndex((l) => l.trim() !== "");
       const statusLine = statusIdx === -1 ? "" : (lines[statusIdx + 1] ?? "");
@@ -202,84 +203,91 @@ function realRun(): number {
 function selfTest(): number {
   const failures: string[] = [];
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "arch-"));
-  const archivedDir = path.join(root, "archived", "process");
-  fs.mkdirSync(archivedDir, { recursive: true });
-  const note = "# Agent Note: 评审机械闸延后\n\nStatus: implemented\nArchived: 2026-09-05\n\n## Problem\n\nx\n";
-  fs.writeFileSync(path.join(archivedDir, "2026-09-05-review-gate-defer.md"), note);
-  const hash = sha256(note);
-  const archRoot = path.join(root, "archived");
+  const roots: string[] = [];
+  roots.push(root);
+  try {
+    const archivedDir = path.join(root, "archived", "process");
+    fs.mkdirSync(archivedDir, { recursive: true });
+    const note = "# Agent Note: 评审机械闸延后\n\nStatus: implemented\nArchived: 2026-09-05\n\n## Problem\n\nx\n";
+    fs.writeFileSync(path.join(archivedDir, "2026-09-05-review-gate-defer.md"), note);
+    const hash = sha256(note);
+    const archRoot = path.join(root, "archived");
 
-  // 合规：树 + 清单 + append-only 全过
-  const r = checkTree(archRoot);
-  if (r.violations.length !== 0 || r.files.length !== 1) failures.push("合规样例（树结构）被误判 FAIL");
-  const freeze: FreezeList = { version: 1, files: { "process/2026-09-05-review-gate-defer.md": hash } };
-  if (checkFreeze(archRoot, freeze, r.files).length !== 0) failures.push("合规样例（冻结清单）被误判 FAIL");
-  if (checkAppendOnly({}, freeze.files).length !== 0) failures.push("合规样例（首次入冻 append-only）被误判 FAIL");
-  if (checkAppendOnly({ "process/2026-09-05-review-gate-defer.md": hash }, freeze.files).length !== 0) failures.push("合规样例（原值在位 append-only）被误判 FAIL");
+    // 合规：树 + 清单 + append-only 全过
+    const r = checkTree(archRoot);
+    if (r.violations.length !== 0 || r.files.length !== 1) failures.push("合规样例（树结构）被误判 FAIL");
+    const freeze: FreezeList = { version: 1, files: { "process/2026-09-05-review-gate-defer.md": hash } };
+    if (checkFreeze(archRoot, freeze, r.files).length !== 0) failures.push("合规样例（冻结清单）被误判 FAIL");
+    if (checkAppendOnly({}, freeze.files).length !== 0) failures.push("合规样例（首次入冻 append-only）被误判 FAIL");
+    if (checkAppendOnly({ "process/2026-09-05-review-gate-defer.md": hash }, freeze.files).length !== 0) failures.push("合规样例（原值在位 append-only）被误判 FAIL");
 
-  // 违约：改写归档内容
-  fs.writeFileSync(path.join(archivedDir, "2026-09-05-review-gate-defer.md"), note + "改动\n");
-  if (checkFreeze(archRoot, freeze, r.files).length === 0) failures.push("违约样例（改写归档件）未被拒");
-  fs.writeFileSync(path.join(archivedDir, "2026-09-05-review-gate-defer.md"), note);
-  // 违约：删条目 / 改条目值
-  if (checkAppendOnly(freeze.files, {}).length === 0) failures.push("违约样例（删冻结条目）未被拒");
-  if (checkAppendOnly(freeze.files, { "process/2026-09-05-review-gate-defer.md": "deadbeef" }).length === 0) failures.push("违约样例（改冻结条目值）未被拒");
-  // 违约：冻结清单分支（缺条目 / 清单漂移）
-  if (checkFreeze(archRoot, { version: 1, files: {} }, r.files).length === 0) failures.push("违约样例（清单缺条目）未被拒");
-  if (checkFreeze(archRoot, { version: 1, files: { "process/ghost.md": hash } }, r.files).length === 0) failures.push("违约样例（清单条目指向不存在文件）未被拒");
-  // 违约：树面（直下文件 / class 外目录 / class 下嵌套目录 / 坏命名 / 文件名日期非法 / 缺 Status / 缺 Archived 行 / 未来日期）
-  fs.writeFileSync(path.join(archRoot, "stray.md"), "x");
-  if (checkTree(archRoot).violations.length === 0) failures.push("违约样例（archived 直下文件）未被拒");
-  fs.unlinkSync(path.join(archRoot, "stray.md"));
-  fs.mkdirSync(path.join(archRoot, "notaclass"));
-  if (checkTree(archRoot).violations.length === 0) failures.push("违约样例（class 外目录）未被拒");
-  fs.rmdirSync(path.join(archRoot, "notaclass"));
-  fs.mkdirSync(path.join(archivedDir, "nested"));
-  if (checkTree(archRoot).violations.length === 0) failures.push("违约样例（class 下嵌套目录）未被拒");
-  fs.rmdirSync(path.join(archivedDir, "nested"));
-  fs.writeFileSync(path.join(archivedDir, "2026-09-05-Bad_Name.md"), note);
-  if (checkTree(archRoot).violations.length === 0) failures.push("违约样例（坏命名）未被拒");
-  fs.unlinkSync(path.join(archivedDir, "2026-09-05-Bad_Name.md"));
-  fs.writeFileSync(path.join(archivedDir, "2026-13-01-invalid-date.md"), note);
-  if (checkTree(archRoot).violations.length === 0) failures.push("违约样例（文件名日期非法）未被拒");
-  fs.unlinkSync(path.join(archivedDir, "2026-13-01-invalid-date.md"));
-  fs.writeFileSync(path.join(archivedDir, "2026-09-06-no-status.md"), "# Agent Note: x\n\n## Problem\n");
-  if (checkTree(archRoot).violations.length === 0) failures.push("违约样例（标题后无 Status 行）未被拒");
-  fs.unlinkSync(path.join(archivedDir, "2026-09-06-no-status.md"));
-  fs.writeFileSync(path.join(archivedDir, "2026-09-06-no-archived-line.md"), "# Agent Note: x\n\nStatus: implemented\n\n## Problem\n");
-  if (checkTree(archRoot).violations.length === 0) failures.push("违约样例（缺 Archived 行）未被拒");
-  fs.writeFileSync(path.join(archivedDir, "2099-01-01-future.md"), "# Agent Note: x\n\nStatus: implemented\nArchived: 2099-01-01\n");
-  if (checkTree(archRoot).violations.length === 0) failures.push("违约样例（未来 Archived 日期）未被拒");
-  // 合规回归：Status 带 ` — <理由>` 尾注与 verify-adr-format 同语法
-  fs.writeFileSync(path.join(archivedDir, "2026-09-06-rejected-tail.md"), "# Agent Note: x\n\nStatus: rejected — 理由可防重蹈覆辙\nArchived: 2026-09-06\n");
-  const tail = checkTree(archRoot).violations.filter((v) => v.entry.includes("rejected-tail"));
-  if (tail.length !== 0) failures.push("合规样例（rejected 尾注语法）被误判 FAIL");
-  fs.unlinkSync(path.join(archivedDir, "2026-09-06-rejected-tail.md"));
-  fs.unlinkSync(path.join(archivedDir, "2099-01-01-future.md"));
-  fs.unlinkSync(path.join(archivedDir, "2026-09-06-no-archived-line.md"));
+    // 违约：改写归档内容
+    fs.writeFileSync(path.join(archivedDir, "2026-09-05-review-gate-defer.md"), note + "改动\n");
+    if (checkFreeze(archRoot, freeze, r.files).length === 0) failures.push("违约样例（改写归档件）未被拒");
+    fs.writeFileSync(path.join(archivedDir, "2026-09-05-review-gate-defer.md"), note);
+    // 违约：删条目 / 改条目值
+    if (checkAppendOnly(freeze.files, {}).length === 0) failures.push("违约样例（删冻结条目）未被拒");
+    if (checkAppendOnly(freeze.files, { "process/2026-09-05-review-gate-defer.md": "deadbeef" }).length === 0) failures.push("违约样例（改冻结条目值）未被拒");
+    // 违约：冻结清单分支（缺条目 / 清单漂移）
+    if (checkFreeze(archRoot, { version: 1, files: {} }, r.files).length === 0) failures.push("违约样例（清单缺条目）未被拒");
+    if (checkFreeze(archRoot, { version: 1, files: { "process/ghost.md": hash } }, r.files).length === 0) failures.push("违约样例（清单条目指向不存在文件）未被拒");
+    // 违约：树面（直下文件 / class 外目录 / class 下嵌套目录 / 坏命名 / 文件名日期非法 / 缺 Status / 缺 Archived 行 / 未来日期）
+    fs.writeFileSync(path.join(archRoot, "stray.md"), "x");
+    if (checkTree(archRoot).violations.length === 0) failures.push("违约样例（archived 直下文件）未被拒");
+    fs.unlinkSync(path.join(archRoot, "stray.md"));
+    fs.mkdirSync(path.join(archRoot, "notaclass"));
+    if (checkTree(archRoot).violations.length === 0) failures.push("违约样例（class 外目录）未被拒");
+    fs.rmdirSync(path.join(archRoot, "notaclass"));
+    fs.mkdirSync(path.join(archivedDir, "nested"));
+    if (checkTree(archRoot).violations.length === 0) failures.push("违约样例（class 下嵌套目录）未被拒");
+    fs.rmdirSync(path.join(archivedDir, "nested"));
+    fs.writeFileSync(path.join(archivedDir, "2026-09-05-Bad_Name.md"), note);
+    if (checkTree(archRoot).violations.length === 0) failures.push("违约样例（坏命名）未被拒");
+    fs.unlinkSync(path.join(archivedDir, "2026-09-05-Bad_Name.md"));
+    fs.writeFileSync(path.join(archivedDir, "2026-13-01-invalid-date.md"), note);
+    if (checkTree(archRoot).violations.length === 0) failures.push("违约样例（文件名日期非法）未被拒");
+    fs.unlinkSync(path.join(archivedDir, "2026-13-01-invalid-date.md"));
+    fs.writeFileSync(path.join(archivedDir, "2026-09-06-no-status.md"), "# Agent Note: x\n\n## Problem\n");
+    if (checkTree(archRoot).violations.length === 0) failures.push("违约样例（标题后无 Status 行）未被拒");
+    fs.unlinkSync(path.join(archivedDir, "2026-09-06-no-status.md"));
+    fs.writeFileSync(path.join(archivedDir, "2026-09-06-no-archived-line.md"), "# Agent Note: x\n\nStatus: implemented\n\n## Problem\n");
+    if (checkTree(archRoot).violations.length === 0) failures.push("违约样例（缺 Archived 行）未被拒");
+    fs.writeFileSync(path.join(archivedDir, "2099-01-01-future.md"), "# Agent Note: x\n\nStatus: implemented\nArchived: 2099-01-01\n");
+    if (checkTree(archRoot).violations.length === 0) failures.push("违约样例（未来 Archived 日期）未被拒");
+    // 合规回归：Status 带 ` — <理由>` 尾注与 verify-adr-format 同语法
+    fs.writeFileSync(path.join(archivedDir, "2026-09-06-rejected-tail.md"), "# Agent Note: x\n\nStatus: rejected — 理由可防重蹈覆辙\nArchived: 2026-09-06\n");
+    const tail = checkTree(archRoot).violations.filter((v) => v.entry.includes("rejected-tail"));
+    if (tail.length !== 0) failures.push("合规样例（rejected 尾注语法）被误判 FAIL");
+    fs.unlinkSync(path.join(archivedDir, "2026-09-06-rejected-tail.md"));
+    fs.unlinkSync(path.join(archivedDir, "2099-01-01-future.md"));
+    fs.unlinkSync(path.join(archivedDir, "2026-09-06-no-archived-line.md"));
 
-  // realRun exit-2 路径（子进程，临时 cwd）：清单形状违约 / 非 git 仓读 HEAD 失败
-  const script = fileURLToPath(import.meta.url);
-  const e2eRoot = fs.mkdtempSync(path.join(os.tmpdir(), "arch-e2e-"));
-  fs.mkdirSync(path.join(e2eRoot, ".agents", "notes", "archived", "process"), { recursive: true });
-  fs.writeFileSync(path.join(e2eRoot, ".agents", "notes", "archived", "process", "2026-09-05-a.md"), note);
-  for (const [freezeBody, why] of [
-    ['{"version":1}', "清单缺 files（形状违约）"] as const,
-    [JSON.stringify({ version: 1, files: { "process/2026-09-05-a.md": hash } }), "非 git 仓读 HEAD 失败"] as const,
-  ]) {
-    fs.mkdirSync(path.join(e2eRoot, "scripts"), { recursive: true });
-    fs.writeFileSync(path.join(e2eRoot, "scripts", "archived-notes.freeze.json"), freezeBody);
-    const res = spawnSync(process.execPath, [script], { cwd: e2eRoot, encoding: "utf-8" });
-    if (res.status !== 2) failures.push(`realRun fail-closed 路径未返回 exit 2（${why}，got ${res.status}）：${res.stderr}`);
-    fs.rmSync(path.join(e2eRoot, "scripts"), { recursive: true });
+    // realRun exit-2 路径（子进程，临时 cwd）：清单形状违约 / 非 git 仓读 HEAD 失败
+    const script = fileURLToPath(import.meta.url);
+    const e2eRoot = fs.mkdtempSync(path.join(os.tmpdir(), "arch-e2e-"));
+    roots.push(e2eRoot);
+    fs.mkdirSync(path.join(e2eRoot, ".agents", "notes", "archived", "process"), { recursive: true });
+    fs.writeFileSync(path.join(e2eRoot, ".agents", "notes", "archived", "process", "2026-09-05-a.md"), note);
+    for (const [freezeBody, why] of [
+      ['{"version":1}', "清单缺 files（形状违约）"] as const,
+      [JSON.stringify({ version: 1, files: { "process/2026-09-05-a.md": hash } }), "非 git 仓读 HEAD 失败"] as const,
+    ]) {
+      fs.mkdirSync(path.join(e2eRoot, "scripts"), { recursive: true });
+      fs.writeFileSync(path.join(e2eRoot, "scripts", "archived-notes.freeze.json"), freezeBody);
+      const res = spawnSync(process.execPath, [script], { cwd: e2eRoot, encoding: "utf-8" });
+      if (res.status !== 2) failures.push(`realRun fail-closed 路径未返回 exit 2（${why}，got ${res.status}）：${res.stderr}`);
+      fs.rmSync(path.join(e2eRoot, "scripts"), { recursive: true });
+    }
+
+    if (failures.length > 0) {
+      for (const f of failures) console.log(`SELF-TEST FAIL: ${f}`);
+      return 1;
+    }
+    console.log("self-test OK");
+    return 0;
+  } finally {
+    for (const r of roots) fs.rmSync(r, { recursive: true, force: true });
   }
-
-  if (failures.length > 0) {
-    for (const f of failures) console.log(`SELF-TEST FAIL: ${f}`);
-    return 1;
-  }
-  console.log("self-test OK");
-  return 0;
 }
 
 if (process.argv[2] === "--self-test") {

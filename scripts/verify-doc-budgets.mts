@@ -172,8 +172,10 @@ function parseManifestArg(argv: string[]): string {
  *  manifest 缺失 SKIP、条目指向缺失文件 FAIL；另含 CJK 计词口径断言。 */
 function selfTest(): number {
   const failures: string[] = [];
+  const created: string[] = [];
   const mk = (files: Record<string, string>): string => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "budgets-"));
+    created.push(dir);
     for (const [name, content] of Object.entries(files)) {
       const p = path.join(dir, name);
       fs.mkdirSync(path.dirname(p), { recursive: true });
@@ -182,54 +184,58 @@ function selfTest(): number {
     return dir;
   };
 
-  // CJK 计词口径：中文按词字符段计数，与英文单词同权（不塌缩成 1）。
-  if (countWords("中文 词组 English words") !== 4) failures.push("CJK/英文计词口径不符（期望 4）");
-  if (countWords("中文🚀emoji，全角标点。") !== 3) failures.push("emoji/全角标点不应计入词（期望 3：中文/emoji/全角标点）");
+  try {
+    // CJK 计词口径：中文按词字符段计数，与英文单词同权（不塌缩成 1）。
+    if (countWords("中文 词组 English words") !== 4) failures.push("CJK/英文计词口径不符（期望 4）");
+    if (countWords("中文🚀emoji，全角标点。") !== 3) failures.push("emoji/全角标点不应计入词（期望 3：中文/emoji/全角标点）");
 
-  // 合规：两个文档均在预算内 → PASS
-  const ok = mk({
-    "manifest.json": JSON.stringify({ budgets: [{ path: "a.md", max_words: 5 }, { path: "sub/b.md", max_words: 10 }] }),
-    "a.md": "one two three",
-    "sub/b.md": "中文 文档 词数 很少",
-  });
-  let r = budgetsCheck(path.join(ok, "manifest.json"), ok);
-  if (r.exit !== 0 || r.out.join("\n") !== "OK   a.md: 3/5\nOK   sub/b.md: 4/10\nOK") {
-    failures.push(`合规样例被误判（exit=${r.exit}，out=${JSON.stringify(r.out)}）`);
-  }
+    // 合规：两个文档均在预算内 → PASS
+    const ok = mk({
+      "manifest.json": JSON.stringify({ budgets: [{ path: "a.md", max_words: 5 }, { path: "sub/b.md", max_words: 10 }] }),
+      "a.md": "one two three",
+      "sub/b.md": "中文 文档 词数 很少",
+    });
+    let r = budgetsCheck(path.join(ok, "manifest.json"), ok);
+    if (r.exit !== 0 || r.out.join("\n") !== "OK   a.md: 3/5\nOK   sub/b.md: 4/10\nOK") {
+      failures.push(`合规样例被误判（exit=${r.exit}，out=${JSON.stringify(r.out)}）`);
+    }
 
-  // 超限：FAIL 文案含字数与处理序三步 + cookbook 蒸馏提示
-  const over = mk({
-    "manifest.json": JSON.stringify({ budgets: [{ path: "big.md", max_words: 3 }] }),
-    "big.md": "a1 a2 a3 a4 a5",
-  });
-  r = budgetsCheck(path.join(over, "manifest.json"), over);
-  const overLine = r.out.find((l) => l.startsWith("FAIL: ")) ?? "";
-  if (r.exit !== 1 || !overLine.includes("5 words > budget 3") || !overLine.includes("procedure: relocate -> condense -> raise ceiling with justification") || !overLine.includes("cookbook: distill/merge entries first")) {
-    failures.push(`超限样例文案/退出码不符（exit=${r.exit}，out=${JSON.stringify(r.out)}）`);
-  }
+    // 超限：FAIL 文案含字数与处理序三步 + cookbook 蒸馏提示
+    const over = mk({
+      "manifest.json": JSON.stringify({ budgets: [{ path: "big.md", max_words: 3 }] }),
+      "big.md": "a1 a2 a3 a4 a5",
+    });
+    r = budgetsCheck(path.join(over, "manifest.json"), over);
+    const overLine = r.out.find((l) => l.startsWith("FAIL: ")) ?? "";
+    if (r.exit !== 1 || !overLine.includes("5 words > budget 3") || !overLine.includes("procedure: relocate -> condense -> raise ceiling with justification") || !overLine.includes("cookbook: distill/merge entries first")) {
+      failures.push(`超限样例文案/退出码不符（exit=${r.exit}，out=${JSON.stringify(r.out)}）`);
+    }
 
-  // manifest 缺失 → SKIP，退出 0
-  const missingDir = mk({});
-  r = budgetsCheck(path.join(missingDir, "manifest.json"));
-  if (r.exit !== 0 || r.out.join("\n") !== `SKIP: manifest ${path.join(missingDir, "manifest.json")} not found`) {
-    failures.push(`manifest 缺失样例应为 SKIP/0（exit=${r.exit}，out=${JSON.stringify(r.out)}）`);
-  }
+    // manifest 缺失 → SKIP，退出 0
+    const missingDir = mk({});
+    r = budgetsCheck(path.join(missingDir, "manifest.json"));
+    if (r.exit !== 0 || r.out.join("\n") !== `SKIP: manifest ${path.join(missingDir, "manifest.json")} not found`) {
+      failures.push(`manifest 缺失样例应为 SKIP/0（exit=${r.exit}，out=${JSON.stringify(r.out)}）`);
+    }
 
-  // 条目指向缺失文件 → FAIL（stale manifest 提示）
-  const stale = mk({
-    "manifest.json": JSON.stringify({ budgets: [{ path: "ghost.md", max_words: 10 }] }),
-  });
-  r = budgetsCheck(path.join(stale, "manifest.json"), stale);
-  if (r.exit !== 1 || r.out.join("\n") !== "FAIL: ghost.md: budget entry but file missing (stale manifest?)") {
-    failures.push(`缺失文件样例应 FAIL/1（exit=${r.exit}，out=${JSON.stringify(r.out)}）`);
-  }
+    // 条目指向缺失文件 → FAIL（stale manifest 提示）
+    const stale = mk({
+      "manifest.json": JSON.stringify({ budgets: [{ path: "ghost.md", max_words: 10 }] }),
+    });
+    r = budgetsCheck(path.join(stale, "manifest.json"), stale);
+    if (r.exit !== 1 || r.out.join("\n") !== "FAIL: ghost.md: budget entry but file missing (stale manifest?)") {
+      failures.push(`缺失文件样例应 FAIL/1（exit=${r.exit}，out=${JSON.stringify(r.out)}）`);
+    }
 
-  if (failures.length > 0) {
-    for (const f of failures) console.log(`SELF-TEST FAIL: ${f}`);
-    return 1;
+    if (failures.length > 0) {
+      for (const f of failures) console.log(`SELF-TEST FAIL: ${f}`);
+      return 1;
+    }
+    console.log("self-test OK");
+    return 0;
+  } finally {
+    for (const dir of created) fs.rmSync(dir, { recursive: true, force: true });
   }
-  console.log("self-test OK");
-  return 0;
 }
 
 function main(): number {

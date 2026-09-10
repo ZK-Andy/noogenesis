@@ -35,6 +35,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 import { TextDecoder } from "node:util";
+import { pathToFileURL } from "node:url";
 import { pyStrip, splitLines, cmpPyStr } from "./pypara.mts";
 
 const HEADER_RE = /^# Agent Note: .+$/;
@@ -46,7 +47,8 @@ const REQUIRED_IMPLEMENTED = ["## Decision", "## Consequences"];
 const REQUIRED_PROPOSED = ["## Proposal"];
 
 // --- ADR 命名规则（机器校验）---
-const CLASS_SET = ["feature", "bug-fix", "simplification", "architecture", "process", "testing"];
+/** ADR class 封闭集单源：本件命名校验与 verify-archived-agent-notes 树校验共用。 */
+export const CLASS_SET = ["feature", "bug-fix", "simplification", "architecture", "process", "testing"];
 // Python \d 是 unicode 十进制数字（≡ \p{Nd}）；JS \d 只匹配 ASCII——用 \p{Nd} + u flag 对齐。
 const NAME_RE = /^(\p{Nd}{4}-\p{Nd}{2}-\p{Nd}{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$/u;
 // 顶层豁免面 = 封闭集：notes 子树常设件（索引 README + 子树规则 AGENTS）；其余一律三层深，
@@ -363,7 +365,11 @@ function realRun(): number {
   return 0;
 }
 
-if (process.argv[2] === "--self-test") {
-  process.exit(selfTest());
+// 入口守卫：直接运行时才分发；被 verify-archived-agent-notes.mts import（CLASS_SET）时不执行。
+// argv[1] 先 realpath 再比对——符号链接调用面 import.meta.url 已是真身（同 verify-review-tier 先例）。
+const invokedAsEntry = process.argv[1] !== undefined
+  && import.meta.url === pathToFileURL(fs.realpathSync(process.argv[1])).href;
+if (invokedAsEntry) {
+  if (process.argv[2] === "--self-test") process.exit(selfTest());
+  process.exit(realRun());
 }
-process.exit(realRun());

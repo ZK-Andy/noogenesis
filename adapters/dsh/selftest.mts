@@ -94,8 +94,8 @@ function writeFixtureGene(repoRoot: string): void {
 
 // ── 2) section：空命中 → ""（零 token）；命中 → 一行式封顶 ────────────────
 {
-	assert.equal(hitsSectionText({ stdout: "" }), "");
-	assert.equal(hitsSectionText({ stdout: "signals: x\n(no genes matched)\n" }), "");
+	assert.equal(hitsSectionText({ stdout: "" }, { maxGenes: 12 }), "");
+	assert.equal(hitsSectionText({ stdout: "signals: x\n(no genes matched)\n" }, { maxGenes: 12 }), "");
 	ok("section: empty select → '' (zero-token drop)");
 
 	const many = Array.from({ length: 15 }, (_, i) => `demo/g-${i}  summary ${i}`).join("\n");
@@ -105,12 +105,12 @@ function writeFixtureGene(repoRoot: string): void {
 	ok("section: hit lines capped with (+N more) tail");
 
 	const long = `demo/x  ${"字".repeat(200)}`;
-	assert.ok(hitsSectionText({ stdout: `signals: x\n${long}\n` }, { maxSummaryChars: 160 }).includes("…"));
+	assert.ok(hitsSectionText({ stdout: `signals: x\n${long}\n` }, { maxGenes: 12, maxSummaryChars: 160 }).includes("…"));
 	ok("section: per-line summary truncated");
 
 	// `{{` 中性化：宿主 interpolate 对未知 {{name}} 抛错且每模型步调用
 	// renderPrompt——模板语法基因 summary 不得原样进 system-prompt 节。
-	const templated = hitsSectionText({ stdout: "signals: x\ndemo/tmpl  prefer {{placeholder}} tokens\n" });
+	const templated = hitsSectionText({ stdout: "signals: x\ndemo/tmpl  prefer {{placeholder}} tokens\n" }, { maxGenes: 12 });
 	assert.ok(!templated.includes("{{"), "literal {{ must not survive into section text");
 	assert.ok(templated.includes("{\u200b{placeholder}"), "neutralized form keeps visible content");
 	ok("section: '{{' neutralized (interpolate cannot throw on gene summaries)");

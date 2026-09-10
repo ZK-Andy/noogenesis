@@ -95,63 +95,67 @@ function scanGenes(repo: string): GeneEntry[] {
 function selfTest(): number {
   const failures: string[] = [];
   const td = fs.mkdtempSync(path.join(os.tmpdir(), "genmanifest-"));
-  const repo = path.join(td, "repo");
-  const write = (rel: string, content: string): void => {
-    const p = path.join(repo, rel);
-    fs.mkdirSync(path.dirname(p), { recursive: true });
-    fs.writeFileSync(p, content, "utf-8");
-  };
-  const gene = (id: string, domain: string): string =>
-    JSON.stringify({ id, domain, summary: `s of ${id}`, signals: [`${id} signal`], strategy: ["step"] }, null, 2) + "\n";
-
-  // 空树（无 genes/ 目录）→ 空条目
-  fs.mkdirSync(path.join(repo, "empty"), { recursive: true });
-  if (scanGenes(path.join(repo, "empty")).length !== 0) failures.push("无 genes/ 目录应为空集");
-
-  // 合规：两域三基因，跨域按 ref 排序
-  write("genes/doc/alpha.json", gene("alpha", "doc"));
-  write("genes/doc/beta.json", gene("beta", "doc"));
-  write("genes/process/gamma.json", gene("gamma", "process"));
-  const entries = scanGenes(repo);
-  if (JSON.stringify(entries.map((e) => e.ref)) !== JSON.stringify(["doc/alpha", "doc/beta", "process/gamma"])) {
-    failures.push(`合规扫描 ref 序不符：${JSON.stringify(entries.map((e) => e.ref))}`);
-  }
-  if (entries[0]!.path !== "genes/doc/alpha.json" || entries[0]!.summary !== "s of alpha" || JSON.stringify(entries[0]!.signals) !== JSON.stringify(["alpha signal"])) {
-    failures.push(`条目内容不符：${JSON.stringify(entries[0])}`);
-  }
-
-  // 协议违约：各类必须命中预期文案
-  const expectProtocol = (files: Record<string, string>, substring: string, desc: string): void => {
-    const r = path.join(td, `case-${desc.replace(/\W+/g, "-")}`);
-    for (const [relc, content] of Object.entries(files)) {
-      const p = path.join(r, relc);
+  try {
+    const repo = path.join(td, "repo");
+    const write = (rel: string, content: string): void => {
+      const p = path.join(repo, rel);
       fs.mkdirSync(path.dirname(p), { recursive: true });
       fs.writeFileSync(p, content, "utf-8");
+    };
+    const gene = (id: string, domain: string): string =>
+      JSON.stringify({ id, domain, summary: `s of ${id}`, signals: [`${id} signal`], strategy: ["step"] }, null, 2) + "\n";
+
+    // 空树（无 genes/ 目录）→ 空条目
+    fs.mkdirSync(path.join(repo, "empty"), { recursive: true });
+    if (scanGenes(path.join(repo, "empty")).length !== 0) failures.push("无 genes/ 目录应为空集");
+
+    // 合规：两域三基因，跨域按 ref 排序
+    write("genes/doc/alpha.json", gene("alpha", "doc"));
+    write("genes/doc/beta.json", gene("beta", "doc"));
+    write("genes/process/gamma.json", gene("gamma", "process"));
+    const entries = scanGenes(repo);
+    if (JSON.stringify(entries.map((e) => e.ref)) !== JSON.stringify(["doc/alpha", "doc/beta", "process/gamma"])) {
+      failures.push(`合规扫描 ref 序不符：${JSON.stringify(entries.map((e) => e.ref))}`);
     }
-    try {
-      scanGenes(r);
-      failures.push(`${desc}：未抛协议错误`);
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
-      if (!(e instanceof GeneProtocolError) || !msg.includes(substring)) {
-        failures.push(`${desc}：文案不符（got: ${msg}）`);
+    if (entries[0]!.path !== "genes/doc/alpha.json" || entries[0]!.summary !== "s of alpha" || JSON.stringify(entries[0]!.signals) !== JSON.stringify(["alpha signal"])) {
+      failures.push(`条目内容不符：${JSON.stringify(entries[0])}`);
+    }
+
+    // 协议违约：各类必须命中预期文案
+    const expectProtocol = (files: Record<string, string>, substring: string, desc: string): void => {
+      const r = path.join(td, `case-${desc.replace(/\W+/g, "-")}`);
+      for (const [relc, content] of Object.entries(files)) {
+        const p = path.join(r, relc);
+        fs.mkdirSync(path.dirname(p), { recursive: true });
+        fs.writeFileSync(p, content, "utf-8");
       }
+      try {
+        scanGenes(r);
+        failures.push(`${desc}：未抛协议错误`);
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : String(e);
+        if (!(e instanceof GeneProtocolError) || !msg.includes(substring)) {
+          failures.push(`${desc}：文案不符（got: ${msg}）`);
+        }
+      }
+    };
+
+    expectProtocol({ "genes/doc/bad.json": "{" }, "not valid JSON", "非 JSON 基因");
+    expectProtocol({ "genes/doc/bad.json": "[1]" }, "gene must be a JSON object", "非对象基因");
+    expectProtocol({ "genes/doc/bad.json": JSON.stringify({ id: "other", domain: "doc", summary: "s", signals: ["x"] }) }, "id must equal filename stem", "id 与文件名不符");
+    expectProtocol({ "genes/doc/bad.json": JSON.stringify({ id: "bad", domain: "process", summary: "s", signals: ["x"] }) }, "domain must equal its directory", "domain 与目录不符");
+    expectProtocol({ "genes/doc/bad.json": JSON.stringify({ id: "bad", domain: "doc", summary: "  ", signals: ["x"] }) }, "summary must be a non-empty string", "空 summary");
+    expectProtocol({ "genes/doc/bad.json": JSON.stringify({ id: "bad", domain: "doc", summary: "s", signals: [] }) }, "signals must be a non-empty array of strings", "空 signals");
+
+    if (failures.length > 0) {
+      for (const f of failures) console.log(`SELF-TEST FAIL: ${f}`);
+      return 1;
     }
-  };
-
-  expectProtocol({ "genes/doc/bad.json": "{" }, "not valid JSON", "非 JSON 基因");
-  expectProtocol({ "genes/doc/bad.json": "[1]" }, "gene must be a JSON object", "非对象基因");
-  expectProtocol({ "genes/doc/bad.json": JSON.stringify({ id: "other", domain: "doc", summary: "s", signals: ["x"] }) }, "id must equal filename stem", "id 与文件名不符");
-  expectProtocol({ "genes/doc/bad.json": JSON.stringify({ id: "bad", domain: "process", summary: "s", signals: ["x"] }) }, "domain must equal its directory", "domain 与目录不符");
-  expectProtocol({ "genes/doc/bad.json": JSON.stringify({ id: "bad", domain: "doc", summary: "  ", signals: ["x"] }) }, "summary must be a non-empty string", "空 summary");
-  expectProtocol({ "genes/doc/bad.json": JSON.stringify({ id: "bad", domain: "doc", summary: "s", signals: [] }) }, "signals must be a non-empty array of strings", "空 signals");
-
-  if (failures.length > 0) {
-    for (const f of failures) console.log(`SELF-TEST FAIL: ${f}`);
-    return 1;
+    console.log("self-test OK");
+    return 0;
+  } finally {
+    fs.rmSync(td, { recursive: true, force: true });
   }
-  console.log("self-test OK");
-  return 0;
 }
 
 /** scanGenes 的 realRun 包装：协议违约同 py SystemExit(str)——stderr 单行文案，exit 1。 */

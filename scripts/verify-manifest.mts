@@ -286,21 +286,25 @@ function selfTest(): number {
 
   let failed = 0;
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "tmp"));
-  for (const [i, [builder, expected, desc]] of cases.entries()) {
-    const t = path.join(root, `case${i}`);
-    fs.mkdirSync(t);
-    builder(t);
-    const [, errors] = verify(t);
-    const actualOk = errors.length === 0;
-    const wantOk = expected.length === 0;
-    if (wantOk && actualOk) {
-      console.log(`  ok: ${desc}`);
-    } else if (!wantOk && !actualOk && errors.some((e) => expected.some((sub) => e.includes(sub)))) {
-      console.log(`  ok: ${desc}`);
-    } else {
-      console.error(`  FAIL ${desc}: expected ${wantOk ? "pass" : pyListRepr(expected)}, got ${actualOk ? "pass" : pyListRepr(errors)}`);
-      failed = 1;
+  try {
+    for (const [i, [builder, expected, desc]] of cases.entries()) {
+      const t = path.join(root, `case${i}`);
+      fs.mkdirSync(t);
+      builder(t);
+      const [, errors] = verify(t);
+      const actualOk = errors.length === 0;
+      const wantOk = expected.length === 0;
+      if (wantOk && actualOk) {
+        console.log(`  ok: ${desc}`);
+      } else if (!wantOk && !actualOk && errors.some((e) => expected.some((sub) => e.includes(sub)))) {
+        console.log(`  ok: ${desc}`);
+      } else {
+        console.error(`  FAIL ${desc}: expected ${wantOk ? "pass" : pyListRepr(expected)}, got ${actualOk ? "pass" : pyListRepr(errors)}`);
+        failed = 1;
+      }
     }
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
   }
   if (failed === 0) {
     console.log("== verify-manifest self-test passed ==");

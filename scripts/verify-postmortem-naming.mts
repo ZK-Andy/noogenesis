@@ -73,27 +73,34 @@ function realRun(): number {
 /** 夹具自测：违约样例必须 FAIL，合规样例必须 PASS。 */
 function selfTest(): number {
   const failures: string[] = [];
+  const created: string[] = [];
   const mk = (files: Record<string, string>): string => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "pmn-"));
+    created.push(dir);
     for (const [name, content] of Object.entries(files)) {
       fs.writeFileSync(path.join(dir, name), content);
     }
     return dir;
   };
 
-  const empty = fs.mkdtempSync(path.join(os.tmpdir(), "pmn-"));
-  if (checkPostmortemDir(empty).length !== 0) failures.push("合规样例（空目录）被误判 FAIL");
-  const ok = mk({ "0001-first-postmortem.md": "x", "0002-second-postmortem.md": "x" });
-  if (checkPostmortemDir(ok).length !== 0) failures.push("合规样例（递增编号）被误判 FAIL");
-  const badName = mk({ "1-bad.md": "x" });
-  if (checkPostmortemDir(badName).length === 0) failures.push("违约样例（坏命名）未被拒");
-  const dup = mk({ "0001-a.md": "x", "0001-b.md": "x" });
-  if (checkPostmortemDir(dup).length === 0) failures.push("违约样例（重复编号）未被拒");
-  const subdir = mk({});
-  fs.mkdirSync(path.join(subdir, "nested"));
-  if (checkPostmortemDir(subdir).length === 0) failures.push("违约样例（子目录）未被拒");
-  const nonMd = mk({ "notes.txt": "x" });
-  if (checkPostmortemDir(nonMd).length === 0) failures.push("违约样例（非 .md 条目）未被拒");
+  try {
+    const empty = fs.mkdtempSync(path.join(os.tmpdir(), "pmn-"));
+    created.push(empty);
+    if (checkPostmortemDir(empty).length !== 0) failures.push("合规样例（空目录）被误判 FAIL");
+    const ok = mk({ "0001-first-postmortem.md": "x", "0002-second-postmortem.md": "x" });
+    if (checkPostmortemDir(ok).length !== 0) failures.push("合规样例（递增编号）被误判 FAIL");
+    const badName = mk({ "1-bad.md": "x" });
+    if (checkPostmortemDir(badName).length === 0) failures.push("违约样例（坏命名）未被拒");
+    const dup = mk({ "0001-a.md": "x", "0001-b.md": "x" });
+    if (checkPostmortemDir(dup).length === 0) failures.push("违约样例（重复编号）未被拒");
+    const subdir = mk({});
+    fs.mkdirSync(path.join(subdir, "nested"));
+    if (checkPostmortemDir(subdir).length === 0) failures.push("违约样例（子目录）未被拒");
+    const nonMd = mk({ "notes.txt": "x" });
+    if (checkPostmortemDir(nonMd).length === 0) failures.push("违约样例（非 .md 条目）未被拒");
+  } finally {
+    for (const dir of created) fs.rmSync(dir, { recursive: true, force: true });
+  }
 
   if (failures.length > 0) {
     for (const f of failures) console.log(`SELF-TEST FAIL: ${f}`);

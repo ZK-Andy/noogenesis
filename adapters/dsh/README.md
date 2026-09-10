@@ -26,6 +26,8 @@ M2 适配层拍板与耦合防火墙的单一事实源：[ADR 2026-09-06-m2-adap
 
 ## 语义与失败模式
 
+- **模型面字符串语言口径**：模型可见字符串（基座节 / 命中节 / 子树规则地图 / lint 拦回与降级 warn / 工具 description）统一英文；注释与 durable 文档用中文。口径单源 = 本行（拍板 ADR [2026-09-10-standards-audit-simplification-candidates](../../.agents/notes/implemented/simplification/2026-09-10-standards-audit-simplification-candidates.md)）。
+
 - **挂载面（B4；A6/A8 记录投影不挂）**：四挂载点接线——`agent/pre-step`（A2，会话首个 pre-step 的子树规则地图建议消息）、`tools/pre-execute`（A3，零策略能力位）、`tools/post-execute`（A4，写码在环 lint 反馈——机器可判违规 **block 拦回**写码工具结果，须修正才能继续；同文件连续拦回达上限降级 `context`、干净写码复位，降级面绝不变成写码阻断）、`agent/session-start`（A5，非阻塞 inject 能力位，首批零策略）。插件**不向宿主 session 写任何自定义事件类型**（A6 记录投影 + A8 `session.append` 自定义 kind `noogenesis/*` 不挂——宿主读路径对词汇表外且未标 `ignorable` 的事件类型 fail-closed 拒解释整份日志，而装机 `Session.append` 无 ignorable 写入口；拍板单源 = [ADR 2026-09-08-a8-session-record-projection-removal](../../.agents/notes/implemented/architecture/2026-09-08-a8-session-record-projection-removal.md)）。阻断面唯一 = A4 block 拦回（升格批 ADR 拍板）；A3 deny 仍零策略件；其余全部异常 catch → warn 降级，绝不阻塞会话。拍板单源 = [ADR 2026-09-08-b4-mount-wiring](../../.agents/notes/implemented/architecture/2026-09-08-b4-mount-wiring.md) + [轨道 A ADR](../../.agents/notes/implemented/architecture/2026-09-08-lint-in-loop-feedback.md) + 撤除 ADR。
 - **三工具只读**：`noo_select` / `noo_propose` / `noo_evaluate` 不写盘不提交；引擎退出码映射：0=结果文本、1=闸红（红是有效结论，以 `RED (exit 1)` 文本返回；**exit 1 + 空 stdout = 引擎内部故障**（非 EngineError 走 `throw e` 崩溃退出码同为 1 且无报告），按 fail-closed 抛错不放行）、2=fail-closed（抛错，重试无益）。
 - **写路径唯一**：solidify 只在 `agent/disposed` 触发体里经人工确认执行；确认缺席/拒绝/超时 → 只输出带精确命令的提醒；in-flight 去重逐仓隔离（同仓近同时 dispose 不重复弹问/重复入档，异仓互不阻塞）；solidify 红档候选不入档（引擎语义），失败清单以 warn 汇报。

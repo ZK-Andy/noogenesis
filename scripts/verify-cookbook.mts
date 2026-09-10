@@ -215,17 +215,21 @@ function selfTest(): number {
 
   let failed = 0;
   const td = fs.mkdtempSync(path.join(os.tmpdir(), "tmp"));
-  for (const [i, [content, expected, desc]] of cases.entries()) {
-    const p = path.join(td, `cookbook-${i}.md`);
-    fs.writeFileSync(p, content, "utf-8");
-    const { errors } = scan(p);
-    const actual = errors.length > 0 ? 1 : 0;
-    if (actual === expected) {
-      console.log(`  ok: ${desc}`);
-    } else {
-      console.log(`  ✗ ${desc}: expected exit ${expected}, got ${actual} (${errors.join(" ; ")})`);
-      failed = 1;
+  try {
+    for (const [i, [content, expected, desc]] of cases.entries()) {
+      const p = path.join(td, `cookbook-${i}.md`);
+      fs.writeFileSync(p, content, "utf-8");
+      const { errors } = scan(p);
+      const actual = errors.length > 0 ? 1 : 0;
+      if (actual === expected) {
+        console.log(`  ok: ${desc}`);
+      } else {
+        console.log(`  ✗ ${desc}: expected exit ${expected}, got ${actual} (${errors.join(" ; ")})`);
+        failed = 1;
+      }
     }
+  } finally {
+    fs.rmSync(td, { recursive: true, force: true });
   }
   if (failed === 0) {
     console.log("== verify-cookbook self-test passed ==");

@@ -27,11 +27,13 @@ export const BASE_SECTION = [
  * 命中节渲染：吃引擎 select 的 stdout（合同面 = stdout 文本，不另立解析协议）。
  * select stdout 首行为 `signals: ...`，其后每行 `<domain>/<id>  <summary>`，
  * 无命中为 `(no genes matched)`。逐行截断摘要，命中数按 maxGenes 封顶。
+ * maxGenes 必传：调用点恒来自 config（缺省 12 单源 = config.mts，README 配置表为口径单源）。
  */
 export function hitsSectionText(
 	selectResult: { stdout?: string } | undefined,
-	{ maxGenes = 12, maxSummaryChars = MAX_SUMMARY_CHARS }: { maxGenes?: number; maxSummaryChars?: number } = {},
+	opts: { maxGenes: number; maxSummaryChars?: number },
 ): string {
+	const { maxGenes, maxSummaryChars = MAX_SUMMARY_CHARS } = opts;
 	const lines = String(selectResult?.stdout ?? "").split("\n").filter((line) => line.length > 0);
 	const hitLines = lines.filter((line) => !line.startsWith("signals:") && line !== "(no genes matched)");
 	if (!hitLines.length) return "";

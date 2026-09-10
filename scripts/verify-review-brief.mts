@@ -465,171 +465,175 @@ function reprList(rows: string[]): string {
 function selfTest(): number {
   const td = fs.mkdtempSync(path.join(os.tmpdir(), "vrb-"));
   const root = td;
-  const briefsDirOf = (dir: string) => path.join(dir, BRIEFS_DIR);
+  try {
+    const briefsDirOf = (dir: string) => path.join(dir, BRIEFS_DIR);
 
-  const w = (dir: string, name: string, lane: string, scopeBody: string,
-    checks = "- [ ] c\n", outscope = "- d\n"): void => {
-    const p = path.join(briefsDirOf(dir), name);
-    fs.writeFileSync(p,
-      `# ${lane} 评审简报（lane）\n\n## Scope\n- base: a  head: b\n${scopeBody}\n` +
-      "- 门禁自证：md-links:0，skill-format:0\n\n" +
-      `## Directed checks\n${checks}\n## Explicitly out of scope\n${outscope}\n` +
-      "## Report contract\n- 返回 `Blocker[]/Suggestion[]`；空即无发现\n",
-      "utf-8");
-  };
+    const w = (dir: string, name: string, lane: string, scopeBody: string,
+      checks = "- [ ] c\n", outscope = "- d\n"): void => {
+      const p = path.join(briefsDirOf(dir), name);
+      fs.writeFileSync(p,
+        `# ${lane} 评审简报（lane）\n\n## Scope\n- base: a  head: b\n${scopeBody}\n` +
+        "- 门禁自证：md-links:0，skill-format:0\n\n" +
+        `## Directed checks\n${checks}\n## Explicitly out of scope\n${outscope}\n` +
+        "## Report contract\n- 返回 `Blocker[]/Suggestion[]`；空即无发现\n",
+        "utf-8");
+    };
 
-  fs.mkdirSync(briefsDirOf(root));
-  w(root, "R1-a.md", "R1", "- 需深审面：scripts/verify-x.py\n- 陪跑文件：docs/method/review.md\n- diff 面相邻件：无");
-  w(root, "R2-a.md", "R2", "- 需深审面：scripts/verify-x.py\n- 陪跑文件：无");
-  w(root, "R3-a.md", "R3", "- 需深审面：.agents/notes/x.md\n- 陪跑文件：无");
-  assertOk(checkRepo(root, [...LANES]).length === 0, "fixture 1 (well-formed R1/R2/R3) should pass");
+    fs.mkdirSync(briefsDirOf(root));
+    w(root, "R1-a.md", "R1", "- 需深审面：scripts/verify-x.py\n- 陪跑文件：docs/method/review.md\n- diff 面相邻件：无");
+    w(root, "R2-a.md", "R2", "- 需深审面：scripts/verify-x.py\n- 陪跑文件：无");
+    w(root, "R3-a.md", "R3", "- 需深审面：.agents/notes/x.md\n- 陪跑文件：无");
+    assertOk(checkRepo(root, [...LANES]).length === 0, "fixture 1 (well-formed R1/R2/R3) should pass");
 
-  // 缺 R1 简报 → 违约
-  const root2 = path.join(td, "f2");
-  fs.mkdirSync(briefsDirOf(root2), { recursive: true });
-  fs.writeFileSync(path.join(briefsDirOf(root2), "R2-a.md"),
-    "# R2 评审简报（code-review）\n\n## Scope\n- base: a  head: b\n- 需深审面：x\n- 陪跑文件：无\n\n" +
-    "## Directed checks\n- [ ] c\n\n## Explicitly out of scope\n- d\n\n## Report contract\n" +
-    "- 返回 `Blocker[]/Suggestion[]`；空即无发现\n", "utf-8");
-  assertOk(anyMatch(checkRepo(root2, [...LANES]), (s) => s.includes("R1: missing brief")),
-    "fixture 2 (missing R1) should flag R1");
-
-  // 无界（缺 out-of-scope）R2 → 违约
-  const root3 = path.join(td, "f3");
-  fs.mkdirSync(briefsDirOf(root3), { recursive: true });
-  fs.writeFileSync(path.join(briefsDirOf(root3), "R2-a.md"),
-    "# R2 评审简报（code-review）\n\n## Scope\n- base: a  head: b\n- 需深审面：x\n- 陪跑文件：无\n\n" +
-    "## Directed checks\n- [ ] c\n\n" +
-    "## Report contract\n- 返回 `Blocker[]/Suggestion[]`；空即无发现\n", "utf-8");
-  assertOk(anyMatch(checkRepo(root3, [...LANES]), (s) => s.includes("R2") && s.includes("out of scope")),
-    "fixture 3 (no out-of-scope) should flag R2");
-
-  // >5 条定向检查 → 违约
-  const root4 = path.join(td, "f4");
-  fs.mkdirSync(briefsDirOf(root4), { recursive: true });
-  fs.writeFileSync(path.join(briefsDirOf(root4), "R1-a.md"),
-    "# R1 评审简报（simplifications）\n\n## Scope\n- base: a  head: b\n- 需深审面：x\n- 陪跑文件：无\n\n" +
-    "## Directed checks\n" + Array.from({ length: 6 }, (_, i) => `- [ ] c${i}\n`).join("") +
-    "\n## Explicitly out of scope\n- d\n\n## Report contract\n" +
-    "- 返回 `Blocker[]/Suggestion[]`；空即无发现\n", "utf-8");
-  assertOk(anyMatch(checkRepo(root4, [...LANES]), (s) => s.includes("R1") && s.includes(">5")),
-    "fixture 4 (>5 checks) should flag R1");
-
-  // 缺需深审面 → 违约
-  const root5 = path.join(td, "f5");
-  fs.mkdirSync(briefsDirOf(root5), { recursive: true });
-  fs.writeFileSync(path.join(briefsDirOf(root5), "R2-a.md"),
-    "# R2 评审简报（code-review）\n\n## Scope\n- base: a  head: b\n- 陪跑文件：x\n- 门禁自证：md-links:0\n\n" +
-    "## Directed checks\n- [ ] c\n\n## Explicitly out of scope\n- d\n\n## Report contract\n" +
-    "- 返回 `Blocker[]/Suggestion[]`；空即无发现\n", "utf-8");
-  assertOk(anyMatch(checkRepo(root5, [...LANES]), (s) => s.includes("R2") && s.includes("需深审面")),
-    "fixture 5 (missing 需深审面) should flag R2");
-
-  // 「需深审面：无」→ 违约（非空清单强制）
-  const root6 = path.join(td, "f6");
-  fs.mkdirSync(briefsDirOf(root6), { recursive: true });
-  fs.writeFileSync(path.join(briefsDirOf(root6), "R2-a.md"),
-    "# R2 评审简报（code-review）\n\n## Scope\n- base: a  head: b\n- 需深审面：无\n- 陪跑文件：无\n\n" +
-    "## Directed checks\n- [ ] c\n\n## Explicitly out of scope\n- d\n\n## Report contract\n" +
-    "- 返回 `Blocker[]/Suggestion[]`；空即无发现\n", "utf-8");
-  assertOk(anyMatch(checkRepo(root6, [...LANES]), (s) => s.includes("R2") && s.includes("需深审面 must name ≥1 file")),
-    "fixture 6 (需深审面：无) should flag R2");
-
-  // 陪跑声明已盖但缺门禁自证 → 违约（门禁自证耦合）
-  const root7 = path.join(td, "f7");
-  fs.mkdirSync(briefsDirOf(root7), { recursive: true });
-  fs.writeFileSync(path.join(briefsDirOf(root7), "R2-a.md"),
-    "# R2 评审简报（code-review）\n\n## Scope\n- base: a  head: b\n- 需深审面：x\n- 陪跑文件：scripts/verify-x.py（机器门禁已盖）\n\n" +
-    "## Directed checks\n- [ ] c\n\n## Explicitly out of scope\n- d\n\n## Report contract\n" +
-    "- 返回 `Blocker[]/Suggestion[]`；空即无发现\n", "utf-8");
-  assertOk(anyMatch(checkRepo(root7, [...LANES]), (s) => s.includes("R2") && s.includes("门禁自证")),
-    "fixture 7 (companion without gate self-assertion) should flag R2");
-
-  // 门禁自证含非 0 exit → 违约（红门禁不得搭车陪跑）
-  const root8 = path.join(td, "f8");
-  fs.mkdirSync(briefsDirOf(root8), { recursive: true });
-  fs.writeFileSync(path.join(briefsDirOf(root8), "R2-a.md"),
-    "# R2 评审简报（code-review）\n\n## Scope\n- base: a  head: b\n- 需深审面：x\n- 陪跑文件：scripts/verify-x.py（机器门禁已盖）\n" +
-    "- 门禁自证：md-links:2，skill-format:0\n\n" +
-    "## Directed checks\n- [ ] c\n\n## Explicitly out of scope\n- d\n\n## Report contract\n" +
-    "- 返回 `Blocker[]/Suggestion[]`；空即无发现\n", "utf-8");
-  assertOk(anyMatch(checkRepo(root8, [...LANES]), (s) => s.includes("R2") && s.includes("非 0 exit")),
-    "fixture 8 (self-assertion with non-zero exit) should flag R2");
-
-  // 同泳道重复简报 → 上报
-  const root9 = path.join(td, "f9");
-  fs.mkdirSync(briefsDirOf(root9), { recursive: true });
-  for (const name of ["R2-a.md", "R2-b.md"]) {
-    fs.writeFileSync(path.join(briefsDirOf(root9), name),
+    // 缺 R1 简报 → 违约
+    const root2 = path.join(td, "f2");
+    fs.mkdirSync(briefsDirOf(root2), { recursive: true });
+    fs.writeFileSync(path.join(briefsDirOf(root2), "R2-a.md"),
       "# R2 评审简报（code-review）\n\n## Scope\n- base: a  head: b\n- 需深审面：x\n- 陪跑文件：无\n\n" +
       "## Directed checks\n- [ ] c\n\n## Explicitly out of scope\n- d\n\n## Report contract\n" +
       "- 返回 `Blocker[]/Suggestion[]`；空即无发现\n", "utf-8");
-  }
-  assertOk(anyMatch(checkRepo(root9, ["R2"]), (s) => s.includes("multiple briefs")),
-    "fixture 9 (duplicate lane briefs) should be reported");
+    assertOk(anyMatch(checkRepo(root2, [...LANES]), (s) => s.includes("R1: missing brief")),
+      "fixture 2 (missing R1) should flag R1");
 
-  // 无简报在飞 → 空过（CI 形态：简报目录 gitignored）
-  const root10 = path.join(td, "f10");
-  fs.mkdirSync(briefsDirOf(root10), { recursive: true });
-  assertOk(checkRepo(root10).length === 0, "fixture 10 (no briefs in flight) should pass vacuously");
+    // 无界（缺 out-of-scope）R2 → 违约
+    const root3 = path.join(td, "f3");
+    fs.mkdirSync(briefsDirOf(root3), { recursive: true });
+    fs.writeFileSync(path.join(briefsDirOf(root3), "R2-a.md"),
+      "# R2 评审简报（code-review）\n\n## Scope\n- base: a  head: b\n- 需深审面：x\n- 陪跑文件：无\n\n" +
+      "## Directed checks\n- [ ] c\n\n" +
+      "## Report contract\n- 返回 `Blocker[]/Suggestion[]`；空即无发现\n", "utf-8");
+    assertOk(anyMatch(checkRepo(root3, [...LANES]), (s) => s.includes("R2") && s.includes("out of scope")),
+      "fixture 3 (no out-of-scope) should flag R2");
 
-  // 面向真实 git 仓的泳道推导：FULL 范围 → 三条泳道；LIGHT 范围 → 仅 R2。
-  const repo = path.join(td, "f11");
-  fs.mkdirSync(path.join(repo, "scripts"), { recursive: true });
-  fs.mkdirSync(path.join(repo, "docs"));
-  fs.writeFileSync(path.join(repo, "docs", "note.md"), "base\n", "utf-8");
+    // >5 条定向检查 → 违约
+    const root4 = path.join(td, "f4");
+    fs.mkdirSync(briefsDirOf(root4), { recursive: true });
+    fs.writeFileSync(path.join(briefsDirOf(root4), "R1-a.md"),
+      "# R1 评审简报（simplifications）\n\n## Scope\n- base: a  head: b\n- 需深审面：x\n- 陪跑文件：无\n\n" +
+      "## Directed checks\n" + Array.from({ length: 6 }, (_, i) => `- [ ] c${i}\n`).join("") +
+      "\n## Explicitly out of scope\n- d\n\n## Report contract\n" +
+      "- 返回 `Blocker[]/Suggestion[]`；空即无发现\n", "utf-8");
+    assertOk(anyMatch(checkRepo(root4, [...LANES]), (s) => s.includes("R1") && s.includes(">5")),
+      "fixture 4 (>5 checks) should flag R1");
 
-  const git = (...args: string[]): void => {
-    const r = spawnSync("git", args, { cwd: repo, encoding: "utf-8" });
-    if (r.error !== undefined || r.status !== 0) {
-      throw new Error(`fixture git ${args.join(" ")} failed: ${r.stderr}`);
+    // 缺需深审面 → 违约
+    const root5 = path.join(td, "f5");
+    fs.mkdirSync(briefsDirOf(root5), { recursive: true });
+    fs.writeFileSync(path.join(briefsDirOf(root5), "R2-a.md"),
+      "# R2 评审简报（code-review）\n\n## Scope\n- base: a  head: b\n- 陪跑文件：x\n- 门禁自证：md-links:0\n\n" +
+      "## Directed checks\n- [ ] c\n\n## Explicitly out of scope\n- d\n\n## Report contract\n" +
+      "- 返回 `Blocker[]/Suggestion[]`；空即无发现\n", "utf-8");
+    assertOk(anyMatch(checkRepo(root5, [...LANES]), (s) => s.includes("R2") && s.includes("需深审面")),
+      "fixture 5 (missing 需深审面) should flag R2");
+
+    // 「需深审面：无」→ 违约（非空清单强制）
+    const root6 = path.join(td, "f6");
+    fs.mkdirSync(briefsDirOf(root6), { recursive: true });
+    fs.writeFileSync(path.join(briefsDirOf(root6), "R2-a.md"),
+      "# R2 评审简报（code-review）\n\n## Scope\n- base: a  head: b\n- 需深审面：无\n- 陪跑文件：无\n\n" +
+      "## Directed checks\n- [ ] c\n\n## Explicitly out of scope\n- d\n\n## Report contract\n" +
+      "- 返回 `Blocker[]/Suggestion[]`；空即无发现\n", "utf-8");
+    assertOk(anyMatch(checkRepo(root6, [...LANES]), (s) => s.includes("R2") && s.includes("需深审面 must name ≥1 file")),
+      "fixture 6 (需深审面：无) should flag R2");
+
+    // 陪跑声明已盖但缺门禁自证 → 违约（门禁自证耦合）
+    const root7 = path.join(td, "f7");
+    fs.mkdirSync(briefsDirOf(root7), { recursive: true });
+    fs.writeFileSync(path.join(briefsDirOf(root7), "R2-a.md"),
+      "# R2 评审简报（code-review）\n\n## Scope\n- base: a  head: b\n- 需深审面：x\n- 陪跑文件：scripts/verify-x.py（机器门禁已盖）\n\n" +
+      "## Directed checks\n- [ ] c\n\n## Explicitly out of scope\n- d\n\n## Report contract\n" +
+      "- 返回 `Blocker[]/Suggestion[]`；空即无发现\n", "utf-8");
+    assertOk(anyMatch(checkRepo(root7, [...LANES]), (s) => s.includes("R2") && s.includes("门禁自证")),
+      "fixture 7 (companion without gate self-assertion) should flag R2");
+
+    // 门禁自证含非 0 exit → 违约（红门禁不得搭车陪跑）
+    const root8 = path.join(td, "f8");
+    fs.mkdirSync(briefsDirOf(root8), { recursive: true });
+    fs.writeFileSync(path.join(briefsDirOf(root8), "R2-a.md"),
+      "# R2 评审简报（code-review）\n\n## Scope\n- base: a  head: b\n- 需深审面：x\n- 陪跑文件：scripts/verify-x.py（机器门禁已盖）\n" +
+      "- 门禁自证：md-links:2，skill-format:0\n\n" +
+      "## Directed checks\n- [ ] c\n\n## Explicitly out of scope\n- d\n\n## Report contract\n" +
+      "- 返回 `Blocker[]/Suggestion[]`；空即无发现\n", "utf-8");
+    assertOk(anyMatch(checkRepo(root8, [...LANES]), (s) => s.includes("R2") && s.includes("非 0 exit")),
+      "fixture 8 (self-assertion with non-zero exit) should flag R2");
+
+    // 同泳道重复简报 → 上报
+    const root9 = path.join(td, "f9");
+    fs.mkdirSync(briefsDirOf(root9), { recursive: true });
+    for (const name of ["R2-a.md", "R2-b.md"]) {
+      fs.writeFileSync(path.join(briefsDirOf(root9), name),
+        "# R2 评审简报（code-review）\n\n## Scope\n- base: a  head: b\n- 需深审面：x\n- 陪跑文件：无\n\n" +
+        "## Directed checks\n- [ ] c\n\n## Explicitly out of scope\n- d\n\n## Report contract\n" +
+        "- 返回 `Blocker[]/Suggestion[]`；空即无发现\n", "utf-8");
     }
-  };
-  git("init", "-q");
-  git("config", "user.email", "t@t");
-  git("config", "user.name", "t");
-  git("add", "-A");
-  git("commit", "-qm", "init");
-  fs.writeFileSync(path.join(repo, "scripts", "verify-x.py"), "# gate\n", "utf-8");
-  git("add", "-A");
-  git("commit", "-qm", "full change");
-  const revParse = (ref: string): string => {
-    const r = spawnSync("git", ["rev-parse", ref], { cwd: repo, encoding: "utf-8" });
-    if (r.error !== undefined || r.status !== 0) throw new Error(`fixture git rev-parse failed: ${r.stderr}`);
-    return (r.stdout ?? "").trim();
-  };
-  const base = revParse("HEAD~1");
-  const head = revParse("HEAD");
+    assertOk(anyMatch(checkRepo(root9, ["R2"]), (s) => s.includes("multiple briefs")),
+      "fixture 9 (duplicate lane briefs) should be reported");
 
-  const briefText = (lane: string, b: string, h: string): string =>
-    `# ${lane} 评审简报（lane）\n\n## Scope\n- base: ${b}  head: ${h}\n` +
-    "- 需深审面：scripts/verify-x.py\n- 陪跑文件：无\n\n" +
-    "## Directed checks\n- [ ] c\n\n## Explicitly out of scope\n- d\n\n" +
-    "## Report contract\n- 返回 `Blocker[]/Suggestion[]`；空即无发现\n";
+    // 无简报在飞 → 空过（CI 形态：简报目录 gitignored）
+    const root10 = path.join(td, "f10");
+    fs.mkdirSync(briefsDirOf(root10), { recursive: true });
+    assertOk(checkRepo(root10).length === 0, "fixture 10 (no briefs in flight) should pass vacuously");
 
-  const root11 = briefsDirOf(repo);
-  fs.mkdirSync(root11);
-  fs.writeFileSync(path.join(root11, "R2-a.md"), briefText("R2", base, head), "utf-8");
-  // 泳道由自报的 FULL 范围推导
-  const vsFull = checkRepo(repo);
-  assertOk(anyMatch(vsFull, (s) => s.includes("R1: missing brief")),
-    `fixture 11a (FULL range) should derive three lanes, got ${reprList(vsFull)}`);
-  assertOk(!anyMatch(vsFull, (s) => s.includes("R2")),
-    `fixture 11a: R2 brief itself is well-formed, got ${reprList(vsFull)}`);
-  // LIGHT 范围（base..HEAD~1 只动 docs/）→ R2 即足
-  fs.writeFileSync(path.join(root11, "R2-a.md"), briefText("R2", base, "HEAD~1"), "utf-8");
-  assertOk(checkRepo(repo).length === 0, "fixture 11b (LIGHT range) should derive R2-only and pass");
+    // 面向真实 git 仓的泳道推导：FULL 范围 → 三条泳道；LIGHT 范围 → 仅 R2。
+    const repo = path.join(td, "f11");
+    fs.mkdirSync(path.join(repo, "scripts"), { recursive: true });
+    fs.mkdirSync(path.join(repo, "docs"));
+    fs.writeFileSync(path.join(repo, "docs", "note.md"), "base\n", "utf-8");
 
-  // 声明范围分歧 → 违约（防降级闸）
-  const root12 = path.join(td, "f12");
-  fs.mkdirSync(briefsDirOf(root12), { recursive: true });
-  fs.writeFileSync(path.join(briefsDirOf(root12), "R1-a.md"), briefText("R1", "a", "b"), "utf-8");
-  fs.writeFileSync(path.join(briefsDirOf(root12), "R2-a.md"), briefText("R2", "a", "HEAD~2"), "utf-8");
-  assertOk(anyMatch(checkRepo(root12), (s) => s.includes("inconsistent diff ranges")),
-    "fixture 12 (divergent ranges) should be reported");
+    const git = (...args: string[]): void => {
+      const r = spawnSync("git", args, { cwd: repo, encoding: "utf-8" });
+      if (r.error !== undefined || r.status !== 0) {
+        throw new Error(`fixture git ${args.join(" ")} failed: ${r.stderr}`);
+      }
+    };
+    git("init", "-q");
+    git("config", "user.email", "t@t");
+    git("config", "user.name", "t");
+    git("add", "-A");
+    git("commit", "-qm", "init");
+    fs.writeFileSync(path.join(repo, "scripts", "verify-x.py"), "# gate\n", "utf-8");
+    git("add", "-A");
+    git("commit", "-qm", "full change");
+    const revParse = (ref: string): string => {
+      const r = spawnSync("git", ["rev-parse", ref], { cwd: repo, encoding: "utf-8" });
+      if (r.error !== undefined || r.status !== 0) throw new Error(`fixture git rev-parse failed: ${r.stderr}`);
+      return (r.stdout ?? "").trim();
+    };
+    const base = revParse("HEAD~1");
+    const head = revParse("HEAD");
 
-  console.log("verify-review-brief --self-test OK (12 fixtures: structure/self-assertion/lane-derivation)");
-  return 0;
+    const briefText = (lane: string, b: string, h: string): string =>
+      `# ${lane} 评审简报（lane）\n\n## Scope\n- base: ${b}  head: ${h}\n` +
+      "- 需深审面：scripts/verify-x.py\n- 陪跑文件：无\n\n" +
+      "## Directed checks\n- [ ] c\n\n## Explicitly out of scope\n- d\n\n" +
+      "## Report contract\n- 返回 `Blocker[]/Suggestion[]`；空即无发现\n";
+
+    const root11 = briefsDirOf(repo);
+    fs.mkdirSync(root11);
+    fs.writeFileSync(path.join(root11, "R2-a.md"), briefText("R2", base, head), "utf-8");
+    // 泳道由自报的 FULL 范围推导
+    const vsFull = checkRepo(repo);
+    assertOk(anyMatch(vsFull, (s) => s.includes("R1: missing brief")),
+      `fixture 11a (FULL range) should derive three lanes, got ${reprList(vsFull)}`);
+    assertOk(!anyMatch(vsFull, (s) => s.includes("R2")),
+      `fixture 11a: R2 brief itself is well-formed, got ${reprList(vsFull)}`);
+    // LIGHT 范围（base..HEAD~1 只动 docs/）→ R2 即足
+    fs.writeFileSync(path.join(root11, "R2-a.md"), briefText("R2", base, "HEAD~1"), "utf-8");
+    assertOk(checkRepo(repo).length === 0, "fixture 11b (LIGHT range) should derive R2-only and pass");
+
+    // 声明范围分歧 → 违约（防降级闸）
+    const root12 = path.join(td, "f12");
+    fs.mkdirSync(briefsDirOf(root12), { recursive: true });
+    fs.writeFileSync(path.join(briefsDirOf(root12), "R1-a.md"), briefText("R1", "a", "b"), "utf-8");
+    fs.writeFileSync(path.join(briefsDirOf(root12), "R2-a.md"), briefText("R2", "a", "HEAD~2"), "utf-8");
+    assertOk(anyMatch(checkRepo(root12), (s) => s.includes("inconsistent diff ranges")),
+      "fixture 12 (divergent ranges) should be reported");
+
+    console.log("verify-review-brief --self-test OK (12 fixtures: structure/self-assertion/lane-derivation)");
+    return 0;
+  } finally {
+    fs.rmSync(td, { recursive: true, force: true });
+  }
 }
 
 // ---- 入口（CLI 参数面与 py argparse 逐一对齐） -------------------------------
