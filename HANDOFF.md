@@ -5,13 +5,13 @@
 
 > **⚡ 最高优先级（框架重建）：charter ADR + 七层蓝图 → [.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md) · [docs/research/framework-rebuild-blueprint.md](docs/research/framework-rebuild-blueprint.md)**——用户拍板推倒重建（先框架后协作层、本仓原地重建），蓝图定稿（七层三段式 + A1–A8 挂载面 + M1–M3 + C1–C15）；**B0–B5 全批闭环（协作层重建收官，C1–C15 全绿）**——B5 切换批（gates.json cmd 全量重指 TS + 旧机器件零残留 + CI/钩子单轨 + 发版 0.2.0；实现 ADR [.agents/notes/implemented/architecture/2026-09-08-b5-switch.md](.agents/notes/implemented/architecture/2026-09-08-b5-switch.md)，批次表 [.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md](.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md)）；优化轮问题池余项（技能清单补全）随重建后进行（记忆库线已另立档案页 [memory-system-dossier.md](docs/research/memory-system-dossier.md)；规范展开 c1/c2 已交付；行动区仍在 [docs/research/capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)）。
 
-> **⏭ 下一步：D 批简化候选 5 项已收口（`c5f7c46`，FULL 三审全采纳修毕）**。其余候选：优化轮问题池余项（技能挂载守卫 / 技能清单补全）[capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md) / 记忆库线（含痕迹提炼面，唯一状态家）[memory-system-dossier.md](docs/research/memory-system-dossier.md) / release 工具族首验（B 条，随下一发版）/ 护栏延后收口（D 条，触发 = 胶囊优化后）；随手待办 [HANDOFF-todos.md](HANDOFF-todos.md)。
+> **⏭ 下一步：D 批简化候选 5 项已收口（`c5f7c46`，FULL 三审全采纳修毕）**。其余候选：优化轮问题池余项（技能挂载守卫 / 技能清单补全）[capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md) / 记忆库线（方向已拍板 = 融合轮 2026-09-10，待融合轮排期；唯一状态家）[memory-system-dossier.md](docs/research/memory-system-dossier.md) / release 工具族首验（B 条，随下一发版）/ 护栏延后收口（D 条，触发 = 胶囊优化后）；随手待办 [HANDOFF-todos.md](HANDOFF-todos.md)。
 
 ## 交接更新记录（摘要滚动窗）
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-10｜**记忆库线开题讨论轮 + 档案页制度试点（讨论+实现批；无 ADR，制度批待评估）**：线 = memory-graph 原语 + 痕迹提炼面，不立项知识库；方向倾向融合轮。试点档案页 = 唯一状态家 [memory-system-dossier.md](docs/research/memory-system-dossier.md)（`ec4e7dc`），todos/优化轮条目迁出留指针。README 无漂移。
+- 2026-09-10｜**记忆库线开题讨论轮 + 档案页制度试点（讨论+实现批；无 ADR，制度批待评估）**：线 = memory-graph 原语 + 痕迹提炼面，不立项知识库；方向已拍板 = 融合轮。试点档案页 = 唯一状态家 [memory-system-dossier.md](docs/research/memory-system-dossier.md)（`ec4e7dc`），todos/优化轮条目迁出留指针。README 无漂移。
 
 - 2026-09-10｜**宿主 OpenCode Go 会话头诊断（无仓变更；cookbook [环境] 入档）**：本机静态 `x-opencode-session` 实证为反模式（亲和桶塌缩）；社区插件 `dsh-opencode-session` 兜底（自定义 provider 名须补路由键坑在案）；用户切内置 opencode-go 路由实证通。**节点：官方 sessionHeader 落地后退役插件（todos C）。** README 无漂移。
 
