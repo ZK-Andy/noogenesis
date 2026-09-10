@@ -72,9 +72,10 @@ interface Trigger { label: string; pred: (rel: string, parts: string[], name: st
 const FULL_TRIGGERS: readonly Trigger[] = [
   { label: "gate-criteria", pred: (_rel, parts, _name) => parts.includes("scripts") },
   { label: "gate-criteria", pred: (_rel, _parts, name) => name === "lefthook.yml" },
-  // 产品源码 = 行为契约面（本仓即引擎与插件本体；顶层目录判据，非任意深度同名段）。
+  // 产品源码 = 行为契约面（本仓即引擎与插件本体；filename 判据 = 随包发布的装载补丁面）
   { label: "behavior-surface", pred: (_rel, parts, _name) => parts[0] === "engine" },
   { label: "behavior-surface", pred: (_rel, parts, _name) => parts[0] === "adapters" },
+  { label: "behavior-surface", pred: (_rel, _parts, name) => name === "cordis.patch.yml" },
   { label: "behavior-surface", pred: (_rel, parts, _name) => parts.includes(".github") && parts.includes("workflows") },
   { label: "behavior-surface", pred: (_rel, parts, _name) => parts.includes("templates") },
   { label: "behavior-surface", pred: (_rel, parts, _name) => parts.includes("docs") && parts.includes("method") },
@@ -204,12 +205,32 @@ function repoChangedPaths(repo: string, stagedOnly: boolean, since: string | nul
   return { paths: Array.from(paths).sort(cmpPyStr), untracked };
 }
 
-/** 变更集中的 proposed ADR 正文自诺 full 评审 → 判 FULL。 */
+/** ADR 头部窗口（行数约定，与 evidence 面同源）。 */
+const ADR_HEAD_LINES = 15;
+
+/** ADR 头部窗口内的 Status 取值（围栏代码块内的行不算；取状态词首个 ASCII 词）。
+ *  proposed 与 implemented 两处判定共用本函数——同一事实一处判定（2026-09-11 精度批：
+ *  整文件子串搜索会把「正文引用状态词面 / 代码块引文」的 ADR 读成另一种状态）。 */
+function adrHeadStatus(text: string): string | null {
+  let fenced = false;
+  for (const line of pySplitlines(text).slice(0, ADR_HEAD_LINES)) {
+    if (/^\s*```/.test(line)) {
+      fenced = !fenced;
+      continue;
+    }
+    if (fenced) continue;
+    const m = /^Status:\s*([A-Za-z-]+)/.exec(line);
+    if (m !== null) return m[1]!;
+  }
+  return null;
+}
+
+/** 变更集中的 proposed ADR 正文自诺 full 评审 → 判 FULL（状态取自头部窗口，见 adrHeadStatus）。 */
 function adrCommitsFull(rel: string, repo: string): boolean {
   if (!rel.endsWith(".md") || !rel.startsWith(NOTES_DIR + "/")) return false;
   const text = readTextStrict(path.join(repo, rel));
   if (text === null) return false;
-  return /^Status:\s*proposed\b/m.test(text) && FULL_TIER_WORDS.some((w) => text.includes(w));
+  return adrHeadStatus(text) === "proposed" && FULL_TIER_WORDS.some((w) => text.includes(w));
 }
 
 /** 返回 (is_full_tier, reasons)。无执行裁量。
@@ -294,9 +315,9 @@ function evidenceInChange(paths: string[], repo: string, stagedOnly: boolean, si
     if (!st.isFile()) continue;
     const text = readTextReplace(adr);
     if (text === null) continue;
-    const head = pySplitlines(text).slice(0, 15);
-    // proposed 不能自证
-    if (!head.join("\n").includes("Status: implemented")) continue;
+    const head = pySplitlines(text).slice(0, ADR_HEAD_LINES);
+    // proposed 不能自证（状态判定与 adrCommitsFull 同源）
+    if (adrHeadStatus(text) !== "implemented") continue;
     const hasValidReview = head.some((line) => {
       const m = REVIEW_LINE_RE.exec(line.trim());
       return m !== null && validDate(m[1]!);
@@ -389,7 +410,7 @@ function selfTest(): number {
     ok(scan(r).some((x) => x.includes("gate-criteria")),
       "lefthook.yml change classifies FULL");
 
-    // 2c) 产品源码（engine/**、adapters/**）变更判 FULL——含门禁白名单 engine/gates.json
+    // 2c) 产品源码（engine/**、adapters/**）与装载补丁面（cordis.patch.yml）判 FULL
     r = newRepo(td, "f2c");
     writeIn(r, "engine/gates.json", "{}\n");
     ok(scan(r).some((x) => x.includes("behavior-surface")),
@@ -398,9 +419,14 @@ function selfTest(): number {
     writeIn(r, "adapters/dsh/config.mts", "// plugin config\n");
     ok(scan(r).some((x) => x.includes("behavior-surface")),
       "adapters/** change classifies FULL");
-    // 2e) 判据是顶层目录：深层同名段不触发
+    r = newRepo(td, "f2f");
+    writeIn(r, "cordis.patch.yml", "# loader patch\n");
+    ok(scan(r).some((x) => x.includes("behavior-surface")),
+      "cordis.patch.yml change classifies FULL");
+    // 2e) 判据是顶层目录：深层同名段不触发（可区分 parts[0] 与 parts.includes 两形态）
     r = newRepo(td, "f2e");
-    writeIn(r, "docs/research/engine-notes.md", "# notes\n");
+    writeIn(r, "docs/research/engine/x.md", "# notes\n");
+    writeIn(r, "docs/engine/notes.md", "# notes\n");
     ok(scan(r).length === 0,
       "a deeper path segment named engine/adapters does not classify FULL");
 
@@ -429,12 +455,21 @@ function selfTest(): number {
     ok(rows.some((x) => x.includes("adr-promises-full")),
       "proposed ADR promising 三重审核 classifies FULL");
 
-    // 6b) implemented ADR 正文提及同一词面不判 FULL（自诺判定锚定行首 Status 行）
+    // 6b) implemented ADR 正文提及同一词面不判 FULL（自诺判定取自头部窗口的 Status 行）
     r = newRepo(td, "f6b");
     writeIn(r, NOTES_DIR + "/implemented/process/2026-09-05-z.md",
       "# Agent Note: z\n\nStatus: implemented\n\n## Problem\n\n讨论 `Status: proposed` 与三重审核词面的判定\n\n## Decision\n\nx\n\n## Alternatives considered\n\n- a\n\n## Consequences\n\nx\n");
     ok(scan(r).length === 0,
       "implemented ADR quoting the words does not classify FULL");
+
+    // 6c) 围栏代码块里列 0 的 `Status: proposed` 引文同样不算自诺（LIGHT 批次须空输出；
+    //     implemented 但无 Review 行 → 若被误判 FULL 即报缺证据）。
+    r = newRepo(td, "f6c");
+    writeIn(r, NOTES_DIR + "/implemented/process/2026-09-05-w.md",
+      "# Agent Note: w\n\nStatus: implemented\n\n## Problem\n\n引文如下：\n\n```\nStatus: proposed\n```\n\n落地须三重审核\n\n## Decision\n\nx\n\n## Alternatives considered\n\n- a\n\n## Consequences\n\nx\n");
+    writeIn(r, "docs/cookbook.md", "LIGHT change\n");
+    ok(scan(r).length === 0,
+      "a fenced Status: proposed quote inside an implemented ADR does not classify FULL");
 
     // 7) 已提交 + 干净树：--since 抓住外发 FULL 变更
     r = newRepo(td, "f7");
@@ -543,7 +578,7 @@ function selfTest(): number {
   }
 
   if (failed === 0) {
-    out("verify-review-tier --self-test OK (21 fixtures: triggers/evidence/modes/fail-closed/ride-along/staged)");
+    out("verify-review-tier --self-test OK (23 fixtures: triggers/evidence/modes/fail-closed/ride-along/staged)");
   } else {
     errOut("verify-review-tier --self-test FAIL");
   }

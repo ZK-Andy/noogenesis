@@ -11,10 +11,10 @@ v0 评审定档纯人工：[review.md](../../../../docs/method/review.md) §1 �
 
 ## Decision
 
-1. **tier 闸（`scripts/verify-review-tier.mts`）——分类零裁量**：FULL 路径触发集的**条目现态单源 = 脚本内 `FULL_TRIGGERS`**（本文不手抄副本；覆盖面含门禁制品 `scripts/**` 与钩子面、产品源码 `engine/**` 与 `adapters/**`、`.github/workflows/**`、`templates/**`、`docs/method/**`、任意层 `AGENTS.md`、`.agents/workflows/**`）；外加"proposed ADR 正文承诺三重审核"强制 FULL。**证据随变更**：同变更集内 implemented ADR 头部 `Review: FULL/<日期>/R1=ok R2=ok R3=ok` 行（格式与严格性规则的家 = review.md §1）。三态模式：默认工作树报告；`--staged`（pre-commit 报告态）；`--since <base>`（pre-push `--enforce` 批次边界强制）。语义面判据（async/并发、跨边界契约、用户显式批量审核）不可路径机械化，仍归人工——review.md §1 保持其家。
-2. **brief 闸（`scripts/verify-review-brief.py`）——简报先行的机器校验**：结构契约的家 = review.md §3，机械校验：标题锁定唯一 lane、Scope 含 base/head（捕获收窄为裸 ref——模板尾注不污染 lane 推导）、需深审面 ≥1（"无"拒收）、陪跑文件行、门禁自证耦合（声明已盖必须携带全 0 exit 项，任意非 0 数字拒收；「陪跑文件：无」免自证）、定向检查 1–5 条、明确不做 ≥1 条、Report contract 固定句；**全部在飞简报须声明同一 base..head 区间**（分歧即违规——防一份窄区间简报把 FULL 静默降档）。lane 推导复用 tier 分类（FULL→R1/R2/R3，LIGHT→R2）：默认从简报自身 Scope 的 base..head 界定 diff（适配本仓"实现→提交→评审"批次序），`--lanes` 可显式覆盖；导入依赖 tier 模块无顶层副作用（`__main__` 守卫保持）。`.review-briefs/` 为本地预发射检查面（gitignored，非 CI 面；无简报在飞 = 空通过）。
+1. **tier 闸（`scripts/verify-review-tier.mts`）——分类零裁量**：FULL 路径触发集的**条目现态单源 = 脚本内 `FULL_TRIGGERS`**（本文不列条目副本，不手抄）；外加"proposed ADR 正文承诺三重审核"强制 FULL。**证据随变更**：同变更集内 implemented ADR 头部 `Review: FULL/<日期>/R1=ok R2=ok R3=ok` 行（格式与严格性规则的家 = review.md §1）。三态模式：默认工作树报告；`--staged`（pre-commit 报告态）；`--since <base>`（pre-push `--enforce` 批次边界强制）。语义面判据（async/并发、跨边界契约、用户显式批量审核）不可路径机械化，仍归人工——review.md §1 保持其家。
+2. **brief 闸（`scripts/verify-review-brief.mts`）——简报先行的机器校验**：结构契约的家 = review.md §3，机械校验：标题锁定唯一 lane、Scope 含 base/head（捕获收窄为裸 ref——模板尾注不污染 lane 推导）、需深审面 ≥1（"无"拒收）、陪跑文件行、门禁自证耦合（声明已盖必须携带全 0 exit 项，任意非 0 数字拒收；「陪跑文件：无」免自证）、定向检查 1–5 条、明确不做 ≥1 条、Report contract 固定句；**全部在飞简报须声明同一 base..head 区间**（分歧即违规——防一份窄区间简报把 FULL 静默降档）。lane 推导复用 tier 分类（FULL→R1/R2/R3，LIGHT→R2）：默认从简报自身 Scope 的 base..head 界定 diff（适配本仓"实现→提交→评审"批次序），`--lanes` 可显式覆盖；导入依赖 tier 模块无顶层副作用（`__main__` 守卫保持）。`.review-briefs/` 为本地预发射检查面（gitignored，非 CI 面；无简报在飞 = 空通过）。
 3. **挂接（fail-closed）**：pre-commit 追加 tier `--staged` 报告态（不阻断批内中间提交——评审在批次边界收口）；pre-push 逐 ref 强制：base = merge-base(远端, 本地) 后 `tier --since <base> --enforce`，**新分支首推无法定 base 即显式报错拒推**（不静默豁免）、分支删除行跳过、非 push 调用（stdin 为终端）跳过；tier 的 git moment 失败（坏 ref/git 报错）= 违规，绝不静默通过。tag 推送分支的扩展 = [2026-09-06-pre-push-tag-outgoing](../bug-fix/2026-09-06-pre-push-tag-outgoing.md)（可达 tag 跳过档位强制，扩展非取代）。CI 加 tier 真强制步（push 事件 `--since github.event.before --enforce`）与两闸 self-test；brief 闸不入 CI/hooks——发射前由主会话手动 `--enforce`（命令见 review.md §3）。
-4. **契约面同步**：review.md §1 加"路径触发集单一事实源 = verify-review-tier.py"指针与 Review 证据行契约，§3 加发射前命令，§6 机械闸表述转现在时；feature-flow §4.1 同步；根 AGENTS 质量门 + session-open + release-flow 计数 7→9；两 hooks 与 validate.yml 落线。
+4. **契约面同步**：review.md §1 加"路径触发集单一事实源 = verify-review-tier.mts"指针与 Review 证据行契约，§3 加发射前命令，§6 机械闸表述转现在时；feature-flow §4.1 同步；根 AGENTS 质量门 + session-open + release-flow 计数 7→9；两 hooks 与 validate.yml 落线。
 5. **deferral ADR 归档**：其预约使命完成，移 `archived/process/`（插 Archived 行冻结）；"照搬即假绿灯"教训由本 ADR Alternatives 承载。
 
 ## Alternatives considered
@@ -29,5 +29,5 @@ v0 评审定档纯人工：[review.md](../../../../docs/method/review.md) §1 �
 - 门禁 7→9；AGENTS/流程卡计数同步（"九门禁"）；CI 的 brief 闸仅 self-test（简报不入库，主跑是本地预发射检查）。
 - FULL 批次的证据载体：批次自然产出/触碰的 implemented ADR 加 `Review:` 行即可；无 ADR 可承载的 FULL 批次加一枚最小 process 笔记。
 - 本仓无 remote：pre-push 强制点暂不触发，闸活性由 self-test + CI 强制步维持；远端建立即生效。新分支首推被拒是设计行为（fail-closed）——首次建仓全史推送需显式 `--no-verify` 或先补证据。
-- 两闸互锁：改 verify-review-brief.py 自身命中 `scripts/**` → FULL（设计使然，desktop 同构）；改本 ADR 所在判据面同理由 tier 闸盯防。
+- 两闸互锁：改 verify-review-brief.mts 自身命中 `scripts/**` → FULL（设计使然，desktop 同构）；改本 ADR 所在判据面同理由 tier 闸盯防。
 - self-test 出生即适用 consolidate-r1 ADR 第 2 条约定（argparse 分派 / fixture 触碰主逻辑 / assert 带消息 / OK 行格式）。
