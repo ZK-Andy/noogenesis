@@ -49,7 +49,7 @@
 | 边界 | 家 |
 |---|---|
 | 适配层 → 引擎 spawn（退出码三档、失败映射、repoRoot 四级回退链） | [adapters/AGENTS.md](../../adapters/AGENTS.md) |
-| 写码在环 lint 反馈（block 拦回 / 连续拦回降级 / 降级清单） | [lint-in-loop ADR](../../.agents/notes/implemented/architecture/2026-09-08-lint-in-loop-feedback.md) + 升格批 ADR |
+| 写码在环判据（lint + 注释面：block 拦回 / 连续拦回降级 / 降级清单 / 仓内判据件执行面四条纪律） | [lint-in-loop ADR](../../.agents/notes/implemented/architecture/2026-09-08-lint-in-loop-feedback.md) + [升格批 ADR](../../.agents/notes/implemented/architecture/2026-09-09-lint-block-and-staged-hook.md) + [扩面批 ADR](../../.agents/notes/proposed/architecture/2026-09-10-export-docs-inloop.md) |
 | 挂载六点 A2–A6（异常 catch → 降级不阻塞会话） | [B4 ADR](../../.agents/notes/implemented/architecture/2026-09-08-b4-mount-wiring.md) |
 | 引擎命令与评审门禁（git 不可解析 = fail-closed） | [engine/README.md](../../engine/README.md)、[verify-review-tier 头注](../../scripts/verify-review-tier.mts) |
 

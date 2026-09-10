@@ -157,11 +157,12 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 	registerNooTools(ctx, { defineTool, runEngine, repoRoot: repoRootFor });
 
 	// ── 挂载面接线（B4 ADR Decision 1–2 + Decision 7 档位纪律：能力层
-	// mount.mts 合并器 + 策略层 mount-policies.mts；A4 lint 反馈用 block 拦回档
-	// ——升格批 2026-09-09-lint-block-and-staged-hook；A3 触点提醒走 advice
+	// mount.mts 合并器 + 策略层 mount-policies.mts；A4 在环两判据〔lint + 注释面〕
+	// 用 block 拦回档——升格批 2026-09-09-lint-block-and-staged-hook + 扩面批
+	// 2026-09-10-export-docs-inloop；A3 触点提醒走 advice
 	// 非阻断档（M1 守卫②）；记录投影不挂（撤除 ADR）。每挂载点恰一个 ctx.on
 	// listener，策略件增挂只动 mount-policies.mts，不复制宿主接线；logger 透传
-	// 给策略层降级提示（A4 写码反馈缺 lint 基建 / A3 提醒投递缺席时每会话至多
+	// 给策略层降级提示（A4 判据缺基建 / A3 提醒投递缺席时每会话至多
 	// 一条 warn）。 ──
 	const mounts = createMountPolicies(cfg, { warn: (message) => logger.warn(message) });
 
@@ -225,7 +226,7 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 	});
 
 	// A4 工具后（tools/post-execute waterfall）：block/附加上下文由合并器单源
-	// 承载（现存 A4 lint 策略用 block 拦回档——机器可判违规拦回；死锁降级走
+	// 承载（现存两判据〔lint + 注释面〕用 block 拦回档——机器可判违规拦回；死锁降级走
 	// context 档）；block → 直接拦回纠正消息（不调 next），context → 合一条消息前置。
 	// 合并异常 → warn 降级返回下游结果。
 	ctx.on("tools/post-execute", async (exec: ToolExecLike, result: ToolResultLike, next: () => Promise<{ kind: string; additionalContexts?: unknown[] }>) => {
