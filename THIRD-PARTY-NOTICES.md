@@ -14,6 +14,7 @@
 | `devops-template` | 文档纪律与 ADR 制度的方法论来源 | Copyright (c) 2026 zhangkun |
 | `deepseek-ai/deepseek-harness` | 上述来源仓的共同上游 | Copyright (c) 2026 DeepSeek |
 | `wanshuiyin/HERO-Anti-OverDefense` | 防过度设计契约的蒸馏来源（[anti-overdesign](docs/method/anti-overdesign.md) + [cases 索引](docs/research/anti-overdefense-cases-index.md) + 根 AGENTS 常驻契约块） | Copyright (c) 2026 Ruofeng Yang |
+| `ZK-Andy/dsh-continual-evolve` | 融合轮机制吸收的蒸馏来源（凭据筛查模式集扩面 + 两半裁剪判据；D3 逐件带吸收补丁，不并代码不并 store） | Copyright (c) 2026 dsh-continual-evolve contributors |
 
 ## MIT License
 

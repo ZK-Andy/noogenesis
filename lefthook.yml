@@ -48,6 +48,15 @@ pre-commit:
     - name: export-docs
       run: node scripts/verify-export-docs.mts
 
+    - name: secrets
+      # 凭据绊线只对 git 面才有暂存语义（genes/ + events/）；观测输入面非 git，
+      # 由 pre-push/CI 的全量跑覆盖（融合立宪 D3/D10）。solidify 的 git commit
+      # 同样过本钩子——候选凭据在落 commit 前被拦下。
+      glob:
+        - "genes/**"
+        - "events/**"
+      run: node scripts/verify-secrets.mts
+
     - name: package-invariants
       glob: "package.json"
       run: node scripts/verify-package-invariants.mts

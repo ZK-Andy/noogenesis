@@ -1,0 +1,263 @@
+#!/usr/bin/env node
+/**
+ * verify-secrets — 凭据绊线（融合立宪 D3/D10；实现 ADR
+ * 2026-09-11-memory-line-phase1-observation-face）。
+ *
+ * 判据 = 三个资产面上的凭据形状扫描：
+ *   1. `genes/**\/*.json`                      基因字段面（入 git）
+ *   2. `events/**\/*.jsonl`                    事件轨，含 `evidence`（入 git）
+ *   3. `.noogenesis/observations/**\/*.jsonl`  观测输入面（非 git；在场才扫）
+ *
+ * **强度上限（写死在件）：best-effort 绊线，不是安全属性——净过 ≠ 无凭据。**
+ * 模式集 = provider token 形状 + 凭据赋值（`=` 与 `:`、带引号与不带）+ JWT +
+ * URL 内嵌凭据 + 连接串凭据；后四类正是旧引擎 `secretLeakReason` 的已知盲区
+ *（它只认带引号赋值、只覆盖其全局写入路径）。已知盲区同样写死在件：分片/拼接
+ * 构造的凭据、非 ASCII 变体、以及不落上述三面的任何文本。
+ *
+ * 用法（仓库根运行）：node scripts/verify-secrets.mts [--self-test]
+ * 退出码：0 = PASS，1 = 命中（违约），2 = fail-closed（面存在但不可读 / 仓根不可用）。
+ * 模块形态：显式 .mts（ESM），相对 import 带显式扩展，只依赖 node: 内建。
+ */
+import * as fs from "node:fs";
+import * as os from "node:os";
+import * as path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const PROGRAM = "verify-secrets.mts";
+
+/** 扫描面（相对仓根）：符号链接不跟随（`withFileTypes` 的目录判定已排除）。 */
+const SCAN_ROOTS = ["genes", "events", path.join(".noogenesis", "observations")];
+
+/** 命中明细输出上限（一份文件被批量污染时不刷屏；尾行报剩余条数）。 */
+const MAX_REPORTED = 20;
+
+/** 凭据名（赋值启发式的左侧）：与旧引擎同族，去引号限制后覆盖 `:` 与 `=` 两种写法。 */
+const CREDENTIAL_NAME = "[a-z0-9_]*(?:api[_-]?key|access[_-]?key|secret|token|password|passwd|pwd|credential)[a-z0-9_]*";
+
+/** 一条扫描模式：`valueGroup` 指敏感值所在捕获组（默认整段匹配）。 */
+interface SecretPattern {
+	/** 命中标签（人面可读的凭据家族名）。 */
+	label: string;
+	/** 形状判据。 */
+	regex: RegExp;
+	/** 敏感值所在捕获组下标（默认 0 = 整段匹配）。 */
+	valueGroup?: number;
+	/** 值级否决（占位符/环境变量引用不算凭据）。 */
+	reject?: (value: string) => boolean;
+}
+
+/**
+ * 占位符与环境变量引用否决：全大写占位词（`YOUR_KEY_HERE`）、常见占位词根、
+ * 模板/环境引用（`{{…}}` / `<…>` / `$VAR`）——旧引擎靠正则 lookahead 表达同一意图，
+ * 此处拆成显式函数以便夹具逐条钉死正/负样例。
+ */
+function isPlaceholder(value: string): boolean {
+	if (/^[A-Z0-9_]+$/.test(value)) return true;
+	if (/^(?:your|my|the|some|example|sample|dummy|fake|test|changeme|placeholder|redacted|none|null|todo)/i.test(value)) return true;
+	if (/^\$/.test(value) || value.includes("{") || value.includes("<")) return true;
+	return false;
+}
+
+/** 模式集（顺序即报告顺序；provider 形状在前，启发式在后）。 */
+const SECRET_PATTERNS: readonly SecretPattern[] = [
+	{ label: "AnySearch API key", regex: /\bas_sk_[A-Za-z0-9]{8,}\b/ },
+	{ label: "Anthropic API key", regex: /\bsk-ant-[A-Za-z0-9_-]{16,}\b/ },
+	{ label: "OpenAI-style API key", regex: /\bsk-(?:proj-)?[A-Za-z0-9_-]{16,}\b/ },
+	{ label: "GitHub token", regex: /\b(?:ghp|gho|ghu|ghs|ghr)_[A-Za-z0-9]{20,}\b/ },
+	{ label: "GitHub fine-grained PAT", regex: /\bgithub_pat_[A-Za-z0-9_]{20,}\b/ },
+	{ label: "AWS access key", regex: /\b(?:AKIA|ASIA)[0-9A-Z]{16}\b/ },
+	{ label: "Google API key", regex: /\bAIza[0-9A-Za-z_-]{35}\b/ },
+	{ label: "Slack token", regex: /\bxox[baprs]-[A-Za-z0-9-]{10,}\b/ },
+	{ label: "npm grant token", regex: /\bnpm_[A-Za-z0-9]{36}\b/ },
+	{ label: "private key block", regex: /-----BEGIN (?:RSA |EC |DSA |OPENSSH |PGP )?PRIVATE KEY(?: BLOCK)?-----/ },
+	{ label: "JWT", regex: /\beyJ[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\.[A-Za-z0-9_-]{8,}\b/ },
+	{
+		label: "credential assignment",
+		regex: new RegExp(`(?:^|[^a-z0-9_])(${CREDENTIAL_NAME})["']?\\s*[:=]\\s*["']?([A-Za-z0-9+/_=.~-]{16,})["']?`, "i"),
+		valueGroup: 2,
+		reject: isPlaceholder,
+	},
+	{ label: "credential in URL", regex: /\b[a-z][a-z0-9+.-]{1,15}:\/\/[^\s/:@]{1,64}:[^\s/:@]{3,}@/i, reject: isPlaceholder },
+	{ label: "connection-string credential", regex: /\b(?:Password|Pwd)\s*=\s*([^;\s"']{6,})/i, valueGroup: 1, reject: isPlaceholder },
+];
+
+/** 命中脱敏：够定位凭据家族，永不回显全值（报告会进 CI 日志与评审材料）。 */
+function redact(value: string): string {
+	if (value.length <= 10) return `${value.slice(0, 3)}…`;
+	return `${value.slice(0, 6)}…${value.slice(-3)}`;
+}
+
+/** 单行扫描：返回首个命中的 `{label, value}`，无命中返回 null（一行一报足够定位修复）。 */
+function scanLine(line: string): { label: string; value: string } | null {
+	for (const pattern of SECRET_PATTERNS) {
+		const match = pattern.regex.exec(line);
+		if (!match) continue;
+		const value = match[pattern.valueGroup ?? 0] ?? "";
+		if (!value || pattern.reject?.(value)) continue;
+		return { label: pattern.label, value };
+	}
+	return null;
+}
+
+/** 递归收集扫描面内的目标文件（面缺席 = 空集，不是错误：观测目录本就允许不存在）。 */
+function collectTargets(repoRoot: string): { files: string[]; unreadable: string[] } {
+	const files: string[] = [];
+	const unreadable: string[] = [];
+	const walk = (abs: string, rel: string): void => {
+		if (!fs.existsSync(abs)) return;
+		let entries: fs.Dirent[];
+		try {
+			entries = fs.readdirSync(abs, { withFileTypes: true });
+		} catch (e) {
+			unreadable.push(`${rel} (${(e as Error).message})`);
+			return;
+		}
+		for (const entry of entries.sort((a, b) => (a.name < b.name ? -1 : 1))) {
+			const childAbs = path.join(abs, entry.name);
+			const childRel = path.join(rel, entry.name);
+			if (entry.isDirectory()) walk(childAbs, childRel);
+			else if (entry.isFile() && (entry.name.endsWith(".json") || entry.name.endsWith(".jsonl"))) files.push(childRel);
+		}
+	};
+	for (const root of SCAN_ROOTS) walk(path.join(repoRoot, root), root);
+	return { files, unreadable };
+}
+
+/** 判据主体：返回 `{code, report}`（0 PASS / 1 命中 / 2 fail-closed）。 */
+function evaluateSecrets(repoRoot: string): { code: number; report: string } {
+	if (!fs.existsSync(repoRoot) || !fs.statSync(repoRoot).isDirectory()) {
+		return { code: 2, report: `${PROGRAM}: FAIL-CLOSED — repo root not usable: ${repoRoot}\n` };
+	}
+	const { files, unreadable } = collectTargets(repoRoot);
+	if (unreadable.length) {
+		return { code: 2, report: `${PROGRAM}: FAIL-CLOSED — scan root unreadable:\n${unreadable.map((u) => `  ${u}`).join("\n")}\n` };
+	}
+	const findings: string[] = [];
+	const bad: string[] = [];
+	for (const rel of files) {
+		let text: string;
+		try {
+			text = fs.readFileSync(path.join(repoRoot, rel), "utf-8");
+		} catch (e) {
+			bad.push(`${rel} (${(e as Error).message})`);
+			continue;
+		}
+		const lines = text.split("\n");
+		for (let i = 0; i < lines.length; i += 1) {
+			const hit = scanLine(lines[i] ?? "");
+			if (hit) findings.push(`  ${rel}:${i + 1} possible ${hit.label} ("${redact(hit.value)}")`);
+		}
+	}
+	if (bad.length) {
+		return { code: 2, report: `${PROGRAM}: FAIL-CLOSED — scanned file unreadable:\n${bad.map((b) => `  ${b}`).join("\n")}\n` };
+	}
+	if (findings.length) {
+		const shown = findings.slice(0, MAX_REPORTED);
+		const hidden = findings.length - shown.length;
+		return {
+			code: 1,
+			report: [
+				`${PROGRAM}: FAIL — possible credential literal(s) in git-facing assets (best-effort screen, not a security property):`,
+				...shown,
+				...(hidden > 0 ? [`  (+${hidden} more)`] : []),
+				"  rotate the credential and keep it out of genes/events/observations.",
+				"",
+			].join("\n"),
+		};
+	}
+	return { code: 0, report: `${PROGRAM}: OK (${files.length} file(s) scanned across ${SCAN_ROOTS.length} surface(s))\n` };
+}
+
+/**
+ * 离线夹具自测：正样例（各家族必须命中）与负样例（占位符/环境引用不得命中）
+ * 逐条钉死，扫描面覆盖（genes/events/observations）+ 面缺席 + 仓根不可用。
+ * 返回退出码（0 全过 / 1 有夹具违约）。
+ */
+function selfTest(): number {
+	const failures: string[] = [];
+	let surfaceFixtures = 0;
+	const expect = (label: string, want: number, root: string): void => {
+		surfaceFixtures += 1;
+		const got = evaluateSecrets(root).code;
+		if (got !== want) failures.push(`${label}: 期望 exit ${want}，实得 ${got}`);
+	};
+	// 模式级正样例：每族一条真实形状（含旧引擎盲区：env 式 / JWT / URL / 连接串）。
+	const positives: [string, string][] = [
+		["anthropic", 'note "sk-ant-api03-AAAABBBBCCCCDDDDEEEE"'],
+		["github", 'token ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'],
+		["aws", '{"key":"AKIAIOSFODNN7EXAMPLE"}'],
+		["private-key", "-----BEGIN OPENSSH PRIVATE KEY-----"],
+		["jwt", 'h "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dBjftJeZ4CVPmB92K27uhbUJU1p1r_wW1gFWFOEjXk"'],
+		["env-assign", "DB_PASSWORD=hunter2hunter2xy"],
+		["json-assign", '"apiKey": "abcdef1234567890abcd"'],
+		["url-cred", '"postgres://appuser:s3cretpw@db.example.com:5432/app"'],
+		["connstring", '"Server=db;Password=sup3rsecretvalue;Database=app"'],
+	];
+	for (const [label, line] of positives) {
+		if (!scanLine(line)) failures.push(`pattern positive missed: ${label}`);
+	}
+	// 模式级负样例：占位符 / 环境引用 / 短值不得命中（误报会把真实写入拦在门外）。
+	const negatives: [string, string][] = [
+		["allcaps-placeholder", "API_KEY=YOUR_API_KEY_HERE"],
+		["env-ref", "API_KEY=$OPENAI_API_KEY"],
+		["template-ref", '"token": "{{token}}"'],
+		["angle-ref", "PASSWORD=<your-password>"],
+		["changeme", "SECRET=changeme"],
+		["too-short", 'apiKey: "abc123"'],
+		["plain-prose", "evidence: evaluate ok: all 16 gates green"],
+	];
+	for (const [label, line] of negatives) {
+		const hit = scanLine(line);
+		if (hit) failures.push(`pattern negative matched (${hit.label}): ${label}`);
+	}
+
+	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "verify-secrets-"));
+	try {
+		const mk = (name: string, files: Record<string, string>): string => {
+			const root = path.join(dir, name);
+			for (const [rel, body] of Object.entries(files)) {
+				const abs = path.join(root, rel);
+				fs.mkdirSync(path.dirname(abs), { recursive: true });
+				fs.writeFileSync(abs, body);
+			}
+			fs.mkdirSync(root, { recursive: true });
+			return root;
+		};
+		const clean = mk("clean", {
+			"genes/process/g.json": '{"id":"g","summary":"uses no literal credentials"}\n',
+			"events/2026-09.jsonl": '{"ts":"t","actor":"t","kind":"gene.added","evidence":"evaluate ok: all 16 gates green"}\n',
+		});
+		expect("clean", 0, clean);
+		expect("absent-observation-face", 0, clean);
+
+		expect("gene-face", 1, mk("gene-face", {
+			"genes/process/g.json": '{"id":"g","summary":"key AKIAIOSFODNN7EXAMPLE"}\n',
+		}));
+		expect("event-evidence-face", 1, mk("event-face", {
+			"events/2026-09.jsonl": '{"ts":"t","evidence":"used ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"}\n',
+		}));
+		expect("observation-face", 1, mk("obs-face", {
+			".noogenesis/observations/2026-09.jsonl": '{"ts":"t","signal":"s","gene":"a/b","outcome":"ok","evidence":"DB_PASSWORD=hunter2hunter2xy"}\n',
+		}));
+		expect("unicode-filename-agnostic", 1, mk("nested", {
+			"genes/域/g.json": '{"id":"g","summary":"sk-ant-api03-AAAABBBBCCCCDDDDEEEE"}\n',
+		}));
+		expect("missing-root", 2, path.join(dir, "does-not-exist"));
+	} finally {
+		fs.rmSync(dir, { recursive: true, force: true });
+	}
+	if (failures.length > 0) {
+		for (const failure of failures) console.log(`SELF-TEST FAIL: ${failure}`);
+		return 1;
+	}
+	console.log(`${PROGRAM} self-test: ${SECRET_PATTERNS.length} patterns + ${surfaceFixtures} surface fixtures passed`);
+	return 0;
+}
+
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+if (process.argv.includes("--self-test")) {
+	process.exit(selfTest());
+}
+const result = evaluateSecrets(repoRoot);
+process.stdout.write(result.report);
+process.exit(result.code);
