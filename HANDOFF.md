@@ -11,7 +11,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-10｜**M1 批 B 防过度混合 D 收口（FULL 三审 R1 1B/3S、R2 3B/6S、R3 5B/4S 全采纳；ADR 第二条 Review 行随批落；`5b0ad9b`→`d277c47`）**：anti-overdesign 完整蒸馏篇 + 根 AGENTS 契约块 9 条（547/800）+ cases 质询索引 18 例（不进加载面）+ 检查项第 5 条 + NOTICES 补 HERO 行。**节点：M1 两批闭环。** README 无漂移。
+- 2026-09-10｜**M1 批 B 防过度混合 D 收口（FULL 三审 R1 1B/3S、R2 3B/6S、R3 5B/4S 全采纳；ADR 第二条 Review 行随批落；`5b0ad9b`→`d277c47`→收尾批）**：anti-overdesign 完整蒸馏篇 + 根 AGENTS 契约块 9 条（547/800）+ cases 质询索引 18 例（不进加载面）+ 检查项第 5 条 + NOTICES 补 HERO 行。**节点：M1 两批闭环。** README 无漂移。
 
 - 2026-09-10｜**M1 批 A 守卫三件套收口（FULL 三审全采纳；ADR [2026-09-10-m1-guard-anti-overdesign](.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) 随批 A 翻转；`206ad18`→`51234bc`）**：①路标行 ②触点提醒 ③对账步全落地。**节点：批 B 防过度待开。** README 无漂移。
 
