@@ -1,6 +1,7 @@
 # Agent Note: 记忆库线第一期——观测输入面 + Select 建议档 + 凭据绊线
 
 Status: implemented
+Review: FULL/2026-09-11/R1=ok R2=ok R3=ok
 
 Related: 融合立宪 [2026-09-10-memory-line-fusion-charter](../../proposed/architecture/2026-09-10-memory-line-fusion-charter.md)（proposed；本件落其 D8/D10 三件与两个待定设计点，不改其边界）；协议面 [2026-09-05-gene-event-schema](2026-09-05-gene-event-schema.md)（事件 kind 准入「可复算才进轨」——本件观测面不触碰该判据）；只读消费面 [2026-09-06-p2-shared-consumer](2026-09-06-p2-shared-consumer.md)（`.noogenesis/` 缓存落点与「读路径降级 / 本仓 fail-closed」姿态先例）；线状态唯一家 [memory-system-dossier](../../../../docs/research/memory-system-dossier.md)；命令合同面 [engine/README](../../../../engine/README.md)。
 
@@ -12,17 +13,17 @@ Related: 融合立宪 [2026-09-10-memory-line-fusion-charter](../../proposed/arc
 
 - `select` stdout 合同 = 首行 `signals: …` + 每行 `<domain>/<id>  <summary>`；无命中为 `(no genes matched)`。适配层 `hitsSectionText` 按「非 `signals:` 行且非 `(no genes matched)`」逐行取命中（[section.mts](../../../../adapters/dsh/section.mts)）。
 - 引擎无任何观测面：`events/` 轨的 kind 准入判据是**写得出复算规则**（S2），`gene.used` / `gene.outcome` 这类观测写不出复算规则，故不进轨（D7-1）——观测数据的家因此悬空。
-- 凭据筛查在本仓**零机器面**。旧引擎 `0.6.0` 的实现（`secretLeakReason`）只覆盖其全局写入路径，模式面只认**带引号赋值**，漏 env 式赋值 / JWT / 连接串内嵌凭据（本轮只读审计发现，`src/promotion.ts:55-80`），且落盘 0644——故 D3 要求「只当 best-effort 绊线，不作安全属性」。
+- 凭据筛查在本仓**零机器面**。旧引擎 `dsh-continual-evolve@0.6.0`（冻结外部参照，`github.com/ZK-Andy/dsh-continual-evolve`）的实现 `secretLeakReason` 只覆盖其全局写入路径，模式面只认**带引号赋值**，漏 env 式赋值 / JWT / 连接串内嵌凭据（`src/promotion.ts:55-80`），且落盘 0644——故 D3 要求「只当 best-effort 绊线，不作安全属性」。
 
 ## Decision
 
-**1. 观测输入面 = `<repoRoot>/.noogenesis/observations/<YYYY-MM>.jsonl`**（gitignored、append-only、可丢弃）。落点与 P2 缓存同属 `.noogenesis/` 本地状态命名空间（`.gitignore` 已整目录忽略）；月卷节奏与 `events/` / `journal/` 同。记录 schema 封闭六字段：`ts`（写入时刻 ISO）/ `actor`（审计署名，必填）/ `signal`（写入时按 `normalizeSignal` 归一——键的口径单源）/ `gene`（`<domain>/<id>` 形状）/ `outcome`（封闭集 `ok` / `fail`）/ `evidence`（可选单行说明，≤200 字符）。未知字段、缺字段、形状/枚举/长度违约一律 fail-closed（exit 2，不落盘）。`ts` 严格限 ISO 8601 UTC、`signal` 须已归一——两者都会被原样拼进 `advice` 行（stdout 契约面），宽松形状会在该行内插入空白/换行，让第二行不以 `advice:` 开头而穿过适配层过滤进常驻节；校验器是写读两侧共用的唯一防线。
+**1. 观测输入面 = `<repoRoot>/.noogenesis/observations/<YYYY-MM>.jsonl`**（gitignored、append-only、可丢弃）。落点与 P2 缓存同属 `.noogenesis/` 本地状态命名空间（`.gitignore` 已整目录忽略）；月卷节奏与 `events/` / `journal/` 同。记录 schema 是**封闭六字段**、违约一律 fail-closed（exit 2，不落盘）——字段表与逐条校验规则的唯一家 = [engine/README](../../../../engine/README.md)「观测输入面」节，本件不重抄。本件保留的是两条判定理由：`ts` 须严格 ISO 8601 UTC、`signal` 须已归一，因为两者都会被原样拼进 `advice` 行（stdout 契约面），宽松形状会在该行内插入空白/换行，让第二行不以 `advice:` 开头而穿过适配层过滤进常驻节；写读两侧共用同一校验器是唯一防线。
 
-**2. 写入触发点 = 人 / 显式目标**（D4 口径）：某基因**被实际采用且其结果已可判**时，由人或经人许可的 agent 显式调用新命令 `node dist/engine/bin.js observe --signal S --gene <domain>/<id> --outcome ok|fail --actor N [--evidence TEXT]` 写入。不随 `solidify` 自动记（**入档 ≠ 使用成功**）、不随 `select` / `propose` 运行记（运行不记，继承 S2 精神）；不加流程卡常备义务——触发权归人，避免自动沉淀那套常开成本（不收清单 D2 的形态）。
+**2. 写入触发点 = 人 / 显式目标**（D4 口径）：某基因**被实际采用且其结果已可判**时，由人或经人许可的 agent 显式调用新命令 `node dist/engine/bin.js observe --signal S --gene <domain>/<id> --outcome ok|fail --actor N [--evidence TEXT]` 写入。不随 `solidify` 自动记（**入档 ≠ 使用成功**）、不随 `select` / `propose` 运行记（运行不记，继承 S2 精神）；不加流程卡常备义务——触发权归人，避免自动沉淀那套常开成本（不收清单 D2 的形态）。**本期写者集合 = 人 / 经人许可的 agent**；D8 列的另一类写者「适配层」属宿主挂载面（D7-3 暂不立），适配层不写观测面。
 
-**3. 派生 = 每次 select 现算**：读输入面（目录缺席 = 空集 = 默认零成本，同 P2 离线姿态），只取「本次查询键 ∩ 本次命中基因」的边 `(signal::gene)→{ok,fail,last_ts}`。不落盘、不缓存、不进 git（派生数据口径 D7-1）；读路径 warn-skip（观测可丢弃，不因它让 select 变红：坏 JSON 行、schema 违约行、非归一键、乃至观测面存在却不可列举都只丢权重 + 一行 stderr），写路径 fail-closed（含落盘失败 → exit 2：observe 无红态，退出码空间恒 0/2）。**边的事实侧身份（命中 ref 与 signal）取自本次 `genes/` 扫描，`events/` 轨不参与边计算**——D8 的「轨 + 输入面」在本仓的实现形态即「事实在 genes/ 面、观测在输入面」。
+**3. 派生 = 每次 select 现算**：读输入面（目录缺席 = 空集 = 默认零成本，同 P2 离线姿态），只取「本次查询键 ∩ 本次命中基因」的边 `(signal::gene)→{ok,fail,last_ts}`。不落盘、不缓存、不进 git（派生数据口径 D7-1）；读路径 warn-skip（观测可丢弃，不因它让 select 变红：坏 JSON 行、schema 违约行、非归一键都只丢自身权重 + 一行 stderr；观测面存在却不可列举则退为空集 + 一行 stderr），写路径 fail-closed（含落盘失败 → exit 2：observe 无红态，退出码空间恒 0/2）。**边的事实侧身份（命中 ref 与 signal）取自本次 `genes/` 扫描，`events/` 轨不参与边计算**——D8 的「轨 + 输入面」在本仓的实现形态即「事实在 genes/ 面、观测在输入面」。
 
-**4. Select 输出契约 = 追加式建议档**：命中行与其后不变，仅在全部命中行**之后**追加 `advice: <signal> :: <ref>  ok=<n> fail=<n> last=<YYYY-MM-DD>` 行（每个有观测的边一行，命中顺序 × 查询键顺序）。**零观测时不发射任何 advice 行**——输出与今日逐字节相同。本期**不排序、不禁用、无阈值、无半衰期衰减**：命中数 6 对上限 12（排序无可观察效果）、样本量 O(1)（比率被噪声支配，别把稀疏噪声当优选依据）——触发 = 命中数逼近 `maxGenes` 上限，或观测样本量足以支撑排序时另立 ADR。
+**4. Select 输出契约 = 追加式建议档**：命中行与其后不变，仅在全部命中行**之后**追加 `advice: <signal> :: <ref>  ok=<n> fail=<n> last=<YYYY-MM-DD>` 行（每个有观测的边一行，命中顺序 × 查询键顺序）。**零观测时不发射任何 advice 行**：stdout 恒为「`signals:` 首行 + 命中行」，与观测面缺席时逐字节相同（不变量，非版本比较）。本期**不排序、不禁用、无阈值、无半衰期衰减**：命中数 6 对上限 12（排序无可观察效果）、样本量 O(1)（比率被噪声支配，别把稀疏噪声当优选依据）——触发 = 命中数逼近 `maxGenes` 上限，或观测样本量足以支撑排序时另立 ADR。
 
 **5. 建议档的消费面 = `noo_select` 工具输出**（按需读，零常驻成本）。system-prompt 命中节**不注入** advice 行：适配层 `hitsSectionText` 增过滤（`advice:` 前缀与既有 `signals:` / `(no genes matched)` 同列），夹具钉死。理由 = 常驻面每步重复付费，而建议只在真正要取基因时有价值。
 
@@ -47,9 +48,9 @@ Related: 融合立宪 [2026-09-10-memory-line-fusion-charter](../../proposed/arc
 
 ## Consequences
 
-- **默认零成本**：无观测记录时 `select` 输出与今日逐字节相同，适配层过滤亦无新增行；观测目录缺席不是错误。
+- **默认零成本**：无观测记录时 `select` stdout 只由 `signals:` 首行与命中行构成（与观测面缺席时逐字节相同），适配层过滤亦无新增行；观测目录缺席不是错误。
 - **降级姿态分面**：写路径 fail-closed（坏记录写不进）；读路径 warn-skip（坏行不阻断 select，只丢该行权重）——与 P2「缓存侧 warn-skip / 本仓 fail-closed」同构。
 - **凭据面强度上限写死在件头**：best-effort；门禁绿不构成「无凭据」证明；入 git 面的真正防线是 pre-commit 钩子（`git commit` 前拦下），全量跑是回归网。
 - **观测数据在无自动接线时依赖人显式记录**（D7-3 挂载面暂不立）。长期零记录时派生面为空、成本为零——这是可接受的失败态，不是待补的缺口；重新评估的触发 = 出现「需要无人写入」的真实场景。
-- **吸收补丁对照（D3）**：凭据筛查行兑现（best-effort + 覆盖扩到 env 式 / JWT / 连接串）；审计事件轨沿用既有 `events/`；写入守卫 / 两段式评估 / 注入预算维持前期状态（第二期或已落地）。
+- **D3 吸收面现状**：凭据筛查 = best-effort 绊线（覆盖 provider 形状 / 赋值 / JWT / URL 与连接串内嵌凭据）；审计事件轨 = 既有 `events/`（kind 准入不变）；写入守卫与注入预算 = 本仓既有形态；两段式评估协议的形态与范围归第二期（D7-2）。
 - **余项**：痕迹提炼面归属（挂起）、行为评估自建与第二期范围（D7-2）——两者都不因本批改变，唯一家仍在融合立宪 ADR。

@@ -47,7 +47,7 @@ node dist/engine/bin.js self-test                           # 元评测夹具（
 ## 观测输入面（融合轮第一期）
 
 - **事实与观测分家**：`events/` 轨只收「写得复算规则」的演化事件；`gene.used` / `gene.outcome` 这类观测不进 git，落 `<repoRoot>/.noogenesis/observations/<YYYY-MM>.jsonl`（append-only、gitignored、可丢弃——丢了只丢观测权重）。
-- **记录 schema（封闭六字段）**：`ts`（严格 ISO 8601 UTC）/ `actor` / `signal`（写入时按信号归一化规则落键）/ `gene`（`<domain>/<id>` 形状）/ `outcome`（`ok` | `fail`）/ `evidence`（可选单行，≤200 字符）。未知字段与形状/枚举/长度违约 → exit 2 且不落盘（含落盘失败——本命令无红态，退出码恒 0/2）。
+- **记录 schema（封闭六字段；字段表与校验规则的唯一家 = 本节，决定与理由见 [实现 ADR](../.agents/notes/implemented/architecture/2026-09-11-memory-line-phase1-observation-face.md)）**：`ts`（严格 ISO 8601 UTC）/ `actor` / `signal`（写入时按信号归一化规则落键）/ `gene`（`<domain>/<id>` 形状）/ `outcome`（`ok` | `fail`）/ `evidence`（可选单行，≤200 字符）。未知字段与形状/枚举/长度违约 → exit 2 且不落盘（含落盘失败——本命令无红态，退出码恒 0/2）。
 - **写入触发点 = 人 / 显式目标**：`observe` 命令只在某基因被实际采用、其结果已可判时由人（或经人许可的 agent）显式调用；不随 `solidify`（入档 ≠ 使用成功）、不随 `select` / `propose` 运行自动记录。
 - **派生 = 每次 select 现算**：`(signal::gene)→{ok,fail,last_ts}` 在 `select` 时现算，只取「本次查询键 ∩ 本次命中基因」的边，不落盘、不进 git；边的事实侧身份（命中 ref 与 signal）来自本次 `genes/` 扫描，`events/` 轨不参与。零观测时 `select` 输出与无观测面逐字节相同。
 - **姿态分面**：写路径 fail-closed；读路径 warn-skip——坏 JSON 行、schema 违约行、非归一键、观测面不可列举都只丢权重 + 一行 stderr（每文件/每面至多一行），不让 `select` 变红。

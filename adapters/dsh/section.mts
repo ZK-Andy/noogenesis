@@ -30,6 +30,8 @@ export const BASE_SECTION = [
  * 排在命中行之后，**不进常驻节**——建议按需经 noo_select 工具输出读，常驻面
  * 每模型步重复付费。逐行截断摘要，命中数按 maxGenes 封顶。
  * maxGenes 必传：调用点恒来自 config（缺省 12 单源 = config.mts，README 配置表为口径单源）。
+ * 前缀过滤的边界：命中行恒以 `<domain>/<id>`（两者 kebab）开头，`signals:` 与 `advice:`
+ * 都不可能成为命中行的行首（需求 `:` 而 ref 必含 `/`），故按前缀剔除不会误杀命中。
  */
 export function hitsSectionText(
 	selectResult: { stdout?: string } | undefined,
