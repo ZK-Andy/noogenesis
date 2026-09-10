@@ -5,11 +5,13 @@
 
 > **⚡ 最高优先级（框架重建）：charter ADR + 七层蓝图 → [.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md) · [docs/research/framework-rebuild-blueprint.md](docs/research/framework-rebuild-blueprint.md)**——用户拍板推倒重建（先框架后协作层、本仓原地重建），蓝图定稿（七层三段式 + A1–A8 挂载面 + M1–M3 + C1–C15）；**B0–B5 全批闭环（协作层重建收官，C1–C15 全绿）**——B5 切换批（gates.json cmd 全量重指 TS + 旧机器件零残留 + CI/钩子单轨 + 发版 0.2.0；实现 ADR [.agents/notes/implemented/architecture/2026-09-08-b5-switch.md](.agents/notes/implemented/architecture/2026-09-08-b5-switch.md)，批次表 [.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md](.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md)）；**优化轮已收口（2026-09-10）**：问题池条目全部判终态、池文档冻结为调研档案（技能清单补全拍板暂不新增技能 + 既有技能 references 实拆补全；记忆库线另立档案页 [memory-system-dossier.md](docs/research/memory-system-dossier.md)；规范展开 c1/c2 已交付；[收口 ADR](.agents/notes/implemented/process/2026-09-10-optimization-round-closure.md) + [池文档 §2.3 收口账](docs/research/capsule-01-optimization-round.md)）。
 
-> **⏭ 下一步：候选排期（框架侧无待启动批次）**——两批已落地（2026-09-11）：记忆库线第一期（观测输入面 + Select 建议档 + 凭据绊线，[实现 ADR](.agents/notes/implemented/architecture/2026-09-11-memory-line-phase1-observation-face.md)；线状态唯一家 = [档案页](docs/research/memory-system-dossier.md)）与**评审发现机械化**（命令面/版本行/模式覆盖三类判据，[机械化 ADR](.agents/notes/implemented/process/2026-09-11-review-finding-mechanization.md)）。余项候选：护栏建设轮（触发已满足 = 待排期）/ 记忆库线第二期（行为评估自建形态待裁）/ 档案页制度批（触发 = 试点评估）/ 技能清单「等等」候选收集（触发 = 用户再给候选）。
+> **⏭ 下一步：候选排期（框架侧无待启动批次）**——2026-09-11 四批已落地：**吸收阶段重建**（吸收升为与评审同级 + 四出口 + 吸收账，[ADR](.agents/notes/implemented/process/2026-09-11-absorption-stage.md)）、**术语口径**（「胶囊」= 内容包层、`Capsule` 原语不译，[ADR](.agents/notes/implemented/process/2026-09-11-capsule-term-layering.md)）、记忆库线第一期（[实现 ADR](.agents/notes/implemented/architecture/2026-09-11-memory-line-phase1-observation-face.md)；线状态唯一家 = [档案页](docs/research/memory-system-dossier.md)）、**评审发现机械化**（命令面/版本行/模式覆盖三类判据，[机械化 ADR](.agents/notes/implemented/process/2026-09-11-review-finding-mechanization.md)）。余项候选：护栏建设轮（触发已满足 = 待排期）/ `capsules/` 路径指代两义（触发 = 共享库或目录立项）/ 记忆库线第二期（行为评估自建形态待裁）/ 档案页制度批（触发 = 试点评估）/ 技能清单「等等」候选收集（触发 = 用户再给候选）。
 
 ## 交接更新记录（摘要滚动窗）
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
+
+- 2026-09-11｜**吸收阶段重建批（FULL 三审 R1 2B/6S、R2 1B/3S、R3 1B/3S；全采纳 15）**：吸收升为与 §4 评审同级（`feature-flow` §5）+ 四出口 + 吸收账；门槛改「判据稳定即立、须先实测噪声」；[ADR](.agents/notes/implemented/process/2026-09-11-absorption-stage.md)。提交 `656b4b9`→`7a29466`。README 无漂移。
 
 - 2026-09-11｜**术语口径批（FULL 三审 R1 1B/3S、R2 3B/4S、R3 0B/4S；全采纳 11 + 部分采纳 1）**：「胶囊」= 内容包层、`Capsule` 原语写英文原名不译，规则落根 AGENTS「文档纪律」+ 四处违例面对齐；[ADR](.agents/notes/implemented/process/2026-09-11-capsule-term-layering.md)。提交 `07de5b4`→`e1d4e9b`。README 无漂移。
 
@@ -56,8 +58,6 @@
 - 2026-09-10｜**review-tier 去重随手批收口（FULL 三审 R1 0B/1S、R2 0B/2S、R3 1B/2S 全采纳；ADR 2026-09-10-review-tier-diff-moment-dedup implemented；`479edf2`→收口批）**：diffMoment 三态映射单源 + untracked 单收集传递（子进程 −1）；R3 实证瞬时角 tracked 子角判定翻转、更 fail-closed。**节点：C 类随手全清。** README 无漂移。
 
 - 2026-09-10｜**C 类随手候选批收口（FULL 三审 0B、8S 采纳 2 转办；ADR `2026-09-10-mdref-py-primitives-fold` + `2026-09-10-review-tier-evidence-ride-along`；`907d1a8`→`93483f5`）**：mdref 增补 pyStrip 导出 + 四件删副本；review-tier 证据收紧「Review 行须本变更引入」（12→17）。**节点：C 类随手全清。** README 无漂移。
-
-- 2026-09-09｜**发布形态对齐上游批（FULL 三审全采纳收口；ADR `2026-09-09-release-shape-alignment` implemented；`71601e7`→`1b6c25b`）**：README 引用统一 DSH + License 修辞正面化（免责句 DeepSeek→DSH 维护方）；release 工具族（bump/release-note 双语 body+@作者）+ tag 切 `dsh-v` + lock 漂移修复。**节点：下一发版用新工具族。**
 
 
 ## 背景
