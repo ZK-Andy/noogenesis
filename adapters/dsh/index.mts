@@ -23,7 +23,7 @@ import { runSolidifyTrigger, listStagingCandidates, createInFlightGate, ASK_TIME
 import { createBankPullScheduler } from "./bank-pull.mjs";
 import { registerBankSkills } from "./skill-provider.mjs";
 import { validateConfig } from "./config.mjs";
-import { mergePreStep, mergeSessionStart, mergeToolPost, mergeToolPre } from "./mount.mjs";
+import { mergePreStep, mergeSessionStart, mergeToolPost, mergeToolPre, createSessionStore } from "./mount.mjs";
 import type { PreStepPayload, SessionStartPayload, ToolExecLike, ToolResultLike } from "./mount.mjs";
 import { createMountPolicies } from "./mount-policies.mjs";
 
@@ -57,6 +57,17 @@ function adviceMessage(lines: string[]): unknown {
 		content: lines.map((text) => ({ type: "text" as const, text })),
 		source: PLUGIN_SOURCE,
 	});
+}
+
+/** A3 advice 投递降级提示（每会话至多一条——重复降级提示是纯噪音；会话键 WeakMap，GC 自清兜底）。 */
+function advisoryWarnOnce(logger: { warn(message: string): void }): (exec: AgentCarrier, message: string) => void {
+	const store = createSessionStore();
+	return (exec, message) => {
+		const state = store.of<{ warned: boolean }>(exec.agent?.session, () => ({ warned: false }));
+		if (state.warned) return;
+		state.warned = true;
+		logger.warn(`noogenesis ${message}`);
+	};
 }
 
 /**
@@ -110,6 +121,7 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 	const cfg = validateConfig(config);
 	const repoRoot = resolveRepoRoot(cfg);
 	const logger = ctx.logger("noogenesis");
+	const warnOnceAdvisory = advisoryWarnOnce(logger);
 
 	// 逐次解析（部署收口 ADR 2026-09-06-adapter-deploy-hardening）：工具体吃
 	// exec.agent 的会话工作区走四级回退链——多 agent 异仓各归各仓；无会话
@@ -156,10 +168,11 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 
 	// ── 挂载面接线（B4 ADR Decision 1–2 + Decision 7 档位纪律：能力层
 	// mount.mts 合并器 + 策略层 mount-policies.mts；A4 lint 反馈用 block 拦回档
-	// ——升格批 2026-09-09-lint-block-and-staged-hook；A3 deny 仍零策略件；
-	// 记录投影不挂（撤除 ADR）。每挂载点恰一个 ctx.on listener，策略件增挂只动
-	// mount-policies.mts，不复制宿主接线；logger 透传给策略层降级提示（A4 写码
-	// 反馈缺 lint 基建时每会话至多一条 warn）。 ──
+	// ——升格批 2026-09-09-lint-block-and-staged-hook；A3 触点提醒走 advice
+	// 非阻断档（M1 守卫②）；记录投影不挂（撤除 ADR）。每挂载点恰一个 ctx.on
+	// listener，策略件增挂只动 mount-policies.mts，不复制宿主接线；logger 透传
+	// 给策略层降级提示（A4 写码反馈缺 lint 基建 / A3 提醒投递缺席时每会话至多
+	// 一条 warn）。 ──
 	const mounts = createMountPolicies(cfg, { warn: (message) => logger.warn(message) });
 
 	// A5 会话开始时刻（agent/session-start，hooks 桥四类时刻的会话开始位）：
@@ -190,9 +203,11 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 		}
 	});
 
-	// A3 工具前（tools/pre-execute waterfall）：deny/ask 决策由合并器单源承载
-	// （首批策略件零使用）；无策略决策 → next() 透传。合并异常 → warn 降级
-	// 仍达 next()（降级纪律：合并失败不得意外阻断工具调用）。
+	// A3 工具前（tools/pre-execute waterfall）：deny/ask 决策由合并器单源承载；
+	// advice 档（M1 守卫②触点提醒）→ agent.inject 非阻塞投递——能力位缺席或
+	// 投递异常 → warn 降级（每会话至多一条），工具调用绝不因此阻断。无策略
+	// 决策 → next() 透传。合并异常 → warn 降级仍达 next()（降级纪律：合并
+	// 失败不得意外阻断工具调用）。
 	ctx.on("tools/pre-execute", async (exec: ToolExecLike, next: () => Promise<unknown>) => {
 		let merged;
 		try {
@@ -203,6 +218,18 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 		}
 		if (merged.deny !== undefined) return { kind: "deny", reason: merged.deny };
 		if (merged.ask !== undefined) return { kind: "ask", ...(merged.ask ? { reason: merged.ask } : {}) };
+		if (merged.advice.length > 0) {
+			try {
+				const agentInject = (exec.agent as { inject?: unknown } | undefined)?.inject;
+				if (typeof agentInject === "function") {
+					(agentInject as (message: unknown) => void).call(exec.agent, adviceMessage(merged.advice));
+				} else {
+					warnOnceAdvisory(exec, "skill advice delivery unavailable: agent.inject capability missing");
+				}
+			} catch (cause) {
+				warnOnceAdvisory(exec, `skill advice delivery failed: ${cause instanceof Error ? cause.message : String(cause)}`);
+			}
+		}
 		return next();
 	});
 

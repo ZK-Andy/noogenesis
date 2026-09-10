@@ -17,7 +17,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { createSessionStore } from "./mount.mjs";
 import type { ToolPostPolicy } from "./mount.mjs";
-import { resolveRepoRoot, sessionWorkspaceOf } from "./engine-bridge.mjs";
+import { resolveRepoRoot, sessionWorkspaceOf, isInsideRepo } from "./engine-bridge.mjs";
 import type { RepoRootConfig } from "./engine-bridge.mjs";
 
 /** 单条 lint 诊断（行/列 1 基，与 oxlint JSON 的 `labels[0].span` 同口径）。 */
@@ -81,12 +81,6 @@ function defaultRunLint({ bin, config, file, cwd }: LintRunContext): LintDiagnos
 			message: diagnostic.message ?? "",
 		};
 	});
-}
-
-/** 路径归属判定：`abs` 在 `repoRoot` 内（含根自身）；出仓面不反馈。 */
-function isInsideRepo(repoRoot: string, abs: string): boolean {
-	const rel = path.relative(repoRoot, abs);
-	return rel !== ".." && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel);
 }
 
 /**

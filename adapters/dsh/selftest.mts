@@ -37,6 +37,7 @@ import { createSessionStore, mergePreStep, mergeSessionStart, mergeToolPost, mer
 import { createMountPolicies, createSubtreeRulesPolicies } from "./mount-policies.mjs";
 import { createLintFeedbackPolicies } from "./lint-feedback.mjs";
 import type { LintDiagnostic, LintRunContext } from "./lint-feedback.mjs";
+import { createSkillGuardPolicies } from "./skill-guard.mjs";
 import { apply } from "./index.mjs";
 
 const ADAPTER_DIR = path.dirname(fileURLToPath(import.meta.url));
@@ -315,7 +316,18 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.equal(cfg.askOnDispose, true);
 	assert.equal(cfg.actor, "noogenesis");
 	assert.equal(cfg.maxIndexGenes, 12);
+	assert.deepEqual(cfg.skillGuards, [
+		{ path: "docs", skill: "noo-doc-standards" },
+		{ path: ".agents/notes", skill: "noo-archive-agent-notes" },
+	]);
 	ok("config: defaults complete");
+
+	// skillGuards：显式数组整体替换缺省表；条目形状违约指名字段。
+	assert.deepEqual(validateConfig({ skillGuards: [{ path: "journal", skill: "noo-custom" }] }).skillGuards, [{ path: "journal", skill: "noo-custom" }]);
+	assert.throws(() => validateConfig({ skillGuards: "docs" }), /skillGuards/);
+	assert.throws(() => validateConfig({ skillGuards: [{ path: "", skill: "x" }] }), /skillGuards/);
+	assert.throws(() => validateConfig({ skillGuards: [{ path: "docs" }] }), /skillGuards/);
+	ok("config: skillGuards — explicit table replaces default; entry violations throw");
 
 	const badConfigs: Array<[unknown, RegExp]> = [
 		[{ repoRoot: "" }, /repoRoot/],
@@ -703,15 +715,17 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.deepEqual(mergePreStep([], {}), { advice: [] });
 	ok("mounts: pre-step merge — advice accumulates, first reject wins and stops");
 
-	// A3 合并语义：deny 胜出停止；无 deny 取首个 ask；无策略 = 无决策（透传）。
+	// A3 合并语义：deny 胜出停止（已累积 advice 随行返回）；无 deny 取首个 ask；
+	// advice 不停扫描照常累积；无策略 = 空决策（透传）。
 	const a3Policies = [
 		() => ({ kind: "ask" as const, reason: "need approval" }),
 		() => ({ kind: "deny" as const, reason: "blocked" }),
 	];
-	assert.deepEqual(mergeToolPre(a3Policies, {}), { deny: "blocked" });
-	assert.deepEqual(mergeToolPre([() => ({ kind: "ask" as const })], {}), { ask: "" });
-	assert.deepEqual(mergeToolPre([], {}), {});
-	ok("mounts: tool-pre merge — first deny wins; ask only when no deny; empty passthrough");
+	assert.deepEqual(mergeToolPre(a3Policies, {}), { deny: "blocked", advice: [] });
+	assert.deepEqual(mergeToolPre([() => ({ kind: "ask" as const })], {}), { ask: "", advice: [] });
+	assert.deepEqual(mergeToolPre([() => ({ kind: "advice" as const, lines: ["l1"] }), () => ({ kind: "advice" as const, lines: ["l2"] })], {}), { advice: ["l1", "l2"] });
+	assert.deepEqual(mergeToolPre([], {}), { advice: [] });
+	ok("mounts: tool-pre merge — first deny wins (advice rides along); ask only when no deny; advice accumulates");
 
 	// A4 合并语义：block 胜出停止；context 行累积（含 block 之前的）。
 	const a4Policies = [
@@ -779,17 +793,69 @@ function writeFixtureGene(repoRoot: string): void {
 		assert.ok(!noPointerAdvice.lines.some((line) => line.includes("code-standards")));
 		assert.ok(!noPointerAdvice.lines.some((line) => line.includes("architecture-standards")));
 		ok("mounts: M2 — opening map once per session (subagent/zero-subtree skipped; pointer line gated on file presence)");
+
+		// 技能路标行（M1 守卫①）：技能面在场（任一候选目录含 noo-*）才发行——缺席仓零噪音。
+		const withSkills = tempRepo("mount-m2-skills");
+		fs.mkdirSync(path.join(withSkills, ".agents", "skills", "noo-doc-standards"), { recursive: true });
+		fs.writeFileSync(path.join(withSkills, ".agents", "skills", "noo-doc-standards", "SKILL.md"), "# skill\n");
+		const skillsAdvice = createSubtreeRulesPolicies({ repoRoot: withSkills }).preStep({ agent: { session: { header: { cwd: withSkills } } }, turn: 1, step: 1 });
+		assert.ok(skillsAdvice && skillsAdvice.kind === "advice");
+		assert.equal(skillsAdvice.lines.filter((line) => line.startsWith("- Task-matched skills")).length, 1);
+		assert.match(skillsAdvice.lines.at(-1)!, /noo-doc-standards/);
+		// 缓存位同款命中（.noogenesis/genes-cache/.agents/skills）。
+		const withCacheSkills = tempRepo("mount-m2-cacheskills");
+		fs.mkdirSync(path.join(withCacheSkills, ".noogenesis", "genes-cache", ".agents", "skills", "noo-code-review"), { recursive: true });
+		fs.writeFileSync(path.join(withCacheSkills, ".noogenesis", "genes-cache", ".agents", "skills", "noo-code-review", "SKILL.md"), "# skill\n");
+		const cacheAdvice = createSubtreeRulesPolicies({ repoRoot: withCacheSkills }).preStep({ agent: { session: { header: { cwd: withCacheSkills } } }, turn: 1, step: 1 });
+		assert.ok(cacheAdvice && cacheAdvice.kind === "advice");
+		assert.equal(cacheAdvice.lines.filter((line) => line.startsWith("- Task-matched skills")).length, 1);
+		ok("mounts: M1 ① — skill roster line emitted only when a noo-* skill face exists (live copy or bank cache)");
 	}
 
-	// 策略件组装：A2 地图件 + A4 写码在环反馈件 + A3/A5 零策略能力位
-	//（A6/A8 投影面不挂——撤除 ADR）。
+	// 策略件组装：A2 地图件 + A3 触点提醒件（缺省守卫表）+ A4 写码在环反馈件
+	// + A5 零策略能力位（A6/A8 投影面不挂——撤除 ADR）。
 	{
 		const set = createMountPolicies({ repoRoot: "/tmp/assembly" });
 		assert.equal(set.preStep.length, 1);
-		assert.deepEqual(set.toolPre, []);
+		assert.equal(set.toolPre.length, 1);
 		assert.equal(set.toolPost.length, 1);
 		assert.deepEqual(set.sessionStart, []);
-		ok("mounts: policy set assembly — A2 map + A4 lint feedback + A3/A5 zero-policy lanes");
+		ok("mounts: policy set assembly — A2 map + A3 skill guard + A4 lint feedback + A5 zero-policy lane");
+	}
+
+	// M1 守卫②：A3 触点提醒策略逐条合同（守卫表直调，零宿主依赖）。
+	{
+		const repo = tempRepo("skill-guard");
+		const agent = { session: { header: { cwd: repo } } };
+		const guards = [
+			{ path: "docs", skill: "noo-doc-standards" },
+			{ path: ".agents/notes", skill: "noo-archive-agent-notes" },
+		];
+		const { toolPre } = createSkillGuardPolicies({ repoRoot: repo }, guards);
+		// 写 docs 面未载技能 → advice 一行；同会话同技能不重复提醒。
+		const advice = toolPre({ name: "write", arguments: { file_path: "docs/x.md" }, agent });
+		assert.ok(advice && advice.kind === "advice");
+		assert.match(advice.lines[0]!, /noo-doc-standards/);
+		assert.equal(toolPre({ name: "write", arguments: { file_path: "docs/y.md" }, agent }), undefined);
+		// skill 调用进入 seen 集 → 提醒消失（载入观测解除）。
+		const agentLoaded = { session: { header: { cwd: repo } } };
+		const toolPreLoaded = createSkillGuardPolicies({ repoRoot: repo }, guards).toolPre;
+		const firstUnloaded = toolPreLoaded({ name: "write", arguments: { file_path: "docs/x.md" }, agent: agentLoaded });
+		assert.ok(firstUnloaded && firstUnloaded.kind === "advice");
+		assert.equal(toolPreLoaded({ name: "write", arguments: { file_path: "docs/x.md" }, agent: agentLoaded }), undefined);
+		toolPreLoaded({ name: "skill", arguments: { name: "noo-doc-standards" }, agent: agentLoaded });
+		assert.equal(toolPreLoaded({ name: "write", arguments: { file_path: "docs/x.md" }, agent: agentLoaded }), undefined);
+		// 非守卫路径 / 子树内层路径命中（.agents/notes 前缀）/ 出仓路径 / 非写码工具 → 静默。
+		assert.equal(toolPre({ name: "write", arguments: { file_path: "docs-misc/x.md" }, agent }), undefined);
+		const notesAdvice = toolPre({ name: "edit", arguments: { file_path: ".agents/notes/implemented/process/x.md" }, agent });
+		assert.ok(notesAdvice && notesAdvice.kind === "advice");
+		assert.match(notesAdvice.lines[0]!, /noo-archive-agent-notes/);
+		assert.equal(toolPre({ name: "write", arguments: { file_path: "../outside.md" }, agent }), undefined);
+		assert.equal(toolPre({ name: "read", arguments: { file_path: "docs/x.md" }, agent }), undefined);
+		// 无会话键（keyless）降级 = 即席新状态 → 仍发提醒（无法去重，触达优于静默）。
+		const keyless = toolPre({ name: "write", arguments: { file_path: "docs/x.md" } });
+		assert.ok(keyless && keyless.kind === "advice");
+		ok("skill-guard: docs/notes trigger once per skill per session; skill load clears; off-path/out-of-repo/non-write silent; keyless still advises");
 	}
 
 	// index 接线假 ctx 冒烟：存留四点各恰一个 listener + 行为逐条。
@@ -832,10 +898,24 @@ function writeFixtureGene(repoRoot: string): void {
 		assert.equal(rejected.kind, "reject");
 		ok("mounts: A2 wiring — opening map appended once; later steps and reject passthrough");
 
-		// A3：首批零 deny/ask → next 透传（能力位在场；exec 形状 = 宿主合同冒烟，无观测语义）。
+		// A3：无策略决策 → next 透传（能力位在场；exec 形状 = 宿主合同冒烟，无观测语义）。
 		const passthroughMarker = { marker: true };
 		assert.equal(await toolPre({ name: "read", arguments: { file_path: "/tmp/x.ts" }, agent }, async () => passthroughMarker), passthroughMarker);
-		ok("mounts: A3 wiring — no first-batch denial; passthrough preserved");
+		ok("mounts: A3 wiring — no-policy passthrough preserved");
+
+		// A3 advice 档（M1 守卫②）：触守卫路径 → agent.inject 投递一条；同会话
+		// 同技能不重复；inject 能力位缺席 → warn 降级（每会话至多一条）且工具调用不阻断。
+		const injected: unknown[] = [];
+		const agentWithInject = { session: { header: { cwd: repo } }, inject: (message: unknown) => injected.push(message) };
+		const passthrough = await toolPre({ name: "write", arguments: { file_path: "docs/x.md" }, agent: agentWithInject }, async () => passthroughMarker);
+		assert.equal(passthrough, passthroughMarker);
+		assert.equal(injected.length, 1);
+		assert.match((injected[0] as { content: Array<{ text: string }> }).content[0]!.text, /noo-doc-standards/);
+		assert.equal(await toolPre({ name: "write", arguments: { file_path: "docs/y.md" }, agent: agentWithInject }, async () => passthroughMarker), passthroughMarker);
+		assert.equal(injected.length, 1);
+		assert.equal(await toolPre({ name: "write", arguments: { file_path: "docs/z.md" }, agent }, async () => passthroughMarker), passthroughMarker);
+		assert.equal(warns.filter((m) => m.includes("advice delivery unavailable")).length, 1);
+		ok("mounts: A3 advice — one inject per skill per session; missing capability degrades with one warn, tool call unblocked");
 
 		// A4：非写码 exec → 透传；写码面缺 lint 基建 → 静默降级 + 每会话一条
 		// warn（warn 经 index.mts 透传的 logger 捕获）。

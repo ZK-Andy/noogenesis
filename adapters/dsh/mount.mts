@@ -6,9 +6,10 @@
  *
  * 四挂载点（A2–A5）各一组策略接口 + 一个合并器——hook-protocol 判定
  * 语义的本地蒸馏（蓝图 §7 边界：不建两方言桥，deny→A3 阻断并回消息 /
- * block→A4 结果面拦回 / additionalContexts→A4 上下文附加 / 非阻断→降级日志）。
+ * block→A4 结果面拦回 / additionalContexts→A4 上下文附加 / advice→A3
+ * 非阻断建议行（agent.inject 投递，M1 守卫②）/ 非阻断→降级日志）。
  * 策略件在 mount-policies.mts（存留件 = A2 开场地图 + A4 写码在环 lint
- * 反馈，记录件不挂——撤除 ADR）；宿主 ctx.on 胶水与消息构造在 index.mts。本模块零宿主依赖（防火墙
+ * 反馈 + A3 技能触点提醒，记录件不挂——撤除 ADR）；宿主 ctx.on 胶水与消息构造在 index.mts。本模块零宿主依赖（防火墙
  * 规则 2，selftest 机器扫描）——宿主 payload 只取本地窄结构面（同
  * engine-bridge AgentCarrier 口径）。
  *
@@ -64,8 +65,11 @@ export interface SessionStartPayload extends AgentCarrier {
 /** A2 策略决策：reject = 权威拒绝一步（阻断档，首批不用）；advice = 建议档消息行。 */
 export type PreStepPolicyDecision = { kind: "reject"; reason: string } | { kind: "advice"; lines: string[] };
 
-/** A3 策略决策：deny = 阻断并回消息；ask = 交审批通道（首批不用）。 */
-export type ToolPrePolicyDecision = { kind: "deny"; reason: string } | { kind: "ask"; reason?: string };
+/** A3 策略决策：deny = 阻断并回消息；ask = 交审批通道；advice = 建议行（非阻断，经 agent.inject 投递）。 */
+export type ToolPrePolicyDecision =
+	| { kind: "deny"; reason: string }
+	| { kind: "ask"; reason?: string }
+	| { kind: "advice"; lines: string[] };
 
 /** A4 策略决策：block = 结果面拦回纠正消息；context = 附加上下文行（建议档）。 */
 export type ToolPostPolicyDecision = { kind: "block"; feedback: string } | { kind: "context"; lines: string[] };
@@ -73,7 +77,7 @@ export type ToolPostPolicyDecision = { kind: "block"; feedback: string } | { kin
 /** A5 策略决策：inject = 会话开始注入上下文行（非阻塞）。 */
 export type SessionStartPolicyDecision = { kind: "inject"; lines: string[] };
 
-/** 策略接口四件（A6/A8 记录投影面不挂——撤除 ADR；A3/A5 首批零策略件）。 */
+/** 策略接口四件（A6/A8 记录投影面不挂——撤除 ADR；A5 零策略件）。 */
 export type PreStepPolicy = (payload: PreStepPayload) => PreStepPolicyDecision | void;
 export type ToolPrePolicy = (exec: ToolExecLike) => ToolPrePolicyDecision | void;
 export type ToolPostPolicy = (exec: ToolExecLike, result: ToolResultLike) => ToolPostPolicyDecision | void;
@@ -120,22 +124,28 @@ export function mergePreStep(policies: readonly PreStepPolicy[], payload: PreSte
 	return merged;
 }
 
-/** A3 合并结果：deny 优先于 ask（首个 deny 胜出；无 deny 取首个 ask）。 */
+/** A3 合并结果：deny 优先于 ask（首个 deny 胜出；无 deny 取首个 ask）；advice 行按注册序累积。 */
 export interface MergedToolPre {
 	deny?: string;
 	ask?: string;
+	advice: string[];
 }
 
-/** A3 合并语义：首个 deny 胜出（扫描全体）；无 deny 取首个 ask（reason 缺省 = 空串哨兵，host 合同允许无理由 ask）；无策略 = 透传。 */
+/** A3 合并语义：首个 deny 胜出（此时未扫描到的策略不再问，已累积 advice 随行返回）；无 deny 取首个 ask（reason 缺省 = 空串哨兵，host 合同允许无理由 ask）；advice 不停扫描照常累积；无策略 = 空决策（透传）。 */
 export function mergeToolPre(policies: readonly ToolPrePolicy[], exec: ToolExecLike): MergedToolPre {
 	let ask: string | undefined;
+	const advice: string[] = [];
 	for (const policy of policies) {
 		const decision = policy(exec);
 		if (!decision) continue;
-		if (decision.kind === "deny") return { deny: decision.reason };
-		ask ??= decision.reason ?? "";
+		if (decision.kind === "deny") return { deny: decision.reason, advice };
+		if (decision.kind === "ask") {
+			ask ??= decision.reason ?? "";
+			continue;
+		}
+		advice.push(...decision.lines);
 	}
-	return ask === undefined ? {} : { ask };
+	return ask === undefined ? { advice } : { ask, advice };
 }
 
 /** A4 合并结果：block = 首个拦回反馈（胜出即停）；context = 附加上下文行。 */

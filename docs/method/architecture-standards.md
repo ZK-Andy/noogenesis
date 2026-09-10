@@ -36,7 +36,7 @@
 | 合同面 | 消费者可见接口：CLI 参数/退出码、gates.json 白名单名、package exports/files、宿主事件 payload、基因 schema 字段 | 契约文档同步（engine/adapters README、拍板 ADR）；跨边界契约 → FULL 定档 | 各族 selftest/e2e；review-tier 机械触发 |
 | 机器面 | verify-* 判据、夹具、gates.json 登记、lefthook 编排 | 判据与夹具同批改；新闸登记 gates.json | gates.mts DAG + 各闸 --self-test |
 | 数据面 | genes/ 闭 schema、events/ 封闭 kind 集、manifest.json 生成物 | 生成物走生成器禁手改；schema 改动先协议 ADR | verify-manifest、verify-gene-format |
-| 散文面 | 入站链接、字数预算、子树 AGENTS、README 收尾核对 | 移动原子改（删老家 + 改每个入站链接）；预算超限处理序（[doc-standards](doc-standards.md) §5）；README 收尾核对程序家 = [session-close](../../.agents/workflows/session-close.md) 步骤 4 | verify-md-links、verify-doc-budgets |
+| 散文面 | 入站链接、字数预算、子树 AGENTS、README 收尾核对 | 移动原子改（删老家 + 改每个入站链接）；预算超限处理序（[doc-standards](doc-standards.md) §5）；README 收尾核对程序家 = [session-close](../../.agents/workflows/session-close.md) 步骤 5 | verify-md-links、verify-doc-budgets |
 
 - 判别式：变更无法回答「触碰了哪几类面、各自义务是否清账」= 影响面识别未做。停档理由：完整性是语义判断；右列机器可判子集已各自成闸，diff 范围界定工具 = `scripts/change-scope.mts`（Git 纪律单源 = 根 [AGENTS.md](../../AGENTS.md)）。
 - 定档判据（FULL/LIGHT）单源 = [review.md](review.md) §1，互链不重抄；路径机械子集 = `verify-review-tier` 的 FULL_TRIGGERS。

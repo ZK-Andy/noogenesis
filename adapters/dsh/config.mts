@@ -13,6 +13,22 @@ function isNatural(value: unknown): value is number {
 /** 官方基因库（P2 ADR D1 本仓即库；缺省进包 = 装完即部署，bug-fix ADR D2）。 */
 export const DEFAULT_GENE_BANK_URL = "https://github.com/ZK-Andy/noogenesis.git";
 
+/** 触点提醒条目：路径前缀（POSIX 目录形态，相对 repoRoot）× 对口技能名。 */
+export interface SkillGuardEntry {
+	path: string;
+	skill: string;
+}
+
+/**
+ * 触点提醒缺省表（M1 守卫②）。宁缺勿滥（charter ADR 对价条款：重复提醒
+ * 稀释真守卫信号）——只配「路径×技能」强相关条目；skill-guard 观测「本会话
+ * 载过没有」，机器可判角落仅此一处，任务型映射不进本表。
+ */
+export const DEFAULT_SKILL_GUARDS: readonly SkillGuardEntry[] = [
+	{ path: "docs", skill: "noo-doc-standards" },
+	{ path: ".agents/notes", skill: "noo-archive-agent-notes" },
+];
+
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -60,8 +76,21 @@ function optGeneBankUrl(value: unknown): string | false | undefined {
 	return value;
 }
 
+function optSkillGuards(value: unknown): readonly SkillGuardEntry[] | undefined {
+	if (value === undefined) return undefined;
+	if (!Array.isArray(value)) {
+		throw new Error("noogenesis: config.skillGuards must be an array of { path, skill }");
+	}
+	return value.map((entry) => {
+		if (!isRecord(entry) || typeof entry.path !== "string" || entry.path.length === 0 || typeof entry.skill !== "string" || entry.skill.length === 0) {
+			throw new Error("noogenesis: config.skillGuards entries must be { path: string, skill: string } with non-empty values");
+		}
+		return { path: entry.path, skill: entry.skill };
+	});
+}
+
 /**
- * 校验并归一化插件配置（8 字段；缺省与失败模式单源见 ./README.md「配置」表）。
+ * 校验并归一化插件配置（9 字段；缺省与失败模式单源见 ./README.md「配置」表）。
  * 违约抛 Error（fail-closed）；geneBankUrl undefined = 官方库缺省、false = 显式禁用。
  */
 export function validateConfig(config: unknown = {}) {
@@ -78,6 +107,8 @@ export function validateConfig(config: unknown = {}) {
 	// geneBankUrl：undefined → 缺省官方库（装完即部署）；false → 显式禁用
 	// （pull 面短路，零 clone 尝试）；非空 string → 自定义库；空串/其余类型违约。
 	const geneBankUrl = optGeneBankUrl(config.geneBankUrl);
+	// skillGuards：undefined → 缺省表；显式数组整体替换缺省表（条目按需增删）。
+	const skillGuards = optSkillGuards(config.skillGuards);
 	return {
 		repoRoot,
 		sectionOrder: sectionOrder ?? 120,
@@ -87,5 +118,6 @@ export function validateConfig(config: unknown = {}) {
 		actor: actor ?? "noogenesis",
 		maxIndexGenes: maxIndexGenes ?? 12,
 		geneBankUrl: geneBankUrl ?? DEFAULT_GENE_BANK_URL,
+		skillGuards: skillGuards ?? DEFAULT_SKILL_GUARDS,
 	};
 }

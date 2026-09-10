@@ -87,6 +87,12 @@ export function resolveRepoRoot(config: RepoRootConfig = {}, sessionCwd?: string
 	return path.resolve(explicitRepoRootOf(config) || sessionCwd || process.cwd());
 }
 
+/** 路径归属判定：`abs` 在 `repoRoot` 内（含根自身）；出仓面不反馈。策略件共用（lint 反馈 / 技能触点提醒）。 */
+export function isInsideRepo(repoRoot: string, abs: string): boolean {
+	const rel = path.relative(repoRoot, abs);
+	return rel !== ".." && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel);
+}
+
 /** 引擎执行兜底超时（async/sync 两面各一档；超时 kill → FAIL_CLOSED）。 */
 const ASYNC_TIMEOUT_MS = 120_000;
 const SYNC_TIMEOUT_MS = 60_000;
