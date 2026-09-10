@@ -19,7 +19,7 @@
 ## 文档纪律
 
 - **每个事实只有一个家**：rationale → ADR；procedure/踩坑 → [docs/cookbook.md](docs/cookbook.md)；方法论正文 → [docs/method/doc-standards.md](docs/method/doc-standards.md) 及同目录；规则 → 本文件 + 链接。
-- **术语分层**：「胶囊」只指内容包层（进化胶囊 01 及包内知识原子，靠限定词分辨）；`Capsule` 原语写英文原名、不译「胶囊」也不写「胶囊原语」，其余原语的中文通名照旧——口径见 [ADR](.agents/notes/implemented/process/2026-09-11-capsule-term-layering.md)，原语清单家 = [主设计](docs/research/dsh-swarm-evolution-framework-design.md) §5.1。
+- **术语分层**：「胶囊」只指内容包层（进化胶囊 01 及包内知识原子，不加限定词默认指整包）；`Capsule` 原语写英文原名、不译「胶囊」也不写「胶囊原语」，其余原语的中文通名照旧——口径见 [ADR](.agents/notes/implemented/process/2026-09-11-capsule-term-layering.md)，原语清单家 = [主设计](docs/research/dsh-swarm-evolution-framework-design.md) §5.1。
 - durable 文档**写当前状态，不写变更历史**（"previously / now / no longer / renamed" 是 slop）。
 - ADR 路径即元数据：`{lifecycle}/{class}/yyyy-mm-dd-<topic>.md`；rejected 仅当理由能防重蹈覆辙才保留；archived 永久冻结。
 - 相对 Markdown 链接 + 机器可校验；禁裸文件名引用。
