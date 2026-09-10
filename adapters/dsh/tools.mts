@@ -93,6 +93,10 @@ export function registerNooTools(ctx: ToolHost, { defineTool, runEngine, repoRoo
 			const signals = requireStringArray(args.signals, "noo_select");
 			const result: EngineResult = await runEngine(["select", ...signals], { repoRoot: repoRootOf(repoRootFor, exec) });
 			if (result.code === 2) failClosed("noo_select", result);
+			// select 无红档：非 0 且非 2 只可能是引擎内部崩溃（非 EngineError 走
+			// `throw e`，Node 崩溃退出码 1 且无 stdout）——当结果文本放行会把栈当
+			// 命中面交给模型（同 noo_evaluate 的同一判据）。
+			if (result.code === 1) failClosed("noo_select", result);
 			return textResult(result.code === 0 ? result.stdout : `${result.stdout}${result.stderr}`);
 		},
 	}));

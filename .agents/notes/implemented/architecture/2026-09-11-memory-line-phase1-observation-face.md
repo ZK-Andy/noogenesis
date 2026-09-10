@@ -16,17 +16,17 @@ Related: 融合立宪 [2026-09-10-memory-line-fusion-charter](../../proposed/arc
 
 ## Decision
 
-**1. 观测输入面 = `<repoRoot>/.noogenesis/observations/<YYYY-MM>.jsonl`**（gitignored、append-only、可丢弃）。落点与 P2 缓存同属 `.noogenesis/` 本地状态命名空间（`.gitignore` 已整目录忽略）；月卷节奏与 `events/` / `journal/` 同。记录 schema 封闭六字段：`ts`（写入时刻 ISO）/ `actor`（审计署名，必填）/ `signal`（写入时按 `normalizeSignal` 归一——键的口径单源）/ `gene`（`<domain>/<id>` 形状）/ `outcome`（封闭集 `ok` / `fail`）/ `evidence`（可选单行说明，≤200 字符）。未知字段、缺字段、形状/枚举/长度违约一律 fail-closed（exit 2，不落盘）。
+**1. 观测输入面 = `<repoRoot>/.noogenesis/observations/<YYYY-MM>.jsonl`**（gitignored、append-only、可丢弃）。落点与 P2 缓存同属 `.noogenesis/` 本地状态命名空间（`.gitignore` 已整目录忽略）；月卷节奏与 `events/` / `journal/` 同。记录 schema 封闭六字段：`ts`（写入时刻 ISO）/ `actor`（审计署名，必填）/ `signal`（写入时按 `normalizeSignal` 归一——键的口径单源）/ `gene`（`<domain>/<id>` 形状）/ `outcome`（封闭集 `ok` / `fail`）/ `evidence`（可选单行说明，≤200 字符）。未知字段、缺字段、形状/枚举/长度违约一律 fail-closed（exit 2，不落盘）。`ts` 严格限 ISO 8601 UTC、`signal` 须已归一——两者都会被原样拼进 `advice` 行（stdout 契约面），宽松形状会在该行内插入空白/换行，让第二行不以 `advice:` 开头而穿过适配层过滤进常驻节；校验器是写读两侧共用的唯一防线。
 
 **2. 写入触发点 = 人 / 显式目标**（D4 口径）：某基因**被实际采用且其结果已可判**时，由人或经人许可的 agent 显式调用新命令 `node dist/engine/bin.js observe --signal S --gene <domain>/<id> --outcome ok|fail --actor N [--evidence TEXT]` 写入。不随 `solidify` 自动记（**入档 ≠ 使用成功**）、不随 `select` / `propose` 运行记（运行不记，继承 S2 精神）；不加流程卡常备义务——触发权归人，避免自动沉淀那套常开成本（不收清单 D2 的形态）。
 
-**3. 派生 = 每次 select 现算**：读输入面（目录缺席 = 空集 = 默认零成本，同 P2 离线姿态），只取「本次查询键 ∩ 本次命中基因」的边 `(signal::gene)→{ok,fail,last_ts}`。不落盘、不缓存、不进 git（派生数据口径 D7-1）；读路径对坏行 warn-skip（观测可丢弃，不因它让 select 变红），写路径 fail-closed。
+**3. 派生 = 每次 select 现算**：读输入面（目录缺席 = 空集 = 默认零成本，同 P2 离线姿态），只取「本次查询键 ∩ 本次命中基因」的边 `(signal::gene)→{ok,fail,last_ts}`。不落盘、不缓存、不进 git（派生数据口径 D7-1）；读路径 warn-skip（观测可丢弃，不因它让 select 变红：坏 JSON 行、schema 违约行、非归一键、乃至观测面存在却不可列举都只丢权重 + 一行 stderr），写路径 fail-closed（含落盘失败 → exit 2：observe 无红态，退出码空间恒 0/2）。**边的事实侧身份（命中 ref 与 signal）取自本次 `genes/` 扫描，`events/` 轨不参与边计算**——D8 的「轨 + 输入面」在本仓的实现形态即「事实在 genes/ 面、观测在输入面」。
 
 **4. Select 输出契约 = 追加式建议档**：命中行与其后不变，仅在全部命中行**之后**追加 `advice: <signal> :: <ref>  ok=<n> fail=<n> last=<YYYY-MM-DD>` 行（每个有观测的边一行，命中顺序 × 查询键顺序）。**零观测时不发射任何 advice 行**——输出与今日逐字节相同。本期**不排序、不禁用、无阈值、无半衰期衰减**：命中数 6 对上限 12（排序无可观察效果）、样本量 O(1)（比率被噪声支配，别把稀疏噪声当优选依据）——触发 = 命中数逼近 `maxGenes` 上限，或观测样本量足以支撑排序时另立 ADR。
 
 **5. 建议档的消费面 = `noo_select` 工具输出**（按需读，零常驻成本）。system-prompt 命中节**不注入** advice 行：适配层 `hitsSectionText` 增过滤（`advice:` 前缀与既有 `signals:` / `(no genes matched)` 同列），夹具钉死。理由 = 常驻面每步重复付费，而建议只在真正要取基因时有价值。
 
-**6. 凭据筛查 = 新独立门禁件 `scripts/verify-secrets.mts`**（入 `engine/gates.json` 白名单 + pre-commit 钩子 + CI self-test 行）。best-effort 绊线，覆盖三面：`genes/**/*.json`（全字符串字段）、`events/**/*.jsonl`（含 `evidence`）、`.noogenesis/observations/**/*.jsonl`（新输入面，在场才扫）。模式集 = provider token 形状 + **env 式无引号赋值** + **JWT** + **连接串内嵌凭据**（后三类即旧引擎漏掉的；模式清单与其已知盲区写在件头）。命中即红；输出脱敏（家族标签 + 截断值，绝不回显全值）。**明确不是安全属性**：净过 ≠ 无凭据。pre-commit 的 `glob` 只收 `genes/**` + `events/**`（暂存面才有意义；观测面非 git，由 pre-push/CI 的全量跑覆盖）。
+**6. 凭据筛查 = 新独立门禁件 `scripts/verify-secrets.mts`**（入 `engine/gates.json` 白名单 + pre-commit 钩子 + CI self-test 行）。best-effort 绊线，覆盖三面：`genes/**/*.json`（全字符串字段）、`events/**/*.jsonl`（含 `evidence`）、`.noogenesis/observations/**/*.jsonl`（新输入面，在场才扫）。模式集 = provider token 形状 + **env 式无引号赋值** + **JWT** + **连接串内嵌凭据**（后三类即旧引擎漏掉的；模式清单与其已知盲区写在件头）。命中即红；输出脱敏（家族标签 + 截断值，绝不回显全值）。**明确不是安全属性**：净过 ≠ 无凭据。pre-commit job 的 `glob` 只收 `genes/**` + `events/**`（暂存面才有意义），但被调脚本恒扫全部三面——本地观测面里的凭据同样拦提交（**是有意为之**：它是工作区里的凭据实物，值得在任何提交前清掉；触发 = 出现「本地观测凭据拦住与之无关的提交」的真实场景时，再加「只扫 git 面」模式）。占位符与环境变量引用（`$VAR` / `{{…}}` / `<…>`）不算凭据——URL 族的否决吃口令捕获组而非整段匹配，否则 `postgres://user:$PGPASS@host` 这类合法写法会被误报。
 
 **7. 合同面与文档同步**：CLI 合同面 5 → 6 命令（`observe` 入 README「合同面」节与 `engine/AGENTS.md` 纪律行）；`.noogenesis/` 的 `.gitignore` 注释与 engine README 目录表同批更新；`noo_select` 工具描述增 advice 行说明（模型面英文口径）。
 

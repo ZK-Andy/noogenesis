@@ -183,6 +183,7 @@ function writeFixtureGene(repoRoot: string): void {
 	const byName: Record<string, RegisteredTool> = {};
 	const responses = {
 		select: { code: 0, stdout: "signals: demo signal\ndemo/demo-hit  demo gene\n", stderr: "" },
+		selectCrash: { code: 1, stdout: "", stderr: "engine: internal fault\n" },
 		propose: { code: 0, stdout: "## demo-hit\nstep one\n", stderr: "" },
 		evaluateRed: { code: 1, stdout: "gate adr-format: FAIL\n", stderr: "" },
 		evaluateCrash: { code: 1, stdout: "", stderr: "engine: internal fault\n" },
@@ -191,7 +192,7 @@ function writeFixtureGene(repoRoot: string): void {
 	const rootsSeen: Array<string | undefined> = [];
 	const fakeRunEngine = async (args: string[], { repoRoot }: { repoRoot?: string } = {}) => {
 		rootsSeen.push(repoRoot);
-		if (args[0] === "select") return responses.select;
+		if (args[0] === "select") return args[1] === "demo/crash" ? responses.selectCrash : responses.select;
 		if (args[0] === "propose") return responses.propose;
 		if (args[0] === "evaluate") {
 			if (args[1] === "demo/red") return responses.evaluateRed;
@@ -233,6 +234,10 @@ function writeFixtureGene(repoRoot: string): void {
 	// 且无报告输出）——不得当红档结论放行。
 	await assert.rejects(() => evaluateTool.execute({ gene: "demo/crash" }), /fail-closed \(exit 2\)/);
 	ok("tools: exit 0 → text; exit 1+report → RED verdict; exit 1+empty report → throw; exit 2 → throw");
+
+	// select 无红档：exit 1 只可能是引擎内部崩溃——不得把栈文本当命中面交给模型。
+	await assert.rejects(() => selectTool.execute({ signals: ["demo/crash"] }), /fail-closed \(exit 2\)/);
+	ok("tools: select exit 1 (engine fault) throws instead of returning a stack as hits");
 
 	await assert.rejects(() => evaluateTool.execute({ gene: "demo/missing" }), /fail-closed \(exit 2\)/);
 	await assert.rejects(() => selectTool.execute({ signals: [] }), /non-empty array/);

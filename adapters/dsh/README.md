@@ -8,7 +8,7 @@ M2 适配层拍板与耦合防火墙的单一事实源：[ADR 2026-09-06-m2-adap
 - 装载契约：ESM 入口 `index.mjs` 导出 `name` / `inject` / `apply`；Config 手工校验，违约 fail-closed 抛错。`inject = ["tools", "systemPrompt"]`——**不含 userQuestions**（提问是可选能力，disposal 时懒取用；cordis 对缺席的注入服务会推迟整个插件装载，声明注入会让降级不可达）。
 - 运行时依赖收敛：`@deepseek-ai/dsh-tools`（defineTool，经依赖注入进 tools.mts）+ `@deepseek-ai/dsh-llm`（createUserMessage，注入消息构造，B4 ADR Proposal 2）；两者只许 index.mts import（dist 发射 index.mjs）。引擎零第三方依赖不受影响。
 - **装上即转**：零配置安装即在三工具与 solidify 面生效——repoRoot 逐次调用解析（四级回退链，见下）；唯一例外是 system-prompt 命中节（同步面无会话上下文），动态索引需显式锚定（见 `repoRoot` 行）。
-- **前置条件**：目标仓 = git 仓且宿主机 git CLI 在场——引擎五命令第一步 `git rev-parse` 锚定仓根，solidify/pull 直接调用 git 子进程；git 缺失或非 git 仓 → 引擎 fail-closed 退出 2（诊断分流：git 缺失指名 git，非 git 仓报 not inside a git repository）。
+- **前置条件**：目标仓 = git 仓且宿主机 git CLI 在场——引擎命令第一步 `git rev-parse` 锚定仓根，solidify/pull 直接调用 git 子进程；git 缺失或非 git 仓 → 引擎 fail-closed 退出 2（诊断分流：git 缺失指名 git，非 git 仓报 not inside a git repository）。
 - **技能面**：插件注册 `noogenesis-bank` 技能 provider（rank 600），技能从 `<repoRoot>/.noogenesis/genes-cache/.agents/skills/` 读取——即 `geneBankUrl` 拉下来的库缓存；未 pull 过 → 技能面为空（正常降级，非错误）；pull 成功落地即触发宿主技能缓存失效刷新（`control.invalidate`），pull 前已被 list 过的会话无需重启即见技能面。self-hosting 仓的 `.agents/skills` 活副本（rank 200）恒遮蔽缓存副本。
 
 ## 配置（profile patch 插件 row 的 `config` 字段，全部可选）

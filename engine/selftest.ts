@@ -160,6 +160,15 @@ function selfTest() {
       'observe: over-long evidence rejected');
     ok(validateObservation({ ts: w1.record.ts, actor: 't', signal: 's', gene: 'process/gene-a', outcome: 'ok', extra: 1 })
       .some((e) => e.includes('unknown field')), 'observe: unknown field rejected');
+    // ts 会被原样拼进 advice 行（stdout 契约面）：可解析但形状宽松的串（含空白/换行）
+    // 必须是违约——否则它会拆出第二个不以 `advice:` 开头的行。
+    ok(throwsEngine(() => buildObservation({ signal: 's', gene: 'process/gene-a', outcome: 'ok', actor: 't', ts: '\n2026-09-10' })),
+      'observe: whitespace-padded ts rejected (stdout line contract)');
+    ok(throwsEngine(() => buildObservation({ signal: 's', gene: 'process/gene-a', outcome: 'ok', actor: 't', ts: '2026-9-1' })),
+      'observe: non-ISO ts rejected');
+    // 键口径：非归一 signal 不得落盘（写路径归一；校验器兜住直写面）
+    ok(validateObservation({ ts: w1.record.ts, actor: 't', signal: 'Push  Force', gene: 'process/gene-a', outcome: 'ok' })
+      .some((e) => e.includes('normalized')), 'observe: non-normalized signal rejected');
 
     // 派生：命中行不变 + advice 追加在全部命中行之后
     const adv = runSelect(td, ['push force']);
@@ -176,11 +185,23 @@ function selfTest() {
       && multi.advice.filter((l: string) => l.includes('process/gene-a')).length === 2,
       'observe: per-edge advice in hit-then-key order');
 
-    // 读路径：坏行 warn-skip（不抛、不进派生），好行保留
+    // 读路径：坏行 warn-skip（不抛、不进派生），好行保留。
+    // 三态各一条夹具：JSON 截断（parse 失败）、良构 JSON 但 schema 违约、非归一键。
     fs.appendFileSync(w1.path, '{"ts":"not-a-date"\n');
+    fs.appendFileSync(w1.path, `${JSON.stringify({ ts: '2026-09-10T00:00:00.000Z', actor: 't', signal: 'push force', gene: 'process/gene-a', outcome: 'maybe' })}\n`);
+    fs.appendFileSync(w1.path, `${JSON.stringify({ ts: '2026-09-10T00:00:00.000Z', actor: 't', signal: 'Push  Force', gene: 'process/gene-a', outcome: 'ok' })}\n`);
     const read = readObservations(td);
-    ok(read.records.length === 4 && read.skipped === 1, 'observe: invalid line skipped, valid siblings kept');
-    ok(runSelect(td, ['push force']).advice.length === 2, 'observe: corrupt line does not break select derivation');
+    ok(read.records.length === 4 && read.skipped === 3, 'observe: parse/schema/non-normalized lines all skipped, valid siblings kept');
+    ok(runSelect(td, ['push force']).advice.length === 2, 'observe: corrupt lines do not break select derivation');
+
+    // 读路径面级降级：观测面被同名文件占位（ENOTDIR）→ 空集 + warn，绝不是红/崩溃
+    const bd = mkTemp();
+    writeGene(bd, 'process', { id: 'gene-a', domain: 'process', summary: 'A', signals: ['k'], strategy: ['s1'] });
+    fs.mkdirSync(path.join(bd, '.noogenesis'), { recursive: true });
+    fs.writeFileSync(path.join(bd, '.noogenesis', 'observations'), 'not a directory\n');
+    ok(readObservations(bd).records.length === 0, 'observe: unlistable face degrades to empty (no throw)');
+    ok(runSelect(bd, ['k']).stdout === 'signals: k\nprocess/gene-a  A\n',
+      'observe: unlistable face does not break select (hits intact, no advice)');
 
     // CLI 面：observe 命令分派 + 退出码三档（fail-closed 与用法错都是 exit 2）
     const ce = mkRepo(mkTemp());

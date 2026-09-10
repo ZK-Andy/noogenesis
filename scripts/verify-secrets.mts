@@ -77,7 +77,14 @@ const SECRET_PATTERNS: readonly SecretPattern[] = [
 		valueGroup: 2,
 		reject: isPlaceholder,
 	},
-	{ label: "credential in URL", regex: /\b[a-z][a-z0-9+.-]{1,15}:\/\/[^\s/:@]{1,64}:[^\s/:@]{3,}@/i, reject: isPlaceholder },
+	{
+		label: "credential in URL",
+		// 口令自成一捕获组：reject 吃的是口令而非整段匹配（整段以 scheme 开头，
+		// 永远不可能以 `$` 开头——环境变量式口令会漏过占位符否决而被误报）。
+		regex: /\b[a-z][a-z0-9+.-]{1,15}:\/\/([^\s/:@]{1,64}):([^\s/:@]{3,})@/i,
+		valueGroup: 2,
+		reject: isPlaceholder,
+	},
 	{ label: "connection-string credential", regex: /\b(?:Password|Pwd)\s*=\s*([^;\s"']{6,})/i, valueGroup: 1, reject: isPlaceholder },
 ];
 
@@ -197,13 +204,20 @@ function selfTest(): number {
 		if (!scanLine(line)) failures.push(`pattern positive missed: ${label}`);
 	}
 	// 模式级负样例：占位符 / 环境引用 / 短值不得命中（误报会把真实写入拦在门外）。
+	// 两组含义不同，勿混：前四条走「赋值族正则本身不匹配」（值类不含 `$`/`{`/`<`，或长度不足）；
+	// 后四条走连接串 / URL 族正则会匹配、由 `reject: isPlaceholder` 否决——占位符否决的
+	// 各个分支（全大写 / 词根 / `$` / `{` / `<`）都必须有夹具钉住。
 	const negatives: [string, string][] = [
-		["allcaps-placeholder", "API_KEY=YOUR_API_KEY_HERE"],
-		["env-ref", "API_KEY=$OPENAI_API_KEY"],
-		["template-ref", '"token": "{{token}}"'],
-		["angle-ref", "PASSWORD=<your-password>"],
-		["changeme", "SECRET=changeme"],
-		["too-short", 'apiKey: "abc123"'],
+		["assign-allcaps", "API_KEY=YOUR_API_KEY_HERE"],
+		["assign-env-ref", "API_KEY=$OPENAI_API_KEY"],
+		["assign-template-ref", '"token": "{{token}}"'],
+		["assign-angle-ref", "PASSWORD=<your-password>"],
+		["assign-too-short", 'apiKey: "abc123"'],
+		["connstring-allcaps", "Server=db;Password=YOUR_PASSWORD_HERE;Database=app"],
+		["connstring-changeme", "Server=db;Password=changeme;Database=app"],
+		["connstring-angle", "Server=db;Password=<your-password>;Database=app"],
+		["url-template", "postgres://appuser:{{token}}@db.example.com:5432/app"],
+		["url-env-ref", "postgres://appuser:$PGPASS@db.example.com:5432/app"],
 		["plain-prose", "evidence: evaluate ok: all 16 gates green"],
 	];
 	for (const [label, line] of negatives) {
@@ -228,7 +242,10 @@ function selfTest(): number {
 			"events/2026-09.jsonl": '{"ts":"t","actor":"t","kind":"gene.added","evidence":"evaluate ok: all 16 gates green"}\n',
 		});
 		expect("clean", 0, clean);
-		expect("absent-observation-face", 0, clean);
+		// 观测面在场但无命中边（观测数据本身不是凭据）：仍是 PASS，覆盖「有数据」路径
+		expect("observation-face-no-hit", 0, mk("obs-clean", {
+			".noogenesis/observations/2026-09.jsonl": '{"ts":"2026-09-10T00:00:00.000Z","signal":"s","gene":"a/b","outcome":"ok","evidence":"used a gene, no literal credential"}\n',
+		}));
 
 		expect("gene-face", 1, mk("gene-face", {
 			"genes/process/g.json": '{"id":"g","summary":"key AKIAIOSFODNN7EXAMPLE"}\n',
