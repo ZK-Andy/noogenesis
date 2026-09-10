@@ -49,7 +49,7 @@ Related: [2026-09-06-collab-rebuild-impl](../../proposed/architecture/2026-09-06
    - A3 记录：`edit`/`write`（`exec.args.file_path`，闭集工具名单；勘误 2026-09-08：字段实为 `exec.arguments.file_path`，勘误指针同上）命中布点子树 → 逐 turn 聚合投影 `session.append("noogenesis/subtree-touch", {turn, touches: [{subtree, path}]})` 归因记录；触摸状态滚动窗口封顶 50（`TOUCH_STATE_CAP`，投影游标随平移同步——R2 修正面）。
    - **HERO 答案**：检测的具体失败 = 写码会话在子树规范未入上下文时开始产出（宿主 A1 动态注入时序实证在 `tools/result` 之后——首触步盲跑，蓝图 §1「缺的是布点不是机制」的时序残余缺口）；真出现后下一步不同的事 = 开场先见子树规则地图，动工前先读对应件，而非首个触碰步盲跑、事后一步才补送。「须读入后才推进」的拦截式（A3 deny-once）= 升格候选不落地——A1 补送已盖主失败面，拦截只收窄单步窗口，先建议档积累数据另案过判据（档位纪律：守卫默认建议档）。
 
-5. **M3 评审实质执行记录件 = 纯记录件**：A4 观测评审机器面运行痕迹（工具结果文本含闭集标记 `verify-review-brief` / `verify-review-tier` / `gates --run`，per-session 累计计数）；A6 投影 `session.append("noogenesis/review-surface", {turn, briefRuns, tierRuns, gateRuns})` 累计记录。**HERO 答案**：检测的具体失败 = 评审声称完成但三路无记录 / 简报未发射（收口推进而评审机器面零运行的假完成不可寻址）；真出现后下一步不同的事 = 记录件让「这轮收口却零评审机器面运行」在会话轨迹可查，session-close 对账有据可补，而非把假完成状态带进下一批。**声称完成的 prose 检测（assistant 文本分类）不建**——同 M1 禁令；**阻断档（停止被拦一次并回消息）= §5 判据另案**（蓝图：状态投影只做记录件不升阻断闸）。适配层不 spawn 门禁脚本（防火墙规则 1：只能 spawn 引擎）——痕迹观测与 fs 读是合法面，代跑评审门禁不是。
+5. **M3 评审实质执行记录件 = 纯记录件**：A4 观测评审机器面运行痕迹（工具结果文本含闭集标记 `verify-review-brief` / `verify-review-tier` / `gates --run`，per-session 累计计数）；A6 投影 `session.append("noogenesis/review-surface", {turn, briefRuns, tierRuns, gateRuns})` 累计记录。**HERO 答案**：检测的具体失败 = 评审声称完成但三路无记录 / 简报未发射（收口推进而评审机器面零运行的假完成不可寻址）；真出现后下一步不同的事 = 记录件让「这轮收口却零评审机器面运行」在会话轨迹可查，session-close 对账有据可补，而非把假完成状态带进下一批。**声称完成的 prose 检测（assistant 文本分类）不建**——同 M1 禁令；**阻断档（停止被拦一次并回消息）= §5 判据另案**（蓝图：状态投影只做记录件不升阻断闸；另案已结：拍板单源 = [2026-09-10-review-execution-reconciliation](2026-09-10-review-execution-reconciliation.md) Proposal 3——阻断判不立，跨会话证据不可见致系统性误报）。适配层不 spawn 门禁脚本（防火墙规则 1：只能 spawn 引擎）——痕迹观测与 fs 读是合法面，代跑评审门禁不是。
 
 6. **C15 候选门禁评估（双不立，数据与理由在案）**：
    - **文件名契约闸（禁构建产物/缓存入库）不立**：HERO 判据 = 检测的具体失败（构建产物入库）全历史零发生（`--diff-filter=A` 实测），且 `.gitignore` 封闭面 + CI checkout + 评审兜底三层已盖；立闸 = 防已覆盖面（speculative，HERO-O「为守卫再造守卫」谱系）。触发条件在案：若未来真实发生产物入库（.gitignore 缺口被绕过），同理由翻案再立。
@@ -65,7 +65,7 @@ Related: [2026-09-06-collab-rebuild-impl](../../proposed/architecture/2026-09-06
 ## Alternatives considered
 
 - **A5 独立建 hooks.json 桥（claude-code 方言兼容层）**：落败——蓝图 §7 边界明裁「两方言桥不建，蒸馏 hook-protocol 判定语义，接线走本仓适配层原生事件」；本仓无既有 hooks.json 资产需要兼容。
-- **M1/M3 首批带阻断档**：落败——蓝图档位纪律（守卫默认建议档，升格逐件过 HERO）+ §5「状态投影只做记录件不升阻断闸」；M3 阻断候选显式另案。
+- **M1/M3 首批带阻断档**：落败——蓝图档位纪律（守卫默认建议档，升格逐件过 HERO）+ §5「状态投影只做记录件不升阻断闸」；M3 阻断候选显式另案（已结：拍板单源 = [2026-09-10-review-execution-reconciliation](2026-09-10-review-execution-reconciliation.md) Proposal 3）。
 - **M2 拦截式（edit 前 deny-once「须读入后才推进」）**：延后不落——A1 宿主动态注入在 `tools/result` 后一步补送已盖主失败面，拦截只收窄首触步单步窗口；先建议档积累归因记录，升格另案过判据。
 - **挂载记录写 `events/*.jsonl` 基因事件轨**：落败——事件轨 kind 封闭集只收 gene 事件（C9 零 diff 承诺），会话投影落宿主 session 事件面（蓝图 §8 三段归属）；混写 = 双语义污染单文件。
 - **手拼消息对象绕开 dsh-llm 依赖**：落败——`createMessage` 的冻结 + uuid id 形态是宿主合同，手拼 = 对宿主私有形状二次钉死，宿主演进即静默腐坏；peer dep 单点收敛 index.mts 更窄（防火墙允许集扩一件在 Decision 2 显式拍板）。
