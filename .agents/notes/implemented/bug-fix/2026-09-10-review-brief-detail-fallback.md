@@ -16,7 +16,7 @@ Status: implemented
 1. **明细打印兜底**：输出面从「按泳道过滤」改为「泳道分组 + 未命中前缀项落兜底节」，兜底节带标签行 `review-brief: violations outside lane scope:`。
 2. **不变式**：每条违规恰输出一次——明细行（去掉标签行）= 违规串集合。判据面（哪些串算违规、退出码语义、`--enforce` 行为）零变化。
 3. **实现**：打印面折叠为纯函数 `formatViolations(violations)`（`main()` 只负责逐行输出），泳道分组序维持 R1→R2→R3。
-4. **夹具**：selfTest 增 fixture 13——复用 fixture 12 的范围分歧构造，断言 `formatViolations(checkRepo(...))` 的输出包含该无前缀串（计数与明细一一对应）。fixtures 12→13；CI 跑 `--self-test` 即覆盖。
+4. **夹具**：selfTest 增 fixture 13——复用 fixture 12 的范围分歧构造（`checkRepo` 单次调用、两处消费），断言 `formatViolations` 的输出与违规串**多重集相等**（同时钉住丢失与重复两个方向）且兜底节标签行恰出现一次。fixtures 12→13；CI 跑 `--self-test` 即覆盖。
 
 ## Alternatives considered
 
@@ -26,7 +26,7 @@ Status: implemented
 
 ## Consequences
 
-- **采用面**：`scripts/verify-review-brief.mts`（`formatViolations` 新增 + `main()` 输出改走它 + 头注输出面说明 + fixture 13，12→13）。
+- **采用面**：`scripts/verify-review-brief.mts`（`formatViolations` 新增 + `OUTSIDE_LANE_LABEL` 常量〔实现与夹具同源消费〕+ `main()` 输出改走它 + 头注「输出面」段为契约单一之家 + fixture 13，12→13）。
 - **行为面**：stdout 仅在存在跨泳道违规时多一行标签；既有泳道明细的文本、顺序与计数行不变。
 - **消费面**：无脚本解析本件 stdout——`gates.mts` 只取退出码、`pre-push` 跳过本件、CI 仅跑 `--self-test`，输出面变化无下游耦合。
 - **同类面**：其余违规生产点（重复泳道、逐泳道结构违约、缺简报）均带泳道前缀，兜底节当前只有一个成员。

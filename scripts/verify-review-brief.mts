@@ -24,7 +24,7 @@
  *
  * 输出面：违规明细按泳道（R1→R2→R3）分组打印；跨泳道违规（如 base..head
  * 范围分歧）无泳道前缀，落「violations outside lane scope」兜底节——不变式 =
- * 每条违规恰输出一次（有计数必有明细）；判定与退出码语义不受输出分组影响。
+ * 每条违规恰输出一次（有计数必有明细）。
  *
  * 结构性例外：brief 闸是评审发射前检查、仅本地预发射不入 CI（简报目录
  * gitignored；无简报在飞 = 空过，CI 侧保持绿且安静）。
@@ -53,6 +53,8 @@ const BRIEFS_DIR = ".review-briefs";
 const LANES = ["R1", "R2", "R3"] as const;
 const PROG = "verify-review-brief.mts";
 const DESCRIPTION = "Review brief existence + structure gate";
+/** 兜底节标签行（跨泳道违规的打印面）：实现与 self-test 同源消费。 */
+const OUTSIDE_LANE_LABEL = "review-brief: violations outside lane scope:";
 
 // 标题须为一级标题且恰好点名一条泳道。(?![\p{L}\p{N}_]) 等价 Python 的 (?!\w)
 // （Python \w 为 Unicode 感知，JS \w 仅 ASCII——防 "R2x 评审简报" 过匹配）。
@@ -461,6 +463,11 @@ function anyMatch(rows: string[], cond: (s: string) => boolean): boolean {
   return rows.some(cond);
 }
 
+/** 多重集比较键（与顺序无关、重复计入）：self-test 验「每条违规恰输出一次」。 */
+function multiset(rows: readonly string[]): string {
+  return JSON.stringify([...rows].sort());
+}
+
 function reprList(rows: string[]): string {
   return `[${rows.map((s) => `'${s}'`).join(", ")}]`;
 }
@@ -630,16 +637,18 @@ function selfTest(): number {
     fs.mkdirSync(briefsDirOf(root12), { recursive: true });
     fs.writeFileSync(path.join(briefsDirOf(root12), "R1-a.md"), briefText("R1", "a", "b"), "utf-8");
     fs.writeFileSync(path.join(briefsDirOf(root12), "R2-a.md"), briefText("R2", "a", "HEAD~2"), "utf-8");
-    assertOk(anyMatch(checkRepo(root12), (s) => s.includes("inconsistent diff ranges")),
+    const rangeViolations = checkRepo(root12);
+    assertOk(anyMatch(rangeViolations, (s) => s.includes("inconsistent diff ranges")),
       "fixture 12 (divergent ranges) should be reported");
 
-    // 明细输出兜底：跨泳道违规（范围分歧）无泳道前缀 → 必须落在打印面且只落一次
-    const rangeViolations = checkRepo(root12);
+    // 明细输出兜底：跨泳道违规（范围分歧）无泳道前缀 → 明细与违规多重集相等
+    //（同时钉住丢失与重复两个方向）+ 兜底节标签行恰一次
     const printed = formatViolations(rangeViolations);
-    assertOk(anyMatch(printed, (s) => s.includes("inconsistent diff ranges")),
-      `fixture 13 (cross-lane violation) must reach the printed detail, got ${reprList(printed)}`);
-    assertOk(printed.filter((s) => rangeViolations.includes(s)).length === rangeViolations.length,
-      `fixture 13 (each violation printed exactly once), got ${reprList(printed)}`);
+    const details = printed.filter((s) => s !== OUTSIDE_LANE_LABEL);
+    assertOk(multiset(details) === multiset(rangeViolations),
+      `fixture 13 (every violation printed exactly once, none dropped), got ${reprList(printed)}`);
+    assertOk(printed.filter((s) => s === OUTSIDE_LANE_LABEL).length === 1,
+      `fixture 13 (fallback section label present exactly once), got ${reprList(printed)}`);
 
     console.log("verify-review-brief --self-test OK (13 fixtures: structure/self-assertion/lane-derivation/output-fallback)");
     return 0;
@@ -705,23 +714,18 @@ function parseArgs(): Args {
   return args;
 }
 
-/** 违规明细输出行（打印面单源）：带 `<lane>:` 前缀的按 R1→R2→R3 分组，其余
- *  （跨泳道违规，如范围分歧）落带标签的兜底节。不变式：每条违规恰输出一次——
- *  「有计数必有明细」；判定与退出码语义不在本件。 */
+/** 违规明细输出行：带 `<lane>:` 前缀的按 R1→R2→R3 分组，其余（跨泳道违规，
+ *  如范围分歧）落带标签的兜底节。输出面契约与不变式 = 头注「输出面」段。 */
 function formatViolations(violations: readonly string[]): string[] {
   const lines: string[] = [];
-  const grouped = new Set<number>();
   for (const lane of LANES) {
-    for (const [i, s] of violations.entries()) {
-      if (s.startsWith(`${lane}:`)) {
-        grouped.add(i);
-        lines.push(s);
-      }
+    for (const s of violations) {
+      if (s.startsWith(`${lane}:`)) lines.push(s);
     }
   }
-  const rest = violations.filter((_, i) => !grouped.has(i));
+  const rest = violations.filter((s) => !LANES.some((lane) => s.startsWith(`${lane}:`)));
   if (rest.length > 0) {
-    lines.push("review-brief: violations outside lane scope:");
+    lines.push(OUTSIDE_LANE_LABEL);
     lines.push(...rest);
   }
   return lines;
