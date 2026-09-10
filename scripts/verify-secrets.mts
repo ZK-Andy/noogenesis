@@ -235,16 +235,9 @@ function selfTest(): number {
 		["connection-string credential", "Server=db;Password=changeme;Database=app"],
 		["connection-string credential", "Server=db;Password=<your-password>;Database=app"],
 	];
-	const owner = (line: string): string | null => {
-		for (const pattern of SECRET_PATTERNS) {
-			const m = pattern.regex.exec(line);
-			if (!m) continue;
-			const value = m[pattern.valueGroup ?? 0] ?? "";
-			if (!value || pattern.reject?.(value)) continue;
-			return pattern.label;
-		}
-		return null;
-	};
+	// 上报判据与生产扫描**同一实现**（折叠而非重写）：重写一份会让元断言在生产路径
+	// 变更后变盲——那正是本批要机械化掉的「夹具自身盲区」形态。
+	const owner = (line: string): string | null => scanLine(line)?.label ?? null;
 	// 元断言 1（负）：带 reject 的模式必有「匹配且被否决」的绑定样例。
 	for (const pattern of SECRET_PATTERNS) {
 		if (!pattern.reject) continue;

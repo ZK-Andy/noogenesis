@@ -4,9 +4,10 @@
  * 2026-09-11-review-finding-mechanization）。
  *
  * 事实源 = `engine/bin.ts` 的命令分支（`cmd === '…'`）。判据三类：
- *   1. `bin.ts` 的 `usage()` 行命令集 == 分支集（含 `self-test`）；
- *   2. `engine/README.md`「合同面」代码块命令集 == 分支集；
- *   3. 活声明面的「N 命令 / N commands」计数 == 核心命令数（分支集去 `self-test`）。
+ *   1. `bin.ts` **`usage()` 数组区间**的命令集 == 分支集（含 `self-test`）；
+ *   2. `engine/README.md` **首个含调用的 fenced 代码块**（合同面块）命令集 == 分支集；
+ *   3. 活声明面里**同行点名 CLI/engine** 的「N 命令 / N commands」计数 == 核心命令数
+ *      （分支集去 `self-test`）——普通英文散文里的「one command」不是命令面声明。
  *
  * 扫描面是**白名单**（活声明面：bin.ts / engine README+AGENTS / 两 README /
  * code-standards）；历史叙事面（journal / ADR / HANDOFF 滚动窗）不扫——它们
@@ -27,8 +28,11 @@ const PROGRAM = "verify-command-surface.mts";
 
 /** 命令分支的事实源（唯一）。 */
 const SOURCE = "engine/bin.ts";
-/** 命令集须逐字一致的两处结构化声明面。 */
-const SET_SURFACES = ["engine/bin.ts", "engine/README.md"];
+/** 结构化声明面 + 各自的声明区形态（只取声明区，不取全文件）。 */
+const SET_SURFACES: { path: string; region: "usage" | "fenced-block"; label: string }[] = [
+	{ path: "engine/bin.ts", region: "usage", label: "usage() 数组区间" },
+	{ path: "engine/README.md", region: "fenced-block", label: "含调用的首个代码块" },
+];
 /** 计数声明的活声明面。 */
 const COUNT_SURFACES = [
 	"engine/bin.ts",
@@ -44,6 +48,8 @@ const INVOCATION_RE = /node dist\/engine\/bin\.js ([a-z][a-z-]*)/g;
 const BRANCH_RE = /cmd === '([a-z][a-z-]*)'/g;
 /** 计数声明：数字（CJK / 阿拉伯 / 英文词）+「命令 / commands」。 */
 const COUNT_RE = /([一二三四五六七八九十]|\d+|one|two|three|four|five|six|seven|eight|nine|ten)\s*(?:命令|commands?)/gi;
+/** 计数的上下文判据：同行须点名 CLI / engine，否则不是命令面声明（防普通散文误报）。 */
+const COUNT_CONTEXT_RE = /\bCLI\b|engine/i;
 /** 不计数的合法形态：「五命令各一」描述的是命令件个数，不是 CLI 命令数。 */
 const COUNT_EXCLUDE_SUFFIX = "各一";
 const CJK_NUM: Record<string, number> = {
@@ -106,6 +112,43 @@ function countClaims(text: string): { line: number; raw: string; claimed: number
 	return out;
 }
 
+/** 取 `usage()` 数组区间（`function usage(` 到其后的 `].join`）；形状变了返回 null。 */
+function usageRegion(text: string): string | null {
+	const lines = text.split("\n");
+	const start = lines.findIndex((line) => line.includes("function usage("));
+	if (start < 0) return null;
+	const end = lines.findIndex((line, i) => i > start && line.includes("].join"));
+	if (end < 0) return null;
+	return lines.slice(start, end + 1).join("\n");
+}
+
+/** 取第一个含调用的 fenced 代码块正文（合同面块）；无此块返回 null。 */
+function invocationBlock(text: string): string | null {
+	const lines = text.split("\n");
+	let i = 0;
+	while (i < lines.length) {
+		if (!(lines[i] ?? "").trimStart().startsWith("```")) {
+			i += 1;
+			continue;
+		}
+		const block: string[] = [];
+		i += 1;
+		while (i < lines.length && !(lines[i] ?? "").trimStart().startsWith("```")) {
+			block.push(lines[i] ?? "");
+			i += 1;
+		}
+		i += 1;
+		const body = block.join("\n");
+		if (body.includes("node dist/engine/bin.js")) return body;
+	}
+	return null;
+}
+
+/** 按声明区形态取声明区文本；形状不认返回 null。 */
+function declarationRegion(text: string, region: "usage" | "fenced-block"): string | null {
+	return region === "usage" ? usageRegion(text) : invocationBlock(text);
+}
+
 /** 判据主体：返回 `{code, report}`（0 PASS / 1 不一致 / 2 fail-closed）。 */
 function evaluateCommandSurface(repoRoot: string): { code: number; report: string } {
 	const sourceText = readOrNull(path.join(repoRoot, SOURCE));
@@ -119,29 +162,36 @@ function evaluateCommandSurface(repoRoot: string): { code: number; report: strin
 	const coreNames = branchNames.filter((n) => n !== "self-test");
 	const problems: string[] = [];
 
-	// 判据 1/2：结构化声明面的命令集必须与分支集逐字一致。
+	// 判据 1/2：结构化声明面的**声明区**命令集必须与分支集逐字一致。
 	for (const surface of SET_SURFACES) {
-		const text = readOrNull(path.join(repoRoot, surface));
+		const text = readOrNull(path.join(repoRoot, surface.path));
 		if (text === null) {
-			problems.push(`${surface}: unreadable (declaration surface must exist)`);
+			problems.push(`${surface.path}: unreadable (declaration surface must exist)`);
 			continue;
 		}
-		const declared = [...new Set(matches(text, INVOCATION_RE).map((m) => m.value))].sort();
+		const region = declarationRegion(text, surface.region);
+		if (region === null) {
+			problems.push(`${surface.path}: declaration region not found (${surface.label}) — shape changed?`);
+			continue;
+		}
+		const declared = [...new Set(matches(region, INVOCATION_RE).map((m) => m.value))].sort();
 		const missing = branchNames.filter((n) => !declared.includes(n));
 		const extra = declared.filter((n) => !branchNames.includes(n));
-		if (missing.length) problems.push(`${surface}: missing command(s) declared nowhere: ${missing.join(", ")}`);
-		if (extra.length) problems.push(`${surface}: declares command(s) absent from ${SOURCE}: ${extra.join(", ")}`);
+		if (missing.length) problems.push(`${surface.path} (${surface.label}): missing command(s): ${missing.join(", ")}`);
+		if (extra.length) problems.push(`${surface.path} (${surface.label}): declares command(s) absent from ${SOURCE}: ${extra.join(", ")}`);
 	}
 
-	// 判据 3：活声明面的计数声明必须等于核心命令数。
+	// 判据 3：活声明面里点名 CLI/engine 的计数声明必须等于核心命令数。
 	for (const surface of COUNT_SURFACES) {
 		const text = readOrNull(path.join(repoRoot, surface));
 		if (text === null) {
 			problems.push(`${surface}: unreadable (count surface must exist)`);
 			continue;
 		}
+		const lines = text.split("\n");
 		for (const hit of countClaims(text)) {
 			if (hit.raw.length === 0) continue;
+			if (!COUNT_CONTEXT_RE.test(lines[hit.line - 1] ?? "")) continue;
 			// 合法例外：「N 命令各一」描述命令件个数，与 CLI 命令数无关。
 			if (hit.following.startsWith(COUNT_EXCLUDE_SUFFIX)) continue;
 			if (hit.claimed === null || hit.claimed === coreNames.length) continue;
@@ -157,7 +207,7 @@ function evaluateCommandSurface(repoRoot: string): { code: number; report: strin
 	}
 	return {
 		code: 0,
-		report: `${PROGRAM}: OK (${coreNames.length} core commands + self-test; ${SET_SURFACES.length} set surfaces + ${COUNT_SURFACES.length} count surfaces in sync)\n`,
+		report: `${PROGRAM}: OK (${coreNames.length} core commands + self-test; ${SET_SURFACES.length} declaration regions + ${COUNT_SURFACES.length} count surfaces in sync)\n`,
 	};
 }
 
@@ -199,6 +249,11 @@ function fixtureRepo(label: string): string {
 	return root;
 }
 
+/** 覆盖写入夹具仓内的某个文件。 */
+function rewrite(root: string, rel: string, transform: (text: string) => string): void {
+	fs.writeFileSync(path.join(root, rel), transform(fs.readFileSync(path.join(root, rel), "utf-8")));
+}
+
 /**
  * 离线夹具自测：同一夹具仓按类变异，违约样例必须 FAIL、合规样例必须 PASS，
  * 且事实源不可读 / 读不出分支两态必须 fail-closed(2)。
@@ -206,7 +261,6 @@ function fixtureRepo(label: string): string {
  */
 function selfTest(): number {
 	const failures: string[] = [];
-	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "verify-command-surface-selftest-"));
 	let fixtures = 0;
 	const expect = (label: string, want: number, mutate: (root: string) => void): void => {
 		fixtures += 1;
@@ -216,39 +270,50 @@ function selfTest(): number {
 		if (got !== want) failures.push(`${label}: 期望 exit ${want}，实得 ${got}`);
 		fs.rmSync(root, { recursive: true, force: true });
 	};
-	try {
-		expect("clean", 0, () => {});
-		// 判据 1：usage 缺一条命令
-		expect("usage-missing-command", 1, (root) => {
-			const p = path.join(root, "engine/bin.ts");
-			fs.writeFileSync(p, fs.readFileSync(p, "utf-8").replace("    '  node dist/engine/bin.js beta',\n", ""));
-		});
-		// 判据 2：README 代码块缺一条命令
-		expect("readme-missing-command", 1, (root) => {
-			const p = path.join(root, "engine/README.md");
-			fs.writeFileSync(p, fs.readFileSync(p, "utf-8").replace("node dist/engine/bin.js beta\n", ""));
-		});
-		// 判据 3：计数漂移（两 README 与 AGENTS 同步漂移才只报计数一处；此处只改一方）
-		expect("count-drift-zh", 1, (root) => {
-			const p = path.join(root, "README.zh.md");
-			fs.writeFileSync(p, fs.readFileSync(p, "utf-8").replace("二命令", "三命令"));
-		});
-		// 判据 3 的英文词形同样覆盖
-		expect("count-drift-en-word", 1, (root) => {
-			const p = path.join(root, "README.md");
-			fs.writeFileSync(p, fs.readFileSync(p, "utf-8").replace("two commands", "five commands"));
-		});
-		// 合法例外：「N 命令各一」描述命令件个数——数量故意写错，仍必须 PASS
-		expect("count-exclude-geyi", 0, (root) => {
-			const p = path.join(root, "engine/README.md");
-			fs.writeFileSync(p, fs.readFileSync(p, "utf-8") + "\n| `alpha.ts` / `beta.ts` | 五命令各一 |\n");
-		});
-		// fail-closed 两态：事实源缺失 / 读不出任何分支
-		expect("source-missing", 2, (root) => fs.rmSync(path.join(root, "engine/bin.ts")));
-		expect("no-branches", 2, (root) => fs.writeFileSync(path.join(root, "engine/bin.ts"), "// no branches here\n"));
-	} finally {
-		fs.rmSync(dir, { recursive: true, force: true });
-	}
+	expect("clean", 0, () => {});
+	// 判据 1：usage() 区间缺一条命令
+	expect("usage-missing-command", 1, (root) => {
+		rewrite(root, "engine/bin.ts", (text) => text.replace("    '  node dist/engine/bin.js beta',\n", ""));
+	});
+	// 判据 2：合同面代码块缺一条命令
+	expect("readme-block-missing-command", 1, (root) => {
+		rewrite(root, "engine/README.md", (text) => text.replace("node dist/engine/bin.js beta\n", ""));
+	});
+	// 判据 2 的范围：块外补上同名调用不救场（证明取的是声明区而非整文件）
+	expect("readme-invocation-outside-block", 1, (root) => {
+		rewrite(root, "engine/README.md", (text) => text
+			.replace("node dist/engine/bin.js beta\n", "")
+			+ "\n另见：node dist/engine/bin.js beta（块外示例）\n");
+	});
+	// 判据 2 的 extra 方向：声明区列出事实源没有的命令
+	expect("declaration-extra-command", 1, (root) => {
+		rewrite(root, "engine/README.md", (text) => text.replace("```\n", "node dist/engine/bin.js gamma\n```\n"));
+	});
+	// 判据 3：计数漂移（中文 / 英文词形各一）
+	expect("count-drift-zh", 1, (root) => {
+		rewrite(root, "README.zh.md", (text) => text.replace("二命令", "三命令"));
+	});
+	expect("count-drift-en-word", 1, (root) => {
+		rewrite(root, "README.md", (text) => text.replace("two commands", "five commands"));
+	});
+	// 判据 3 的上下文判据：普通英文散文里的数字+command 不得计入命令面（防全仓误红）
+	expect("count-plain-prose-ignored", 0, (root) => {
+		rewrite(root, "README.md", (text) => text + "Releases need one command to exempt the minimumReleaseAge window.\n");
+	});
+	// 合法例外：「N 命令各一」描述命令件个数——数量故意写错，仍必须 PASS
+	expect("count-exclude-geyi", 0, (root) => {
+		rewrite(root, "engine/README.md", (text) => text + "\n| `alpha.ts` / `beta.ts` | 五命令各一 |\n");
+	});
+	// 声明面 / 计数面不可读：判 1（声明面须在场），不是静默 PASS
+	expect("declaration-surface-missing", 1, (root) => fs.rmSync(path.join(root, "engine/README.md")));
+	expect("count-surface-missing", 1, (root) => fs.rmSync(path.join(root, "README.zh.md")));
+	// 声明区形状变了（usage() 消失）→ 判 1，且消息点名声明区
+	expect("declaration-region-missing", 1, (root) => {
+		rewrite(root, "engine/bin.ts", (text) => text.replace("function usage(", "function usageText("));
+	});
+	// fail-closed 两态：事实源缺失 / 读不出任何分支
+	expect("source-missing", 2, (root) => fs.rmSync(path.join(root, "engine/bin.ts")));
+	expect("no-branches", 2, (root) => fs.writeFileSync(path.join(root, "engine/bin.ts"), "// no branches here\n"));
 	if (failures.length > 0) {
 		for (const failure of failures) console.log(`SELF-TEST FAIL: ${failure}`);
 		return 1;

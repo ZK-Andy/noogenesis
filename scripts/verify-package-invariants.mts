@@ -12,9 +12,9 @@
  *   4. `engines.node` 在场、`dsh.bundle.patch` 指向实存件、`peerDependencies`
  *      的 `@deepseek-ai/*` 两件（dsh-tools + dsh-llm）在场；
  *   5. `files` 不得收录白名单外目录（`src/` / `tests/` / `.cache/`）；
- *   6. README 的包版本声明（`noogenesis-dsh@X.Y.Z`）必须等于 `package.json.version`，
- *      且至少声明一次——发版靠人工同步 README 版本行 = 漂移面（评审发现的机械化；
- *      ADR 2026-09-11-review-finding-mechanization）。
+ *   6. 版本声明面必须与 `package.json.version` 一致：双语 README **每个在场件**至少
+ *      声明一次（少一处即违约），`HANDOFF.md` 属状态面（声明了就必须对）——发版靠人工
+ *      同步版本行 = 漂移面（评审发现的机械化；ADR 2026-09-11-review-finding-mechanization）。
  *
  * 前置：`npm run build`（dist 由 tsc 产出）；缺 dist → fail-closed exit 2
  *（发布面不变量在缺件时无法判定，不得静默绿）。权威面 = CI（先构建再跑）；
@@ -22,7 +22,8 @@
  * Consequences）。
  *
  * 用法（仓库根运行）：node scripts/verify-package-invariants.mts [--self-test]
- * 退出码：0 = PASS，1 = 违约，2 = fail-closed（缺 dist / package.json 缺失或不可解析）。
+ * 退出码：0 = PASS，1 = 违约，2 = fail-closed（缺 dist / package.json 缺失或不可解析 /
+ * 版本面存在但不可读）。
  * 模块形态：显式 .mts（ESM），相对 import 带显式扩展，只依赖 node: 内建。
  */
 import * as fs from "node:fs";
@@ -49,8 +50,15 @@ const REQUIRED_FILES_ENTRIES = [
 /** 不得进发布白名单的目录前缀（源码/测试/本地缓存）。 */
 const FORBIDDEN_FILES_PREFIXES = ["src/", "tests/", ".cache/"];
 
-/** README 版本声明面（双语镜像；README.md 必存由 REQUIRED_FILES_ENTRIES 保证）。 */
-const README_VERSION_SURFACES = ["README.md", "README.zh.md"];
+/**
+ * 版本声明面：双语 README 每个在场件都必须声明当前版本（`requireDeclaration`），
+ * HANDOFF 属状态面——声明了就必须与 package.json 一致，不强制必须有锚。
+ */
+const VERSION_SURFACES: { path: string; requireDeclaration: boolean }[] = [
+	{ path: "README.md", requireDeclaration: true },
+	{ path: "README.zh.md", requireDeclaration: true },
+	{ path: "HANDOFF.md", requireDeclaration: false },
+];
 /** 版本声明形态：`noogenesis-dsh@X.Y.Z`（包名后允许一层 Markdown 链接尾）。 */
 const README_VERSION_RE = /noogenesis-dsh(?:`\]\([^)]*\))?@(\d+\.\d+\.\d+)/g;
 
@@ -91,6 +99,16 @@ function collectExportTargets(value: unknown, label: string, out: Array<[string,
 	if (value === null || typeof value !== "object") return;
 	for (const [key, child] of Object.entries(value)) {
 		collectExportTargets(child, `${label}[${JSON.stringify(key)}]`, out);
+	}
+}
+
+/** 可读普通文件判据（目录 / 权限不足都算不可读）。 */
+function readableFile(abs: string): boolean {
+	try {
+		fs.readFileSync(abs);
+		return true;
+	} catch {
+		return false;
 	}
 }
 
@@ -152,25 +170,25 @@ function collectViolations(repoRoot: string, pkg: PackageManifest): string[] {
 			violations.push(`files 收录白名单外目录：${entry}`);
 		}
 	}
-	// 6) README 版本行 == package.json.version（发版手工同步面，机械化）
+	// 6) 版本声明面 == package.json.version（发版手工同步面，逐面机械化）
 	const version = pkg.version;
 	if (typeof version !== "string" || !version.trim()) {
 		violations.push("package.json 缺 version");
 	} else {
-		let declared = 0;
-		for (const surface of README_VERSION_SURFACES) {
-			const abs = path.join(repoRoot, surface);
+		for (const surface of VERSION_SURFACES) {
+			const abs = path.join(repoRoot, surface.path);
 			if (!fs.existsSync(abs)) continue;
 			const text = fs.readFileSync(abs, "utf-8");
+			let declared = 0;
 			for (const match of text.matchAll(new RegExp(README_VERSION_RE.source, README_VERSION_RE.flags))) {
 				declared += 1;
 				if (match[1] !== version) {
-					violations.push(`${surface} 版本行漂移：声明 ${String(match[1])}，package.json 为 ${version}`);
+					violations.push(`${surface.path} 版本行漂移：声明 ${String(match[1])}，package.json 为 ${version}`);
 				}
 			}
-		}
-		if (declared === 0) {
-			violations.push("README 未声明包版本号（noogenesis-dsh@X.Y.Z）——发布面缺人类可读版本锚点");
+			if (declared === 0 && surface.requireDeclaration) {
+				violations.push(`${surface.path} 未声明包版本号（noogenesis-dsh@X.Y.Z）——发布面缺人类可读版本锚点`);
+			}
 		}
 	}
 	return violations;
@@ -186,6 +204,13 @@ function evaluatePackage(repoRoot: string): { code: number; lines: string[] } {
 	}
 	const pkg = readManifest(repoRoot);
 	if (pkg === null) return { code: 2, lines: [`${PROGRAM}: FAIL-CLOSED — package.json 不可解析`] };
+	// 版本面存在但不可读（如 README.md 是目录）→ 判不了即拒跑，不留未捕获栈。
+	const unreadable = VERSION_SURFACES
+		.map((surface) => path.join(repoRoot, surface.path))
+		.filter((abs) => fs.existsSync(abs) && !readableFile(abs));
+	if (unreadable.length) {
+		return { code: 2, lines: [`${PROGRAM}: FAIL-CLOSED — 版本面存在但不可读：${unreadable.map((abs) => path.relative(repoRoot, abs)).join("，")}`] };
+	}
 	const violations = collectViolations(repoRoot, pkg);
 	if (violations.length === 0) {
 		return { code: 0, lines: ["OK: 发布面不变量（main/exports 实存 · files 覆盖 · dist 关键件 · engines/peer/bundle）"] };
@@ -222,11 +247,11 @@ function selfTest(repoRoot: string): number {
 		const pkg = structuredClone(base);
 		mutate(pkg);
 		fs.writeFileSync(path.join(root, "package.json"), JSON.stringify(pkg, null, 2));
-		// README 版本面：合规基线写正确的版本声明（判据 6），rewrite 钩子再做变异。
-		for (const rel of README_VERSION_SURFACES) {
-			const abs = path.join(root, rel);
+		// 版本面：合规基线写正确的版本声明（判据 6；README 用真实链接形态），rewrite 钩子再做变异。
+		for (const surface of VERSION_SURFACES) {
+			const abs = path.join(root, surface.path);
 			fs.mkdirSync(path.dirname(abs), { recursive: true });
-			fs.writeFileSync(abs, `see noogenesis-dsh@${String(pkg.version ?? "0.0.0")} here\n`);
+			fs.writeFileSync(abs, `see [\`noogenesis-dsh\`](https://example.invalid/noogenesis-dsh)@${String(pkg.version ?? "0.0.0")} here\n`);
 		}
 		remove?.(root);
 		rewrite?.(root);
@@ -277,13 +302,29 @@ function selfTest(repoRoot: string): number {
 		expect("exports-conditions-positive", 0, (pkg) => {
 			pkg.exports = { ".": { types: "./dist/adapters/dsh/index.mjs", default: "./dist/adapters/dsh/index.mjs" } };
 		});
-		// 判据 6：README 版本行漂移 / 未声明版本
-		expect("readme-version-drift", 1, () => {}, undefined, (root) => {
-			fs.writeFileSync(path.join(root, "README.zh.md"), "see noogenesis-dsh@9.9.9 here\n");
+		// 判据 6：版本漂移（链接形态基线 / 中文镜像单独漂移 / HANDOFF 状态锚漂移）
+		expect("version-drift-zh", 1, () => {}, undefined, (root) => {
+			fs.writeFileSync(path.join(root, "README.zh.md"), "see [`noogenesis-dsh`](https://example.invalid/noogenesis-dsh)@9.9.9 here\n");
 		});
-		expect("readme-version-absent", 1, () => {}, undefined, (root) => {
+		expect("version-drift-handoff", 1, () => {}, undefined, (root) => {
+			fs.writeFileSync(path.join(root, "HANDOFF.md"), "latest = `noogenesis-dsh@9.9.9`\n");
+		});
+		// 逐面口径：中文镜像写成不带锚的裸数字 = 该面未声明（英文镜像的锚不救场）
+		expect("version-bare-number-zh", 1, () => {}, undefined, (root) => {
+			fs.writeFileSync(path.join(root, "README.zh.md"), "（AGPL-3.0，当前发布 0.2.4）\n");
+		});
+		expect("version-absent", 1, () => {}, undefined, (root) => {
 			fs.writeFileSync(path.join(root, "README.md"), "no version token here\n");
 			fs.writeFileSync(path.join(root, "README.zh.md"), "no version token here\n");
+		});
+		// HANDOFF 属状态面：不声明不违约（其余面合规即 PASS）
+		expect("handoff-without-anchor", 0, () => {}, undefined, (root) => {
+			fs.writeFileSync(path.join(root, "HANDOFF.md"), "no version anchor here\n");
+		});
+		// 版本面存在但不可读 → fail-closed(2)，不是未捕获栈
+		expect("version-surface-unreadable", 2, () => {}, undefined, (root) => {
+			fs.rmSync(path.join(root, "README.md"));
+			fs.mkdirSync(path.join(root, "README.md"));
 		});
 		// fail-closed 三档（缺 package.json / 缺 dist / 坏 JSON）——直跑判据主体。
 		const empty = path.join(dir, "empty");
