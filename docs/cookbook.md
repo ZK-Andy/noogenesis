@@ -29,6 +29,7 @@
 - **[门禁] `wc -w` 对中文文本严重少计词数（2026-09-08 来源：noogenesis B0，R3 评审实证）**：症状——SKILL.md 用 `wc -w` 量得 198 词当拍板依据，仓计数单源（verify-doc-budgets 的 WORD_RE，CJK 逐字计词）实为 359，差近一倍。根因——`wc -w` 按空白分词，CJK 无空格。规避——凡「词数」判断一律用 doc-budgets 同款计数口径；拿不准时两种口径都算并声明用的是哪个。
 - **[门禁] 在被 .gitignore 忽略的目录里做 linter 探针 = 零文件假象（2026-09-08 来源：noogenesis C2 oxlint 调优）**：症状——在 `.cache/` 下放探针源码跑 `oxlint --rules .` 恒报 `No files found to lint`，误判工具坏或规则集为空。根因——oxlint 默认尊重 `.gitignore`，探针目录被整体忽略；`--no-ignore` 只覆盖 `.eslintignore`/`--ignore-pattern` 面，不解除 gitignore。规避——探针放未忽略路径或直接对真实源码跑；判「规则是否存在」用真实文件的命中结果，不靠被忽略目录。
 - **[门禁] `no-duplicate-imports` 误伤值/类型分行 import（2026-09-08 来源：noogenesis C2 白名单）**：症状——TS 惯用的 `import { x } from "m"` + `import type { T } from "m"` 被报同模块重复导入（10 处里仅 1 处是真重复值导入）。根因——规则默认不区分 type-only import。规避——配 `["error", { "allowSeparateTypeImports": true }]`；白名单落地前先跑一遍看噪声分布，别按规则名望文生义。
+- **[门禁] 评审变异检查的临时副本靠相对路径落点，会被 `git add -A` 扫进提交（2026-09-10 来源：noogenesis 收口批 R2 泳道实测 + 主会话复核）**：症状——泳道做变异检查时把在审件复制去 `/tmp` 实验，一条 `cd` 失败使副本落在仓根，`git status` 出现未跟踪同名件；主会话若正用 `git add -A` 收尾，该副本会被一并带走。根因——变异检查必须改文件，而在审文件受「评审期间不动 diff」约束，临时副本落点于是依赖一串相对路径命令，任一处 `cd` 失败即改落当前目录。规避——变体一律 `mkdir -p /tmp/<name>` + 绝对路径 `cp`，改完即 `rm -rf`；每次变异后核 `git status --porcelain` 为空；主会话收尾把「未跟踪件」列入对账。
 
 ## 文档
 

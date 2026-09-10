@@ -11,6 +11,8 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-10｜**优化轮收口批（FULL 三审 R1/R2/R3 全采纳）**：ADR [收口+验收口径](.agents/notes/implemented/process/2026-09-10-optimization-round-closure.md)、[brief 明细兜底](.agents/notes/implemented/bug-fix/2026-09-10-review-brief-detail-fallback.md)；`d1a014a`→`c242dc2`。README 无漂移。
+
 - 2026-09-10｜**0.2.4 真机复验第二轮（新会话独立复现，零仓变更）**：A2 路标行在场；A3 首写一行 advice／重复不重提／载技能后消失；A4 lint 与注释面均 block×3 → 第 4 次 context → 合规写零反馈并复位 → 再违规回 block；域外 `.ts` 只判 lint、注释面静默（判据链在场反证）；非 `.ts` 零反馈。探针件全清。
 
 - 2026-09-10｜**0.2.4 真机复验收口（三条 (B) 全清）**：A2 技能路标行在场；A3 对 `docs/` 写码投递一行 advice（非阻断、重复不重提、载对口技能后消失）；注释面在环判据全命中（域内缺 JSDoc → block、连续 3 次后降级 context、合规写复位、域外/非 `.ts` 零反馈）；release 工具族实发已验。**节点：发版轮闭环。** README 无漂移。
@@ -56,8 +58,6 @@
 - 2026-09-09｜**编码规范机器拦升格批（FULL 三审 0B 全采纳；ADR `2026-09-09-lint-block-and-staged-hook` implemented；`c880a00`→`c7b62e8` 绿）**：A4 在环 `context`→`block` 拦回（连续拦回降级 context 防死锁）+ pre-commit lint 收窄暂存面（含 rename 档）；pre-push/CI 仍全仓穷尽。**节点：机器可判违规写码当轮拦回。** README 无漂移。
 
 - 2026-09-09｜**宿主升级踩坑入 cookbook（npm ≥12 依赖安装脚本默认阻断；讨论轮，无 ADR）**：升级 `@deepseek-ai/dsh` 装完起不来；OpenCode 修复 = 回钉 0.1.3-alpha.2 + `--allow-scripts` 放行六原生包 + user 级持久化。**拍板：宿主基线维持 0.1.3-alpha.2，复验不碰 alpha 升级。** README 无漂移。
-
-- 2026-09-08｜**编码强制两轨收口（批 1 轨道 A / 批 2 轨道 B / 批 3 测量延后；FULL 三审全采纳；ADR `2026-09-08-coding-enforcement-track-b`）**：A4 在环 lint 反馈；宿主 API 键存在+形状相容断言 + 发布面不变量闸；type-aware 零 async 缺陷 → 延后。`5a1822e`→`49687f6`。**节点：两轨闭环，真机复验待装机。** README 无漂移。
 ## 背景
 
 Noogenesis（心源）：DeepSeek Harness 之上的"蜂群进化框架"；终极北极星 AGI（只定方向）；当前落地 = 第一个进化胶囊「AI 协作编码方法论」——四源（devops-template / dotnet-deepseek-harness-desktop / dsh-frecency / work 区）提炼搬迁，self-hosting：用心源体系开发心源。设计基准 `docs/research/dsh-swarm-evolution-framework-design.md`；搬迁计划（已实施冻结）[journal/capsule-01-migration-plan.md](journal/capsule-01-migration-plan.md)（评审定稿 2026-09-05）。
