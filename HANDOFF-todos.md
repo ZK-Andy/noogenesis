@@ -53,6 +53,8 @@
 - [ ] （B）M1 守卫三件套 + 防过度契约块真机复验（随下一发版重装后）：A2 地图含技能路标行；写 docs/ 未载技能 → advice 一行不阻断、重复写不重提、载入后消失；session-close 对账步可跑。触发 = 下一发版轮（可与 release 工具族首验同轮）。
 - [ ] （B）release 工具族首次实发验证（ADR [2026-09-09-release-shape-alignment](.agents/notes/implemented/process/2026-09-09-release-shape-alignment.md)）：下一发版走 `release:bump` + tag `dsh-v<版本>` + `release:note`（双语 body+@作者）；验收 bump 产 chore(release)+lock 同步、dsh-v tag 过 pre-push。触发 = 下一发版轮。
 - [ ] （C）宿主 OpenCode Go 会话头收尾（2026-09-10 诊断批遗留，本地环境不入仓）：官方 sessionHeader（pi-ai 包方向，上游 pi#9326）落地后退役 `dsh-opencode-session` 插件（`dsh plugin --profile dotnet-desktop remove`）；`~/.dsh/settings.yaml` 的 omenalpha 死块（含静态 headers 行）随用户清理删除。坑与解法已入 cookbook [环境]。
+- [ ] （B）注释面在环判据真机复验（随下一发版重装后）：写含无 JSDoc 导出函数的 `.ts` → 当轮 `block`（英文 FAIL 行，工具结果被替换）；补注释重写 → 通过；同文件连续 3 次后降级 `context`；非 `.ts`/域外（`engine/**`）写码零反馈；判据件缺席仓静默降级（每会话至多一条 warn）。触发 = 下一发版轮（可与其余两条 (B) 同轮）。
+- [ ] （C）verify-review-brief 明细输出缺口（2026-09-10 实遇）：范围分歧类违规串无泳道前缀，被输出循环 `violations.filter(v => v.startsWith(lane + ":"))` 静默吞掉（只报计数）——修法 = 明细打印兜底未命中前缀的项。触发 = 下次触碰该件时随批（触碰即 FULL，须走三审）。坑与规避已入 cookbook [门禁]。
 - [ ] （C）档案页制度批（2026-09-10 试点拍板的后续）：试点件 = [memory-system-dossier.md](docs/research/memory-system-dossier.md)；内容 = 全仓推广评估 + 骨架四段机器闸（仿 verify-handoff-structure）+ tier 归口拍板（research 层「非当下状态」vs 状态页先例）+ ADR 立项（proposed→implemented）。触发 = 试点跑一段评估。
 - [x] （A）M1 批 A 守卫三件套 2026-09-10（FULL 三审全采纳；三件 v0 落地），ADR [2026-09-10-m1-guard-anti-overdesign](.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) implemented（分批批注）。
 - [x] （A）M1 批 B 防过度混合 D 2026-09-10（FULL 三审全采纳；契约块 + 蒸馏篇 + cases 索引 + 检查项第 5 条），ADR [2026-09-10-m1-guard-anti-overdesign](.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) 第二条 Review 行在案。
