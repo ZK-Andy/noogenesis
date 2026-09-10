@@ -4,11 +4,11 @@
 
 ## 1. 定档判据（命中任一 → FULL 三重审核）
 
-- 触碰**行为契约面**：`src/**`/`tests/**` 之外的契约口径（`.github/workflows/**`、`templates/**`、`docs/method/**`、`.agents/workflows/**` 流程卡、根/子树 AGENTS.md）。
+- 触碰**行为契约面**：本仓产品源码（`engine/**`、`adapters/**`——引擎与随包插件本体，含门禁白名单 `engine/gates.json`）与其余契约口径（`.github/workflows/**`、`templates/**`、`docs/method/**`、`.agents/workflows/**` 流程卡、根/子树 AGENTS.md）。
 - 涉及 **async/生命周期/事件序/取消/异常/并发** 的语义面。
 - 改**跨边界契约**：对外协议/帧格式/存储布局/配置 schema。
 - 改**发版链路**（打包/发布脚本、签名/校验面、版本感知机制）。
-- **门禁判据本身**的改动（`scripts/verify-*`、`.githooks/**`）——门禁不能由被审者顺手改弱。
+- **门禁判据本身**的改动（`scripts/verify-*`、`lefthook.yml` 钩子面）——门禁不能由被审者顺手改弱。
 - 承诺三重审核的 proposed ADR 的落地变更。
 - 用户显式指定的批量事后审核。
 

@@ -5,8 +5,10 @@
  * 判据（review.md §1 的路径可机械子集；语义判据——async/并发/跨边界契约/用户显式
  * 批量审核——仍留该处人工评审，单源 docs/method/review.md §1）。FULL-tier 路径触发集：
  *   gate-criteria     scripts/**（含共享门禁助手）、lefthook.yml（钩子面，B3 起）
- *   behavior-surface  .github/** 下的 workflows、templates/**、docs/method/**、
- *                     任意深度的 AGENTS.md、.agents/workflows/**
+ *   behavior-surface  engine/** 与 adapters/**（产品源码：引擎 + 随包插件本体，含
+ *                     engine/gates.json 门禁白名单）、.github/** 下的 workflows、
+ *                     templates/**、docs/method/**、任意深度的 AGENTS.md、
+ *                     .agents/workflows/**
  * 另：.agents/notes 下 Status: proposed 的 ADR 正文自诺「三重审核」亦判 FULL——
  * ADR 自己承诺的 tier 优先于默认。触碰任一 FULL 路径的 diff 必须随变更携带评审证据
  * 才可 push：证据 = 同一变更集内一个 implemented ADR 的 `Review:
@@ -70,6 +72,9 @@ interface Trigger { label: string; pred: (rel: string, parts: string[], name: st
 const FULL_TRIGGERS: readonly Trigger[] = [
   { label: "gate-criteria", pred: (_rel, parts, _name) => parts.includes("scripts") },
   { label: "gate-criteria", pred: (_rel, _parts, name) => name === "lefthook.yml" },
+  // 产品源码 = 行为契约面（本仓即引擎与插件本体；顶层目录判据，非任意深度同名段）。
+  { label: "behavior-surface", pred: (_rel, parts, _name) => parts[0] === "engine" },
+  { label: "behavior-surface", pred: (_rel, parts, _name) => parts[0] === "adapters" },
   { label: "behavior-surface", pred: (_rel, parts, _name) => parts.includes(".github") && parts.includes("workflows") },
   { label: "behavior-surface", pred: (_rel, parts, _name) => parts.includes("templates") },
   { label: "behavior-surface", pred: (_rel, parts, _name) => parts.includes("docs") && parts.includes("method") },
@@ -78,6 +83,8 @@ const FULL_TRIGGERS: readonly Trigger[] = [
 ];
 
 // 正文自诺三重审核的 proposed ADR 强制 FULL——ADR 自己承诺的 tier 优先于默认。
+// proposed 判定锚定行首 Status 行：整文件子串搜索会把「正文引用这两个词面」的
+// implemented ADR 读成提案（2026-09-11 精度批的实例）。
 const FULL_TIER_WORDS = ["三重审核"];
 
 /** py print 的 stdout 直写（避免 console.log 的 % 格式化面）。 */
@@ -202,7 +209,7 @@ function adrCommitsFull(rel: string, repo: string): boolean {
   if (!rel.endsWith(".md") || !rel.startsWith(NOTES_DIR + "/")) return false;
   const text = readTextStrict(path.join(repo, rel));
   if (text === null) return false;
-  return text.includes("Status: proposed") && FULL_TIER_WORDS.some((w) => text.includes(w));
+  return /^Status:\s*proposed\b/m.test(text) && FULL_TIER_WORDS.some((w) => text.includes(w));
 }
 
 /** 返回 (is_full_tier, reasons)。无执行裁量。
@@ -382,6 +389,21 @@ function selfTest(): number {
     ok(scan(r).some((x) => x.includes("gate-criteria")),
       "lefthook.yml change classifies FULL");
 
+    // 2c) 产品源码（engine/**、adapters/**）变更判 FULL——含门禁白名单 engine/gates.json
+    r = newRepo(td, "f2c");
+    writeIn(r, "engine/gates.json", "{}\n");
+    ok(scan(r).some((x) => x.includes("behavior-surface")),
+      "engine/** change classifies FULL (gate whitelist included)");
+    r = newRepo(td, "f2d");
+    writeIn(r, "adapters/dsh/config.mts", "// plugin config\n");
+    ok(scan(r).some((x) => x.includes("behavior-surface")),
+      "adapters/** change classifies FULL");
+    // 2e) 判据是顶层目录：深层同名段不触发
+    r = newRepo(td, "f2e");
+    writeIn(r, "docs/research/engine-notes.md", "# notes\n");
+    ok(scan(r).length === 0,
+      "a deeper path segment named engine/adapters does not classify FULL");
+
     // 3) 同一变更携带带合法 Review 行的 implemented ADR 时放行
     r = newRepo(td, "f3");
     writeIn(r, "scripts/verify-x.py", "# gate\n");
@@ -406,6 +428,13 @@ function selfTest(): number {
     rows = scan(r);
     ok(rows.some((x) => x.includes("adr-promises-full")),
       "proposed ADR promising 三重审核 classifies FULL");
+
+    // 6b) implemented ADR 正文提及同一词面不判 FULL（自诺判定锚定行首 Status 行）
+    r = newRepo(td, "f6b");
+    writeIn(r, NOTES_DIR + "/implemented/process/2026-09-05-z.md",
+      "# Agent Note: z\n\nStatus: implemented\n\n## Problem\n\n讨论 `Status: proposed` 与三重审核词面的判定\n\n## Decision\n\nx\n\n## Alternatives considered\n\n- a\n\n## Consequences\n\nx\n");
+    ok(scan(r).length === 0,
+      "implemented ADR quoting the words does not classify FULL");
 
     // 7) 已提交 + 干净树：--since 抓住外发 FULL 变更
     r = newRepo(td, "f7");
@@ -514,7 +543,7 @@ function selfTest(): number {
   }
 
   if (failed === 0) {
-    out("verify-review-tier --self-test OK (17 fixtures: triggers/evidence/modes/fail-closed/ride-along/staged)");
+    out("verify-review-tier --self-test OK (21 fixtures: triggers/evidence/modes/fail-closed/ride-along/staged)");
   } else {
     errOut("verify-review-tier --self-test FAIL");
   }
