@@ -1,6 +1,7 @@
 # Agent Note: 全仓规范审计简化候选批——单源归口 / 清理纪律 / 语言口径拍板
 
 Status: implemented
+Review: FULL/2026-09-10/R1=ok R2=ok R3=ok
 
 > Provenance：本仓原创（2026-09-10，三族 [R] 语义面审计的范围外观察面）。同源审计的缺陷修复批 = [2026-09-10-standards-audit-fix-batch](../bug-fix/2026-09-10-standards-audit-fix-batch.md)（行为面已收口，本件只承载非缺陷的简化/拍板候选）。
 
