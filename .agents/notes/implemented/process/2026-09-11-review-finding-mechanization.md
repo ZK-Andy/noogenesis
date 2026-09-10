@@ -1,4 +1,4 @@
-# Agent Note: 评审发现的机械化——把复发的可判问题做成机械校验
+# Agent Note: 评审发现的机械化——把可机械判的问题做成机械校验
 
 Status: implemented
 Review: FULL/2026-09-11/R1=ok R2=ok R3=ok
@@ -17,7 +17,7 @@ Related: 评审契约 [review](../../../../docs/method/review.md)（findings 形
 
 ## Decision
 
-**1. 机械化判据 = 可机械判（形状可枚举、不看语义）且判据稳定即立**；立闸前先实测噪声率，噪声率高才不立——门禁自身是维护面且会带缺陷（[verify-secrets](../../../../scripts/verify-secrets.mts) 的 URL 族误报；本件 Decision 3 的变更史词面闸实测噪声 ≈95% 即不立）。单次代价高者（凭据泄漏 / 发布事故 / 数据丢失）不受噪声实测约束。口径与阶段位置单源 = [吸收阶段 ADR](2026-09-11-absorption-stage.md)。
+**1. 机械化判据 = 可机械判（形状可枚举、不看语义）且判据稳定即立**；立闸前先实测噪声率，噪声率高才不立——门禁自身是维护面且会带缺陷（[verify-secrets](../../../../scripts/verify-secrets.mts) 的 URL 族误报；本件 Decision 3 的变更史词面闸实测噪声 ≈95% 即不立）。单次代价高者（凭据泄漏 / 发布事故 / 数据丢失）不受噪声实测约束。阶段位置单源 = [吸收阶段 ADR](2026-09-11-absorption-stage.md)。
 
 **2. 本次机械化三件**：
 
@@ -27,7 +27,7 @@ Related: 评审契约 [review](../../../../docs/method/review.md)（findings 形
 
 **3. 评估未过（附实测，不装成已解）**：durable 文档「变更史词面闸」不立。【探索性 · n=1 次本机实测】口径 = 扫 `.agents/notes/{implemented,proposed}` + `docs/method` + 两 README + 根 AGENTS（共 64 件 md），标记表 = 英文 5 条（`previously` / `no longer` / `used to be` / `renamed` / `was changed to`）+ 中文 5 条（`曾经` / `之前是` / `改自` / `不再(是|支持|走|用)` / `原先`），逐行正则计数。**现象**：命中 19 处，其中 18 处落在**定义这条禁令的规则文档自身**（`doc-standards` / 根 AGENTS / `code-standards` / `ai-collaboration-method` 引用被禁词表）或正当用法。**该面继续归评审语义面 + `noo-trim-cot-leakage` 技能**（成因未证，不列机制结论）。
 
-**4. 接线与动作点**：[feature-flow](../../../workflows/feature-flow.md) §5「吸收」= 评审结论齐后的同级阶段（逐条 findings 分类归口四出口；不可机械判项按既有归口，**不新造载体**）；[session-close](../../../workflows/session-close.md) 增吸收对账一行（对账 ≠ 动作）。新门禁的 self-test 入 CI 抽查清单。
+**4. 接线与动作点**：[feature-flow](../../../workflows/feature-flow.md) §5「吸收」= 评审结论齐后的同级阶段（逐条 findings 分类归口四出口；不可机械判项按既有归口，**不新造载体**）；[session-close](../../../workflows/session-close.md) 的对账行改为吸收对账（对账 ≠ 动作）。新门禁的 self-test 入 CI 抽查清单。
 
 **5. 反哺**：发现的**类**随批记入 journal（动作在 [feature-flow](../../../workflows/feature-flow.md) §5）——复发计数用于判断类的形态与噪声，不再作为立闸门槛。
 

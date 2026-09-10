@@ -2,7 +2,7 @@
 
 Status: implemented
 
-Related: 触发件 [2026-09-11-review-finding-mechanization](2026-09-11-review-finding-mechanization.md)（阈值与首例；本批改写其 Decision 1/4/5）；清单与动作的家 [feature-flow](../../../workflows/feature-flow.md) §5；对账 [session-close](../../../workflows/session-close.md) §3；出口面 [cookbook](../../../../docs/cookbook.md)、[review](../../../../docs/method/review.md) §6。
+Related: 触发件 [2026-09-11-review-finding-mechanization](2026-09-11-review-finding-mechanization.md)（阈值与首例；本批改写其 Decision 1/4/5）；清单与动作的家 [feature-flow](../../../workflows/feature-flow.md) §5；对账 [session-close](../../../workflows/session-close.md) §3；findings 裁决入口 [review](../../../../docs/method/review.md) §6；踩坑出口格式 [cookbook](../../../../docs/cookbook.md)。
 
 ## Problem
 
@@ -22,7 +22,7 @@ Related: 触发件 [2026-09-11-review-finding-mechanization](2026-09-11-review-f
 2. **四出口**（清单与形态的家 = §5）：**机械校验** / **cookbook 踩坑** / **流程卡纪律** / **不入库**；逐条 findings 落且只落一家。
 3. **立闸门槛改写**（单源 = [机械化 ADR](2026-09-11-review-finding-mechanization.md) Decision 1，本批同改）：判据稳定（形状可枚举、不看语义）即立，立闸前先实测噪声率，噪声率高才不立——「复发 ≥2 次」不再作为门槛；单次代价高者（凭据泄漏 / 发布事故 / 数据丢失）不受噪声实测约束。
 4. **执行者 = 主会话**：吸收的输入是主会话已裁决的 findings，分类是判断动作，不新立泳道或子代理。
-5. **产出 = 吸收账**（类 / 本批证据 / 可机械判性 / 去向），随批汇报；发现的**类**记入 journal，复发计数只用于形态与噪声判断，不再用于门槛。
+5. **产出 = 吸收账**（字段与形态单源 = `feature-flow` §5），随批汇报；发现的**类**记入 journal，复发计数只用于形态与噪声判断，不再用于门槛。
 6. **接线**：`session-close` §3 的机械化对账改为吸收对账（对账 ≠ 动作，动作只在 §5）；根 AGENTS 流程卡索引的主链路加上吸收。
 
 ## Alternatives considered

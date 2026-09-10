@@ -13,7 +13,7 @@
 
 - 2026-09-11｜**术语口径批（FULL 三审 R1 1B/3S、R2 3B/4S、R3 0B/4S；全采纳 11 + 部分采纳 1）**：「胶囊」= 内容包层、`Capsule` 原语写英文原名不译，规则落根 AGENTS「文档纪律」+ 四处违例面对齐；[ADR](.agents/notes/implemented/process/2026-09-11-capsule-term-layering.md)。提交 `07de5b4`→`e1d4e9b`。README 无漂移。
 
-- 2026-09-11｜**评审发现机械化批（FULL 三审 R1 0B/2S、R2 1B/6S、R3 4B/9S；采纳 12 拒绝 1）**：新增 `verify-command-surface`（命令面事实源 ↔ 声明区/计数面）+ 版本锚判据 6（三面）+ 模式双向覆盖元断言；门槛 = 复发 ≥2 或代价高；[ADR](.agents/notes/implemented/process/2026-09-11-review-finding-mechanization.md)。
+- 2026-09-11｜**评审发现机械化批（FULL 三审 R1 0B/2S、R2 1B/6S、R3 4B/9S；采纳 12 拒绝 1）**：新增 `verify-command-surface`（命令面事实源 ↔ 声明区/计数面）+ 版本锚判据 6（三面）+ 模式双向覆盖元断言；[ADR](.agents/notes/implemented/process/2026-09-11-review-finding-mechanization.md)。
 
 - 2026-09-11｜**记忆库线第一期实现批（FULL 三审逐条裁决）**：`observe` 观测输入面（gitignored；写 fail-closed／读 warn-skip）+ `select` 建议档 `advice:` 行（不进常驻节）+ 凭据绊线 `verify-secrets`（三面）；ADR [实现件](.agents/notes/implemented/architecture/2026-09-11-memory-line-phase1-observation-face.md)。
 
