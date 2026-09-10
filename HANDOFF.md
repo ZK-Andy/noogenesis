@@ -11,7 +11,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-10｜**记忆库线开题讨论轮 + 档案页制度试点（讨论+实现批；无 ADR，制度待试点评估后另批）**：拆词定名——线 = 引擎记忆原语（memory-graph）+ 痕迹提炼面，不立项知识库（durable 四家即知识库）；方向倾向融合轮。用户拍板先以记忆库线试点档案页；唯一状态家 [memory-system-dossier.md](docs/research/memory-system-dossier.md)，痕迹提炼面自 todos 迁出、优化轮两处迁出留指针。README 无漂移。
+- 2026-09-10｜**记忆库线开题讨论轮 + 档案页制度试点（讨论+实现批；无 ADR，制度批待评估）**：线 = memory-graph 原语 + 痕迹提炼面，不立项知识库；方向倾向融合轮。试点档案页 = 唯一状态家 [memory-system-dossier.md](docs/research/memory-system-dossier.md)（`ec4e7dc`），todos/优化轮条目迁出留指针。README 无漂移。
 
 - 2026-09-10｜**宿主 OpenCode Go 会话头诊断（无仓变更；cookbook [环境] 入档）**：本机静态 `x-opencode-session` 实证为反模式（亲和桶塌缩）；社区插件 `dsh-opencode-session` 兜底（自定义 provider 名须补路由键坑在案）；用户切内置 opencode-go 路由实证通。**节点：官方 sessionHeader 落地后退役插件（todos C）。** README 无漂移。
 
