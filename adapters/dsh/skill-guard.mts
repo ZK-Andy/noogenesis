@@ -8,9 +8,9 @@
  * - suffix：写码目标以条目后缀结尾（扩展名，如 .md）；
  * - command：bash 命令文本匹配条目正则。
  * 写码目标两条通道——`write` / `edit` 的 `file_path`，以及 bash 命令里的
- * `>` / `>>` / `tee` 目标（按会话 cwd 解析，出仓即弃，与写码工具同口径）；
- * 脚本体内的写（python heredoc 的 `sub(path, …)`、`sed -i`）不可枚举，
- * 是残余边界（扩面 ADR Consequences）。
+ * `>` / `>>` / `tee` 目标（引号包或裸 token；按会话 cwd 解析，出仓即弃，与
+ * 写码工具同口径）；脚本体内的写（python heredoc 的 `sub(path, …)`、`sed -i`）
+ * 与 heredoc 体内的 `>` 文本不可枚举，是残余边界（扩面 ADR Consequences）。
  *
  * 命中即 advice 建议行（非阻断，经 agent.inject 投递——repeat-tool-reminder
  * 同款哲学：触发交给机器，服从留给自觉）；同一事件命中的技能由同一条 advice
@@ -50,17 +50,21 @@ interface GuardState {
 }
 
 /**
- * bash 写文件目标提取：`>` / `>>` / `tee` 后跟的路径 token（引号可包）。
- * 只做形状枚举——脚本体内的写不在此列（残余边界）。
+ * bash 写文件目标提取：`>` / `>>` / `tee`（含 `-a` / `--append`）后跟的目标——
+ * 形式 = 双引号包、单引号包或裸 token。只做形状枚举：脚本体内的写不在此列，
+ * `->` / `=>` 不算重定向（前导 `-`/`=` 被排除），`$`/`~` 开头的未展开式不取
+ * （解析不出仓内路径，取了只会假阳）。以上均为残余边界与假阳面的落点（扩面
+ * ADR Consequences）。
  */
-const REDIRECT_TARGET_RE = /(?:>>?|(?:^|[\s;&|])tee(?:\s+-a)?)\s*("?)([^\s"'`;&|()<>]+)\1/g;
+const REDIRECT_TARGET_RE = /(?:(?<![-=])>>?|(?:^|[\s;&|])tee(?:\s+(?:-a|--append))?)\s*(?:"([^"]+)"|'([^']+)'|([^\s"'`;&|()<>]+))/g;
 
-/** 从命令文本提取重定向/tee 写目标（原样字符串，去重保序）。 */
+/** 从命令文本提取重定向/tee 写目标（原样字符串，去重保序；未展开式丢弃）。 */
 function redirectTargets(command: string): string[] {
 	const out: string[] = [];
 	for (const match of command.matchAll(REDIRECT_TARGET_RE)) {
-		const target = match[2];
-		if (target !== undefined && !out.includes(target)) out.push(target);
+		const target = match[1] ?? match[2] ?? match[3];
+		if (target === undefined || target.includes("$") || target.startsWith("~")) continue;
+		if (!out.includes(target)) out.push(target);
 	}
 	return out;
 }

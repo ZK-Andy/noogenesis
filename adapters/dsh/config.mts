@@ -100,9 +100,13 @@ function optSkillGuards(value: unknown): readonly SkillGuardEntry[] | undefined 
 		}
 		const kind = entry.kind as SkillGuardKind;
 		// 三类模式各自有「永不命中却通过非空校验」的形态——守卫静默失效，fail-closed 拒收。
-		// path：POSIX 相对目录（绝对路径/盘符/反斜杠/尾部斜杠）。
-		if (kind === "path" && (/^(\/|[A-Za-z]:)|\\/.test(entry.pattern) || entry.pattern.endsWith("/"))) {
-			throw new Error(`noogenesis: config.skillGuards path must be a POSIX-style relative directory (got ${JSON.stringify(entry.pattern)})`);
+		if (kind === "path") {
+			// POSIX 相对目录且每段为常规段：绝对路径 / 盘符 / 反斜杠，以及空段
+			// （`docs//x`、尾斜杠）、`.`、`..`（含前导 `./`）都不命中前缀匹配。
+			const segments = entry.pattern.split("/");
+			if (/^(\/|[A-Za-z]:)|\\/.test(entry.pattern) || segments.some((segment) => segment === "" || segment === "." || segment === "..")) {
+				throw new Error(`noogenesis: config.skillGuards path must be a POSIX-style relative directory of regular segments (got ${JSON.stringify(entry.pattern)})`);
+			}
 		}
 		// suffix：点开头的扩展名（含 `/` 是路径不是后缀）。
 		if (kind === "suffix" && (!entry.pattern.startsWith(".") || entry.pattern.includes("/"))) {

@@ -354,6 +354,11 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.throws(() => validateConfig({ skillGuards: [{ kind: "path", pattern: "C:docs", skill: "x" }] }), /POSIX/);
 	assert.throws(() => validateConfig({ skillGuards: [{ kind: "path", pattern: "docs\\sub", skill: "x" }] }), /POSIX/);
 	assert.throws(() => validateConfig({ skillGuards: [{ kind: "path", pattern: "docs/", skill: "x" }] }), /POSIX/);
+	// 非规范化段（`./` / `.` / `..` / 空段）同样永不命中，拒收。
+	assert.throws(() => validateConfig({ skillGuards: [{ kind: "path", pattern: "./docs", skill: "x" }] }), /POSIX/);
+	assert.throws(() => validateConfig({ skillGuards: [{ kind: "path", pattern: "docs//x", skill: "x" }] }), /POSIX/);
+	assert.throws(() => validateConfig({ skillGuards: [{ kind: "path", pattern: ".", skill: "x" }] }), /POSIX/);
+	assert.throws(() => validateConfig({ skillGuards: [{ kind: "path", pattern: "..", skill: "x" }] }), /POSIX/);
 	// suffix 须点开头且不含 `/`；command 须可编译（否则守卫静默失效）。
 	assert.throws(() => validateConfig({ skillGuards: [{ kind: "suffix", pattern: "md", skill: "x" }] }), /suffix/);
 	assert.throws(() => validateConfig({ skillGuards: [{ kind: "suffix", pattern: ".md/bak", skill: "x" }] }), /suffix/);
@@ -931,6 +936,25 @@ function writeFixtureGene(repoRoot: string): void {
 		// 重定向目标出仓 / 非守卫后缀 → 静默（含 fd 重定向形态）。
 		assert.equal(toolPre({ name: "bash", arguments: { command: "echo hi > /tmp/x.md 2>&1" }, agent: session() }), undefined);
 		assert.equal(toolPre({ name: "bash", arguments: { command: "make > build.log" }, agent: session() }), undefined);
+		// 引号家族与 tee 长选项：单引号目标、含空格的引号路径、`tee --append` 都是写码目标。
+		const singleQuoted = toolPre({ name: "bash", arguments: { command: "cat >> 'journal/2026-09.md' <<'EOF'\nbody\nEOF" }, agent: session() });
+		assert.ok(singleQuoted && singleQuoted.kind === "advice");
+		assert.match(singleQuoted.lines[0]!, /noo-prose-standard/);
+		const spacedQuoted = toolPre({ name: "bash", arguments: { command: 'echo x > "docs/my file.md"' }, agent: session() });
+		assert.ok(spacedQuoted && spacedQuoted.kind === "advice");
+		assert.equal(spacedQuoted.lines.length, 2);
+		const teeLongOpt = toolPre({ name: "bash", arguments: { command: "echo x | tee --append docs/a.md" }, agent: session() });
+		assert.ok(teeLongOpt && teeLongOpt.kind === "advice");
+		assert.match(teeLongOpt.lines[0]!, /noo-doc-standards/);
+		// 未展开的 shell 形式（`$VAR` / `~`）与 `->` / `=>` 不算重定向目标（假阳面收窄）。
+		assert.equal(toolPre({ name: "bash", arguments: { command: "echo x > $HOME/x.md" }, agent: session() }), undefined);
+		assert.equal(toolPre({ name: "bash", arguments: { command: "echo x > ~/notes.md" }, agent: session() }), undefined);
+		assert.equal(toolPre({ name: "bash", arguments: { command: 'echo "arrow -> docs/x.md"' }, agent: session() }), undefined);
+		assert.equal(toolPre({ name: "bash", arguments: { command: 'echo "map => docs/x.md"' }, agent: session() }), undefined);
+		// 相对写码路径按会话 cwd 解析（cwd 出仓即弃）——不以 repoRoot 硬拼。
+		assert.equal(toolPre({ name: "write", arguments: { file_path: "docs/x.md" }, agent: { session: { header: { cwd: os.tmpdir() } } } }), undefined);
+		// 后缀判定是结尾匹配：含 `.md` 但不以之结尾的路径不命中。
+		assert.equal(toolPre({ name: "write", arguments: { file_path: "journal/2026-09.mdx" }, agent: session() }), undefined);
 		// 无会话键（keyless）降级 = 即席新状态 → 仍发提醒（无法去重，触达优于静默）。
 		const keyless = toolPre({ name: "write", arguments: { file_path: "docs/x.md" } });
 		assert.ok(keyless && keyless.kind === "advice");
