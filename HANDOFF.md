@@ -11,7 +11,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-10｜**记忆库线融合轮开题讨论轮（边界拍板：按机制收 / 按两半裁；零代码变更）**：ADR [融合立宪](.agents/notes/proposed/architecture/2026-09-10-memory-line-fusion-charter.md)（proposed）+ [档案页](docs/research/memory-system-dossier.md) 对账；`5d0a0da`→`2ee9407`。README 无漂移。
+- 2026-09-10｜**记忆库线融合轮开题讨论轮（边界拍板 + 接口契约；零代码变更）**：ADR [融合立宪](.agents/notes/proposed/architecture/2026-09-10-memory-line-fusion-charter.md)（proposed，D1–D7）+ [档案页](docs/research/memory-system-dossier.md) 对账；`5d0a0da`→`a725a4c`。README 无漂移。
 
 - 2026-09-10｜**优化轮收口批（FULL 三审 R1/R2/R3 全采纳）**：ADR [收口+验收口径](.agents/notes/implemented/process/2026-09-10-optimization-round-closure.md)、[brief 明细兜底](.agents/notes/implemented/bug-fix/2026-09-10-review-brief-detail-fallback.md)；`d1a014a`→`e11dd0e`。README 无漂移。
 
