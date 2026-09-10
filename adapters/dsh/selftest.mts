@@ -33,6 +33,7 @@ import { listStagingCandidates, buildSolidifyArgs, solidifyNotice, runSolidifyTr
 import { buildPullArgs, pullBankOnce, createBankPullScheduler } from "./bank-pull.mjs";
 import { BUNDLED_SKILL_RANK, PROVIDER_NAME, createBankSkillProvider, parseSkillFile, registerBankSkills } from "./skill-provider.mjs";
 import { validateConfig, DEFAULT_GENE_BANK_URL } from "./config.mjs";
+import type { SkillGuardEntry } from "./config.mjs";
 import { createSessionStore, mergePreStep, mergeSessionStart, mergeToolPost, mergeToolPre } from "./mount.mjs";
 import { createMountPolicies, createSubtreeRulesPolicies, SKILL_DIR_CANDIDATES } from "./mount-policies.mjs";
 import { createLintFeedbackPolicies } from "./lint-feedback.mjs";
@@ -333,22 +334,31 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.equal(cfg.actor, "noogenesis");
 	assert.equal(cfg.maxIndexGenes, 12);
 	assert.deepEqual(cfg.skillGuards, [
-		{ path: "docs", skill: "noo-doc-standards" },
-		{ path: ".agents/notes", skill: "noo-archive-agent-notes" },
+		{ kind: "path", pattern: "docs", skill: "noo-doc-standards" },
+		{ kind: "suffix", pattern: ".md", skill: "noo-prose-standard" },
+		{ kind: "path", pattern: ".agents/notes", skill: "noo-archive-agent-notes" },
+		{ kind: "command", pattern: "\\bgit\\s+push\\b", skill: "noo-pre-push-checks" },
 	]);
 	ok("config: defaults complete");
 
-	// skillGuards：显式数组整体替换缺省表；条目形状违约指名字段。
-	assert.deepEqual(validateConfig({ skillGuards: [{ path: "journal", skill: "noo-custom" }] }).skillGuards, [{ path: "journal", skill: "noo-custom" }]);
+	// skillGuards：显式数组整体替换缺省表；条目形状与三类模式各自违约即抛错。
+	assert.deepEqual(validateConfig({ skillGuards: [{ kind: "path", pattern: "journal", skill: "noo-custom" }] }).skillGuards, [{ kind: "path", pattern: "journal", skill: "noo-custom" }]);
 	assert.throws(() => validateConfig({ skillGuards: "docs" }), /skillGuards/);
-	assert.throws(() => validateConfig({ skillGuards: [{ path: "", skill: "x" }] }), /skillGuards/);
-	assert.throws(() => validateConfig({ skillGuards: [{ path: "docs" }] }), /skillGuards/);
+	assert.throws(() => validateConfig({ skillGuards: [{ kind: "path", pattern: "", skill: "x" }] }), /skillGuards/);
+	assert.throws(() => validateConfig({ skillGuards: [{ kind: "path", pattern: "docs" }] }), /skillGuards/);
+	// 缺 kind 的旧形态与未知 kind 一律拒收——静默不匹配的条目等于守卫失效。
+	assert.throws(() => validateConfig({ skillGuards: [{ path: "docs", skill: "x" }] }), /skillGuards/);
+	assert.throws(() => validateConfig({ skillGuards: [{ kind: "glob", pattern: "**/*.md", skill: "x" }] }), /skillGuards/);
 	// POSIX 相对目录形态：绝对路径 / 盘符 / 反斜杠 / 尾部斜杠永不命中 = 静默失效，fail-closed 拒收。
-	assert.throws(() => validateConfig({ skillGuards: [{ path: "/abs/docs", skill: "x" }] }), /POSIX/);
-	assert.throws(() => validateConfig({ skillGuards: [{ path: "C:docs", skill: "x" }] }), /POSIX/);
-	assert.throws(() => validateConfig({ skillGuards: [{ path: "docs\\sub", skill: "x" }] }), /POSIX/);
-	assert.throws(() => validateConfig({ skillGuards: [{ path: "docs/", skill: "x" }] }), /POSIX/);
-	ok("config: skillGuards — explicit table replaces default; entry and path-shape violations throw");
+	assert.throws(() => validateConfig({ skillGuards: [{ kind: "path", pattern: "/abs/docs", skill: "x" }] }), /POSIX/);
+	assert.throws(() => validateConfig({ skillGuards: [{ kind: "path", pattern: "C:docs", skill: "x" }] }), /POSIX/);
+	assert.throws(() => validateConfig({ skillGuards: [{ kind: "path", pattern: "docs\\sub", skill: "x" }] }), /POSIX/);
+	assert.throws(() => validateConfig({ skillGuards: [{ kind: "path", pattern: "docs/", skill: "x" }] }), /POSIX/);
+	// suffix 须点开头且不含 `/`；command 须可编译（否则守卫静默失效）。
+	assert.throws(() => validateConfig({ skillGuards: [{ kind: "suffix", pattern: "md", skill: "x" }] }), /suffix/);
+	assert.throws(() => validateConfig({ skillGuards: [{ kind: "suffix", pattern: ".md/bak", skill: "x" }] }), /suffix/);
+	assert.throws(() => validateConfig({ skillGuards: [{ kind: "command", pattern: "([", skill: "x" }] }), /regular expression/);
+	ok("config: skillGuards — explicit table replaces default; entry, kind and per-kind pattern violations throw");
 
 	const badConfigs: Array<[unknown, RegExp]> = [
 		[{ repoRoot: "" }, /repoRoot/],
@@ -851,39 +861,80 @@ function writeFixtureGene(repoRoot: string): void {
 		ok("mounts: policy set assembly — A2 map + A3 skill guard + A4 lint/export-docs judges + A5 zero-policy lane");
 	}
 
-	// M1 守卫②：A3 触点提醒策略逐条合同（守卫表直调，零宿主依赖）。
+	// M1 守卫②：A3 触点提醒策略逐条合同（守卫表直调，零宿主依赖）。三类匹配面
+	// （path / suffix / command）+ 两条写码目标通道（写码工具 + bash 重定向）。
 	{
 		const repo = tempRepo("skill-guard");
-		const agent = { session: { header: { cwd: repo } } };
-		const guards = [
-			{ path: "docs", skill: "noo-doc-standards" },
-			{ path: ".agents/notes", skill: "noo-archive-agent-notes" },
+		const guards: SkillGuardEntry[] = [
+			{ kind: "path", pattern: "docs", skill: "noo-doc-standards" },
+			{ kind: "suffix", pattern: ".md", skill: "noo-prose-standard" },
+			{ kind: "path", pattern: ".agents/notes", skill: "noo-archive-agent-notes" },
+			{ kind: "command", pattern: "\\bgit\\s+push\\b", skill: "noo-pre-push-checks" },
 		];
 		const { toolPre } = createSkillGuardPolicies({ repoRoot: repo }, guards);
-		// 写 docs 面未载技能 → advice 一行；同会话同技能不重复提醒。
-		const advice = toolPre({ name: "write", arguments: { file_path: "docs/x.md" }, agent });
-		assert.ok(advice && advice.kind === "advice");
-		assert.match(advice.lines[0]!, /noo-doc-standards/);
+		// 新会话探针（状态按会话隔离）。
+		const session = () => ({ session: { header: { cwd: repo } } });
+		// 一次事件命中多条 → 一次列全（表序），且各技能随之进入 reminded。
+		const both = toolPre({ name: "write", arguments: { file_path: "docs/x.md" }, agent: session() });
+		assert.ok(both && both.kind === "advice");
+		assert.equal(both.lines.length, 2);
+		assert.match(both.lines[0]!, /noo-doc-standards/);
+		assert.match(both.lines[1]!, /noo-prose-standard/);
+		assert.match(both.lines[0]!, /writing to docs\//);
+		assert.match(both.lines[1]!, /writing a \.md file/);
+		// 同会话同技能不重复提醒（含后续 .md 写）。
+		const agent = session();
+		assert.ok(toolPre({ name: "write", arguments: { file_path: "docs/x.md" }, agent }));
 		assert.equal(toolPre({ name: "write", arguments: { file_path: "docs/y.md" }, agent }), undefined);
-		// skill 调用进入 seen 集 → 提醒消失（载入观测解除）。
-		const agentLoaded = { session: { header: { cwd: repo } } };
-		const toolPreLoaded = createSkillGuardPolicies({ repoRoot: repo }, guards).toolPre;
-		const firstUnloaded = toolPreLoaded({ name: "write", arguments: { file_path: "docs/x.md" }, agent: agentLoaded });
-		assert.ok(firstUnloaded && firstUnloaded.kind === "advice");
-		assert.equal(toolPreLoaded({ name: "write", arguments: { file_path: "docs/x.md" }, agent: agentLoaded }), undefined);
-		toolPreLoaded({ name: "skill", arguments: { name: "noo-doc-standards" }, agent: agentLoaded });
-		assert.equal(toolPreLoaded({ name: "write", arguments: { file_path: "docs/x.md" }, agent: agentLoaded }), undefined);
-		// 非守卫路径 / 子树内层路径命中（.agents/notes 前缀）/ 出仓路径 / 非写码工具 → 静默。
-		assert.equal(toolPre({ name: "write", arguments: { file_path: "docs-misc/x.md" }, agent }), undefined);
-		const notesAdvice = toolPre({ name: "edit", arguments: { file_path: ".agents/notes/implemented/process/x.md" }, agent });
+		assert.equal(toolPre({ name: "edit", arguments: { file_path: "docs/z.md" }, agent }), undefined);
+		// skill 调用进入 seen 集 → 该技能不再提醒，未载的其他技能照常提醒。
+		const loaded = session();
+		toolPre({ name: "skill", arguments: { name: "noo-doc-standards" }, agent: loaded });
+		const onlyProse = toolPre({ name: "write", arguments: { file_path: "docs/x.md" }, agent: loaded });
+		assert.ok(onlyProse && onlyProse.kind === "advice");
+		assert.equal(onlyProse.lines.length, 1);
+		assert.match(onlyProse.lines[0]!, /noo-prose-standard/);
+		// 前缀按路径段对齐：docs-misc 不命中 path 条目，但 .md 后缀仍命中。
+		const offPath = toolPre({ name: "write", arguments: { file_path: "docs-misc/x.md" }, agent: session() });
+		assert.ok(offPath && offPath.kind === "advice");
+		assert.equal(offPath.lines.length, 1);
+		assert.match(offPath.lines[0]!, /noo-prose-standard/);
+		// 前缀目录自身与子树内层路径均命中；无守卫面路径静默；出仓路径静默；非写码工具静默。
+		const notesAdvice = toolPre({ name: "edit", arguments: { file_path: ".agents/notes/implemented/process/x.md" }, agent: session() });
 		assert.ok(notesAdvice && notesAdvice.kind === "advice");
-		assert.match(notesAdvice.lines[0]!, /noo-archive-agent-notes/);
-		assert.equal(toolPre({ name: "write", arguments: { file_path: "../outside.md" }, agent }), undefined);
-		assert.equal(toolPre({ name: "read", arguments: { file_path: "docs/x.md" }, agent }), undefined);
+		assert.ok(notesAdvice.lines.some((line) => /noo-archive-agent-notes/.test(line)));
+		assert.ok(notesAdvice.lines.some((line) => /noo-prose-standard/.test(line)));
+		assert.equal(toolPre({ name: "write", arguments: { file_path: "src/x.ts" }, agent: session() }), undefined);
+		assert.equal(toolPre({ name: "write", arguments: { file_path: "../outside.md" }, agent: session() }), undefined);
+		assert.equal(toolPre({ name: "read", arguments: { file_path: "docs/x.md" }, agent: session() }), undefined);
+		// 命令面：真实 push 命中一次，重复与无关命令静默。
+		const pushAgent = session();
+		const pushAdvice = toolPre({ name: "bash", arguments: { command: "cd /repo && git push origin main" }, agent: pushAgent });
+		assert.ok(pushAdvice && pushAdvice.kind === "advice");
+		assert.match(pushAdvice.lines[0]!, /noo-pre-push-checks/);
+		assert.match(pushAdvice.lines[0]!, /running a command matching/);
+		assert.equal(toolPre({ name: "bash", arguments: { command: "git push --force-with-lease=main:abc" }, agent: pushAgent }), undefined);
+		assert.equal(toolPre({ name: "bash", arguments: { command: "git status --short" }, agent: session() }), undefined);
+		// 命令面是文本正则：字符串字面量里的 `git push` 同样命中——已接受噪声
+		// （一行、每会话一次；扩面 ADR Consequences）。
+		const literal = toolPre({ name: "bash", arguments: { command: "echo 'git push'" }, agent: session() });
+		assert.ok(literal && literal.kind === "advice");
+		assert.match(literal.lines[0]!, /noo-pre-push-checks/);
+		// 命令面通道：bash 重定向 / tee 目标算写码目标（path + suffix 两类都参与）。
+		const redir = toolPre({ name: "bash", arguments: { command: "cat > docs/redirected.md <<'EOF'\nbody\nEOF" }, agent: session() });
+		assert.ok(redir && redir.kind === "advice");
+		assert.equal(redir.lines.length, 2);
+		const tee = toolPre({ name: "bash", arguments: { command: "echo x | tee -a journal/2026-09.md" }, agent: session() });
+		assert.ok(tee && tee.kind === "advice");
+		assert.equal(tee.lines.length, 1);
+		assert.match(tee.lines[0]!, /noo-prose-standard/);
+		// 重定向目标出仓 / 非守卫后缀 → 静默（含 fd 重定向形态）。
+		assert.equal(toolPre({ name: "bash", arguments: { command: "echo hi > /tmp/x.md 2>&1" }, agent: session() }), undefined);
+		assert.equal(toolPre({ name: "bash", arguments: { command: "make > build.log" }, agent: session() }), undefined);
 		// 无会话键（keyless）降级 = 即席新状态 → 仍发提醒（无法去重，触达优于静默）。
 		const keyless = toolPre({ name: "write", arguments: { file_path: "docs/x.md" } });
 		assert.ok(keyless && keyless.kind === "advice");
-		ok("skill-guard: docs/notes trigger once per skill per session; skill load clears; off-path/out-of-repo/non-write silent; keyless still advises");
+		ok("skill-guard: path/suffix/command kinds + bash redirect channel; one advice lists all hits; per-session dedupe; off-path/out-of-repo/other-tools silent; keyless advises");
 	}
 
 	// index 接线假 ctx 冒烟：存留四点各恰一个 listener + 行为逐条。

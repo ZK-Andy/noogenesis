@@ -19,7 +19,7 @@ Related: [2026-09-08-b4-mount-wiring](2026-09-08-b4-mount-wiring.md)（tool-pre 
 
 1. **技能守卫 = 三件套 v0**（触发交给机器，服从留给自觉）：
    - **① 技能路标**：A2 开场地图加一行「任务型 → 技能名」映射（动 `docs/**` → `noo-doc-standards`；评审收口 → `noo-code-review`；push 前 → `noo-pre-push-checks` 等）——常驻零自觉可见，调用仍自觉。〔批 A 落地：`mount-policies.mts` SKILL_ROSTER_LINE，技能面存在性过滤（活副本 / 随库缓存任一含 `noo-*` 才发行）；A2 发行条件随之自「零子树件」放宽为「零内容」——B4 ADR Decision 4 同批同步。〕
-   - **② 触点提醒**：tool-pre 钩子（B4 已证可用的挂载面）按**文件路径模式**判「本会话该载而未载」（写 `docs/**` 而未载 `noo-doc-standards`）→ `agent.inject` 一行 advice，**不阻断**（repeat-tool-reminder 同款哲学）；映射表进 config，条目按需增删。〔批 A 落地：`skill-guard.mts` + A3 advice 档（能力层扩档）+ `config.skillGuards`（缺省表 `docs`/`.agents/notes` 两条，POSIX 相对目录形态 fail-closed）；每会话每技能至多提醒一次。subagent 不跳——A2 全图对窄任务子代理是纯噪音故跳，本件单行路径强相关提醒对子代理同样有效且每（子）会话有界（R3 评审要求书面化，已落 skill-guard 头注）。〕
+   - **② 触点提醒**：tool-pre 钩子（B4 已证可用的挂载面）按**文件路径模式**判「本会话该载而未载」（写 `docs/**` 而未载 `noo-doc-standards`）→ `agent.inject` 一行 advice，**不阻断**（repeat-tool-reminder 同款哲学）；映射表进 config，条目按需增删。〔批 A 落地：`skill-guard.mts` + A3 advice 档（能力层扩档）+ `config.skillGuards`（条目集与三类匹配面现态单源 = [触发面扩面 ADR](2026-09-11-skill-guard-trigger-faces.md)）；每会话每技能至多提醒一次。subagent 不跳——A2 全图对窄任务子代理是纯噪音故跳，本件单行路径强相关提醒对子代理同样有效且每（子）会话有界（R3 评审要求书面化，已落 skill-guard 头注）。〕
    - **③ 事后对账**：session-close 流程卡加一步——grep 宿主日志 `tool/result` 技能调用痕迹，列出本会话用了什么；「该不该」的裁断留人/评审（A8 撤除后既定证据面）。〔批 A 落地：session-close 步骤 2。〕
    - **阻断档判不立**（见 Alternatives）。
 2. **防过度设计 = 混合形态（HERO 原生分层）**：

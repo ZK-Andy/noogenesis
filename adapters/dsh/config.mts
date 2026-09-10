@@ -13,21 +13,31 @@ function isNatural(value: unknown): value is number {
 /** 官方基因库（P2 ADR D1 本仓即库；缺省进包 = 装完即部署，bug-fix ADR D2）。 */
 export const DEFAULT_GENE_BANK_URL = "https://github.com/ZK-Andy/noogenesis.git";
 
-/** 触点提醒条目：路径前缀（POSIX 目录形态，相对 repoRoot）× 对口技能名。 */
+/** 触点提醒匹配面（封闭三值）：写码目标路径前缀 / 路径后缀 / bash 命令文本正则。 */
+export type SkillGuardKind = "path" | "suffix" | "command";
+
+/** 触点提醒条目：匹配面（`kind`）+ 模式（`pattern`）+ 对口技能名。 */
 export interface SkillGuardEntry {
-	path: string;
+	kind: SkillGuardKind;
+	pattern: string;
 	skill: string;
 }
 
 /**
- * 触点提醒缺省表（M1 守卫②）。宁缺勿滥（charter ADR 对价条款：重复提醒
- * 稀释真守卫信号）——只配「路径×技能」强相关条目；skill-guard 观测「本会话
- * 载过没有」，机器可判角落仅此一处，任务型映射不进本表。
+ * 触点提醒缺省表（M1 守卫②；触发面扩面 ADR
+ * 2026-09-11-skill-guard-trigger-faces）。宁缺勿滥（charter ADR 对价条款：
+ * 重复提醒稀释真守卫信号）——只配实证过「该载未载」的强相关条目；噪声上界
+ * 由触发器给（每会话每技能至多一条），不靠条目节制；任务型语义映射不进本表。
  */
 export const DEFAULT_SKILL_GUARDS: readonly SkillGuardEntry[] = [
-	{ path: "docs", skill: "noo-doc-standards" },
-	{ path: ".agents/notes", skill: "noo-archive-agent-notes" },
+	{ kind: "path", pattern: "docs", skill: "noo-doc-standards" },
+	{ kind: "suffix", pattern: ".md", skill: "noo-prose-standard" },
+	{ kind: "path", pattern: ".agents/notes", skill: "noo-archive-agent-notes" },
+	{ kind: "command", pattern: "\\bgit\\s+push\\b", skill: "noo-pre-push-checks" },
 ];
+
+/** 触点提醒匹配面封闭集（配置校验的拒收判据）。 */
+const SKILL_GUARD_KINDS: ReadonlySet<string> = new Set(["path", "suffix", "command"]);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
 	return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -79,18 +89,34 @@ function optGeneBankUrl(value: unknown): string | false | undefined {
 function optSkillGuards(value: unknown): readonly SkillGuardEntry[] | undefined {
 	if (value === undefined) return undefined;
 	if (!Array.isArray(value)) {
-		throw new Error("noogenesis: config.skillGuards must be an array of { path, skill }");
+		throw new Error("noogenesis: config.skillGuards must be an array of { kind, pattern, skill }");
 	}
 	return value.map((entry) => {
-		if (!isRecord(entry) || typeof entry.path !== "string" || entry.path.length === 0 || typeof entry.skill !== "string" || entry.skill.length === 0) {
-			throw new Error("noogenesis: config.skillGuards entries must be { path: string, skill: string } with non-empty values");
+		if (!isRecord(entry) || typeof entry.kind !== "string" || !SKILL_GUARD_KINDS.has(entry.kind)) {
+			throw new Error('noogenesis: config.skillGuards entries must be { kind: "path" | "suffix" | "command", pattern: string, skill: string }');
 		}
-		// POSIX 相对目录形态（matchesGuardPath 契约）：绝对路径/盘符/反斜杠/
-		// 尾部斜杠永不命中却通过非空校验 = 守卫静默失效，fail-closed 拒收。
-		if (/^(\/|[A-Za-z]:)|\\/.test(entry.path) || entry.path.endsWith("/")) {
-			throw new Error(`noogenesis: config.skillGuards path must be a POSIX-style relative directory (got ${JSON.stringify(entry.path)})`);
+		if (typeof entry.pattern !== "string" || entry.pattern.length === 0 || typeof entry.skill !== "string" || entry.skill.length === 0) {
+			throw new Error("noogenesis: config.skillGuards entries must be { kind, pattern: string, skill: string } with non-empty pattern and skill");
 		}
-		return { path: entry.path, skill: entry.skill };
+		const kind = entry.kind as SkillGuardKind;
+		// 三类模式各自有「永不命中却通过非空校验」的形态——守卫静默失效，fail-closed 拒收。
+		// path：POSIX 相对目录（绝对路径/盘符/反斜杠/尾部斜杠）。
+		if (kind === "path" && (/^(\/|[A-Za-z]:)|\\/.test(entry.pattern) || entry.pattern.endsWith("/"))) {
+			throw new Error(`noogenesis: config.skillGuards path must be a POSIX-style relative directory (got ${JSON.stringify(entry.pattern)})`);
+		}
+		// suffix：点开头的扩展名（含 `/` 是路径不是后缀）。
+		if (kind === "suffix" && (!entry.pattern.startsWith(".") || entry.pattern.includes("/"))) {
+			throw new Error(`noogenesis: config.skillGuards suffix must be a dot-prefixed extension such as ".md" (got ${JSON.stringify(entry.pattern)})`);
+		}
+		// command：编译不得抛（守卫按事件现场编译；不可编译即静默失效）。
+		if (kind === "command") {
+			try {
+				new RegExp(entry.pattern);
+			} catch {
+				throw new Error(`noogenesis: config.skillGuards command pattern must be a valid regular expression (got ${JSON.stringify(entry.pattern)})`);
+			}
+		}
+		return { kind, pattern: entry.pattern, skill: entry.skill };
 	});
 }
 
