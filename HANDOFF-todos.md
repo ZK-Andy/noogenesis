@@ -37,7 +37,9 @@
 - [x] （C）engine/bin.ts pull guard 合并 2026-09-08 随 B5 兑现（B2 R1 延后项，同文案 fail 合一 + 不可达 continue 消除，行为零变化）；B5 ADR Decision 6。
 - [x] （A）框架重建立项收口 2026-09-06（推倒重建/先框架后协作层/原地重建；FULL 三审 R1 0B/5S、R2 2B/6S、R3 1B/3S 全采纳），ADR [2026-09-06-framework-rebuild-charter](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md)。
 - [x] （C）main 领先包体出包 2026-09-08 随 B5 0.2.0 断点销账（git 前置条件 + ENOENT 诊断 `b5fcb2e`→`10745e2` 已带出；tag `v0.2.0` + npm latest 在案）。
-- [ ] （D）护栏延后拍板待收口（ADR [2026-09-06-guardrail-defer-trigger](.agents/notes/proposed/architecture/2026-09-06-guardrail-defer-trigger.md) proposed）：护栏三件（token-meter 真测量 / 严格改进度量 / canary 隔离）需但延后至胶囊优化后触发；收口时转 implemented + 修正骨架 ADR 归口 + 设计稿 §6/§11 API 名实测修正。**待证点** = 在环反馈是否让模型更合规（无度量）。余项：js-yaml + YAML 迁移器归口、Detect 信号源轮立项（D2 逐源解除，连带 M3 频次重议）。
+- [ ] （D）技能清单「等等」候选收集（优化轮收口遗留，显式挂起）：用户拍板暂不新增技能（用不上不写），既有技能 references/ 已补；触发 = 用户再给候选时重开（先例参照 = HERO-Anti-OverDefense）。决定单源 = [skill-references-fill](.agents/notes/implemented/process/2026-09-10-skill-references-fill.md)；池文档收口账 = [§2.3](docs/research/capsule-01-optimization-round.md)。
+- [ ] （D）优化轮收口遗留缓议两件：技能 A3 写入前阻断档 + 评审收口触点提醒。触发 = 会话内出现需要写入前阻断的真实场景 / step-2 对账抓到真实漏网。判据与预拍板单源 = [lint-in-loop](.agents/notes/implemented/architecture/2026-09-08-lint-in-loop-feedback.md) + [review-exec](.agents/notes/implemented/architecture/2026-09-10-review-execution-reconciliation.md)。
+- [ ] （D）护栏建设轮待排期（触发已满足）：收口 ADR [三条件](.agents/notes/implemented/process/2026-09-10-optimization-round-closure.md) 已兑现 → [护栏 ADR](.agents/notes/proposed/architecture/2026-09-06-guardrail-defer-trigger.md) 达成。立项轮逐件拍板（token-meter / 改进度量 / canary）后转 implemented（收口细节见该 ADR）。待证点 = 在环反馈是否让模型更合规。余项：js-yaml 归口、Detect 信号源轮立项（D2 逐源解除，连带 M3 重议）。
 - [x] （D）架构规范实现批 2026-09-10（FULL 三审三轮全采纳收口；import 环实测 n=46/81 零环零跨族），ADR [2026-09-10-architecture-standards-charter](.agents/notes/implemented/architecture/2026-09-10-architecture-standards-charter.md)。
 - [x] （D）P2 实现轮 2026-09-06（FULL 三审 R1 1B/5S、R2 1B/8S、R3 0B/6S 全采纳），ADR [2026-09-06-p2-shared-consumer](.agents/notes/implemented/architecture/2026-09-06-p2-shared-consumer.md) implemented。
 - [x] （C）编码规范 c1 评审恢复与收口 2026-09-08（FULL 三审恢复重跑：R1 1B/4S、R2 1B/4S、R3 2B/3S 全采纳收口），ADR [2026-09-08-coding-standards](.agents/notes/implemented/architecture/2026-09-08-coding-standards.md) implemented。
@@ -54,7 +56,7 @@
 - [x] （B）release 工具族首验 2026-09-10（0.2.4 实发）：bump 产 `chore(release)`+lock 同提交（`6fe74ea`）、tag `dsh-v0.2.4` 过 pre-push、npm latest 0.2.4、双语 Release Latest；证据 = ADR `release-shape-alignment` 落地验证节。
 - [ ] （C）宿主 OpenCode Go 会话头收尾（2026-09-10 诊断批遗留，本地环境不入仓）：官方 sessionHeader（pi-ai 包方向，上游 pi#9326）落地后退役 `dsh-opencode-session` 插件（`dsh plugin --profile dotnet-desktop remove`）；`~/.dsh/settings.yaml` 的 omenalpha 死块（含静态 headers 行）随用户清理删除。坑与解法已入 cookbook [环境]。
 - [x] （B）注释面在环判据真机复验 2026-09-10（0.2.4 装机）：域内缺 JSDoc → 当轮 `block`（英文违约行替换结果）；连续 3 次后第 4 次降级 `context`；合规写通过并复位；域外/非 `.ts` 零反馈；判据件缺席降级面 = self-test 夹具（journal 在案）。
-- [ ] （C）verify-review-brief 明细输出缺口（2026-09-10 实遇）：范围分歧类违规串无泳道前缀，被输出循环 `violations.filter(v => v.startsWith(lane + ":"))` 静默吞掉（只报计数）——修法 = 明细打印兜底未命中前缀的项。触发 = 下次触碰该件时随批（触碰即 FULL，须走三审）。坑与规避已入 cookbook [门禁]。
+- [x] （C）verify-review-brief 明细输出缺口 2026-09-10 修复（随收口批）：明细打印兜底无泳道前缀项，fixtures 12→13；ADR [2026-09-10-review-brief-detail-fallback](.agents/notes/implemented/bug-fix/2026-09-10-review-brief-detail-fallback.md)。
 - [ ] （C）release-note 大批次归并档缺失（2026-09-10 0.2.4 首验实遇）：v0.2.3→0.2.4 跨 59 笔时「其他变更」节输出 47 条过程条目（body 147 行），发布者须手工按批次归并；修法 = 脚本增按批次/scope 的聚合档。触发 = 下次发版仍须手工归并。
 - [ ] （C）档案页制度批（2026-09-10 试点拍板的后续）：试点件 = [memory-system-dossier.md](docs/research/memory-system-dossier.md)；内容 = 全仓推广评估 + 骨架四段机器闸（仿 verify-handoff-structure）+ tier 归口拍板（research 层「非当下状态」vs 状态页先例）+ ADR 立项（proposed→implemented）。触发 = 试点跑一段评估。
 - [x] （A）M1 批 A 守卫三件套 2026-09-10（FULL 三审全采纳；三件 v0 落地），ADR [2026-09-10-m1-guard-anti-overdesign](.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) implemented（分批批注）。
