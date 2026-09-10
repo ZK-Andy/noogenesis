@@ -95,23 +95,26 @@
 
 ### 2.3 收口账（2026-09-10）
 
-> 口径 = [收口 ADR](../../.agents/notes/implemented/process/2026-09-10-optimization-round-closure.md)：池零未判定 + 终态单源 + 成果实机生效。本表是「终态 → 去向」的唯一索引；细节在各条正文与 durable 家，不在此复述。
+> 口径 = [收口 ADR](../../.agents/notes/implemented/process/2026-09-10-optimization-round-closure.md)：池零未判定 + 终态单源 + 成果实机生效。**每行恰一个终态**（四种：已落地 / 判不立 / 显式挂起 / 定案留档），复合项拆行。本表是「终态 → 去向」的唯一索引；细节在各条正文与 durable 家，不在此复述。
 
 | 条目 | 终态 | 去向（durable 家 / 行动区） |
 |---|---|---|
 | §2.1 技能集总结 | 显式挂起 | 行动区（D）条 + [skill-references-fill](../../.agents/notes/implemented/process/2026-09-10-skill-references-fill.md) |
-| §2.1 技能使用挂载 | ③ 落地 / ② 缓议 | [review-execution-reconciliation](../../.agents/notes/implemented/architecture/2026-09-10-review-execution-reconciliation.md) + 行动区（D）条 |
-| §2.1 评审实质执行 | 拍板落账 | 同上 ADR |
-| §2.1 规范事前接入 | 落地（成文 + 机器拦 + 在环两判据） | [lint-in-loop](../../.agents/notes/implemented/architecture/2026-09-08-lint-in-loop-feedback.md) · [export-docs-inloop](../../.agents/notes/implemented/architecture/2026-09-10-export-docs-inloop.md) |
-| §2.1 规范事前接入余项三件 | 触发未满足 / 判不立 | 同上两 ADR Alternatives |
+| §2.1 技能使用挂载 ③ 事后对账 | 已落地 | [review-execution-reconciliation](../../.agents/notes/implemented/architecture/2026-09-10-review-execution-reconciliation.md) + session-close 步骤 2 |
+| §2.1 技能使用挂载 ② 触点提醒 | 判不立（缓议，触发在案） | 同 ADR Decision 2 + 行动区（D）条 |
+| §2.1 评审实质执行 | 已落地 | 同 ADR（③ 对账步 + 跨会话证据出口） |
+| §2.1 规范事前接入（成文 + 机器拦 + 在环两判据） | 已落地 | [lint-in-loop](../../.agents/notes/implemented/architecture/2026-09-08-lint-in-loop-feedback.md) · [export-docs-inloop](../../.agents/notes/implemented/architecture/2026-09-10-export-docs-inloop.md) |
+| §2.1 规范事前接入余项三件 | 判不立（触发未满足 / 判据在案） | 同上两 ADR Alternatives |
 | §2.1 上帝类预防闸 | 判不立（附触发阈值） | [B4 挂载接线](../../.agents/notes/implemented/architecture/2026-09-08-b4-mount-wiring.md) Decision 6 |
-| §2.1 事实面定案 | 免行动留档 | 本档 §3 |
-| §2.2-1/2 方案工作面 | 已落地（M1 两批，真机复验两轮） | [m1-guard-anti-overdesign](../../.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) |
-| §2.2-3 小落差五件 | 四件落地 / 一件判不立 | §3.5 状态注 |
-| §2.2-4 技能清单补全 | 拍板暂不新增（候选挂起） | skill-references-fill ADR + 行动区（D）条 |
-| §2.2-5 记忆库线 | 迁出 | [memory-system-dossier](memory-system-dossier.md) |
-| §2.2-6 语言统一 TS | 随重建收官 | [B5 切换](../../.agents/notes/implemented/architecture/2026-09-08-b5-switch.md) |
-| §2.2-7 框架重建信号 | 完成使命 | [charter](../../.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md) |
+| §2.1 事实面定案 | 定案留档（免行动） | 本档 §3 |
+| §2.2-1/2 方案工作面 | 已落地 | [m1-guard-anti-overdesign](../../.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md)（两轮真机复验） |
+| §2.2-3 小落差（钩子自动安装 / 门禁 DAG 并行 / archived-notes 校验件） | 已落地 | §3.5 状态注 |
+| §2.2-3 小落差（技能 references/ 形态） | 已落地 | [skill-references-fill](../../.agents/notes/implemented/process/2026-09-10-skill-references-fill.md)（实拆兑现） |
+| §2.2-3 小落差（CI 文件名契约闸） | 判不立 | §3.5 状态注 + B4 Decision 6 |
+| §2.2-4 技能清单补全 | 显式挂起（候选收集） | skill-references-fill + 行动区（D）条 |
+| §2.2-5 记忆库线 | 已落地（迁出转档） | [memory-system-dossier](memory-system-dossier.md) |
+| §2.2-6 语言统一 TS | 已落地（随重建收官） | [B5 切换](../../.agents/notes/implemented/architecture/2026-09-08-b5-switch.md) |
+| §2.2-7 框架重建信号 | 已落地（完成使命） | [charter](../../.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md) |
 
 ## 3. 调研报告
 

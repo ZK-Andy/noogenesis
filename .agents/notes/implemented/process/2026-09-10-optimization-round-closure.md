@@ -19,7 +19,7 @@ Status: implemented
 
 1. **「胶囊 01 优化完成」验收口径**（用户拍板 2026-09-10，三条件同时成立）：
 
-   - ① **池零未判定**：问题池与方案工作面每条都有终态，终态只允许三种——已落地 / 判不立（附判据）/ 显式挂起（等用户输入）；
+   - ① **池零未判定**：问题池与方案工作面每条都有终态，终态只允许四种——已落地 / 判不立（附判据与触发条件）/ 显式挂起（等用户输入）/ 定案留档（免行动）；收口账每行恰一个终态，复合项拆行；
    - ② **终态单源**：每条终态的理由与触发条件落在 durable 家（ADR / 方法文档 / `HANDOFF-todos.md` 行动区），池文档只留指针；
    - ③ **成果实机生效**：本轮交付机制在装机插件上真机复验命中（在环判据 / 守卫 / 契约块；证据 = 滚动窗与 journal 记录）。
 
@@ -40,7 +40,7 @@ Status: implemented
 
 ## Consequences
 
-- **采用面**：`docs/research/capsule-01-optimization-round.md`（状态行 + 六条终态 + 五面归宿 + 收口账）、`HANDOFF.md`（⏭ 候选 + 状态区）、`HANDOFF-todos.md`（三件遗留）、`.agents/notes/implemented/architecture/2026-09-10-export-docs-inloop.md`（lint 泛化指针自持化——同步事实，不改决定）。
+- **采用面**：`docs/research/capsule-01-optimization-round.md`（状态行 + §2.1 全部条目终态 + §2.2 七面归宿 + §2.3 收口账 16 行）、`HANDOFF.md`（⏭ 候选 + 状态区）、`HANDOFF-todos.md`（表头行动区归属改口径 + 三件遗留）、`.agents/notes/implemented/architecture/2026-09-10-export-docs-inloop.md`（lint 泛化指针自持化 + Related 处出处标注——同步事实，不改决定）。
 - **判定面**：护栏 D 条触发 = 已满足；护栏建设轮 = 待排期。
 - **边界**：本批零产品代码；池文档冻结后新增调研另开件（research 层不承载状态）。
 - **残余**：口径 ② 的「单源」由评审面抽查——文档语义判据机器不可判，机器能盖的只有链接不悬空（`verify-md-links`）。

@@ -3,7 +3,7 @@
 Status: implemented
 Review: FULL/2026-09-10/R1=ok R2=ok R3=ok
 
-Related: 轨道 A [2026-09-08-lint-in-loop-feedback](../../implemented/architecture/2026-09-08-lint-in-loop-feedback.md)（A4 在环面创始件；本批 = 该面扩一名判据，勘误面 = 其 Consequences「export-docs 不入在环面」句）；[2026-09-09-lint-block-and-staged-hook](../../implemented/architecture/2026-09-09-lint-block-and-staged-hook.md)（`block` 档 + 死锁降级纪律单源）；procedure 单源 [coding-enforcement-impl-plan](../../../../docs/research/coding-enforcement-impl-plan.md)；判据单源 [verify-export-docs.mts](../../../../scripts/verify-export-docs.mts) + [code-standards](../../../../docs/method/code-standards.md)；问题池 [capsule-01-optimization-round](../../../../docs/research/capsule-01-optimization-round.md) §2.1「规范事前接入」。
+Related: 轨道 A [2026-09-08-lint-in-loop-feedback](../../implemented/architecture/2026-09-08-lint-in-loop-feedback.md)（A4 在环面创始件；本批 = 该面扩一名判据，勘误面 = 其 Consequences「export-docs 不入在环面」句）；[2026-09-09-lint-block-and-staged-hook](../../implemented/architecture/2026-09-09-lint-block-and-staged-hook.md)（`block` 档 + 死锁降级纪律单源）；procedure 单源 [coding-enforcement-impl-plan](../../../../docs/research/coding-enforcement-impl-plan.md)；判据单源 [verify-export-docs.mts](../../../../scripts/verify-export-docs.mts) + [code-standards](../../../../docs/method/code-standards.md)；候选出处 [capsule-01-optimization-round](../../../../docs/research/capsule-01-optimization-round.md) §2.1「规范事前接入」（该文档 2026-09-10 收口冻结，此行仅作出处记录——触发与判据单源在本件 Problem / Alternatives）。
 
 ## Problem
 

@@ -2,7 +2,7 @@
 
 > 全部待办明细、状态与预算的**唯一行动区**（HANDOFF.md 待办节只放指针）。`[ ]` 条 ≤16（每条 ≤340 字），`[x]` 压缩为一行指针（≤220 字），总条数 ≤70；由 `scripts/verify-handoff-structure.mts` 机器强制。
 > 分类速览约定见 [session-close](.agents/workflows/session-close.md)：A 待拍板 / B 待复验 / C 随手候选 / D 远期。
-> 胶囊 01 优化轮问题池与相关待办已迁出（2026-09-06）：唯一行动区 = [docs/research/capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)，本文件不再承载该轮条目。
+> 胶囊 01 优化轮已收口（2026-09-10）：其问题池冻结为调研档案，终态与去向 = [该文档 §2.3 收口账](docs/research/capsule-01-optimization-round.md)；跨会话遗留（下方 D 条三件）由本行动区承载。
 > 记忆库线（含痕迹提炼面 D 条）已迁出（2026-09-10）：唯一状态家 = [docs/research/memory-system-dossier.md](docs/research/memory-system-dossier.md)（档案页制度试点）。
 
 - [x] （A）胶囊 v0.2 评审机械闸 2026-09-05 落地（verify-review-tier + verify-review-brief），ADR [2026-09-05-review-mechanical-gate](.agents/notes/implemented/process/2026-09-05-review-mechanical-gate.md)。
