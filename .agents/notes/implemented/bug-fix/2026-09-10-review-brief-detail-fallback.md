@@ -1,6 +1,7 @@
 # Agent Note: verify-review-brief 明细输出缺口——未命中泳道前缀的违规串被静默吞掉
 
 Status: implemented
+Review: FULL/2026-09-10/R1=ok R2=ok R3=ok
 
 > Provenance：本仓原创修复（2026-09-10，优化轮收口批随批）。候选出处：HANDOFF-todos（C）「verify-review-brief 明细输出缺口」（2026-09-10 注释面在环批评审发射前实遇）。
 > Related：本件属 [2026-09-05-review-mechanical-gate](../process/2026-09-05-review-mechanical-gate.md) 建立的简报闸实现面（相关非取代）。

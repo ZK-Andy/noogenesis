@@ -1,6 +1,7 @@
 # Agent Note: 胶囊 01 优化轮收口 + 「优化完成」验收口径
 
 Status: implemented
+Review: FULL/2026-09-10/R1=ok R2=ok R3=ok
 
 > Provenance：本仓原创（2026-09-10，优化轮收口批）。候选出处：HANDOFF ⏭「优化轮问题池余项」+ 用户 2026-09-10 拍板「按 B 走」并选定验收口径甲。
 > Related：[护栏时序 ADR](../../proposed/architecture/2026-09-06-guardrail-defer-trigger.md)（本 ADR 兑现其触发条件的判定口径）+ [评审实质执行对账 ADR](../architecture/2026-09-10-review-execution-reconciliation.md)（② 缓议触发转行动区）+ [B4 挂载接线 ADR](../architecture/2026-09-08-b4-mount-wiring.md) Decision 6（上帝类/文件名契约闸判不立的 durable 家，相关非取代）。
