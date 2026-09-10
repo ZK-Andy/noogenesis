@@ -85,6 +85,11 @@ function optSkillGuards(value: unknown): readonly SkillGuardEntry[] | undefined 
 		if (!isRecord(entry) || typeof entry.path !== "string" || entry.path.length === 0 || typeof entry.skill !== "string" || entry.skill.length === 0) {
 			throw new Error("noogenesis: config.skillGuards entries must be { path: string, skill: string } with non-empty values");
 		}
+		// POSIX 相对目录形态（matchesGuardPath 契约）：绝对路径/盘符/反斜杠/
+		// 尾部斜杠永不命中却通过非空校验 = 守卫静默失效，fail-closed 拒收。
+		if (/^(\/|[A-Za-z]:)|\\/.test(entry.path) || entry.path.endsWith("/")) {
+			throw new Error(`noogenesis: config.skillGuards path must be a POSIX-style relative directory (got ${JSON.stringify(entry.path)})`);
+		}
 		return { path: entry.path, skill: entry.skill };
 	});
 }

@@ -34,8 +34,8 @@ export const SUBTREE_AGENTS = ["engine", "adapters", "scripts", "docs", ".agents
 const SKILL_ROSTER_LINE =
 	"- Task-matched skills (load via the skill tool when the task matches; calls stay self-initiated): docs → noo-doc-standards + noo-prose-standard, ADR housekeeping → noo-archive-agent-notes, review close-out → noo-code-review, pre-push → noo-pre-push-checks, simplification candidates → noo-find-simplifications, prose audit → noo-trim-cot-leakage";
 
-/** 技能面候选目录（活副本 + 随库缓存；任一含 noo-* 技能即发行路标行）。 */
-const SKILL_DIR_CANDIDATES = [".agents/skills", ".noogenesis/genes-cache/.agents/skills"] as const;
+/** 技能面候选目录（活副本 + 随库缓存；任一含 noo-* 技能即发行路标行；selftest 同源消费）。 */
+export const SKILL_DIR_CANDIDATES = [".agents/skills", ".noogenesis/genes-cache/.agents/skills"] as const;
 
 /** 技能面在场判定：候选目录任一含 noo-* 前缀成员（技能面缺席的仓零噪音——同指针行存在性过滤口径）。 */
 function hasNooSkills(repoRoot: string): boolean {

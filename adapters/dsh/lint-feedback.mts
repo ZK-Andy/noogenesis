@@ -15,7 +15,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import { createSessionStore } from "./mount.mjs";
+import { createSessionStore, createSessionWarnOnce } from "./mount.mjs";
 import type { ToolPostPolicy } from "./mount.mjs";
 import { resolveRepoRoot, sessionWorkspaceOf, isInsideRepo } from "./engine-bridge.mjs";
 import type { RepoRootConfig } from "./engine-bridge.mjs";
@@ -92,20 +92,10 @@ export function createLintFeedbackPolicies(config: RepoRootConfig, deps: LintFee
 	const warn = deps.warn ?? (() => {});
 	const store = createSessionStore();
 	interface State {
-		warned: boolean;
 		/** 同文件连续 block 计数（文件维度防死锁；成功写码即复位）。 */
 		blockCounts: Map<string, number>;
 	}
-	const warnOnce = (session: unknown, message: string): void => {
-		try {
-			const state = store.of<State>(session, () => ({ warned: false, blockCounts: new Map() }));
-			if (state.warned) return;
-			state.warned = true;
-			warn(`noogenesis ${message}`);
-		} catch {
-			// 降级提示面自身不得抛出（策略件永不抛合同）。
-		}
-	};
+	const warnOnce = createSessionWarnOnce(warn);
 	const toolPost: ToolPostPolicy = (exec, result) => {
 		try {
 			if (exec.name !== "write" && exec.name !== "edit") return;
@@ -122,20 +112,20 @@ export function createLintFeedbackPolicies(config: RepoRootConfig, deps: LintFee
 			const bin = path.join(repoRoot, OXLINT_BIN_REL);
 			const lintConfig = path.join(repoRoot, OXLINT_CONFIG_REL);
 			if (!fs.existsSync(bin) || !fs.existsSync(lintConfig)) {
-				warnOnce(exec.agent?.session, `lint feedback offline: ${OXLINT_CONFIG_REL} or ${OXLINT_BIN_REL} missing under ${repoRoot}`);
+				warnOnce(exec.agent?.session, `noogenesis lint feedback offline: ${OXLINT_CONFIG_REL} or ${OXLINT_BIN_REL} missing under ${repoRoot}`);
 				return;
 			}
 			const diagnostics = runLint({ bin, config: lintConfig, file: abs, cwd: repoRoot });
 			if (diagnostics.length === 0) {
 				// 干净写码：复位该文件计数（成功即解除死锁降级）。
-				const state = store.of<State>(exec.agent?.session, () => ({ warned: false, blockCounts: new Map() }));
+				const state = store.of<State>(exec.agent?.session, () => ({ blockCounts: new Map() }));
 				state.blockCounts.delete(abs);
 				return;
 			}
 			const rel = path.relative(repoRoot, abs);
 			const lines = diagnostics.slice(0, MAX_FEEDBACK_LINES).map((d) => `${rel}:${d.line}:${d.column} ${d.rule}: ${d.message}`);
 			if (diagnostics.length > MAX_FEEDBACK_LINES) lines.push(`…(+${diagnostics.length - MAX_FEEDBACK_LINES} more)`);
-			const state = store.of<State>(exec.agent?.session, () => ({ warned: false, blockCounts: new Map() }));
+			const state = store.of<State>(exec.agent?.session, () => ({ blockCounts: new Map() }));
 			const blockCount = (state.blockCounts.get(abs) ?? 0) + 1;
 			state.blockCounts.set(abs, blockCount);
 			// 死锁降级：同文件连续 block 达上限后稳定降级 context（不清计数——
@@ -146,7 +136,7 @@ export function createLintFeedbackPolicies(config: RepoRootConfig, deps: LintFee
 			// 升格档（lint-block-and-staged-hook ADR）：机器可判违规 → block 拦回。
 			return { kind: "block", feedback: lines.join("\n") };
 		} catch (cause) {
-			warnOnce(exec.agent?.session, `lint feedback failed: ${cause instanceof Error ? cause.message : String(cause)}`);
+			warnOnce(exec.agent?.session, `noogenesis lint feedback failed: ${cause instanceof Error ? cause.message : String(cause)}`);
 			return;
 		}
 	};

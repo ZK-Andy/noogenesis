@@ -103,6 +103,27 @@ export function createSessionStore(): { of<T>(key: unknown, init: () => T): T } 
 	};
 }
 
+/**
+ * 每会话 warn 至多一条的降级提示助手（策略件降级面单源，R1 评审 2026-09-10
+ * 折叠三份手写实现）：键 = 会话对象，GC 自清。keyless carve-out：会话键缺席
+ * = 每调用即席新状态，warn 逐条重复——触达优于静默（keyless 调用面零去重
+ * 手段，静默会让降级完全不可见），与 lint-feedback 同款先例。提示面自身
+ * 不抛（策略件永不抛合同的组成面）。
+ */
+export function createSessionWarnOnce(warn: (message: string) => void): (session: unknown, message: string) => void {
+	const store = createSessionStore();
+	return (session, message) => {
+		try {
+			const state = store.of<{ warned: boolean }>(session, () => ({ warned: false }));
+			if (state.warned) return;
+			state.warned = true;
+			warn(message);
+		} catch {
+			// 降级提示面自身不得抛出（策略件永不抛合同）。
+		}
+	};
+}
+
 /** A2 合并结果：reject = 首个拒绝理由（胜出即停）；advice = 建议行（注册序累积）。 */
 export interface MergedPreStep {
 	reject?: string;

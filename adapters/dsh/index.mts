@@ -23,7 +23,7 @@ import { runSolidifyTrigger, listStagingCandidates, createInFlightGate, ASK_TIME
 import { createBankPullScheduler } from "./bank-pull.mjs";
 import { registerBankSkills } from "./skill-provider.mjs";
 import { validateConfig } from "./config.mjs";
-import { mergePreStep, mergeSessionStart, mergeToolPost, mergeToolPre, createSessionStore } from "./mount.mjs";
+import { mergePreStep, mergeSessionStart, mergeToolPost, mergeToolPre, createSessionWarnOnce } from "./mount.mjs";
 import type { PreStepPayload, SessionStartPayload, ToolExecLike, ToolResultLike } from "./mount.mjs";
 import { createMountPolicies } from "./mount-policies.mjs";
 
@@ -57,17 +57,6 @@ function adviceMessage(lines: string[]): unknown {
 		content: lines.map((text) => ({ type: "text" as const, text })),
 		source: PLUGIN_SOURCE,
 	});
-}
-
-/** A3 advice 投递降级提示（每会话至多一条——重复降级提示是纯噪音；会话键 WeakMap，GC 自清兜底）。 */
-function advisoryWarnOnce(logger: { warn(message: string): void }): (exec: AgentCarrier, message: string) => void {
-	const store = createSessionStore();
-	return (exec, message) => {
-		const state = store.of<{ warned: boolean }>(exec.agent?.session, () => ({ warned: false }));
-		if (state.warned) return;
-		state.warned = true;
-		logger.warn(`noogenesis ${message}`);
-	};
 }
 
 /**
@@ -121,7 +110,8 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 	const cfg = validateConfig(config);
 	const repoRoot = resolveRepoRoot(cfg);
 	const logger = ctx.logger("noogenesis");
-	const warnOnceAdvisory = advisoryWarnOnce(logger);
+	// A3 advice 投递降级提示（每会话至多一条；keyless carve-out 见 createSessionWarnOnce）。
+	const warnOnceAdvisory = createSessionWarnOnce((message) => logger.warn(message));
 
 	// 逐次解析（部署收口 ADR 2026-09-06-adapter-deploy-hardening）：工具体吃
 	// exec.agent 的会话工作区走四级回退链——多 agent 异仓各归各仓；无会话
@@ -204,10 +194,11 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 	});
 
 	// A3 工具前（tools/pre-execute waterfall）：deny/ask 决策由合并器单源承载；
-	// advice 档（M1 守卫②触点提醒）→ agent.inject 非阻塞投递——能力位缺席或
-	// 投递异常 → warn 降级（每会话至多一条），工具调用绝不因此阻断。无策略
-	// 决策 → next() 透传。合并异常 → warn 降级仍达 next()（降级纪律：合并
-	// 失败不得意外阻断工具调用）。
+	// advice 档（M1 守卫②触点提醒）在 deny/ask 早退**之前**投递——合并器为
+	// 三态都累积 advice（策略件已消费提醒预算，早退丢弃 = 永不补投），经
+	// agent.inject 非阻塞投递；能力位缺席或投递异常 → warn 降级（每会话至多
+	// 一条），工具调用绝不因此阻断。无策略决策 → next() 透传。合并异常 →
+	// warn 降级仍达 next()（降级纪律：合并失败不得意外阻断工具调用）。
 	ctx.on("tools/pre-execute", async (exec: ToolExecLike, next: () => Promise<unknown>) => {
 		let merged;
 		try {
@@ -216,20 +207,20 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 			logger.warn(`noogenesis tool-pre mount failed: ${cause instanceof Error ? cause.message : String(cause)}`);
 			return next();
 		}
-		if (merged.deny !== undefined) return { kind: "deny", reason: merged.deny };
-		if (merged.ask !== undefined) return { kind: "ask", ...(merged.ask ? { reason: merged.ask } : {}) };
 		if (merged.advice.length > 0) {
 			try {
 				const agentInject = (exec.agent as { inject?: unknown } | undefined)?.inject;
 				if (typeof agentInject === "function") {
 					(agentInject as (message: unknown) => void).call(exec.agent, adviceMessage(merged.advice));
 				} else {
-					warnOnceAdvisory(exec, "skill advice delivery unavailable: agent.inject capability missing");
+					warnOnceAdvisory(exec.agent?.session, "noogenesis skill advice delivery unavailable: agent.inject capability missing");
 				}
 			} catch (cause) {
-				warnOnceAdvisory(exec, `skill advice delivery failed: ${cause instanceof Error ? cause.message : String(cause)}`);
+				warnOnceAdvisory(exec.agent?.session, `noogenesis skill advice delivery failed: ${cause instanceof Error ? cause.message : String(cause)}`);
 			}
 		}
+		if (merged.deny !== undefined) return { kind: "deny", reason: merged.deny };
+		if (merged.ask !== undefined) return { kind: "ask", ...(merged.ask ? { reason: merged.ask } : {}) };
 		return next();
 	});
 

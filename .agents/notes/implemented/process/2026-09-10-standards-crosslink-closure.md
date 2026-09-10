@@ -16,7 +16,7 @@ Review: FULL/2026-09-10/R1=ok R2=ok R3=ok
 
 1. **G1**：review.md §1 末补一行回指 architecture-standards §2.4（识别通则彼处，判据单源留本节）。
 2. **G2**：code-standards §4 两族分野行并入 architecture 行，改指 R6（B2 ADR 降为括注档案指针）。
-3. **G3**：§2.4 散文面行补两链（doc-standards §5 处理序 + session-close 步骤 4 程序家）。
+3. **G3**：§2.4 散文面行补两链（doc-standards §5 处理序 + session-close 步骤 5 程序家；步骤号随 2026-09-10 M1 守卫批对账步插入重编号同步）。
 4. **G4**：mount-policies.mts A2 地图增架构规范指针行（与写码规范行同款存在性过滤，文案对齐 R2 判别式「新顶层目录」）；selftest.mts 夹具同步（期望行 + nopointer 断言扩 architecture）。
 5. **G5**：问题池 §2.1 补「2026-09-10 续：架构规范已成文单源」；§2.2-4 补「三规范均已按规范篇落地（非技能）」状态。
 6. **G6**：feature-flow 步骤 2 补规范面指针行（code + architecture 两篇）。

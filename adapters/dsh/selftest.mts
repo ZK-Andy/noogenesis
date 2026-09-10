@@ -34,7 +34,7 @@ import { buildPullArgs, pullBankOnce, createBankPullScheduler } from "./bank-pul
 import { BUNDLED_SKILL_RANK, PROVIDER_NAME, createBankSkillProvider, parseSkillFile, registerBankSkills } from "./skill-provider.mjs";
 import { validateConfig, DEFAULT_GENE_BANK_URL } from "./config.mjs";
 import { createSessionStore, mergePreStep, mergeSessionStart, mergeToolPost, mergeToolPre } from "./mount.mjs";
-import { createMountPolicies, createSubtreeRulesPolicies } from "./mount-policies.mjs";
+import { createMountPolicies, createSubtreeRulesPolicies, SKILL_DIR_CANDIDATES } from "./mount-policies.mjs";
 import { createLintFeedbackPolicies } from "./lint-feedback.mjs";
 import type { LintDiagnostic, LintRunContext } from "./lint-feedback.mjs";
 import { createSkillGuardPolicies } from "./skill-guard.mjs";
@@ -327,7 +327,12 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.throws(() => validateConfig({ skillGuards: "docs" }), /skillGuards/);
 	assert.throws(() => validateConfig({ skillGuards: [{ path: "", skill: "x" }] }), /skillGuards/);
 	assert.throws(() => validateConfig({ skillGuards: [{ path: "docs" }] }), /skillGuards/);
-	ok("config: skillGuards — explicit table replaces default; entry violations throw");
+	// POSIX 相对目录形态：绝对路径 / 盘符 / 反斜杠 / 尾部斜杠永不命中 = 静默失效，fail-closed 拒收。
+	assert.throws(() => validateConfig({ skillGuards: [{ path: "/abs/docs", skill: "x" }] }), /POSIX/);
+	assert.throws(() => validateConfig({ skillGuards: [{ path: "C:docs", skill: "x" }] }), /POSIX/);
+	assert.throws(() => validateConfig({ skillGuards: [{ path: "docs\\sub", skill: "x" }] }), /POSIX/);
+	assert.throws(() => validateConfig({ skillGuards: [{ path: "docs/", skill: "x" }] }), /POSIX/);
+	ok("config: skillGuards — explicit table replaces default; entry and path-shape violations throw");
 
 	const badConfigs: Array<[unknown, RegExp]> = [
 		[{ repoRoot: "" }, /repoRoot/],
@@ -724,6 +729,7 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.deepEqual(mergeToolPre(a3Policies, {}), { deny: "blocked", advice: [] });
 	assert.deepEqual(mergeToolPre([() => ({ kind: "ask" as const })], {}), { ask: "", advice: [] });
 	assert.deepEqual(mergeToolPre([() => ({ kind: "advice" as const, lines: ["l1"] }), () => ({ kind: "advice" as const, lines: ["l2"] })], {}), { advice: ["l1", "l2"] });
+	assert.deepEqual(mergeToolPre([() => ({ kind: "advice" as const, lines: ["l1"] }), () => ({ kind: "deny" as const, reason: "r" })], {}), { deny: "r", advice: ["l1"] });
 	assert.deepEqual(mergeToolPre([], {}), { advice: [] });
 	ok("mounts: tool-pre merge — first deny wins (advice rides along); ask only when no deny; advice accumulates");
 
@@ -792,24 +798,30 @@ function writeFixtureGene(repoRoot: string): void {
 		assert.equal(noPointerAdvice.lines.length, 2);
 		assert.ok(!noPointerAdvice.lines.some((line) => line.includes("code-standards")));
 		assert.ok(!noPointerAdvice.lines.some((line) => line.includes("architecture-standards")));
-		ok("mounts: M2 — opening map once per session (subagent/zero-subtree skipped; pointer line gated on file presence)");
+		ok("mounts: M2 — opening map once per session (subagent skipped; empty map suppressed; pointer line gated on file presence)");
 
 		// 技能路标行（M1 守卫①）：技能面在场（任一候选目录含 noo-*）才发行——缺席仓零噪音。
-		const withSkills = tempRepo("mount-m2-skills");
-		fs.mkdirSync(path.join(withSkills, ".agents", "skills", "noo-doc-standards"), { recursive: true });
-		fs.writeFileSync(path.join(withSkills, ".agents", "skills", "noo-doc-standards", "SKILL.md"), "# skill\n");
-		const skillsAdvice = createSubtreeRulesPolicies({ repoRoot: withSkills }).preStep({ agent: { session: { header: { cwd: withSkills } } }, turn: 1, step: 1 });
-		assert.ok(skillsAdvice && skillsAdvice.kind === "advice");
-		assert.equal(skillsAdvice.lines.filter((line) => line.startsWith("- Task-matched skills")).length, 1);
-		assert.match(skillsAdvice.lines.at(-1)!, /noo-doc-standards/);
-		// 缓存位同款命中（.noogenesis/genes-cache/.agents/skills）。
-		const withCacheSkills = tempRepo("mount-m2-cacheskills");
-		fs.mkdirSync(path.join(withCacheSkills, ".noogenesis", "genes-cache", ".agents", "skills", "noo-code-review"), { recursive: true });
-		fs.writeFileSync(path.join(withCacheSkills, ".noogenesis", "genes-cache", ".agents", "skills", "noo-code-review", "SKILL.md"), "# skill\n");
-		const cacheAdvice = createSubtreeRulesPolicies({ repoRoot: withCacheSkills }).preStep({ agent: { session: { header: { cwd: withCacheSkills } } }, turn: 1, step: 1 });
-		assert.ok(cacheAdvice && cacheAdvice.kind === "advice");
-		assert.equal(cacheAdvice.lines.filter((line) => line.startsWith("- Task-matched skills")).length, 1);
+		// 两候选目录（活副本 / 随库缓存）同源循环，夹具仅目录路径不同。
+		for (const skillDir of SKILL_DIR_CANDIDATES) {
+			const withSkills = tempRepo(`mount-m2-skills-${skillDir.replace(/[/.]/g, "-")}`);
+			fs.mkdirSync(path.join(withSkills, skillDir, "noo-doc-standards"), { recursive: true });
+			fs.writeFileSync(path.join(withSkills, skillDir, "noo-doc-standards", "SKILL.md"), "# skill\n");
+			const skillsAdvice = createSubtreeRulesPolicies({ repoRoot: withSkills }).preStep({ agent: { session: { header: { cwd: withSkills } } }, turn: 1, step: 1 });
+			assert.ok(skillsAdvice && skillsAdvice.kind === "advice");
+			assert.equal(skillsAdvice.lines.filter((line) => line.startsWith("- Task-matched skills")).length, 1);
+			assert.match(skillsAdvice.lines.at(-1)!, /noo-doc-standards/);
+		}
 		ok("mounts: M1 ① — skill roster line emitted only when a noo-* skill face exists (live copy or bank cache)");
+
+		// 发行条件放宽面：零子树布点 + 指针在场 → 指针行地图仍发行（零内容才零注入）。
+		const pointerOnly = tempRepo("mount-m2-pointeronly");
+		fs.mkdirSync(path.join(pointerOnly, "docs", "method"), { recursive: true });
+		fs.writeFileSync(path.join(pointerOnly, "docs", "method", "code-standards.md"), "# code-standards\n");
+		const pointerOnlyAdvice = createSubtreeRulesPolicies({ repoRoot: pointerOnly }).preStep({ agent: { session: { header: { cwd: pointerOnly } } }, turn: 1, step: 1 });
+		assert.ok(pointerOnlyAdvice && pointerOnlyAdvice.kind === "advice");
+		assert.equal(pointerOnlyAdvice.lines.length, 2);
+		assert.ok(pointerOnlyAdvice.lines.some((line) => line.includes("code-standards")));
+		ok("mounts: M2 release condition — pointer-only repo still gets the map (zero content, zero injection)");
 	}
 
 	// 策略件组装：A2 地图件 + A3 触点提醒件（缺省守卫表）+ A4 写码在环反馈件
