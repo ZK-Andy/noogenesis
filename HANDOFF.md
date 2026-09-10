@@ -11,6 +11,8 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-11｜**术语口径批（FULL 三审 R1 1B/3S、R2 3B/4S、R3 0B/4S；全采纳 11 + 部分采纳 1）**：「胶囊」= 内容包层、`Capsule` 原语写英文原名不译，规则落根 AGENTS「文档纪律」+ 四处违例面对齐；[ADR](.agents/notes/implemented/process/2026-09-11-capsule-term-layering.md)。提交 `07de5b4`→`e1d4e9b`。README 无漂移。
+
 - 2026-09-11｜**评审发现机械化批（FULL 三审 R1 0B/2S、R2 1B/6S、R3 4B/9S；采纳 12 拒绝 1）**：新增 `verify-command-surface`（命令面事实源 ↔ 声明区/计数面）+ 版本锚判据 6（三面）+ 模式双向覆盖元断言；门槛 = 复发 ≥2 或代价高；[ADR](.agents/notes/implemented/process/2026-09-11-review-finding-mechanization.md)。
 
 - 2026-09-11｜**记忆库线第一期实现批（FULL 三审逐条裁决）**：`observe` 观测输入面（gitignored；写 fail-closed／读 warn-skip）+ `select` 建议档 `advice:` 行（不进常驻节）+ 凭据绊线 `verify-secrets`（三面）；ADR [实现件](.agents/notes/implemented/architecture/2026-09-11-memory-line-phase1-observation-face.md)。
@@ -56,8 +58,6 @@
 - 2026-09-10｜**C 类随手候选批收口（FULL 三审 0B、8S 采纳 2 转办；ADR `2026-09-10-mdref-py-primitives-fold` + `2026-09-10-review-tier-evidence-ride-along`；`907d1a8`→`93483f5`）**：mdref 增补 pyStrip 导出 + 四件删副本；review-tier 证据收紧「Review 行须本变更引入」（12→17）。**节点：C 类随手全清。** README 无漂移。
 
 - 2026-09-09｜**发布形态对齐上游批（FULL 三审全采纳收口；ADR `2026-09-09-release-shape-alignment` implemented；`71601e7`→`1b6c25b`）**：README 引用统一 DSH + License 修辞正面化（免责句 DeepSeek→DSH 维护方）；release 工具族（bump/release-note 双语 body+@作者）+ tag 切 `dsh-v` + lock 漂移修复。**节点：下一发版用新工具族。**
-
-- 2026-09-09｜**批 1 真机复验（todo B 勾账；0.2.3 实机判据全命中，journal 在案）**：var 写码同轮 block 拦回 / 修正重写零反馈 / 连续 ×3 后第 4 次降级 context 不死锁 / 干净写码复位 / edit 同拦 / 非 .ts 零反馈 / staged 红。**节点：0.2.3 实机生效；宿主基线已升 0.1.5-alpha.1（用户确认主动升级）。** README 无漂移。
 
 
 ## 背景
