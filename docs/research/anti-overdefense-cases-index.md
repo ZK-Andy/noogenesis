@@ -1,7 +1,8 @@
 # HERO 案例索引（anti-overdefense cases index）
 
-> 状态：案例索引（2026-09-10，随 [M1 立项 ADR](../../.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) 批 B 落地）。来源 = HERO-Anti-OverDefense（MIT，本地只读缓存 `.cache/hero-anti-overdefense/cases/`——缓存可失，本索引为**自足蒸馏**：ID + 一句形态足够质询用，细节按需回源仓 README）。上游版权集中于 [THIRD-PARTY-NOTICES.md](../../THIRD-PARTY-NOTICES.md)。
-> **本索引不进任何常驻/懒加载面**（拍板 = [ADR](../../.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) Decision 2；上游关键设计：整本案例在手会拿相似度误杀真发现）。常驻面只留 [anti-overdesign.md](../method/anti-overdesign.md) §5 六个一行形状。
+> 状态：案例索引（2026-09-10，随 [M1 立项 ADR](../../.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) 批 B 落地）。上游 = `wanshuiyin/HERO-Anti-OverDefense`（MIT，`cases/README.md`；本地只读缓存 `.cache/hero-anti-overdefense/`——缓存与远端均可失，本索引为**自足蒸馏**：ID + 一句形态足够质询用）。上游版权集中于 [THIRD-PARTY-NOTICES.md](../../THIRD-PARTY-NOTICES.md)。
+> **不进任何常驻/懒加载面**——拍板与理由单源 = [anti-overdesign.md](../method/anti-overdesign.md) §7；常驻面只留该篇 §5 六个一行形状。
+> **收录边界**：四族 19 例全收（一句形态蒸馏）；`SIB-003/004`（defensive prose）不单列——判据家 = anti-overdesign §3 Rule 7（§6 归并声明）；`SIB-001/002` 与 over-correction 上游未给质询条目，形态描述见 anti-overdesign §2 兄弟形态行。
 
 ## 用法（事后辩论武器，不是事前清单）
 
@@ -33,7 +34,7 @@ agent 坚持要加固而你认为不必时，**按 ID 质询**：「你的提案
 | HERO-R-003 | 叶子模块改一行却全量重跑套件两次——爆炸半径才是判据，不是行数 |
 | HERO-R-004 | 【反例】从未端到端跑过一次的调度器带病上线——欠一次六十秒的冒烟 |
 | HERO-R-005 | 【反例】改共享序列化格式后全量跑消费方——不确定性有界且结果改变下一步，是成比例的 |
-| HERO-R-006 | 研究流水线被审计循环置换（协议冻结/门禁/评审包排队，计算始终未跑）——完整案例见上游 quant-research-audit-loop |
+| HERO-R-006 | 研究流水线被审计循环置换（协议冻结/门禁/评审包排队，计算始终未跑）——上游完整案例 = `quant-research-audit-loop`（头注定位符） |
 
 ## O — Overbuild
 

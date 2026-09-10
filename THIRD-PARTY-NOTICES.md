@@ -13,6 +13,7 @@
 | `dsh-frecency` | 部分流程卡与门禁判据来源 | Copyright (c) 2026 zhangkun |
 | `devops-template` | 文档纪律与 ADR 制度的方法论来源 | Copyright (c) 2026 zhangkun |
 | `deepseek-ai/deepseek-harness` | 上述来源仓的共同上游 | Copyright (c) 2026 DeepSeek |
+| `wanshuiyin/HERO-Anti-OverDefense` | 防过度设计契约的蒸馏来源（[anti-overdesign](docs/method/anti-overdesign.md) + [cases 索引](docs/research/anti-overdefense-cases-index.md) + 根 AGENTS 常驻契约块） | Copyright (c) 2026 Ruofeng Yang |
 
 ## MIT License
 

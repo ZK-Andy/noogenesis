@@ -1,72 +1,21 @@
 {
   "budgets": [
-    {
-      "path": "AGENTS.md",
-      "max_words": 800
-    },
-    {
-      "path": ".agents/AGENTS.md",
-      "max_words": 300
-    },
-    {
-      "path": "engine/AGENTS.md",
-      "max_words": 300
-    },
-    {
-      "path": "adapters/AGENTS.md",
-      "max_words": 300
-    },
-    {
-      "path": "scripts/AGENTS.md",
-      "max_words": 300
-    },
-    {
-      "path": "docs/AGENTS.md",
-      "max_words": 300
-    },
-    {
-      "path": ".agents/notes/AGENTS.md",
-      "max_words": 300
-    },
-    {
-      "path": ".agents/notes/README.md",
-      "max_words": 800
-    },
-    {
-      "path": "docs/cookbook.md",
-      "max_words": 2700
-    },
-    {
-      "path": "docs/method/ai-collaboration-method.md",
-      "max_words": 2000
-    },
-    {
-      "path": "docs/method/doc-standards.md",
-      "max_words": 1200
-    },
-    {
-      "path": "docs/method/review.md",
-      "max_words": 1500
-    },
-    {
-      "path": "docs/method/standard-authoring.md",
-      "max_words": 800
-    },
-    {
-      "path": "docs/method/code-standards.md",
-      "max_words": 1500
-    },
-    {
-      "path": "docs/method/architecture-standards.md",
-      "max_words": 1500
-    },
-    {
-      "path": "docs/method/anti-overdesign.md",
-      "max_words": 1500
-    },
-    {
-      "path": "docs/research/anti-overdefense-cases-index.md",
-      "max_words": 900
-    }
+    { "path": "AGENTS.md", "max_words": 800 },
+    { "path": ".agents/AGENTS.md", "max_words": 300 },
+    { "path": "engine/AGENTS.md", "max_words": 300 },
+    { "path": "adapters/AGENTS.md", "max_words": 300 },
+    { "path": "scripts/AGENTS.md", "max_words": 300 },
+    { "path": "docs/AGENTS.md", "max_words": 300 },
+    { "path": ".agents/notes/AGENTS.md", "max_words": 300 },
+    { "path": ".agents/notes/README.md", "max_words": 800 },
+    { "path": "docs/cookbook.md", "max_words": 2700 },
+    { "path": "docs/method/ai-collaboration-method.md", "max_words": 2000 },
+    { "path": "docs/method/doc-standards.md", "max_words": 1200 },
+    { "path": "docs/method/review.md", "max_words": 1500 },
+    { "path": "docs/method/standard-authoring.md", "max_words": 800 },
+    { "path": "docs/method/code-standards.md", "max_words": 1500 },
+    { "path": "docs/method/architecture-standards.md", "max_words": 1500 },
+    { "path": "docs/method/anti-overdesign.md", "max_words": 1500 },
+    { "path": "docs/research/anti-overdefense-cases-index.md", "max_words": 900 }
   ]
 }
