@@ -1,18 +1,20 @@
 /**
- * mount-policies.mts — 挂载策略件组装（存留挂载面 = A2 开场地图 + A4 写码在环
- * lint 拦回 + A3 技能触点提醒；记录投影不挂 M1/M2/M3 事件位——宿主 Session.append 无 ignorable
- * 写入口，下游插件自定义事件类型会令会话历史在读路径 fail-closed 不可加载，
- * ADR 2026-09-08-a8-session-record-projection-removal）。
+ * mount-policies.mts — 挂载策略件组装（存留挂载面 = A2 开场地图 + A4 写码在环判据
+ * 拦回〔lint + 导出契约注释两判据〕+ A3 技能触点提醒；记录投影不挂 M1/M2/M3 事件位——宿主
+ * Session.append 无 ignorable 写入口，下游插件自定义事件类型会令会话历史在读路径 fail-closed
+ * 不可加载，ADR 2026-09-08-a8-session-record-projection-removal）。
  *
- * 档位：A4 lint 反馈 = block 拦回（升格批 2026-09-09-lint-block-and-staged-hook；
- * 同文件连续 block 达上限降级 context 防死锁）；A3 技能触点提醒 = advice 非阻断
+ * 档位：A4 在环判据 = block 拦回（升格批 2026-09-09-lint-block-and-staged-hook；
+ * 同文件连续 block 达上限降级 context 防死锁；注释面判据扩面 ADR
+ * 2026-09-10-export-docs-inloop）；A3 技能触点提醒 = advice 非阻断
  * （M1 守卫②，2026-09-10-m1-guard-anti-overdesign）；A5 零策略件；降级 = 异常由
  * index.mts 胶水 catch → warn，拦回/提醒缺席不阻塞会话。状态按会话 WeakMap 隔离
  * （GC 自清）。零宿主依赖（防火墙规则 2）；fs 只读。
  *
  * HERO 答案单源 = B4 ADR Decision 4（A2 地图件）+ 轨道 A ADR
  * 2026-09-08-lint-in-loop-feedback + 升格 ADR 2026-09-09-lint-block-and-staged-hook
- * （A4 反馈/拦回件）+ M1 立项 ADR 2026-09-10-m1-guard-anti-overdesign（A2 路标行 +
+ * （A4 反馈/拦回件）+ ADR 2026-09-10-export-docs-inloop（A4 注释面判据件）+
+ * M1 立项 ADR 2026-09-10-m1-guard-anti-overdesign（A2 路标行 +
  * A3 触点提醒件）；本文不重抄判据，只落组装。
  */
 import fs from "node:fs";
@@ -25,6 +27,8 @@ import { DEFAULT_SKILL_GUARDS } from "./config.mjs";
 import type { SkillGuardEntry } from "./config.mjs";
 import { createLintFeedbackPolicies } from "./lint-feedback.mjs";
 import type { LintFeedbackDeps } from "./lint-feedback.mjs";
+import { createExportDocsPolicies } from "./export-docs-feedback.mjs";
+import type { ExportDocsFeedbackDeps } from "./export-docs-feedback.mjs";
 import { createSkillGuardPolicies } from "./skill-guard.mjs";
 
 /** M2 布点表（蓝图 §1 五件；闭集，新增子树件随 C11 布点变更同改）。 */
@@ -75,7 +79,7 @@ export function createSubtreeRulesPolicies(config: RepoRootConfig): { preStep: P
 		];
 		// 规范指针行与布点件同款存在性过滤：指向不存在文件的指针行是噪音。
 		if (fs.existsSync(path.join(repoRoot, "docs/method/code-standards.md"))) {
-			lines.push("- Coding standards: docs/method/code-standards.md (in-loop lint feedback on code writes; export-docs at the gate layer)");
+			lines.push("- Coding standards: docs/method/code-standards.md (in-loop feedback on code writes: lint rules + export contract comments)");
 		}
 		if (fs.existsSync(path.join(repoRoot, "docs/method/architecture-standards.md"))) {
 			lines.push("- Architecture standards: docs/method/architecture-standards.md (layering / dependencies / impact surface; new top-level dirs first pass the admission questions)");
@@ -95,22 +99,27 @@ export interface MountPolicySet {
 	sessionStart: SessionStartPolicy[];
 }
 
+/** A4 两判据的注入缝汇总（日志面共享；执行面各自可替换——夹具按判据分别注入桩）。 */
+export type MountPolicyDeps = LintFeedbackDeps & ExportDocsFeedbackDeps;
+
 /**
- * 组装存留挂载物（A2 地图件 + A4 写码在环 lint 拦回 + A3 技能触点提醒）；
- * config 走 M2 的 repoRoot 回退链，deps 透传给 A4 策略（执行面/日志面注入缝）
+ * 组装存留挂载物（A2 地图件 + A4 写码在环判据拦回〔lint + 注释面〕+ A3 技能触点提醒）；
+ * config 走 M2 的 repoRoot 回退链，deps 透传给 A4 两判据（执行面/日志面注入缝）
  * 并共享给 A3 提醒件的降级提示面。skillGuards 显式配置整体替换缺省表
  * （config.mts 归一化后随 validateConfig 结果传入——无该字段的直调面落缺省表）。
  */
-export function createMountPolicies(config: RepoRootConfig = {}, deps: LintFeedbackDeps = {}): MountPolicySet {
+export function createMountPolicies(config: RepoRootConfig = {}, deps: MountPolicyDeps = {}): MountPolicySet {
 	const subtree = createSubtreeRulesPolicies(config);
-	const lintFeedback = createLintFeedbackPolicies(config, deps);
+	const lintFeedback = createLintFeedbackPolicies(config, { runLint: deps.runLint, warn: deps.warn });
+	const exportDocs = createExportDocsPolicies(config, { runExportDocs: deps.runExportDocs, warn: deps.warn });
 	const skillGuards = (config as RepoRootConfig & { skillGuards?: readonly SkillGuardEntry[] }).skillGuards ?? DEFAULT_SKILL_GUARDS;
 	const skillGuard = createSkillGuardPolicies(config, skillGuards, { warn: deps.warn });
 	return {
 		preStep: [subtree.preStep],
 		// A3 advice 档（M1 守卫②）：策略件出现即挂；deny/ask 能力位仍零策略。
 		toolPre: [skillGuard.toolPre],
-		toolPost: [lintFeedback.toolPost],
+		// A4 判据序 = lint → 注释面（合并器首 block 胜出：lint 未过时不叠加注释面反馈）。
+		toolPost: [lintFeedback.toolPost, exportDocs.toolPost],
 		sessionStart: [],
 	};
 }

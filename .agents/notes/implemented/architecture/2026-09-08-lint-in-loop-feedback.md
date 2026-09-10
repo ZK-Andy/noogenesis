@@ -33,7 +33,7 @@ Related: 实施计划 [coding-enforcement-impl-plan](../../../../docs/research/c
 
 2. **接线**：`createMountPolicies(config, deps)` 组装 `toolPost: [lintFeedback.toolPost]`；`index.mts` 只把既有 `logger.warn` 透传进 deps。**这偏离实施计划 §1-A2「`index.mts` 零改动」的字面**：计划同条要求「每会话 warn 一次」，而策略层若无 logger 注入则该要求不可达；透传既有 logger 不触宿主接线面（不新增 listener、不改注入声明），形态同 `registerBankSkills(ctx, {config, logger})` / `createBankPullScheduler({... logger ...})` 既有两件。计划该句的括号理由（每挂载点恰一个 listener）仍然成立。
 
-3. **A2 指针行**：`createSubtreeRulesPolicies` 的开场地图在 `docs/method/code-standards.md` 实存时追加一行 `- 写码规范：docs/method/code-standards.md（机器面 lint 写码后自动反馈；export-docs 在门禁面）`——地图已承载「动工前先读哪份规则」，写码规范指针与 A4 反馈同批落地；零布点件、或缺 `docs/method/code-standards.md` 的仓不加（指针行与布点件同款存在性过滤）。反馈本身另需仓根 `.oxlintrc.json` + oxlint 二进制，缺席时静默降级（第 1 节第 6 条）。
+3. **A2 指针行**：`createSubtreeRulesPolicies` 的开场地图在 `docs/method/code-standards.md` 实存时追加一行写码规范指针（文案单源 = `adapters/dsh/mount-policies.mts`，由 selftest 夹具钉死；本笔记不复述串面——复述即第二家，随文案演进漂移）——地图已承载「动工前先读哪份规则」，写码规范指针与 A4 反馈同批落地；零布点件、或缺 `docs/method/code-standards.md` 的仓不加（指针行与布点件同款存在性过滤）。反馈本身另需仓根 `.oxlintrc.json` + oxlint 二进制，缺席时静默降级（第 1 节第 6 条）。
 
 4. **测试**：`adapters/dsh/selftest.mts` 追加夹具组——①–⑧ 逐条合同（注入桩，含空诊断、`.mts` 正例、绝对出仓、截断与尾行）、缺基建 warn-once（文案钉死）、默认 `runLint` 真件 e2e（临时仓 + `.oxlintrc.json` + `node_modules` 符号链接 + 含 `var` 的 `.ts` → `block`；干净文件 → `void`）、index 接线面 warn-once 冒烟、A2 指针行存在性正负两例。防火墙自测（import 面机器断言）同批全绿。
 
@@ -54,7 +54,7 @@ Related: 实施计划 [coding-enforcement-impl-plan](../../../../docs/research/c
 - 写码当轮（write/edit 成功后下一模型步）收到 ≤10 条 `文件:行:列 规则: 消息` 行；干净代码零注入零 token。规范从「提交时才发现」提前到「写码当轮」。
 - 延迟实测（n=5，`node node_modules/oxlint/bin/oxlint --config .oxlintrc.json --deny-warnings -f json <单文件>`，2026-09-08 本机，【探索性】）：0.07–0.12s/次；实施计划估的 30–60ms 偏低（进程启动主导为【推断 · 未证】），仍属可接受写码往返开销。
 - 泛化边界：v1 只对 `repoRoot` 内、仓根带 `.oxlintrc.json` + oxlint 的仓生效（self-hosting 面）；按文件所属仓找 lint 配置列为后续（实施计划 §5 同口径）。
-- 判据零新增：与 `lint` 闸消费同一 `.oxlintrc.json`；`export-docs` 不入在环面（其判据是声明面整体，写码中途不成立）。
+- 判据零新增：与 `lint` 闸消费同一 `.oxlintrc.json`。`export-docs` 在本批不入在环面；该排除由 2026-09-10 扩面批解除（实读判据 = 单文件 AST 判定，可入在环）——[扩面批](../../proposed/architecture/2026-09-10-export-docs-inloop.md)。
 - A4 决策 = `block` 拦回（同文件连续拦回达上限降级 `context` 防死锁；合并器单源承载，见 [升格批](2026-09-09-lint-block-and-staged-hook.md)）。
 - **同步面代价**：`spawnSync` 在 A4 listener 的同步段、早于 `next()` 执行——每次 write/edit 阻塞宿主事件循环 ~0.1s（非仅该会话往返；「流式输出同受影响」为【推断 · 未证】）。异步化见 Alternatives 升格触发。
 - **出仓判定语义**：`path.relative` 三段判据（`..` 自身 / `..<sep>` 前缀 / 绝对路径）；仓内经 symlink 指向仓外的文件按仓内处理（v1 无 realpath 解析）。

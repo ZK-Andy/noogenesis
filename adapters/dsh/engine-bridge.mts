@@ -93,6 +93,45 @@ export function isInsideRepo(repoRoot: string, abs: string): boolean {
 	return rel !== ".." && !rel.startsWith(`..${path.sep}`) && !path.isAbsolute(rel);
 }
 
+/** 在环判据的写码目标（A4 面判据共用：仓根 / 绝对路径 / 仓根相对路径）。 */
+export interface InLoopTarget {
+	repoRoot: string;
+	abs: string;
+	rel: string;
+}
+
+/** 在环目标解析入参窄面（与 mount.mts 的 `ToolExecLike` 结构相容，免跨件类型依赖）。 */
+export interface InLoopExecLike {
+	name?: string;
+	arguments?: unknown;
+	agent?: { session?: { header?: { cwd?: string } } };
+}
+
+/**
+ * A4 在环判据的写码目标解析（lint / export-docs 两判据共用前言，折叠单源）：非
+ * write/edit、参数面缺 `file_path`、`result.isError`、出仓、扩展名 ∉ `extensions`
+ * —— 一律 null（判据对它们无语义）。`rel` 供反馈行格式化（POSIX 无关，同 lint 口径）。
+ */
+export function resolveInLoopTarget(
+	config: RepoRootConfig,
+	exec: InLoopExecLike,
+	result: { isError?: boolean },
+	extensions: ReadonlySet<string>,
+): InLoopTarget | null {
+	if (exec.name !== "write" && exec.name !== "edit") return null;
+	const args = exec.arguments;
+	if (typeof args !== "object" || args === null) return null;
+	const filePath = (args as Record<string, unknown>).file_path;
+	if (typeof filePath !== "string") return null;
+	if (result.isError === true) return null;
+	const sessionCwd = sessionWorkspaceOf(exec);
+	const repoRoot = resolveRepoRoot(config, sessionCwd);
+	const abs = path.resolve(sessionCwd ?? repoRoot, filePath);
+	if (!isInsideRepo(repoRoot, abs)) return null;
+	if (!extensions.has(path.extname(abs))) return null;
+	return { repoRoot, abs, rel: path.relative(repoRoot, abs) };
+}
+
 /** 引擎执行兜底超时（async/sync 两面各一档；超时 kill → FAIL_CLOSED）。 */
 const ASYNC_TIMEOUT_MS = 120_000;
 const SYNC_TIMEOUT_MS = 60_000;

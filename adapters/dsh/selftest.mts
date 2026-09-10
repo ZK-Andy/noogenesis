@@ -37,6 +37,8 @@ import { createSessionStore, mergePreStep, mergeSessionStart, mergeToolPost, mer
 import { createMountPolicies, createSubtreeRulesPolicies, SKILL_DIR_CANDIDATES } from "./mount-policies.mjs";
 import { createLintFeedbackPolicies } from "./lint-feedback.mjs";
 import type { LintDiagnostic, LintRunContext } from "./lint-feedback.mjs";
+import { createExportDocsPolicies } from "./export-docs-feedback.mjs";
+import type { ExportDocsRunContext, ExportDocsRunResult } from "./export-docs-feedback.mjs";
 import { createSkillGuardPolicies } from "./skill-guard.mjs";
 import { apply } from "./index.mjs";
 
@@ -776,7 +778,7 @@ function writeFixtureGene(repoRoot: string): void {
 			"Noogenesis subtree rules map — read a subtree's AGENTS.md before working in it:",
 			"- engine/ → engine/AGENTS.md",
 			"- scripts/ → scripts/AGENTS.md",
-			"- Coding standards: docs/method/code-standards.md (in-loop lint feedback on code writes; export-docs at the gate layer)",
+			"- Coding standards: docs/method/code-standards.md (in-loop feedback on code writes: lint rules + export contract comments)",
 			"- Architecture standards: docs/method/architecture-standards.md (layering / dependencies / impact surface; new top-level dirs first pass the admission questions)",
 		]);
 		assert.equal(subtreePolicies.preStep({ agent, turn: 1, step: 2 }), undefined);
@@ -824,15 +826,15 @@ function writeFixtureGene(repoRoot: string): void {
 		ok("mounts: M2 release condition — pointer-only repo still gets the map (zero content, zero injection)");
 	}
 
-	// 策略件组装：A2 地图件 + A3 触点提醒件（缺省守卫表）+ A4 写码在环反馈件
-	// + A5 零策略能力位（A6/A8 投影面不挂——撤除 ADR）。
+	// 策略件组装：A2 地图件 + A3 触点提醒件（缺省守卫表）+ A4 写码在环两判据
+	// （lint + 注释面）+ A5 零策略能力位（A6/A8 投影面不挂——撤除 ADR）。
 	{
 		const set = createMountPolicies({ repoRoot: "/tmp/assembly" });
 		assert.equal(set.preStep.length, 1);
 		assert.equal(set.toolPre.length, 1);
-		assert.equal(set.toolPost.length, 1);
+		assert.equal(set.toolPost.length, 2);
 		assert.deepEqual(set.sessionStart, []);
-		ok("mounts: policy set assembly — A2 map + A3 skill guard + A4 lint feedback + A5 zero-policy lane");
+		ok("mounts: policy set assembly — A2 map + A3 skill guard + A4 lint/export-docs judges + A5 zero-policy lane");
 	}
 
 	// M1 守卫②：A3 触点提醒策略逐条合同（守卫表直调，零宿主依赖）。
@@ -929,7 +931,7 @@ function writeFixtureGene(repoRoot: string): void {
 		assert.equal(warns.filter((m) => m.includes("advice delivery unavailable")).length, 1);
 		ok("mounts: A3 advice — one inject per skill per session; missing capability degrades with one warn, tool call unblocked");
 
-		// A4：非写码 exec → 透传；写码面缺 lint 基建 → 静默降级 + 每会话一条
+		// A4：非写码 exec → 透传；写码面两判据缺基建 → 各自静默降级 + 每会话一条
 		// warn（warn 经 index.mts 透传的 logger 捕获）。
 		const postDownstream = { kind: "accept" };
 		assert.equal(await toolPost({ agent }, { content: [{ type: "text", text: "ok" }] }, async () => postDownstream), postDownstream);
@@ -937,7 +939,8 @@ function writeFixtureGene(repoRoot: string): void {
 		assert.equal(await toolPost(writeExec, {}, async () => postDownstream), postDownstream);
 		assert.equal(await toolPost(writeExec, {}, async () => postDownstream), postDownstream);
 		assert.equal(warns.filter((m) => m.includes("lint feedback offline")).length, 1);
-		ok("mounts: A4 wiring — non-write passthrough; track A degrades with one warn per session");
+		assert.equal(warns.filter((m) => m.includes("export-docs feedback offline")).length, 1);
+		ok("mounts: A4 wiring — non-write passthrough; both judges degrade with one warn per session");
 
 		// A5：零策略件 → 无注入不抛（能力位在场即冒烟）。
 		await sessionStart({ agent });
@@ -1075,6 +1078,143 @@ function writeFixtureGene(repoRoot: string): void {
 	fs.writeFileSync(path.join(repo, "sample.ts"), "export function ok(): number { return 1; }\n");
 	assert.equal(real.toolPost(writeExec, {}), undefined);
 	ok("lint-feedback: default runLint e2e — real oxlint blocks no-var; clean file → void");
+}
+
+// ── 5.9) 注释面在环反馈：A4 export-docs 策略逐条合同 + 真件 e2e ──────────────
+{
+	const repo = tempRepo("export-docs-feedback");
+	fs.mkdirSync(path.join(repo, "scripts"), { recursive: true });
+	// 桩夹具只需判据件路径在位（执行面被注入桩替换）；真件 e2e 用真判据件副本。
+	fs.writeFileSync(path.join(repo, "scripts", "verify-export-docs.mts"), "// stub judge placeholder\n");
+	const agent = { session: { header: { cwd: repo } } };
+	const writeExec = { name: "write", arguments: { file_path: "sample.ts" }, agent };
+	const stubCalls: ExportDocsRunContext[] = [];
+	const withStub = (run: ExportDocsRunResult) =>
+		createExportDocsPolicies(
+			{ repoRoot: repo },
+			{
+				runExportDocs: (ctx) => {
+					stubCalls.push(ctx);
+					return run;
+				},
+			},
+		);
+
+	const failing = withStub({ code: 1, stdout: "FAIL: adapters/dsh/a.ts:12: 导出 function foo 缺契约注释（/** */ 紧邻声明）\n" });
+	assert.deepEqual(failing.toolPost(writeExec, {}), {
+		kind: "block",
+		feedback: "adapters/dsh/a.ts:12: 导出 function foo 缺契约注释（/** */ 紧邻声明）",
+	});
+	assert.equal(stubCalls[0]!.cwd, repo);
+	assert.equal(stubCalls[0]!.file, path.join(repo, "sample.ts"));
+	assert.equal(stubCalls[0]!.script, path.join(repo, "scripts", "verify-export-docs.mts"));
+	ok("export-docs-feedback: write + judge FAIL → block with stripped FAIL line");
+
+	// 目标解析前言（与 lint 判据共享谓词）：同款边界。
+	assert.equal(failing.toolPost({ name: "read", arguments: { file_path: "sample.ts" }, agent }, {}), undefined);
+	assert.equal(failing.toolPost(writeExec, { isError: true }), undefined);
+	assert.equal(failing.toolPost({ name: "write", arguments: { file_path: "../outside.ts" }, agent }, {}), undefined);
+	assert.equal(failing.toolPost({ name: "write", arguments: { file_path: "/etc/outside.ts" }, agent }, {}), undefined);
+	assert.equal(failing.toolPost({ name: "write", arguments: { file_path: "notes.md" }, agent }, {}), undefined);
+	assert.equal(failing.toolPost({ name: "write", arguments: { file_path: 42 }, agent }, {}), undefined);
+	assert.equal(failing.toolPost({ name: "write", arguments: "not-an-object", agent }, {}), undefined);
+	assert.equal(failing.toolPost({ name: "write", agent }, {}), undefined);
+	ok("export-docs-feedback: non-write / isError / outside-repo (rel+abs) / non-TS / bad file_path → void");
+
+	assert.equal(withStub({ code: 0, stdout: "OK: 1 件文件目标\n" }).toolPost(writeExec, {}), undefined);
+	ok("export-docs-feedback: judge exit 0 → void");
+
+	// 判据件故障面（退出码 ≠ 0/1、spawn 抛错）→ void + 每会话至多一条 warn（不是写码方违规）。
+	{
+		const warns: string[] = [];
+		const broken = createExportDocsPolicies({ repoRoot: repo }, { runExportDocs: () => ({ code: 2, stdout: "" }), warn: (m) => warns.push(m) });
+		assert.equal(broken.toolPost(writeExec, {}), undefined);
+		assert.equal(broken.toolPost(writeExec, {}), undefined);
+		assert.equal(warns.length, 1);
+		assert.match(warns[0]!, /export-docs feedback skipped: judge exited 2/);
+		const throwing = createExportDocsPolicies(
+			{ repoRoot: repo },
+			{
+				runExportDocs: () => {
+					throw new Error("boom");
+				},
+				warn: (m) => warns.push(m),
+			},
+		);
+		assert.equal(throwing.toolPost(writeExec, {}), undefined);
+		ok("export-docs-feedback: judge exit ≠ 0/1 or throw → void + one warn per session");
+	}
+
+	// 截断（≤10 行 + 尾行）与协议面兜底（退出码 1 却无 FAIL 行）。
+	{
+		const many = Array.from({ length: 13 }, (_, i) => `FAIL: f.ts:${i + 1}: 导出 function f${i} 缺契约注释`).join("\n");
+		const truncated = withStub({ code: 1, stdout: `${many}\n` }).toolPost(writeExec, {});
+		assert.ok(truncated && truncated.kind === "block");
+		assert.match(truncated.feedback, /\+3 more/);
+		assert.match(truncated.feedback, /f0.*f9/s);
+		const protocol = withStub({ code: 1, stdout: "unexpected output without FAIL lines\n" }).toolPost(writeExec, {});
+		assert.ok(protocol && protocol.kind === "block");
+		assert.match(protocol.feedback, /无 FAIL 行输出/);
+		ok("export-docs-feedback: >10 FAIL lines truncated; exit 1 without FAIL lines → protocol line");
+	}
+
+	// 死锁降级：同文件连续 block 达上限后 → context；干净写码复位后重新 block。
+	{
+		let violating = true;
+		const flipper = createExportDocsPolicies(
+			{ repoRoot: repo },
+			{
+				runExportDocs: () => (violating ? { code: 1, stdout: "FAIL: f.ts:1: 导出 function f 缺契约注释\n" } : { code: 0, stdout: "OK\n" }),
+			},
+		);
+		const first = flipper.toolPost(writeExec, {});
+		const second = flipper.toolPost(writeExec, {});
+		const third = flipper.toolPost(writeExec, {});
+		const fourth = flipper.toolPost(writeExec, {});
+		assert.ok(first && first.kind === "block", "1st must block");
+		assert.ok(second && second.kind === "block", "2nd must block");
+		assert.ok(third && third.kind === "block", "3rd must block");
+		assert.ok(fourth && fourth.kind === "context", "4th+ must demote to context");
+		violating = false;
+		assert.equal(flipper.toolPost(writeExec, {}), undefined, "clean write after demotion → void (delete resets)");
+		violating = true;
+		const re = flipper.toolPost(writeExec, {});
+		assert.ok(re && re.kind === "block", "after clean reset, next violation re-arms block");
+		ok("export-docs-feedback: deadlock demotion to context after N; clean write resets to block");
+	}
+
+	// 判据件缺席 → void + 每会话一条 warn（文案钉死，同 lint 判据的离线降级纪律）。
+	{
+		const bare = tempRepo("export-docs-feedback-bare");
+		const bareAgent = { session: { header: { cwd: bare } } };
+		const warns: string[] = [];
+		const degraded = createExportDocsPolicies({ repoRoot: bare }, { warn: (m) => warns.push(m) });
+		assert.equal(degraded.toolPost({ name: "write", arguments: { file_path: "a.ts" }, agent: bareAgent }, {}), undefined);
+		assert.equal(degraded.toolPost({ name: "write", arguments: { file_path: "a.ts" }, agent: bareAgent }, {}), undefined);
+		assert.equal(warns.length, 1);
+		assert.match(warns[0]!, /export-docs feedback offline: .*verify-export-docs\.mts missing/);
+		ok("export-docs-feedback: missing judge script → void + one warn per session (message pinned)");
+	}
+
+	// 真件 e2e：真判据件 + 默认执行面（node 直跑仓内脚本，文件目标模式）。
+	{
+		const real = tempRepo("export-docs-feedback-real");
+		fs.mkdirSync(path.join(real, "scripts"), { recursive: true });
+		fs.mkdirSync(path.join(real, "adapters", "dsh"), { recursive: true });
+		fs.copyFileSync(path.join(REPO_ROOT, "scripts", "verify-export-docs.mts"), path.join(real, "scripts", "verify-export-docs.mts"));
+		fs.symlinkSync(path.join(REPO_ROOT, "node_modules"), path.join(real, "node_modules"), "dir");
+		const realAgent = { session: { header: { cwd: real } } };
+		const target = "adapters/dsh/bad.ts";
+		const realExec = { name: "write", arguments: { file_path: target }, agent: realAgent };
+		const policies = createExportDocsPolicies({ repoRoot: real });
+		fs.writeFileSync(path.join(real, target), "export function bad(): number { return 1; }\n");
+		const blocked = policies.toolPost(realExec, {});
+		assert.ok(blocked && blocked.kind === "block");
+		assert.match(blocked.feedback, /adapters\/dsh\/bad\.ts:1: 导出 function bad 缺契约注释/);
+		fs.writeFileSync(path.join(real, target), "/** 契约：返回 1。 */\nexport function bad(): number { return 1; }\n");
+		assert.equal(policies.toolPost(realExec, {}), undefined);
+		ok("export-docs-feedback: default runner e2e — real judge blocks missing contract comment; compliant write → void");
+	}
 }
 
 // ── 6) 防火墙机器检查：import 面 / 引擎零依赖 / 包结构契约 ────────────────

@@ -17,7 +17,7 @@ import path from "node:path";
 import { spawnSync } from "node:child_process";
 import { createSessionStore, createSessionWarnOnce } from "./mount.mjs";
 import type { ToolPostPolicy } from "./mount.mjs";
-import { resolveRepoRoot, sessionWorkspaceOf, isInsideRepo } from "./engine-bridge.mjs";
+import { resolveInLoopTarget } from "./engine-bridge.mjs";
 import type { RepoRootConfig } from "./engine-bridge.mjs";
 
 /** 单条 lint 诊断（行/列 1 基，与 oxlint JSON 的 `labels[0].span` 同口径）。 */
@@ -98,17 +98,10 @@ export function createLintFeedbackPolicies(config: RepoRootConfig, deps: LintFee
 	const warnOnce = createSessionWarnOnce(warn);
 	const toolPost: ToolPostPolicy = (exec, result) => {
 		try {
-			if (exec.name !== "write" && exec.name !== "edit") return;
-			const args = exec.arguments;
-			if (typeof args !== "object" || args === null) return;
-			const filePath = (args as Record<string, unknown>).file_path;
-			if (typeof filePath !== "string") return;
-			if (result.isError === true) return;
-			const sessionCwd = sessionWorkspaceOf(exec);
-			const repoRoot = resolveRepoRoot(config, sessionCwd);
-			const abs = path.resolve(sessionCwd ?? repoRoot, filePath);
-			if (!isInsideRepo(repoRoot, abs)) return;
-			if (!LINT_EXTENSIONS.has(path.extname(abs))) return;
+			// 目标解析前言与 export-docs 判据折叠单源（engine-bridge.resolveInLoopTarget）。
+			const target = resolveInLoopTarget(config, exec, result, LINT_EXTENSIONS);
+			if (target === null) return;
+			const { repoRoot, abs, rel } = target;
 			const bin = path.join(repoRoot, OXLINT_BIN_REL);
 			const lintConfig = path.join(repoRoot, OXLINT_CONFIG_REL);
 			if (!fs.existsSync(bin) || !fs.existsSync(lintConfig)) {
@@ -122,7 +115,6 @@ export function createLintFeedbackPolicies(config: RepoRootConfig, deps: LintFee
 				state.blockCounts.delete(abs);
 				return;
 			}
-			const rel = path.relative(repoRoot, abs);
 			const lines = diagnostics.slice(0, MAX_FEEDBACK_LINES).map((d) => `${rel}:${d.line}:${d.column} ${d.rule}: ${d.message}`);
 			if (diagnostics.length > MAX_FEEDBACK_LINES) lines.push(`…(+${diagnostics.length - MAX_FEEDBACK_LINES} more)`);
 			const state = store.of<State>(exec.agent?.session, () => ({ blockCounts: new Map() }));
