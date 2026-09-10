@@ -79,7 +79,7 @@ export function registerNooTools(ctx: ToolHost, { defineTool, runEngine, repoRoo
 	register(defineTool({
 		name: "noo_select",
 		description:
-			"Match evolution genes by explicit signal phrases (literal normalized match, multi-key union). Returns '<domain>/<id>  <summary>' lines. Read-only.",
+			"Match evolution genes by explicit signal phrases (literal normalized match, multi-key union). Returns '<domain>/<id>  <summary>' lines, optionally followed by 'advice: <signal> :: <ref>  ok=<n> fail=<n> last=<date>' lines derived from recorded gene outcomes. Read-only.",
 		parameters: {
 			signals: {
 				type: "array",

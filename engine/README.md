@@ -12,11 +12,14 @@
 
 ```sh
 node dist/engine/bin.js select <signal>... [--stdin]        # 信号 → 基因（归一化字面匹配，多键并集）
+                                                            # + 观测建议档行（advice: …，零观测时不发射）
 node dist/engine/bin.js propose <domain>/<id> [--out FILE]  # gene → 注入文本（确定性，同输入必同输出）
 node dist/engine/bin.js evaluate <domain>/<id>              # gates.json 全集 + 约束；红即拒，无豁免
 node dist/engine/bin.js solidify <candidate.json> --actor N # 入档：全绿 → genes/ + events/ 同一 commit
 node dist/engine/bin.js solidify --retire <domain>/<id> --actor N
 node dist/engine/bin.js pull <bank-url> [--cache DIR]       # P2 只读消费：clone/pull 基因库进仓内缓存
+node dist/engine/bin.js observe --signal S --gene <domain>/<id> --outcome ok|fail --actor N [--evidence TEXT]
+                                                            # 观测输入面：append-only 到 .noogenesis/observations/
 node dist/engine/bin.js self-test                           # 元评测夹具（临时沙箱，不触碰真实仓）
 ```
 
@@ -30,7 +33,8 @@ node dist/engine/bin.js self-test                           # 元评测夹具（
 | `util.ts` | 归一化 / SHA-256 / 结构化 spawn / git 封装 / 槽值推导 |
 | `gates.ts` + `gates.json` | 验证白名单（fail-closed 装载） |
 | `gene.ts` | Gene 八字段封闭 schema / 目录扫描（含缓存合并扫描） |
-| `select.ts` / `propose.ts` / `evaluate.ts` / `solidify.ts` / `pull.ts` | 五命令各一 |
+| `observe.ts` | 观测输入面（schema / 追加写 / 派生边） |
+| `select.ts` / `propose.ts` / `evaluate.ts` / `solidify.ts` / `pull.ts` | 五命令各一（select 兼消费观测派生面） |
 | `selftest.ts` | 元评测夹具 |
 
 ## 共享消费（P2，只读）
@@ -39,6 +43,15 @@ node dist/engine/bin.js self-test                           # 元评测夹具（
 - **合并扫描**：缓存在场时并入 `select` / `propose` 的扫描根；同名 ref（`domain/id`）**本仓基因优先**（缓存副本被遮蔽，不报错）——本仓是策展活体，库是分发副本。缓存侧解析失败的基因 warn-skip（stderr 一行，读路径不红——分发副本降级姿态）；本仓 `genes/` 解析失败仍 fail-closed。`evaluate` / `solidify` 恒以本仓 `genes/` 为对象（`{cache: false}`），缓存基因**只读不可评估、不可入档**。
 - 缓存目录不进 git（`.gitignore` `/.noogenesis/`）；安全边界：缓存绝不指向仓根本体、`genes/` 本身或其子树。
 - 基因库侧的检索索引 = 仓根 `manifest.json`（`scripts/gen-manifest.mts` 生成，确定性输出；`scripts/verify-manifest.mts` 门禁防漂移，已入 `gates.json` 白名单）。
+
+## 观测输入面（融合轮第一期）
+
+- **事实与观测分家**：`events/` 轨只收「写得复算规则」的演化事件；`gene.used` / `gene.outcome` 这类观测不进 git，落 `<repoRoot>/.noogenesis/observations/<YYYY-MM>.jsonl`（append-only、gitignored、可丢弃——丢了只丢观测权重）。
+- **记录 schema（封闭六字段）**：`ts` / `actor` / `signal`（写入时按信号归一化规则落键）/ `gene`（`<domain>/<id>` 形状）/ `outcome`（`ok` | `fail`）/ `evidence`（可选单行，≤200 字符）。未知字段与形状/枚举/长度违约 → exit 2 且不落盘。
+- **写入触发点 = 人 / 显式目标**：`observe` 命令只在某基因被实际采用、其结果已可判时由人（或经人许可的 agent）显式调用；不随 `solidify`（入档 ≠ 使用成功）、不随 `select` / `propose` 运行自动记录。
+- **派生 = 每次 select 现算**：`(signal::gene)→{ok,fail,last_ts}` 由「轨 + 输入面」在 `select` 时现算，只取「本次查询键 ∩ 本次命中基因」的边，不落盘、不进 git；零观测时 `select` 输出与无观测面逐字节相同。
+- **姿态分面**：写路径 fail-closed；读路径坏行 warn-skip（每个坏文件一行 stderr 汇总，不让 `select` 变红）。
+- 强度上限：观测样本 O(1) 时不排序、不禁用、不设阈值（判决与触发单源 = [实现 ADR](../.agents/notes/implemented/architecture/2026-09-11-memory-line-phase1-observation-face.md)）。
 
 ## 安全模型（五条，schema ADR S3）
 
@@ -63,5 +76,6 @@ node dist/engine/bin.js self-test                           # 元评测夹具（
 - 引擎自身：`evaluate` 跑白名单全集作为入档门槛。
 - `scripts/verify-gene-format.mts`（白名单外独立件）：校验 `genes/` + `events/`，含白名单条目脚本存在性与 `gene_sha` 工作树复算（例外机制单家见 gates.mts 头注）。
 - `scripts/gates.mts`（门禁清单单源发射器）：hooks/CI 的门禁清单单源 = 本白名单（结构性例外四件见该脚本头注）。
+- `scripts/verify-secrets.mts`（白名单条目 `secrets`）：凭据绊线扫 `genes/` + `events/` + `.noogenesis/observations/` 三面；**best-effort 绊线，不是安全属性**（强度上限与已知盲区写在件头）。
 - `adapters/dsh/`（M2 适配层）：spawn CLI 单合同的第一个进程外消费者；引擎与 `gates.json` 对适配层零新增要求。
 - CI：`node dist/engine/bin.js self-test`（与 verify-* self-test 平级，不占门禁编号）。

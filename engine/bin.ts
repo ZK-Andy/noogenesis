@@ -15,6 +15,8 @@ function usage(): string {
     '  node dist/engine/bin.js solidify <candidate.json> --actor N # 入档：evaluate 全绿 → genes/ + events/ 同一 commit',
     '  node dist/engine/bin.js solidify --retire <domain>/<id> --actor N',
     '  node dist/engine/bin.js pull <bank-url> [--cache DIR]       # 只读消费：clone/pull 基因库进仓内缓存（P2）',
+    '  node dist/engine/bin.js observe --signal S --gene <domain>/<id> --outcome ok|fail --actor N [--evidence TEXT]',
+    '      # 观测输入面：append-only 写入 .noogenesis/observations/（写路径 fail-closed）',
     '  node dist/engine/bin.js self-test                           # 元评测夹具（临时沙箱，不触碰真实仓）',
     '',
   ].join('\n');
@@ -155,6 +157,38 @@ function main(argv: string[]): number {
     let r;
     try {
       r = pullBank(repoRoot, bankUrl, cacheVals[0] || null);
+    } catch (e) {
+      if ((e as { engine?: unknown }).engine) return fail((e as Error).message, 2);
+      throw e;
+    }
+    process.stdout.write(r.report);
+    return 0;
+  }
+
+  if (cmd === 'observe') {
+    // 观测输入面写入（融合立宪 D8/D10）：五旗标各至多一次、各需值；无位置参数。
+    // 校验（封闭字段/形状/枚举/长度）全在 observe.js，违约 → exit 2 且不落盘。
+    const flags = ['--signal', '--gene', '--outcome', '--actor', '--evidence'];
+    const vals: Record<string, string> = {};
+    for (let i = 0; i < rest.length; i++) {
+      const flag = rest[i]!;
+      if (!flags.includes(flag)) fail(`observe: unknown argument ${flag}`);
+      const val = rest[i + 1];
+      if (val === undefined) fail(`observe: ${flag} needs a value`);
+      if (vals[flag] !== undefined) fail(`observe: ${flag} accepts at most once`);
+      vals[flag] = val;
+      i++;
+    }
+    for (const required of ['--signal', '--gene', '--outcome', '--actor']) {
+      if (vals[required] === undefined) fail(`observe needs ${required} <value>`);
+    }
+    const { recordObservation } = require('./observe.js');
+    let r;
+    try {
+      r = recordObservation(repoRoot, {
+        signal: vals['--signal'], gene: vals['--gene'], outcome: vals['--outcome'],
+        actor: vals['--actor'], evidence: vals['--evidence'],
+      });
     } catch (e) {
       if ((e as { engine?: unknown }).engine) return fail((e as Error).message, 2);
       throw e;

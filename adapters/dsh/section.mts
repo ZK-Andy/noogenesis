@@ -26,7 +26,9 @@ export const BASE_SECTION = [
 /**
  * 命中节渲染：吃引擎 select 的 stdout（合同面 = stdout 文本，不另立解析协议）。
  * select stdout 首行为 `signals: ...`，其后每行 `<domain>/<id>  <summary>`，
- * 无命中为 `(no genes matched)`。逐行截断摘要，命中数按 maxGenes 封顶。
+ * 无命中为 `(no genes matched)`；观测建议档行（`advice: ...`，融合立宪 D8/D10）
+ * 排在命中行之后，**不进常驻节**——建议按需经 noo_select 工具输出读，常驻面
+ * 每模型步重复付费。逐行截断摘要，命中数按 maxGenes 封顶。
  * maxGenes 必传：调用点恒来自 config（缺省 12 单源 = config.mts，README 配置表为口径单源）。
  */
 export function hitsSectionText(
@@ -35,7 +37,7 @@ export function hitsSectionText(
 ): string {
 	const { maxGenes, maxSummaryChars = MAX_SUMMARY_CHARS } = opts;
 	const lines = String(selectResult?.stdout ?? "").split("\n").filter((line) => line.length > 0);
-	const hitLines = lines.filter((line) => !line.startsWith("signals:") && line !== "(no genes matched)");
+	const hitLines = lines.filter((line) => !line.startsWith("signals:") && !line.startsWith("advice:") && line !== "(no genes matched)");
 	if (!hitLines.length) return "";
 	const capped = hitLines.slice(0, maxGenes).map((line) => (line.length > maxSummaryChars ? `${line.slice(0, maxSummaryChars)}…` : line));
 	const truncated = hitLines.length > maxGenes ? `\n(+${hitLines.length - maxGenes} more — refine signals)` : "";

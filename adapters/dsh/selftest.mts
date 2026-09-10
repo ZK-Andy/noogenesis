@@ -117,6 +117,15 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.ok(!templated.includes("{{"), "literal {{ must not survive into section text");
 	assert.ok(templated.includes("{\u200b{placeholder}"), "neutralized form keeps visible content");
 	ok("section: '{{' neutralized (interpolate cannot throw on gene summaries)");
+
+	// 观测建议档行不进常驻节（融合立宪 D8/D10）：命中行在场、advice 行被滤掉，
+	// 也绝不参与 maxGenes 封顶计数（否则建议会顶掉真实命中）。
+	const withAdvice = hitsSectionText({
+		stdout: "signals: x\ndemo/a  hit a\nadvice: x :: demo/a  ok=2 fail=1 last=2026-09-10\ndemo/b  hit b\nadvice: x :: demo/b  ok=1 fail=0 last=2026-09-10\n",
+	}, { maxGenes: 2 });
+	assert.ok(withAdvice.includes("demo/a  hit a") && withAdvice.includes("demo/b  hit b"), "hits survive alongside advice lines");
+	assert.ok(!withAdvice.includes("advice:"), "advice lines are not injected into the resident section");
+	ok("section: observation advice lines filtered out (zero resident cost)");
 }
 
 // ── 2b) hits provider：select 失败 warn 留痕（每故障期恰一条、成功复位）──

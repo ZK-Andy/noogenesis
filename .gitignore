@@ -22,5 +22,7 @@ node_modules/
 # docs/research/evomap-evolver-engine-evolution.md，永不入库）
 /.research-mirror/
 
-# 基因库只读消费缓存（P2 共享客户端 pull 目标；不入库——ADR 2026-09-06-p2-shared-consumer）
+# .noogenesis/ = 本地状态面（不入库）：genes-cache/ = P2 只读消费缓存
+# （ADR 2026-09-06-p2-shared-consumer）；observations/ = 观测输入面（可丢弃，
+# 丢了只丢观测权重——ADR 2026-09-11-memory-line-phase1-observation-face）
 /.noogenesis/

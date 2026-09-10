@@ -8,7 +8,8 @@ import { execFileSync } from 'child_process';
 
 import { normalizeSignal, sha256Hex, EngineError } from './util.js';
 import { loadGates } from './gates.js';
-import { selectGenes } from './select.js';
+import { selectGenes, runSelect } from './select.js';
+import { validateObservation, buildObservation, recordObservation, readObservations, EVIDENCE_MAX_CHARS } from './observe.js';
 import { renderGene } from './propose.js';
 import { evaluateGeneObj, checkConstraints } from './evaluate.js';
 import { solidify, retire } from './solidify.js';
@@ -112,6 +113,89 @@ function selfTest() {
     ok(selectGenes(td, ['  PUSH   force ']).hits.length === 1, 'select: normalized hit (case/space)');
     ok(selectGenes(td, ['no such key']).hits.length === 0, 'select: miss');
     ok(selectGenes(td, ['review', 'doc budget']).hits.length === 2, 'select: multi-signal union');
+  }
+
+  // --- 2.5) 观测输入面（融合立宪 D8/D10；实现 ADR 2026-09-11）：写路径 fail-closed、
+  //          读路径 warn-skip、零观测时 select 输出逐字节不变 ---
+  {
+    const td = mkTemp();
+    writeGene(td, 'process', {
+      id: 'gene-a', domain: 'process', summary: 'A', signals: ['push force', 'review'],
+      strategy: ['s1'],
+    });
+    writeGene(td, 'doc', {
+      id: 'gene-b', domain: 'doc', summary: 'B', signals: ['push force'],
+      strategy: ['s1'],
+    });
+
+    // 零观测 = 默认零成本：stdout 与无观测面时逐字节相同，且不发射 advice 行
+    // （命中顺序 = 扫描顺序：域目录名排序，doc 先于 process）
+    const base = runSelect(td, ['push force']);
+    ok(base.stdout === 'signals: push force\ndoc/gene-b  B\nprocess/gene-a  A\n',
+      'observe: zero-observation select output byte-identical');
+    ok(base.advice.length === 0, 'observe: zero observations -> no advice lines');
+
+    // 写路径：signal 归一（键口径单源）+ 落月卷 + append
+    const w1 = recordObservation(td, { signal: '  PUSH   Force ', gene: 'process/gene-a', outcome: 'ok', actor: 't' });
+    ok(w1.record.signal === 'push force', 'observe: signal normalized at write');
+    ok(fs.existsSync(w1.path) && w1.path.endsWith('.jsonl') && w1.path.includes('.noogenesis')
+      && path.basename(w1.path) === `${w1.record.ts.slice(0, 7)}.jsonl`,
+      'observe: record appended to .noogenesis/observations/<YYYY-MM>.jsonl');
+    recordObservation(td, { signal: 'push force', gene: 'process/gene-a', outcome: 'fail', actor: 't' });
+    recordObservation(td, { signal: 'push force', gene: 'doc/gene-b', outcome: 'ok', actor: 't' });
+    recordObservation(td, { signal: 'review', gene: 'process/gene-a', outcome: 'ok', actor: 't' });
+
+    // 写路径违约：fail-closed（EngineError，不落盘）
+    ok(throwsEngine(() => buildObservation({ signal: 's', gene: 'process/gene-a', outcome: 'maybe', actor: 't' })),
+      'observe: bad outcome rejected (fail-closed)');
+    ok(throwsEngine(() => buildObservation({ signal: 's', gene: 'bad-ref', outcome: 'ok', actor: 't' })),
+      'observe: bad gene ref rejected');
+    ok(throwsEngine(() => buildObservation({ signal: 's', gene: 'process/gene-a', outcome: 'ok', actor: '   ' })),
+      'observe: blank actor rejected');
+    ok(throwsEngine(() => buildObservation({ signal: '   ', gene: 'process/gene-a', outcome: 'ok', actor: 't' })),
+      'observe: blank signal rejected');
+    ok(throwsEngine(() => buildObservation({ signal: 's', gene: 'process/gene-a', outcome: 'ok', actor: 't', evidence: 'a\nb' })),
+      'observe: multiline evidence rejected');
+    ok(throwsEngine(() => buildObservation({ signal: 's', gene: 'process/gene-a', outcome: 'ok', actor: 't', evidence: 'x'.repeat(EVIDENCE_MAX_CHARS + 1) })),
+      'observe: over-long evidence rejected');
+    ok(validateObservation({ ts: w1.record.ts, actor: 't', signal: 's', gene: 'process/gene-a', outcome: 'ok', extra: 1 })
+      .some((e) => e.includes('unknown field')), 'observe: unknown field rejected');
+
+    // 派生：命中行不变 + advice 追加在全部命中行之后
+    const adv = runSelect(td, ['push force']);
+    const advLines = adv.stdout.split('\n').filter((l) => l.length);
+    ok(advLines[1] === 'doc/gene-b  B' && advLines[2] === 'process/gene-a  A',
+      'observe: hit lines unchanged when advice present');
+    ok(/^advice: push force :: doc\/gene-b {2}ok=1 fail=0 last=\d{4}-\d{2}-\d{2}$/.test(advLines[3] || '')
+      && /^advice: push force :: process\/gene-a {2}ok=1 fail=1 last=\d{4}-\d{2}-\d{2}$/.test(advLines[4] || ''),
+      'observe: advice keyed (signal::gene) in hit order');
+
+    // 边分辨：命中顺序 × 查询键顺序；非查询键/非命中基因的观测不参与
+    const multi = runSelect(td, ['review', 'push force']);
+    ok(multi.advice.length === 3 && multi.advice[0]!.startsWith('advice: push force :: doc/gene-b')
+      && multi.advice.filter((l: string) => l.includes('process/gene-a')).length === 2,
+      'observe: per-edge advice in hit-then-key order');
+
+    // 读路径：坏行 warn-skip（不抛、不进派生），好行保留
+    fs.appendFileSync(w1.path, '{"ts":"not-a-date"\n');
+    const read = readObservations(td);
+    ok(read.records.length === 4 && read.skipped === 1, 'observe: invalid line skipped, valid siblings kept');
+    ok(runSelect(td, ['push force']).advice.length === 2, 'observe: corrupt line does not break select derivation');
+
+    // CLI 面：observe 命令分派 + 退出码三档（fail-closed 与用法错都是 exit 2）
+    const ce = mkRepo(mkTemp());
+    writeGene(ce, 'process', { id: 'gene-a', domain: 'process', summary: 'A', signals: ['review'], strategy: ['s1'] });
+    const bin = path.join(__dirname, 'bin.js');
+    ok(spawnCode([bin, 'observe', '--signal', 'review', '--gene', 'process/gene-a', '--outcome', 'ok', '--actor', 't'], ce) === 0,
+      'bin: observe valid record -> exit 0');
+    ok(readObservations(ce).records.length === 1, 'bin: observe wrote exactly one record');
+    ok(spawnCode([bin, 'observe', '--signal', 'review', '--gene', 'process/gene-a', '--outcome', 'nope', '--actor', 't'], ce) === 2,
+      'bin: observe bad outcome -> exit 2');
+    ok(spawnCode([bin, 'observe', '--signal', 'review', '--signal', 'x', '--gene', 'process/gene-a', '--outcome', 'ok', '--actor', 't'], ce) === 2,
+      'bin: observe duplicate flag -> exit 2');
+    ok(spawnCode([bin, 'observe', '--signal', 'review', '--outcome', 'ok', '--actor', 't'], ce) === 2,
+      'bin: observe missing --gene -> exit 2');
+    ok(readObservations(ce).records.length === 1, 'bin: rejected observe attempts wrote nothing');
   }
 
   // --- 3) propose 金样渲染（确定性：同输入必同输出）---

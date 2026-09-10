@@ -12,7 +12,7 @@ noogenesis＝心智的发生与持续生长（德日进谱系下集体知识演�
 
 两个运行层已就位：
 
-- **演化发动机**——`engine/` 五命令（`select` / `propose` / `evaluate` / `solidify` / `pull`，Node 零依赖）+ 验证白名单（`engine/gates.json`）+ 基因/事件协议。
+- **演化发动机**——`engine/` 六命令（`select` / `propose` / `evaluate` / `solidify` / `pull` / `observe`，Node 零依赖）+ 验证白名单（`engine/gates.json`）+ 基因/事件协议。
 - **DSH 适配层**——本仓即 DSH 插件包 [`noogenesis-dsh`](https://www.npmjs.com/package/noogenesis-dsh)@0.2.4（AGPL-3.0）：经 spawn CLI 单合同把引擎接进会话生命周期，并随基因库分发 7 个 `noo-*` 技能。
 
 前置条件：**运行仓 = git 仓且 git CLI 在场**——引擎命令依赖 git 子进程，非 git 目录用 `noo_*` 工具会 fail-closed 退出 2；git 未装时引擎诊断指名 git 缺失，不误报非 git 仓。
@@ -50,7 +50,7 @@ node dist/engine/bin.js self-test  # 引擎自检（消费预构建 dist）
 │   ├── cookbook.md         # 踩坑单一事实源（原子条目）
 │   └── research/           # 设计文档（蜂群框架设计 / 共享层设计 / JIT-Agent 研究）+ 参考引擎调研解剖
 ├── scripts/                # verify-* 机器门禁（.mts，node ≥22.18 原生直跑；lint/export-docs 两闸用 oxlint/typescript devDependency）+ gates.mts 门禁清单单源发射器（含 needs/after DAG）+ release/（bump.mts + release-note.mts：dsh-v tag + 双语 release 正文）
-├── engine/                 # 演化发动机（Node 零依赖五命令 + gates.json 白名单；pull = 基因库只读消费；源码 TS，运行形态 = tsc dist）
+├── engine/                 # 演化发动机（Node 零依赖六命令 + gates.json 白名单；pull = 基因库只读消费；observe = 观测输入面；源码 TS，运行形态 = tsc dist）
 ├── adapters/dsh/           # DSH 适配层（插件壳接线：system-prompt 节 / noo_* 工具 / solidify 人工确认 / geneBankUrl 惰性 pull / 技能随库分发 / 挂载面 A2–A5 四点接线与 A2 开场地图（A6/A8 记录投影已撤，见 [撤除 ADR](.agents/notes/implemented/architecture/2026-09-08-a8-session-record-projection-removal.md)）；B2 起源码 TS，npm 包 = tsc dist）
 ├── genes/                  # 基因库（<domain>/<id>.json，经 solidify 入档；本仓即库）
 ├── manifest.json           # 基因库检索索引（gen-manifest 生成，verify-manifest 门禁）
