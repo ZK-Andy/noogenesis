@@ -73,7 +73,7 @@ Hooks run fast checks only (lefthook's built-in postinstall wires them; hooks si
 - Methodology body: [docs/method/ai-collaboration-method.md](docs/method/ai-collaboration-method.md)
 - Pitfall triage: [docs/cookbook.md](docs/cookbook.md)
 
-Lineage: the methodology and gates are distilled from `dotnet-deepseek-harness-desktop`, `dsh-frecency`, and `devops-template` (MIT), with upstream `deepseek-ai/deepseek-harness` (MIT); distilled-then-adapted, never byte-for-byte — every asset carries a provenance line at its head.
+Lineage: the methodology and gates are distilled from `dotnet-deepseek-harness-desktop`, `dsh-frecency`, and `devops-template` (MIT), with upstream `deepseek-ai/deepseek-harness` (MIT); the anti-overdesign contract is distilled from `wanshuiyin/HERO-Anti-OverDefense` (MIT). Distilled-then-adapted, never byte-for-byte — every asset carries a provenance line at its head.
 
 ## Contributing
 

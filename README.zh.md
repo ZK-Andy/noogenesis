@@ -73,7 +73,7 @@ hooks 只做快检查（lefthook 内建 postinstall 接线，钩子单源 `lefth
 - 方法论正文：[docs/method/ai-collaboration-method.md](docs/method/ai-collaboration-method.md)
 - 踩坑判别：[docs/cookbook.md](docs/cookbook.md)
 
-血统：方法论与门禁蒸馏自 `dotnet-deepseek-harness-desktop`、`dsh-frecency`、`devops-template`（MIT），上游 `deepseek-ai/deepseek-harness`（MIT）；**提炼后搬迁，非逐字节搬运**，每件资产头部带 provenance 行。
+血统：方法论与门禁蒸馏自 `dotnet-deepseek-harness-desktop`、`dsh-frecency`、`devops-template`（MIT），上游 `deepseek-ai/deepseek-harness`（MIT）；防过度设计契约蒸馏自 `wanshuiyin/HERO-Anti-OverDefense`（MIT）。**提炼后搬迁，非逐字节搬运**，每件资产头部带 provenance 行。
 
 ## 参与贡献
 

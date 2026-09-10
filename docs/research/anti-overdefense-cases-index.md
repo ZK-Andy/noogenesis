@@ -1,8 +1,8 @@
 # HERO 案例索引（anti-overdefense cases index）
 
 > 状态：案例索引（2026-09-10，随 [M1 立项 ADR](../../.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) 批 B 落地）。上游 = `wanshuiyin/HERO-Anti-OverDefense`（MIT，`cases/README.md`；本地只读缓存 `.cache/hero-anti-overdefense/`——缓存与远端均可失，本索引为**自足蒸馏**：ID + 一句形态足够质询用）。上游版权集中于 [THIRD-PARTY-NOTICES.md](../../THIRD-PARTY-NOTICES.md)。
-> **不进任何常驻/懒加载面**——拍板与理由单源 = [anti-overdesign.md](../method/anti-overdesign.md) §7；常驻面只留该篇 §5 六个一行形状。
-> **收录边界**：四族 19 例全收（一句形态蒸馏）；`SIB-003/004`（defensive prose）不单列——判据家 = anti-overdesign §3 Rule 7（§6 归并声明）；`SIB-001/002` 与 over-correction 上游未给质询条目，形态描述见 anti-overdesign §2 兄弟形态行。
+> **不进任何常驻/懒加载面**——拍板与理由单源 = [anti-overdesign.md](../method/anti-overdesign.md) §7；常驻面 = 根 AGENTS 契约块（链接 = 指针非加载）；形状与案例目录均不进常驻。
+> **收录边界**：四族 18 例全收（一句形态蒸馏）；`SIB-003/004`（defensive prose）不单列——判据家 = anti-overdesign §3 Rule 7（§6 归并声明）；`SIB-001/002` 上游有条目、本索引防分类学稀释选择不收；over-correction 上游无 ID 条目，形态见 anti-overdesign §2 兄弟形态行。
 
 ## 用法（事后辩论武器，不是事前清单）
 
