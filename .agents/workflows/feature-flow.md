@@ -40,9 +40,9 @@
 ### 4.6 发现机械化（评审收尾后即办，主会话执行）
 
 - findings 齐、主会话裁决完毕 → 逐条判「**可机械判吗**」（不看语义、判据稳定、形状可枚举）：
-  - 可，且**该类复发 ≥2 次或单次代价高**（凭据泄漏 / 发布事故 / 数据丢失）→ 落**机械校验**（门禁 / 夹具 / 元断言），随本批或排下一批。
+  - 可，且满足门槛（阈值单源 = [机械化 ADR](../notes/implemented/process/2026-09-11-review-finding-mechanization.md) Decision 1）→ 落**机械校验**（门禁 / 夹具 / 元断言），随本批或排下一批。
   - 否（语义面）或未达门槛 → 按既有归口：cookbook（踩坑）/ 流程卡（纪律漏项）/ 不入库（一次性措辞与证据形态）。**不为此新造载体。**
-- 每批把发现的**类**记入 journal（复发计数）；类计数达 2 即够门槛。判据、门槛与首例单源 = [发现机械化 ADR](../notes/implemented/process/2026-09-11-review-finding-mechanization.md)；本步不新增评审代理。
+- 每批把发现的**类**记入 journal（复发计数——够不够门槛据此判）。判据、门槛与首例单源 = [发现机械化 ADR](../notes/implemented/process/2026-09-11-review-finding-mechanization.md)；本步不新增评审代理。
 
 ### 4.5 等待纪律
 

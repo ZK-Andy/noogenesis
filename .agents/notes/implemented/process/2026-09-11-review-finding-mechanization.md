@@ -1,6 +1,7 @@
 # Agent Note: 评审发现的机械化——把复发的可判问题做成机械校验
 
 Status: implemented
+Review: FULL/2026-09-11/R1=ok R2=ok R3=ok
 
 Related: 评审契约 [review](../../../../docs/method/review.md)（findings 形态与三路收窄）、主链路 [feature-flow](../../../workflows/feature-flow.md) §4.6（挂载点）、收尾检查单 [session-close](../../../workflows/session-close.md)（机械化对账行）、门槛判据 [anti-overdesign](../../../../docs/method/anti-overdesign.md)；落地件 [verify-command-surface](../../../../scripts/verify-command-surface.mts)、[verify-package-invariants](../../../../scripts/verify-package-invariants.mts)、[verify-secrets](../../../../scripts/verify-secrets.mts)；写作面 [doc-standards](../../../../docs/method/doc-standards.md) 铁律 6。
 
@@ -12,7 +13,7 @@ Related: 评审契约 [review](../../../../docs/method/review.md)（findings 形
 
 - **声明面漂移**（2 次）：2026-09-08 `engine/AGENTS.md` 写「四命令」而 `bin.ts` 是五命令；2026-09-11 `bin.ts` 头注写「五命令」而两 README / `engine/AGENTS` / `code-standards` 已是六命令。
 - **门禁件自身的盲区**（3 次）：2026-09-05 cookbook 记「门禁未经真实样例校准会带 bug」；2026-09-11 [verify-secrets](../../../../scripts/verify-secrets.mts) 两条——负样例根本没走到 `reject`（只证明上游正则不匹配）、URL 族 `reject` 吃整段匹配致环境变量式口令误报（`postgres://user:$PGPASS@host` 本应放行）。
-- **README 版本行**：每次发版靠人工同步（0.2.3、0.2.4 两轮手工改）+ `session-close` 强制人工核对——机器面完全没有这一项。
+- **README 版本行**：版本行由独立提交手工同步（`71601e7` 0.1.3→0.2.3、`5b9279c` 0.2.3→0.2.4 各只改 README 版本行；`scripts/release/bump.mts` 只碰 `package.json` 与 lock）+ `session-close` 强制人工核对——机器面此前没有这一项。【推断 · 未证】该手工步骤在每次发版都会出现（无法从仓内证明"每次"，只证明这两轮）。
 
 ## Decision
 
@@ -20,19 +21,19 @@ Related: 评审契约 [review](../../../../docs/method/review.md)（findings 形
 
 **2. 本次机械化三件**：
 
-- `scripts/verify-command-surface.mts`（新件，白名单条目 `command-surface`）：事实源 = `engine/bin.ts` 的命令分支；判据 = ①`bin.ts` usage 行命令集与 ②`engine/README.md` 合同面代码块命令集**逐字等于**分支集，③六个活声明面的「N 命令 / N commands」计数等于核心命令数（去 `self-test`）。扫描面是白名单活声明面；**历史叙事面**（journal / ADR / HANDOFF 滚动窗）不扫（它们合法地记载当时的命令数）；「N 命令各一」描述命令件个数，是显式例外。
-- `scripts/verify-package-invariants.mts` 判据 6（并入既有发布面不变量闸，不新增条目）：README（双语）的 `noogenesis-dsh@X.Y.Z` 必须等于 `package.json.version`，且至少声明一次。
+- `scripts/verify-command-surface.mts`（新件，白名单条目 `command-surface`）：事实源 = `engine/bin.ts` 的命令分支（`cmd === '…'`）；判据 = ①`bin.ts` 的 `usage()` 数组区间、②`engine/README.md` 首个含调用的 fenced 代码块——两处**声明区**的命令集逐字等于分支集；③计数面白名单里**同行点名 CLI/engine** 的「N 命令 / N commands」等于核心命令数（去 `self-test`）。声明区清单与计数面白名单的单源 = 该件 `SET_SURFACES` / `COUNT_SURFACES` 常量（本件不抄其条数）。**历史叙事面**（journal / ADR / HANDOFF 滚动窗）不扫（它们合法地记载当时的命令数）；「N 命令各一」描述命令件个数，是显式例外；普通英文散文里的「one command」不是命令面声明（同行无 CLI/engine 即跳过）。
+- `scripts/verify-package-invariants.mts` 判据 6（并入既有发布面不变量闸，不新增条目）：三个版本面 —— 两个 README **各自**必须声明 `noogenesis-dsh@X.Y.Z` 且等于 `package.json.version`；`HANDOFF.md` 属状态面（声明了就必须对，不强制有锚）。面清单单源 = 该件 `VERSION_SURFACES` 常量。
 - `scripts/verify-secrets.mts` 元断言：`SECRET_PATTERNS` 每条必须有**绑定它的正样例**（命中且 label 相符——按序扫描，落在更早模式上即不合格），带 `reject` 的每条必须有**「匹配后被 reject 否决」的绑定负样例**。首跑即抓出两条名义覆盖夹具（Google key 长度不足、连接串样例被赋值族先命中）。
 
-**3. 评估未过（附实测，不装成已解）**：durable 文档「变更史词面闸」不立——实测 64 件文档、标记命中 19 处，其中 18 处为**规则自指**（标准文档本身引用被禁词表：`doc-standards` / `AGENTS` / `code-standards` / `ai-collaboration-method`）或正当用法，噪声率约 95%。该面继续归评审语义面 + `noo-trim-cot-leakage` 技能。
+**3. 评估未过（附实测，不装成已解）**：durable 文档「变更史词面闸」不立。【探索性 · n=1 次本机实测】口径 = 扫 `.agents/notes/{implemented,proposed}` + `docs/method` + 两 README + 根 AGENTS（共 64 件 md），标记表 = 英文 5 条（`previously` / `no longer` / `used to be` / `renamed` / `was changed to`）+ 中文 5 条（`曾经` / `之前是` / `改自` / `不再(是|支持|走|用)` / `原先`），逐行正则计数。**现象**：命中 19 处，其中 18 处落在**定义这条禁令的规则文档自身**（`doc-standards` / 根 AGENTS / `code-standards` / `ai-collaboration-method` 引用被禁词表）或正当用法。**该面继续归评审语义面 + `noo-trim-cot-leakage` 技能**（成因未证，不列机制结论）。
 
 **4. 接线与动作点**：[feature-flow](../../../workflows/feature-flow.md) §4.6「发现机械化」= 评审收尾后的确定性动作（逐条判可机械判性与门槛；未达门槛或语义面按既有归口，**不新造载体**）；[session-close](../../../workflows/session-close.md) 增机械化对账一行。新门禁的 self-test 入 CI 抽查清单。
 
-**5. 反哺**：每批把发现按「类」记入 journal（复发计数）；类计数达 2 即按第 1 条判据机械化——本批即首例（三个类各带 ≥2 次证据）。
+**5. 反哺**：发现的**类**随批记入 journal（动作在 [feature-flow](../../../workflows/feature-flow.md) §4.6），类复发达到第 1 条门槛即机械化——本批即首例（三个类各带 ≥2 次复发证据）。
 
 ## Alternatives considered
 
-- **每个 finding 都建门禁**：落败——门禁是维护面且自身会带缺陷（本批 R2-B3）；判据必须带门槛。
+- **每个 finding 都建门禁**：落败——门禁是维护面且自身会带缺陷（[verify-secrets](../../../../scripts/verify-secrets.mts) 的 URL 族误报实证）；判据必须带门槛。
 - **让三路评审代理顺手机械化**：落败——机械化需要跨路视野（同一类常横跨 R1/R2：声明面漂移两路各现一次），且评审的有效载荷应保持 findings 原样；机械化集中一次做。
 - **变更史词面闸**：实测噪声约 95%（数据在案），落败——中文标记与"规则自指"把误报推高到不可用。
 - **收尾单源同步闸**（档案页/行动区 ↔ 已落地 ADR）：判据模糊——「待启动」字样与 ADR 存在性之间没有稳定关系，不立。
@@ -41,6 +42,6 @@ Related: 评审契约 [review](../../../../docs/method/review.md)（findings 形
 ## Consequences
 
 - **三类复发不再进评审**：命令面漂移、README 版本漂移、凭据模式表的双向覆盖（后者的夹具面）。
-- **成本护栏**：每加一条门禁 = 多一个维护面；门槛（复发 ≥2 或代价高）与「先实测再立闸」（M4 例）是其约束；`command-surface` 的白名单扫描面防止把历史叙事面一并卷入。
-- **漂移面先删、必留的落成锚点**：[doc-standards](../../../../docs/method/doc-standards.md) 铁律 6 收紧为「无闸覆盖的计数不进正文」——无闸的漂移面先删（本批删了 `HANDOFF.md` 一处陈旧计数），用户面必须保留的计数落成被 `command-surface` 逐处校核的锚点。门禁只兜底，不替代删除。
+- **成本护栏**：每加一条门禁 = 多一个维护面；门槛（复发 ≥2 或代价高）与「先实测再立闸」（见 Decision 3 的变更史词面闸实测：噪声过高即不立）是其约束；`command-surface` 的白名单扫描面防止把历史叙事面一并卷入。
+- **漂移面先删、必留的落成锚点**：[doc-standards](../../../../docs/method/doc-standards.md) 铁律 6 收紧为「无闸覆盖的计数不进正文」——无闸的漂移面先删；用户面必须保留的计数则落成被 `command-surface` 逐处校核的锚点。门禁只兜底，不替代删除。
 - **明确未机械化**（不装成已解）：命名/措辞/证据形态/单源撕裂/外部证据可复现性等语义面，仍靠评审三路 + 根 AGENTS「评审检查项」AI 兜底清单。
