@@ -254,84 +254,87 @@ function selfTest(): number {
   };
 
   const cases: Array<[string, number, string]> = []; // (notes_root, expected_exit, description)
-  const t = fs.mkdtempSync(path.join(os.tmpdir(), "adr-format-"));
-
-  // case A: 全合规树 → exit 0
-  const conform = path.join(t, "conform");
-  fs.mkdirSync(path.join(conform, "implemented", "feature"), { recursive: true });
-  writeStatus(path.join(conform, "implemented", "feature"), "2026-08-27-naming-ok.md", "implemented");
-  cases.push([conform, 0, "conforming tree -> pass"]);
-
-  // case B: class 段不在封闭集 → exit 1
-  const badclass = path.join(t, "badclass");
-  fs.mkdirSync(path.join(badclass, "implemented", "refactor"), { recursive: true });
-  writeStatus(path.join(badclass, "implemented", "refactor"), "2026-08-27-naming-ok.md", "implemented");
-  cases.push([badclass, 1, "invalid class 'refactor' -> fail"]);
-
-  // case C: slug 含大写 → exit 1
-  const badslug = path.join(t, "badslug");
-  fs.mkdirSync(path.join(badslug, "implemented", "feature"), { recursive: true });
-  writeStatus(path.join(badslug, "implemented", "feature"), "2026-08-27-Naming-Ok.md", "implemented");
-  cases.push([badslug, 1, "uppercase in filename -> fail"]);
-
-  // case D: future date → exit 1（相对 UTC 今天 +2，恒超过 +1 容差，跨时区亦确定失败）
-  const futuredate = path.join(t, "futuredate");
-  fs.mkdirSync(path.join(futuredate, "implemented", "feature"), { recursive: true });
-  const today = todayUtcYmd();
-  const future = new Date(Date.UTC(today.y, today.m - 1, today.d) + 2 * 86400000);
-  const futureStr = `${String(future.getUTCFullYear()).padStart(4, "0")}-${pad2(future.getUTCMonth() + 1)}-${pad2(future.getUTCDate())}`;
-  writeStatus(path.join(futuredate, "implemented", "feature"), `${futureStr}-naming-ok.md`, "implemented");
-  cases.push([futuredate, 1, "date after today -> fail"]);
-
-  // case E: 非真日历日 → exit 1
-  const baddate = path.join(t, "baddate");
-  fs.mkdirSync(path.join(baddate, "implemented", "feature"), { recursive: true });
-  writeStatus(path.join(baddate, "implemented", "feature"), "2026-02-31-naming-ok.md", "implemented");
-  cases.push([baddate, 1, "invalid calendar date -> fail"]);
-
-  // case F: 段数错（class 目录缺位）→ exit 1
-  const badcount = path.join(t, "badcount");
-  fs.mkdirSync(path.join(badcount, "implemented"), { recursive: true });
-  writeStatus(path.join(badcount, "implemented"), "2026-08-27-naming-ok.md", "implemented");
-  cases.push([badcount, 1, "path not 3 segments -> fail"]);
-
-  // case G: lifecycle 树外的杂散顶层笔记 → exit 1（fail-closed：豁免面仅封闭集两件）
-  const stray = path.join(t, "stray");
-  fs.mkdirSync(stray, { recursive: true });
-  fs.writeFileSync(path.join(stray, "drafts-scratch.md"), "# Agent Note: scratch\n\nStatus: implemented\n");
-  cases.push([stray, 1, "stray note outside lifecycle tree -> fail"]);
-
-  // case H: 深位同名豁免件（README.md 不在顶层）→ exit 1（豁免只认一层深度）
-  const deepreadme = path.join(t, "deepreadme");
-  fs.mkdirSync(path.join(deepreadme, "implemented", "feature"), { recursive: true });
-  fs.writeFileSync(path.join(deepreadme, "implemented", "feature", "README.md"), "# Agent Note: stray\n\nStatus: implemented\n");
-  cases.push([deepreadme, 1, "deep-position same-name exempt file -> fail"]);
-
   let failed = 0;
-  for (const [notesRoot, expected, desc] of cases) {
-    const { errors } = scan(notesRoot);
-    const actual = errors.length > 0 ? 1 : 0;
-    if (actual === expected) {
-      console.log(`  ok: ${desc}`);
+  const t = fs.mkdtempSync(path.join(os.tmpdir(), "adr-format-"));
+  try {
+
+    // case A: 全合规树 → exit 0
+    const conform = path.join(t, "conform");
+    fs.mkdirSync(path.join(conform, "implemented", "feature"), { recursive: true });
+    writeStatus(path.join(conform, "implemented", "feature"), "2026-08-27-naming-ok.md", "implemented");
+    cases.push([conform, 0, "conforming tree -> pass"]);
+
+    // case B: class 段不在封闭集 → exit 1
+    const badclass = path.join(t, "badclass");
+    fs.mkdirSync(path.join(badclass, "implemented", "refactor"), { recursive: true });
+    writeStatus(path.join(badclass, "implemented", "refactor"), "2026-08-27-naming-ok.md", "implemented");
+    cases.push([badclass, 1, "invalid class 'refactor' -> fail"]);
+
+    // case C: slug 含大写 → exit 1
+    const badslug = path.join(t, "badslug");
+    fs.mkdirSync(path.join(badslug, "implemented", "feature"), { recursive: true });
+    writeStatus(path.join(badslug, "implemented", "feature"), "2026-08-27-Naming-Ok.md", "implemented");
+    cases.push([badslug, 1, "uppercase in filename -> fail"]);
+
+    // case D: future date → exit 1（相对 UTC 今天 +2，恒超过 +1 容差，跨时区亦确定失败）
+    const futuredate = path.join(t, "futuredate");
+    fs.mkdirSync(path.join(futuredate, "implemented", "feature"), { recursive: true });
+    const today = todayUtcYmd();
+    const future = new Date(Date.UTC(today.y, today.m - 1, today.d) + 2 * 86400000);
+    const futureStr = `${String(future.getUTCFullYear()).padStart(4, "0")}-${pad2(future.getUTCMonth() + 1)}-${pad2(future.getUTCDate())}`;
+    writeStatus(path.join(futuredate, "implemented", "feature"), `${futureStr}-naming-ok.md`, "implemented");
+    cases.push([futuredate, 1, "date after today -> fail"]);
+
+    // case E: 非真日历日 → exit 1
+    const baddate = path.join(t, "baddate");
+    fs.mkdirSync(path.join(baddate, "implemented", "feature"), { recursive: true });
+    writeStatus(path.join(baddate, "implemented", "feature"), "2026-02-31-naming-ok.md", "implemented");
+    cases.push([baddate, 1, "invalid calendar date -> fail"]);
+
+    // case F: 段数错（class 目录缺位）→ exit 1
+    const badcount = path.join(t, "badcount");
+    fs.mkdirSync(path.join(badcount, "implemented"), { recursive: true });
+    writeStatus(path.join(badcount, "implemented"), "2026-08-27-naming-ok.md", "implemented");
+    cases.push([badcount, 1, "path not 3 segments -> fail"]);
+
+    // case G: lifecycle 树外的杂散顶层笔记 → exit 1（fail-closed：豁免面仅封闭集两件）
+    const stray = path.join(t, "stray");
+    fs.mkdirSync(stray, { recursive: true });
+    fs.writeFileSync(path.join(stray, "drafts-scratch.md"), "# Agent Note: scratch\n\nStatus: implemented\n");
+    cases.push([stray, 1, "stray note outside lifecycle tree -> fail"]);
+
+    // case H: 深位同名豁免件（README.md 不在顶层）→ exit 1（豁免只认一层深度）
+    const deepreadme = path.join(t, "deepreadme");
+    fs.mkdirSync(path.join(deepreadme, "implemented", "feature"), { recursive: true });
+    fs.writeFileSync(path.join(deepreadme, "implemented", "feature", "README.md"), "# Agent Note: stray\n\nStatus: implemented\n");
+    cases.push([deepreadme, 1, "deep-position same-name exempt file -> fail"]);
+
+    for (const [notesRoot, expected, desc] of cases) {
+      const { errors } = scan(notesRoot);
+      const actual = errors.length > 0 ? 1 : 0;
+      if (actual === expected) {
+        console.log(`  ok: ${desc}`);
+      } else {
+        console.log(`  ✗ ${desc}: expected exit ${expected}, got ${actual} (${errors.join("; ")})`);
+        failed = 1;
+      }
+    }
+    // case F 文案钉死：段数实测值必须内插（夹具只断退出码时，文案残缺无人看见）
+    const fErrors = scan(badcount).errors.filter((e) => e.includes("3 segments"));
+    if (fErrors.length === 1 && /got 2\)/.test(fErrors[0]!)) {
+      console.log("  ok: segment-count message interpolates actual count");
     } else {
-      console.log(`  ✗ ${desc}: expected exit ${expected}, got ${actual} (${errors.join("; ")})`);
+      console.log(`  ✗ segment-count message: ${fErrors.join("; ")}`);
       failed = 1;
     }
+    if (failed === 0) {
+      console.log("== verify-adr-format self-test passed ==");
+    } else {
+      console.error("== verify-adr-format self-test failed ==");
+    }
+  } finally {
+    fs.rmSync(t, { recursive: true, force: true });
   }
-  // case F 文案钉死：段数实测值必须内插（夹具只断退出码时，文案残缺无人看见）
-  const fErrors = scan(badcount).errors.filter((e) => e.includes("3 segments"));
-  if (fErrors.length === 1 && /got 2\)/.test(fErrors[0]!)) {
-    console.log("  ok: segment-count message interpolates actual count");
-  } else {
-    console.log(`  ✗ segment-count message: ${fErrors.join("; ")}`);
-    failed = 1;
-  }
-  if (failed === 0) {
-    console.log("== verify-adr-format self-test passed ==");
-  } else {
-    console.error("== verify-adr-format self-test failed ==");
-  }
-  fs.rmSync(t, { recursive: true, force: true });
   return failed;
 }
 
