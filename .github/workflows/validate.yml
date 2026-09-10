@@ -75,6 +75,7 @@ jobs:
           node scripts/verify-lint.mts --self-test
           node scripts/verify-export-docs.mts --self-test
           node scripts/verify-secrets.mts --self-test
+          node scripts/verify-command-surface.mts --self-test
           node scripts/verify-package-invariants.mts --self-test
 
       # 引擎元评测（schema ADR S3）：与 verify-* self-test 平级，不占门禁编号；

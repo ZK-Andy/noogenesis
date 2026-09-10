@@ -15,6 +15,7 @@
     { "name": "change-scope", "cmd": "node", "args": ["scripts/change-scope.mts", "{{outgoing_base}}", "{{head}}"] },
     { "name": "lint", "cmd": "node", "args": ["scripts/verify-lint.mts"] },
     { "name": "secrets", "cmd": "node", "args": ["scripts/verify-secrets.mts"] },
+    { "name": "command-surface", "cmd": "node", "args": ["scripts/verify-command-surface.mts"] },
     { "name": "export-docs", "cmd": "node", "args": ["scripts/verify-export-docs.mts"] },
     { "name": "package-invariants", "cmd": "node", "args": ["scripts/verify-package-invariants.mts"] },
     { "name": "ts-typecheck", "cmd": "node", "args": ["node_modules/typescript/bin/tsc", "--noEmit"] }

@@ -176,8 +176,13 @@ function evaluateSecrets(repoRoot: string): { code: number; report: string } {
 }
 
 /**
- * 离线夹具自测：正样例（各家族必须命中）与负样例（占位符/环境引用不得命中）
- * 逐条钉死，扫描面覆盖（genes/events/observations）+ 面缺席 + 仓根不可用。
+ * 离线夹具自测，三类断言：
+ *   1. **模式双向覆盖（元断言）**：`SECRET_PATTERNS` 每条必须有一条绑定它的正样例
+ *      （命中且 label 相符——按序扫描，落在更早模式上即判不合格），带 `reject` 的
+ *      还必须有一条绑定它的「匹配后被 reject 否决」负样例。这是本件自身盲区的机械
+ *      化（判据来源 = ADR 2026-09-11-review-finding-mechanization）。
+ *   2. 上游即挡的负样例：不得被任何模式命中。
+ *   3. 扫描面：genes/events/observations 三面 + 面缺席 + 仓根不可用。
  * 返回退出码（0 全过 / 1 有夹具违约）。
  */
 function selfTest(): number {
@@ -188,39 +193,87 @@ function selfTest(): number {
 		const got = evaluateSecrets(root).code;
 		if (got !== want) failures.push(`${label}: 期望 exit ${want}，实得 ${got}`);
 	};
-	// 模式级正样例：每族一条真实形状（含旧引擎盲区：env 式 / JWT / URL / 连接串）。
+	// 正样例：**绑定模式 label**（元断言 1 据此判定覆盖）。含旧引擎盲区：env 式赋值 / JWT / URL / 连接串。
+	// 模式表按序扫描：≥16 字符的口令先被「凭据赋值」族命中，连接串族的独有覆盖是短口令
+	// （赋值族值类下限 16、连接串族下限 6）——长口令归赋值族是正常归属，不是漏报。
 	const positives: [string, string][] = [
-		["anthropic", 'note "sk-ant-api03-AAAABBBBCCCCDDDDEEEE"'],
-		["github", 'token ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'],
-		["aws", '{"key":"AKIAIOSFODNN7EXAMPLE"}'],
-		["private-key", "-----BEGIN OPENSSH PRIVATE KEY-----"],
-		["jwt", 'h "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dBjftJeZ4CVPmB92K27uhbUJU1p1r_wW1gFWFOEjXk"'],
-		["env-assign", "DB_PASSWORD=hunter2hunter2xy"],
-		["json-assign", '"apiKey": "abcdef1234567890abcd"'],
-		["url-cred", '"postgres://appuser:s3cretpw@db.example.com:5432/app"'],
-		["connstring", '"Server=db;Password=sup3rsecretvalue;Database=app"'],
+		["AnySearch API key", "note as_sk_ABCDEFGH12345678"],
+		["Anthropic API key", 'note "sk-ant-api03-AAAABBBBCCCCDDDDEEEE"'],
+		["OpenAI-style API key", "const k = 'sk-proj-AAAABBBBCCCCDDDDEEEE'"],
+		["GitHub token", "token ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"],
+		["GitHub fine-grained PAT", "token github_pat_ABCDEFGHIJKLMNOPQRSTUVWX"],
+		["AWS access key", '{"key":"AKIAIOSFODNN7EXAMPLE"}'],
+		["Google API key", "key AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ0123456"],
+		["Slack token", "token xoxb-1234567890-abcdefghij"],
+		["npm grant token", "npm_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"],
+		["private key block", "-----BEGIN OPENSSH PRIVATE KEY-----"],
+		["JWT", 'h "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxMjM0NTY3ODkwIn0.dBjftJeZ4CVPmB92K27uhbUJU1p1r_wW1gFWFOEjXk"'],
+		["credential assignment", "DB_PASSWORD=hunter2hunter2xy"],
+		["credential assignment", '"apiKey": "abcdef1234567890abcd"'],
+		["credential in URL", '"postgres://appuser:s3cretpw@db.example.com:5432/app"'],
+		["connection-string credential", '"Server=db;Password=abc123;Database=app"'],
 	];
-	for (const [label, line] of positives) {
-		if (!scanLine(line)) failures.push(`pattern positive missed: ${label}`);
+	// 元断言 1（正）：每条模式都有绑定样例，且命中它的正是它自己。
+	for (const pattern of SECRET_PATTERNS) {
+		const bound = positives.filter(([label]) => label === pattern.label);
+		if (!bound.length) {
+			failures.push(`pattern has no positive fixture: ${pattern.label}`);
+			continue;
+		}
+		for (const [, line] of bound) {
+			const hit = scanLine(line);
+			if (!hit) failures.push(`positive fixture missed: ${pattern.label} (${line})`);
+			else if (hit.label !== pattern.label) failures.push(`positive fixture hit wrong pattern (${hit.label}, expected ${pattern.label}): ${line}`);
+		}
 	}
-	// 模式级负样例：占位符 / 环境引用 / 短值不得命中（误报会把真实写入拦在门外）。
-	// 两组含义不同，勿混：前四条走「赋值族正则本身不匹配」（值类不含 `$`/`{`/`<`，或长度不足）；
-	// 后四条走连接串 / URL 族正则会匹配、由 `reject: isPlaceholder` 否决——占位符否决的
-	// 各个分支（全大写 / 词根 / `$` / `{` / `<`）都必须有夹具钉住。
-	const negatives: [string, string][] = [
+	// 负样例：绑定模式 label，且必须**由该模式匹配后被 reject 否决**（不是靠上游正则挡住）。
+	const rejected: [string, string][] = [
+		["credential assignment", '{"dbPassword": "YOUR_PLACEHOLDER_VALUE"}'],
+		["credential in URL", "postgres://appuser:$PGPASS@db.example.com:5432/app"],
+		["credential in URL", "postgres://appuser:{{token}}@db.example.com:5432/app"],
+		["connection-string credential", "Server=db;Password=YOUR_PASSWORD_HERE;Database=app"],
+		["connection-string credential", "Server=db;Password=changeme;Database=app"],
+		["connection-string credential", "Server=db;Password=<your-password>;Database=app"],
+	];
+	const owner = (line: string): string | null => {
+		for (const pattern of SECRET_PATTERNS) {
+			const m = pattern.regex.exec(line);
+			if (!m) continue;
+			const value = m[pattern.valueGroup ?? 0] ?? "";
+			if (!value || pattern.reject?.(value)) continue;
+			return pattern.label;
+		}
+		return null;
+	};
+	// 元断言 1（负）：带 reject 的模式必有「匹配且被否决」的绑定样例。
+	for (const pattern of SECRET_PATTERNS) {
+		if (!pattern.reject) continue;
+		const bound = rejected.filter(([label]) => label === pattern.label);
+		if (!bound.length) {
+			failures.push(`reject-bearing pattern has no rejected fixture: ${pattern.label}`);
+			continue;
+		}
+		for (const [, line] of bound) {
+			const m = pattern.regex.exec(line);
+			if (!m) {
+				failures.push(`rejected fixture does not even match its pattern: ${pattern.label} (${line})`);
+				continue;
+			}
+			const value = m[pattern.valueGroup ?? 0] ?? "";
+			if (!pattern.reject(value)) failures.push(`rejected fixture not vetoed by reject: ${pattern.label} (${line})`);
+			if (owner(line) !== null) failures.push(`rejected fixture still reported by ${String(owner(line))}: ${line}`);
+		}
+	}
+	// 上游即挡的负样例（值类不含 `$`/`{`/`<`，或长度不足）——不得被任何模式命中。
+	const unmatchable: [string, string][] = [
 		["assign-allcaps", "API_KEY=YOUR_API_KEY_HERE"],
 		["assign-env-ref", "API_KEY=$OPENAI_API_KEY"],
 		["assign-template-ref", '"token": "{{token}}"'],
 		["assign-angle-ref", "PASSWORD=<your-password>"],
 		["assign-too-short", 'apiKey: "abc123"'],
-		["connstring-allcaps", "Server=db;Password=YOUR_PASSWORD_HERE;Database=app"],
-		["connstring-changeme", "Server=db;Password=changeme;Database=app"],
-		["connstring-angle", "Server=db;Password=<your-password>;Database=app"],
-		["url-template", "postgres://appuser:{{token}}@db.example.com:5432/app"],
-		["url-env-ref", "postgres://appuser:$PGPASS@db.example.com:5432/app"],
 		["plain-prose", "evidence: evaluate ok: all 16 gates green"],
 	];
-	for (const [label, line] of negatives) {
+	for (const [label, line] of unmatchable) {
 		const hit = scanLine(line);
 		if (hit) failures.push(`pattern negative matched (${hit.label}): ${label}`);
 	}

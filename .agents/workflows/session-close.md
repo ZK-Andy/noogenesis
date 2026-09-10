@@ -6,7 +6,7 @@
 
 1. **提交对账**：`git log` 本会话全部提交 vs HANDOFF 最新记录——每条提交必须能对应到交接条目。
 2. **技能与评审机器面对账（M1 守卫③ + 评审对账）**：grep 本会话宿主日志 `tool/result` 事件文本中的技能调用痕迹，列出本会话实际载过哪些技能；「该载未载」的裁断不自动化——对照本会话任务型留人/评审判断（证据面 = 宿主日志，A8 撤除后既定口径；拍板单源 = [M1 立项 ADR](../notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) Decision 1③）。同面增 grep 评审机器面闭集标记（`verify-review-brief` / `verify-review-tier` / `gates --run`），对照本会话 ADR Review 行与收口条目——**「声称 FULL 收口但评审无机器面痕迹」即假完成**，补跑评审或显式降档后才算收口；跨会话评审（评审在先前会话完成、收口在续接会话执行）的标记经 Review 行日期与收口条目在案即视同有证据，不因本会话日志零标记误判（拍板单源 = [评审实质执行 ADR](../notes/implemented/architecture/2026-09-10-review-execution-reconciliation.md)）。
-3. **决策落档（结论只落 durable 四家）**：本轮拍板结论是否已进 ADR / `docs/cookbook.md` / README / AGENTS？没有则补。**结论只落 durable 四家，不落 HANDOFF 滚动窗**——滚动窗不复述结论；凡待跨会话用的复现细节/取证点/判据，正文进 durable 家，滚动窗与待办区只留指针。
+3. **决策落档（结论只落 durable 四家）**：本轮拍板结论是否已进 ADR / `docs/cookbook.md` / README / AGENTS？没有则补。**机械化对账**：本会话跑过评审的，[发现机械化](feature-flow.md) §4.6 是否已执行——够门槛的可机械判类是否已落成判据/夹具，未达门槛的类是否已记入 journal 复发计数（判据单源 = [机械化 ADR](../notes/implemented/process/2026-09-11-review-finding-mechanization.md)）。**结论只落 durable 四家，不落 HANDOFF 滚动窗**——滚动窗不复述结论；凡待跨会话用的复现细节/取证点/判据，正文进 durable 家，滚动窗与待办区只留指针。
 4. **待办对账（跨会话遗留的唯一落点）**：`HANDOFF-todos.md` 增删——本轮产生的跨会话遗留/观察/待复现项（够不上「结论/决策」的那类）**必须写进待办区**（写清受影响面与前置研究点；`[ ]` 条 ≤340 字、`[x]` 压缩为一行指针），不留滚动窗副本。
 5. **README 核对（强制，每次收尾必做）**：核对 `README.md` 与 shipped 现实——计数、功能清单、结构表述；**有漂移即修正并随本批次提交**；无漂移也须在收尾汇报中显式说明「README 核对无变更」。
 6. **未推送提醒**：本地领先 origin 的提交数如实告知用户；是否推送由用户定或按既定惯例。

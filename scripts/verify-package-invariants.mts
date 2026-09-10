@@ -11,7 +11,10 @@
  *   3. dist 关键件实存（适配层入口 / 引擎 CLI / 门禁清单）；
  *   4. `engines.node` 在场、`dsh.bundle.patch` 指向实存件、`peerDependencies`
  *      的 `@deepseek-ai/*` 两件（dsh-tools + dsh-llm）在场；
- *   5. `files` 不得收录白名单外目录（`src/` / `tests/` / `.cache/`）。
+ *   5. `files` 不得收录白名单外目录（`src/` / `tests/` / `.cache/`）；
+ *   6. README 的包版本声明（`noogenesis-dsh@X.Y.Z`）必须等于 `package.json.version`，
+ *      且至少声明一次——发版靠人工同步 README 版本行 = 漂移面（评审发现的机械化；
+ *      ADR 2026-09-11-review-finding-mechanization）。
  *
  * 前置：`npm run build`（dist 由 tsc 产出）；缺 dist → fail-closed exit 2
  *（发布面不变量在缺件时无法判定，不得静默绿）。权威面 = CI（先构建再跑）；
@@ -46,12 +49,18 @@ const REQUIRED_FILES_ENTRIES = [
 /** 不得进发布白名单的目录前缀（源码/测试/本地缓存）。 */
 const FORBIDDEN_FILES_PREFIXES = ["src/", "tests/", ".cache/"];
 
+/** README 版本声明面（双语镜像；README.md 必存由 REQUIRED_FILES_ENTRIES 保证）。 */
+const README_VERSION_SURFACES = ["README.md", "README.zh.md"];
+/** 版本声明形态：`noogenesis-dsh@X.Y.Z`（包名后允许一层 Markdown 链接尾）。 */
+const README_VERSION_RE = /noogenesis-dsh(?:`\]\([^)]*\))?@(\d+\.\d+\.\d+)/g;
+
 /** 宿主 peer 依赖允许集（与 adapter selftest 的 import 面断言同集）。 */
 const REQUIRED_PEER_DEPENDENCIES = ["@deepseek-ai/dsh-llm", "@deepseek-ai/dsh-tools"];
 
 /** package.json 中本闸消费的窄面。 */
 interface PackageManifest {
 	name?: string;
+	version?: string;
 	main?: string;
 	exports?: unknown;
 	files?: string[];
@@ -143,6 +152,27 @@ function collectViolations(repoRoot: string, pkg: PackageManifest): string[] {
 			violations.push(`files 收录白名单外目录：${entry}`);
 		}
 	}
+	// 6) README 版本行 == package.json.version（发版手工同步面，机械化）
+	const version = pkg.version;
+	if (typeof version !== "string" || !version.trim()) {
+		violations.push("package.json 缺 version");
+	} else {
+		let declared = 0;
+		for (const surface of README_VERSION_SURFACES) {
+			const abs = path.join(repoRoot, surface);
+			if (!fs.existsSync(abs)) continue;
+			const text = fs.readFileSync(abs, "utf-8");
+			for (const match of text.matchAll(new RegExp(README_VERSION_RE.source, README_VERSION_RE.flags))) {
+				declared += 1;
+				if (match[1] !== version) {
+					violations.push(`${surface} 版本行漂移：声明 ${String(match[1])}，package.json 为 ${version}`);
+				}
+			}
+		}
+		if (declared === 0) {
+			violations.push("README 未声明包版本号（noogenesis-dsh@X.Y.Z）——发布面缺人类可读版本锚点");
+		}
+	}
 	return violations;
 }
 
@@ -176,7 +206,12 @@ function selfTest(repoRoot: string): number {
 	const base = JSON.parse(fs.readFileSync(path.join(repoRoot, "package.json"), "utf-8")) as PackageManifest;
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "verify-package-invariants-"));
 	/** 合成一个包：合规基线（真实 manifest + 判据面全实存件）按 mutate 改写，返回退出码。 */
-	const codeOf = (label: string, mutate: (pkg: PackageManifest) => void, remove?: (root: string) => void): number => {
+	const codeOf = (
+		label: string,
+		mutate: (pkg: PackageManifest) => void,
+		remove?: (root: string) => void,
+		rewrite?: (root: string) => void,
+	): number => {
 		const root = path.join(dir, label);
 		fs.mkdirSync(root, { recursive: true });
 		for (const rel of [...DIST_KEY_FILES, ...REQUIRED_FILES_ENTRIES]) {
@@ -187,11 +222,26 @@ function selfTest(repoRoot: string): number {
 		const pkg = structuredClone(base);
 		mutate(pkg);
 		fs.writeFileSync(path.join(root, "package.json"), JSON.stringify(pkg, null, 2));
+		// README 版本面：合规基线写正确的版本声明（判据 6），rewrite 钩子再做变异。
+		for (const rel of README_VERSION_SURFACES) {
+			const abs = path.join(root, rel);
+			fs.mkdirSync(path.dirname(abs), { recursive: true });
+			fs.writeFileSync(abs, `see noogenesis-dsh@${String(pkg.version ?? "0.0.0")} here\n`);
+		}
 		remove?.(root);
+		rewrite?.(root);
 		return evaluatePackage(root).code;
 	};
-	const expect = (label: string, want: number, mutate: (pkg: PackageManifest) => void, remove?: (root: string) => void): void => {
-		const got = codeOf(label, mutate, remove);
+	let fixtures = 0;
+	const expect = (
+		label: string,
+		want: number,
+		mutate: (pkg: PackageManifest) => void,
+		remove?: (root: string) => void,
+		rewrite?: (root: string) => void,
+	): void => {
+		fixtures += 1;
+		const got = codeOf(label, mutate, remove, rewrite);
 		if (got !== want) failures.push(`${label}: 期望 exit ${want}，实得 ${got}`);
 	};
 	try {
@@ -227,6 +277,14 @@ function selfTest(repoRoot: string): number {
 		expect("exports-conditions-positive", 0, (pkg) => {
 			pkg.exports = { ".": { types: "./dist/adapters/dsh/index.mjs", default: "./dist/adapters/dsh/index.mjs" } };
 		});
+		// 判据 6：README 版本行漂移 / 未声明版本
+		expect("readme-version-drift", 1, () => {}, undefined, (root) => {
+			fs.writeFileSync(path.join(root, "README.zh.md"), "see noogenesis-dsh@9.9.9 here\n");
+		});
+		expect("readme-version-absent", 1, () => {}, undefined, (root) => {
+			fs.writeFileSync(path.join(root, "README.md"), "no version token here\n");
+			fs.writeFileSync(path.join(root, "README.zh.md"), "no version token here\n");
+		});
 		// fail-closed 三档（缺 package.json / 缺 dist / 坏 JSON）——直跑判据主体。
 		const empty = path.join(dir, "empty");
 		fs.mkdirSync(empty, { recursive: true });
@@ -246,7 +304,7 @@ function selfTest(repoRoot: string): number {
 		for (const failure of failures) console.log(`SELF-TEST FAIL: ${failure}`);
 		return 1;
 	}
-	console.log(`${PROGRAM} self-test: 15 fixtures passed`);
+	console.log(`${PROGRAM} self-test: ${fixtures} fixtures passed`);
 	return 0;
 }
 
