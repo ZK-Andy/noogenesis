@@ -11,7 +11,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-10｜**注释面在环扩面批收口（FULL 三审 R1 0B/3S、R2 1B/5S、R3 2B/5S 全采纳；ADR [export-docs-inloop](.agents/notes/implemented/architecture/2026-09-10-export-docs-inloop.md) implemented；`633b017`→`db4406a`）**：A4 在环面扩到注释规范（判据件文件目标模式 + 死锁门单源）。**节点：真机复验随下一发版。** README 无漂移。
+- 2026-09-10｜**注释面在环扩面批收口（FULL 三审 R1 0B/3S、R2 1B/5S、R3 2B/5S 全采纳；ADR [export-docs-inloop](.agents/notes/implemented/architecture/2026-09-10-export-docs-inloop.md) implemented；`633b017`→`308561c`）**：A4 在环面扩到注释规范（判据件文件目标模式 + 死锁门单源）。**节点：真机复验随下一发版。** README 无漂移。
 
 - 2026-09-10｜**评审实质执行拍板批收口（FULL 三审全采纳；ADR [review-execution-reconciliation](.agents/notes/implemented/architecture/2026-09-10-review-execution-reconciliation.md) implemented；`d79a0b5`）**：session-close 步骤 2 扩评审机器面对账；②缓议观察触发；阻断判不立；B4「另案」补指针。README 无漂移。
 
