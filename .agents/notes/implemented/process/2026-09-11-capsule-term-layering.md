@@ -1,9 +1,9 @@
 # Agent Note: 「胶囊」术语分层——内容包词与 Capsule 原语分开
 
 Status: implemented
-Review: FULL/2026-09-11/pending（三重审核进行中，收口时回填真实结论）
+Review: FULL/2026-09-11/R1=ok R2=ok R3=ok
 
-Related: 原语清单的家 [主设计 §5.1](../../../../docs/research/dsh-swarm-evolution-framework-design.md)；原语后置判定 [2026-09-05-gene-event-schema](../architecture/2026-09-05-gene-event-schema.md)；规则落点 [根 AGENTS.md](../../../../AGENTS.md)「文档纪律」；词面闸判不立先例 [2026-09-11-review-finding-mechanization](2026-09-11-review-finding-mechanization.md)。
+Related: 原语清单的家 [主设计 §5.1](../../../../docs/research/dsh-swarm-evolution-framework-design.md)；原语后置判定 [2026-09-05-gene-event-schema](../architecture/2026-09-05-gene-event-schema.md)；规则落点 [根 AGENTS.md](../../../../AGENTS.md)「文档纪律」；部分重叠的既有权属 [2026-09-06-skills-ride-bank](../architecture/2026-09-06-skills-ride-bank.md) D6、[2026-09-06-p2-shared-consumer](../architecture/2026-09-06-p2-shared-consumer.md) D3；机械化门槛单源 [2026-09-11-review-finding-mechanization](2026-09-11-review-finding-mechanization.md)。
 
 ## Problem
 
@@ -26,10 +26,10 @@ Related: 原语清单的家 [主设计 §5.1](../../../../docs/research/dsh-swar
 2. `Capsule` 原语写 `Capsule`（必要时括注语义，如「`Capsule`（一次真实执行的审计记录）」）；禁写「胶囊原语」，禁把该原语称作「胶囊」。与同族原语并列时写 `gene` / `capsule` / `event`（或 `Gene` / `Capsule` / `Event`）。
 3. 本口径约束中文指代，不另立英文重命名：产品面沿用 `Capsule 01` / evolution capsule，`Capsule` 原语以代码体出现在原语表与 schema 语境，同形由语境分辨。
 4. 其余原语的中文通名不动——本次只解 `Capsule` ↔ 胶囊 一处碰撞，`Gene` / `Event` 的既有写法照旧。
-5. `capsules/` 路径的两种指代不由本口径裁定；adapters 面「按胶囊过滤」读作内容包成员集，合本口径。
-6. 规则落点 = 根 AGENTS.md「文档纪律」一行（正向口径：谁指、禁什么）；写法细则（括注形态、并列写法）以本条为家——两处不是同一事实的复述。主设计 §5.1 正文不改（它已写英文原名）。
+5. `capsules/` 路径的两种指代不由本口径裁定；adapters 面「按胶囊过滤」读作内容包成员集，合本口径。该面既有权属留在 [skills-ride-bank](../architecture/2026-09-06-skills-ride-bank.md) D6（胶囊过滤只立设计约束、过滤本身后置）与 [p2-shared-consumer](../architecture/2026-09-06-p2-shared-consumer.md) D3（`capsules/` 原语后置）——本条与之部分重叠，不取代，只补词面归属。
+6. 规则落点 = 根 AGENTS.md「文档纪律」一行（正向口径：谁指、禁什么），写法细则（括注形态、并列写法）以本条为家；分工合该文件「规则 → 本文件 + 链接」的口诀。主设计 §5.1 正文不改（它已写英文原名）。
 7. 同变更对齐现存违例面：共享层设计稿三处「基因/胶囊」改为 `gene/capsule`；主设计 §3.2「Gene/胶囊」改为「原子胶囊」。
-8. 不立词面门禁：违规只发生在「用胶囊指 Capsule 原语」这一语义条件下，中文「胶囊」的合法用法占绝对多数，机器判不稳；词面闸先例已判不立（指针 = [机械化 ADR](2026-09-11-review-finding-mechanization.md)）。
+8. 不立词面门禁：本类违规须语义判断（判断某处「胶囊」是否在指 `Capsule` 原语），形状不可枚举；按机械化门槛（单源 = [机械化 ADR](2026-09-11-review-finding-mechanization.md)）本类首现且代价低——归评审语义面。
 
 ## Alternatives considered
 
