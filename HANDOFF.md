@@ -11,6 +11,8 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-10｜**M1 双方案设计轮拍板（讨论轮；实现批待开带 ADR）**：技能守卫 = 三件套 v0（A2 技能路标 + tool-pre 触点提醒 advice 不阻断 + session-close 对账；阻断档判不立）；防过度 = 混合 D（精简契约块进根 AGENTS + docs/method 新篇 + cases 留辩论不加载）。要点在优化轮 §2.2-1/2。README 无漂移。
+
 - 2026-09-10｜**记忆库线开题讨论轮 + 档案页制度试点（讨论+实现批；无 ADR，制度批待评估）**：线 = memory-graph 原语 + 痕迹提炼面，不立项知识库；方向已拍板 = 融合轮。试点档案页 = 唯一状态家 [memory-system-dossier.md](docs/research/memory-system-dossier.md)（`ec4e7dc`），todos/优化轮条目迁出留指针。README 无漂移。
 
 - 2026-09-10｜**宿主 OpenCode Go 会话头诊断（无仓变更；cookbook [环境] 入档）**：本机静态 `x-opencode-session` 实证为反模式（亲和桶塌缩）；社区插件 `dsh-opencode-session` 兜底（自定义 provider 名须补路由键坑在案）；用户切内置 opencode-go 路由实证通。**节点：官方 sessionHeader 落地后退役插件（todos C）。** README 无漂移。
@@ -44,7 +46,6 @@
 - 2026-09-08｜**编码强制两轨实施计划落盘（讨论轮；无 ADR，行动区指针）**：`docs/research/coding-enforcement-impl-plan.md`——轨道 A（A4 写码在环反馈 + 指针）+ 轨道 B（宿主 API 签名核对[类型级] + 发布面不变量[AST/JSON]；镜像比对判死；type-aware lint 评估后定）。**节点：下一会话执行批 1。** README 无漂移。
 - 2026-09-08｜**编码规范 c2 机器强制收口（FULL 三审 R1 1B/6S、R2 1B/5S、R3 1B/5S 全采纳；ADR `2026-09-08-c2-lint-enforcement` implemented；`8a3898f`→`9844023`）**：oxlint 白名单 + 导出面契约注释闸入 gates.json（13→15，三面同判据）；清 19 处真实缺陷 + 4 处注释缺口。**节点：c1/c2 闭环。** README 有变更已同步。
 - 2026-09-08｜**编码规范 c1 评审恢复收口（FULL 三审 R1 1B/4S、R2 1B/4S、R3 2B/3S 全采纳；ADR `2026-09-08-coding-standards` implemented；`155e1af`→收口）**：修复 = §2.4 改 [R] + 停档理由、判据收编落家、实例去虚构、兜底归属单源根 AGENTS、五命令对齐、ADR 出处归口问题池。**节点：c1 收口，下一批 = c2。** README 无漂移。
-- 2026-09-08｜**问题池状态同步批（`c53882f` push）**：capsule-01-optimization-round.md 对齐 09-08 现实——TS 统一/推倒重建转已落地；M1/M3 标 A8 撤除随投影面退役、证据回 tool/result 事件文本；上帝类闸 C15 判不立；§3.5 逐项落地。**README 无漂移。**
 - 2026-09-08｜**编码规范 c1 立项 + 部分实现（proposed ADR `2026-09-08-coding-standards`；`155e1af` 未 push）**：拍板 = 注释为主体成文（基准蒸馏社区 TS 规范）+ 命名/结构 + 工程纪律留链接；零工具批，oxlint 排 c2。FULL 三审在 R1/R2 并行后被取消——**批未过 FULL、ADR 未翻转**，评审恢复待办见 todos（C）。**README 无漂移。**
 - 2026-09-08｜**0.2.2 重验 + 宿主 0.1.3-alpha.2 对齐核验（todo B 勾账 + issue 外报条删除；维持 A8 撤除）**：0.2.2 重验绿（日志零 noogenesis/* 事件）；上游 alpha 恢复 ignorable 读侧容忍（ADR 2026-08-30-retain-ignorable-external-session-events）但 append 写入口仍无——撤除结构性成立，复投影不开案。`e717b2d`。**README 无漂移。**
 - 2026-09-08｜**A8 会话记录投影撤除批（FULL 三审全采纳收口；ADR `2026-09-08-a8-session-record-projection-removal` implemented；0.2.2 发版）**：读路径对未标 ignorable 插件事件 fail-closed → 投影面退役，A2 地图与能力层保留。`1eb742e→bee3a35`。**节点：0.2.1 重验判据作废改写（todos → 0.2.2）。** README 核对有变更已同步。
