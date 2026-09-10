@@ -5,13 +5,13 @@
 
 > **⚡ 最高优先级（框架重建）：charter ADR + 七层蓝图 → [.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md) · [docs/research/framework-rebuild-blueprint.md](docs/research/framework-rebuild-blueprint.md)**——用户拍板推倒重建（先框架后协作层、本仓原地重建），蓝图定稿（七层三段式 + A1–A8 挂载面 + M1–M3 + C1–C15）；**B0–B5 全批闭环（协作层重建收官，C1–C15 全绿）**——B5 切换批（gates.json cmd 全量重指 TS + 旧机器件零残留 + CI/钩子单轨 + 发版 0.2.0；实现 ADR [.agents/notes/implemented/architecture/2026-09-08-b5-switch.md](.agents/notes/implemented/architecture/2026-09-08-b5-switch.md)，批次表 [.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md](.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md)）；**优化轮已收口（2026-09-10）**：问题池条目全部判终态、池文档冻结为调研档案（技能清单补全拍板暂不新增技能 + 既有技能 references 实拆补全；记忆库线另立档案页 [memory-system-dossier.md](docs/research/memory-system-dossier.md)；规范展开 c1/c2 已交付；[收口 ADR](.agents/notes/implemented/process/2026-09-10-optimization-round-closure.md) + [池文档 §2.3 收口账](docs/research/capsule-01-optimization-round.md)）。
 
-> **⏭ 下一步：记忆库线融合轮接口契约（讨论轮，零代码）**——融合轮已开题（2026-09-10）：边界拍板 = **按机制收 + 按两半裁**（收 B 半治理与评估机制、逐件带吸收补丁；不收 A 半自动沉淀全家）+ **收机制换触发与对象**；[融合立宪 ADR](.agents/notes/proposed/architecture/2026-09-10-memory-line-fusion-charter.md)（proposed）含补丁清单与待拍板三项，线状态唯一家 [memory-system-dossier.md](docs/research/memory-system-dossier.md)。接口契约三题 = 传什么 / memory-graph 记账点 / 换触发后的触发源。余项候选：护栏建设轮（触发已满足 = 待排期）/ 档案页制度批（触发 = 试点评估）/ 技能清单「等等」候选收集（触发 = 用户再给候选）。
+> **⏭ 下一步：融合轮第一期实现批（范围已拍，待启动）**——融合轮已立宪：边界 = **按机制收 + 按两半裁**（收 B 半、逐件带吸收补丁；不收 A 半自动沉淀全家）+ 换触发与对象；接口契约 D7 + 观测输入面 D8 + 代码归属 = 本仓已定；两件机制（原子写/快照/回滚、乐观并发守卫）因本仓无对象**判不立**，第一期 IN = D8 观测输入面 + 派生与 Select 建议档 + 凭据筛查。启动时另立实现 ADR（写死输入面写入触发点 · Select 输出契约改法）。[融合立宪 ADR](.agents/notes/proposed/architecture/2026-09-10-memory-line-fusion-charter.md)（proposed）· 线状态唯一家 [memory-system-dossier.md](docs/research/memory-system-dossier.md)。余项候选：护栏建设轮（触发已满足 = 待排期）/ 档案页制度批（触发 = 试点评估）/ 技能清单「等等」候选收集（触发 = 用户再给候选）。
 
 ## 交接更新记录（摘要滚动窗）
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-10｜**记忆库线融合轮开题讨论轮（边界拍板 + 接口契约；零代码变更）**：ADR [融合立宪](.agents/notes/proposed/architecture/2026-09-10-memory-line-fusion-charter.md)（proposed，D1–D7）+ [档案页](docs/research/memory-system-dossier.md) 对账；`5d0a0da`→`a725a4c`。README 无漂移。
+- 2026-09-10｜**记忆库线融合轮开题讨论轮（立宪 + 接口契约 + 第一期范围；零代码变更）**：ADR [融合立宪](.agents/notes/proposed/architecture/2026-09-10-memory-line-fusion-charter.md)（proposed，D1–D10）+ [档案页](docs/research/memory-system-dossier.md) 对账；`5d0a0da`→`a16fedf`。README 无漂移。
 
 - 2026-09-10｜**优化轮收口批（FULL 三审 R1/R2/R3 全采纳）**：ADR [收口+验收口径](.agents/notes/implemented/process/2026-09-10-optimization-round-closure.md)、[brief 明细兜底](.agents/notes/implemented/bug-fix/2026-09-10-review-brief-detail-fallback.md)；`d1a014a`→`e11dd0e`。README 无漂移。
 
