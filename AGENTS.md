@@ -40,6 +40,7 @@
 3. **胶囊内容域与门禁判据口径一致** — [doc-standards](docs/method/doc-standards.md) tier 表 + [standard-authoring](docs/method/standard-authoring.md)；架构域语义面（新目录准入、named-only 最小化、影响面清单、失败传导通则）— [architecture-standards](docs/method/architecture-standards.md) 各「[R] 留评审」条目。
 4. **编码规范语义面**：机器面已盖（导出函数/类注释存在性、TODO/FIXME 词面、未用变量、`as const`；写码当轮在环拦回机器可判违规〔lint + 导出契约注释〕、同文件连续拦回达上限降级 context 防死锁）——评审核对注释**内容**（契约是否说清、变更史/推理转写/控制流复述、命名是否揭示意图）与格式约定（头注三要素/尾随注释/中英混杂）— [code-standards](docs/method/code-standards.md) 各「[R] 留评审」档条目。
 5. **防过度设计语义面**：范围契约（约束修法不约束找问题）+ 评审自身义务（跑检查前先答核心两问、对的就说对、按案例 ID 质询防相似度误杀）— [anti-overdesign](docs/method/anti-overdesign.md) + [cases 索引](docs/research/anti-overdefense-cases-index.md)。
+6. **流程与机制结构面**：新增/改写阶段卡、流程卡或机制件（门禁、守卫、对账步）时，核对**步序 / 角色位 / 关口**是否齐（写作规则 = [doc-standards](docs/method/doc-standards.md) 铁律 7），以及机制件是否有匹配的机器面或对账点——只有出口清单与产出物的阶段会被按最低成本解释（出处 = ADR [2026-09-11-stage-card-structure](.agents/notes/implemented/process/2026-09-11-stage-card-structure.md)）。
 
 ## 防过度设计（范围契约）
 
