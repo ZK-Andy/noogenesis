@@ -22,6 +22,10 @@
  * 覆盖；保守回退 = 三条全要。飞行中简报的 base..head 必须一致（防一份更窄
  * 的范围把整场评审泳道集静默降级）。
  *
+ * 输出面：违规明细按泳道（R1→R2→R3）分组打印；跨泳道违规（如 base..head
+ * 范围分歧）无泳道前缀，落「violations outside lane scope」兜底节——不变式 =
+ * 每条违规恰输出一次（有计数必有明细）；判定与退出码语义不受输出分组影响。
+ *
  * 结构性例外：brief 闸是评审发射前检查、仅本地预发射不入 CI（简报目录
  * gitignored；无简报在飞 = 空过，CI 侧保持绿且安静）。
  * 消费契约（同族单源）：import 同族 scripts/verify-review-tier.mts 的 export
@@ -629,7 +633,15 @@ function selfTest(): number {
     assertOk(anyMatch(checkRepo(root12), (s) => s.includes("inconsistent diff ranges")),
       "fixture 12 (divergent ranges) should be reported");
 
-    console.log("verify-review-brief --self-test OK (12 fixtures: structure/self-assertion/lane-derivation)");
+    // 明细输出兜底：跨泳道违规（范围分歧）无泳道前缀 → 必须落在打印面且只落一次
+    const rangeViolations = checkRepo(root12);
+    const printed = formatViolations(rangeViolations);
+    assertOk(anyMatch(printed, (s) => s.includes("inconsistent diff ranges")),
+      `fixture 13 (cross-lane violation) must reach the printed detail, got ${reprList(printed)}`);
+    assertOk(printed.filter((s) => rangeViolations.includes(s)).length === rangeViolations.length,
+      `fixture 13 (each violation printed exactly once), got ${reprList(printed)}`);
+
+    console.log("verify-review-brief --self-test OK (13 fixtures: structure/self-assertion/lane-derivation/output-fallback)");
     return 0;
   } finally {
     fs.rmSync(td, { recursive: true, force: true });
@@ -693,6 +705,28 @@ function parseArgs(): Args {
   return args;
 }
 
+/** 违规明细输出行（打印面单源）：带 `<lane>:` 前缀的按 R1→R2→R3 分组，其余
+ *  （跨泳道违规，如范围分歧）落带标签的兜底节。不变式：每条违规恰输出一次——
+ *  「有计数必有明细」；判定与退出码语义不在本件。 */
+function formatViolations(violations: readonly string[]): string[] {
+  const lines: string[] = [];
+  const grouped = new Set<number>();
+  for (const lane of LANES) {
+    for (const [i, s] of violations.entries()) {
+      if (s.startsWith(`${lane}:`)) {
+        grouped.add(i);
+        lines.push(s);
+      }
+    }
+  }
+  const rest = violations.filter((_, i) => !grouped.has(i));
+  if (rest.length > 0) {
+    lines.push("review-brief: violations outside lane scope:");
+    lines.push(...rest);
+  }
+  return lines;
+}
+
 function main(): number {
   const args = parseArgs();
 
@@ -713,11 +747,7 @@ function main(): number {
   }
 
   const violations = checkRepo(repo, lanes);
-  for (const lane of LANES) {
-    for (const s of violations.filter((v) => v.startsWith(`${lane}:`))) {
-      console.log(s);
-    }
-  }
+  for (const line of formatViolations(violations)) console.log(line);
   if (violations.length > 0) {
     console.log(`review-brief: ${violations.length} violation(s)`);
     return args.enforce ? 1 : 0;
