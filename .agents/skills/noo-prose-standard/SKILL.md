@@ -23,6 +23,8 @@ description: Use when writing, reviewing, restoring, trimming, or auditing prose
 
 使用点保留完整局部契约；架构/理由/算法/历史/长示例激进链接到所有者文档。一个解释一个家；必要的契约事实允许局部重复。
 
+三分对照示例（砍过头/均衡/写过头，按本仓表面校准）：[references/examples.md](references/examples.md)——用途是认准管辖原则，不是抄模板。
+
 ## 按位置定必需覆盖（不是单向缩短）
 
 代码、类型与结构本身说不出的契约，要补回散文；已局部显然的不加注释。

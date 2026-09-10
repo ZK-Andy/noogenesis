@@ -26,6 +26,8 @@ description: Use when auditing or fixing prose in this repo that reads like a le
 7. **对冲与计划残留** — "probably fine for now"、"should be enough"、无标记的推迟。升为 `TODO`/`FIXME` 或陈述真实边界；删对冲。
 8. **写作语言混杂** — 中文正文里夹未翻译的工作语残留（或反之）。翻译或删除。
 
+配套示例库（泄漏↔修复对照 + 过度纠偏陷阱）：[references/examples.md](references/examples.md)；grep 扫描电池（模式 + 已裁误报族）：[references/recall-batteries.md](references/recall-batteries.md)——电池过匹配，命中须语义裁断，且必配无模式密散文通读。
+
 ## 什么不是泄漏（keep 规则）
 
 - **Issue 引用** — `#1470`、`TODO(name):` 在 HEAD 可解析；任何表面都保留。
@@ -39,7 +41,7 @@ description: Use when auditing or fixing prose in this repo that reads like a le
 ## 工作流（Workflow）
 
 1. 按 [noo-prose-standard](../noo-prose-standard/SKILL.md) 定 scope + 排除项：要求显式 scope；**永不触碰 `.agents/notes/archived/`（冻结）**与录制夹具。
-2. **先只读审计**：grep 可疑模式（死 §/阶段标签、"used to"/"no longer"、评审编舞短语、对冲），对每个命中做语义判断；再无模式在手读范围内最密的散文（README、docs/method、ADR）。
+2. **先只读审计**：按 [recall batteries](references/recall-batteries.md) 扫可疑模式（死 §/阶段标签、"used to"/"no longer"、评审编舞短语、对冲），对每个命中做语义判断；再无模式在手读范围内最密的散文（README、docs/method、ADR）。
 3. 按表面修所有者优先：生成物 → 修源头；prompt/可见字符串 → 措辞即行为，标记需行为验证。
 4. 删任何东西之前，先枚举该段落的命题（prose-standard），并核对过度纠偏陷阱：把义务剪成背书、把假设升成已落地、删掉真事实、丢掉出处。
 5. 验证：重跑扫描期望只剩合法 keep；确认每个残留引用在 HEAD 可解析；跑触碰表面的门禁（`verify-md-links`、`verify-doc-budgets`、`git diff --check`）。

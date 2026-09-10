@@ -3,13 +3,15 @@
 > 项目交接主文档（**唯一入口**）：背景 / 位置 / 当前状态 / 待办 / 开始步骤 / 记录索引。
 > 文件架构（ADR [2026-09-05-journal-in-git](.agents/notes/implemented/process/2026-09-05-journal-in-git.md)）：**稳定区 + 更新摘要**在本文件；**行动区（待办）**在 [HANDOFF-todos.md](HANDOFF-todos.md)；**叙事全文**在 `journal/`（**入 git**——过程即资产）。
 
-> **⚡ 最高优先级（框架重建）：charter ADR + 七层蓝图 → [.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md) · [docs/research/framework-rebuild-blueprint.md](docs/research/framework-rebuild-blueprint.md)**——用户拍板推倒重建（先框架后协作层、本仓原地重建），蓝图定稿（七层三段式 + A1–A8 挂载面 + M1–M3 + C1–C15）；**B0–B5 全批闭环（协作层重建收官，C1–C15 全绿）**——B5 切换批（gates.json cmd 全量重指 TS + 旧机器件零残留 + CI/钩子单轨 + 发版 0.2.0；实现 ADR [.agents/notes/implemented/architecture/2026-09-08-b5-switch.md](.agents/notes/implemented/architecture/2026-09-08-b5-switch.md)，批次表 [.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md](.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md)）；优化轮问题池余项（技能清单补全）随重建后进行（记忆库线已另立档案页 [memory-system-dossier.md](docs/research/memory-system-dossier.md)；规范展开 c1/c2 已交付；行动区仍在 [docs/research/capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)）。
+> **⚡ 最高优先级（框架重建）：charter ADR + 七层蓝图 → [.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md) · [docs/research/framework-rebuild-blueprint.md](docs/research/framework-rebuild-blueprint.md)**——用户拍板推倒重建（先框架后协作层、本仓原地重建），蓝图定稿（七层三段式 + A1–A8 挂载面 + M1–M3 + C1–C15）；**B0–B5 全批闭环（协作层重建收官，C1–C15 全绿）**——B5 切换批（gates.json cmd 全量重指 TS + 旧机器件零残留 + CI/钩子单轨 + 发版 0.2.0；实现 ADR [.agents/notes/implemented/architecture/2026-09-08-b5-switch.md](.agents/notes/implemented/architecture/2026-09-08-b5-switch.md)，批次表 [.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md](.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md)）；优化轮问题池余项随重建后进行（技能清单补全已合并收口：用户拍板暂不新增技能 + 既有技能 references 实拆补全，2026-09-10；记忆库线已另立档案页 [memory-system-dossier.md](docs/research/memory-system-dossier.md)；规范展开 c1/c2 已交付；行动区仍在 [docs/research/capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)）。
 
-> **⏭ 下一步：M1 两批全收口（守卫三件套 + 防过度混合 D，FULL 三审全采纳，ADR 两行 Review 在案）**。其余候选：优化轮问题池余项（技能清单补全 / 守卫三件套真机复验随下一发版）[capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md) / 记忆库线（方向已拍板 = 融合轮，待排期；唯一状态家）[memory-system-dossier.md](docs/research/memory-system-dossier.md) / release 工具族首验（B 条，随下一发版）/ 护栏延后收口（D 条）；随手待办 [HANDOFF-todos.md](HANDOFF-todos.md)。
+> **⏭ 下一步：优化轮问题池余项**（评审实质执行在自觉区 / 规范事前接入余项 / 技能使用挂载余项——[capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)）。其余候选：守卫三件套真机复验 + release 工具族首验（均随下一发版，todos B 条）/ 记忆库线融合轮（方向已拍板，待排期；唯一状态家 [memory-system-dossier.md](docs/research/memory-system-dossier.md)）/ 护栏延后收口（D 条，触发 = 胶囊优化后）；随手待办 [HANDOFF-todos.md](HANDOFF-todos.md)。
 
 ## 交接更新记录（摘要滚动窗）
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
+
+- 2026-09-10｜**技能 references 实拆补全（暂不新增技能；LIGHT 评审 4B+5S 全采纳；ADR [skill-references-fill](.agents/notes/implemented/process/2026-09-10-skill-references-fill.md)）**：trim + prose 补 `references/`（B0 件 4 触发兑现）；优化轮 §2.2-4/§3.5 合并账。**节点：技能清单补全收口。** README 无漂移。
 
 - 2026-09-10｜**M1 批 B 防过度混合 D 收口（FULL 三审 R1 1B/3S、R2 3B/6S、R3 5B/4S 全采纳；ADR 第二条 Review 行随批落；`5b0ad9b`→`d277c47`→收尾批）**：anti-overdesign 完整蒸馏篇 + 根 AGENTS 契约块 9 条（547/800）+ cases 质询索引 18 例（不进加载面）+ 检查项第 5 条 + NOTICES 补 HERO 行。**节点：M1 两批闭环。** README 无漂移。
 
@@ -52,7 +54,6 @@
 - 2026-09-08｜**编码规范 c1 评审恢复收口（FULL 三审 R1 1B/4S、R2 1B/4S、R3 2B/3S 全采纳；ADR `2026-09-08-coding-standards` implemented；`155e1af`→收口）**：修复 = §2.4 改 [R] + 停档理由、判据收编落家、实例去虚构、兜底归属单源根 AGENTS、五命令对齐、ADR 出处归口问题池。**节点：c1 收口，下一批 = c2。** README 无漂移。
 - 2026-09-08｜**编码规范 c1 立项 + 部分实现（proposed ADR `2026-09-08-coding-standards`；`155e1af` 未 push）**：拍板 = 注释为主体成文（基准蒸馏社区 TS 规范）+ 命名/结构 + 工程纪律留链接；零工具批，oxlint 排 c2。FULL 三审在 R1/R2 并行后被取消——**批未过 FULL、ADR 未翻转**，评审恢复待办见 todos（C）。**README 无漂移。**
 - 2026-09-08｜**0.2.2 重验 + 宿主 0.1.3-alpha.2 对齐核验（todo B 勾账 + issue 外报条删除；维持 A8 撤除）**：0.2.2 重验绿（日志零 noogenesis/* 事件）；上游 alpha 恢复 ignorable 读侧容忍（ADR 2026-08-30-retain-ignorable-external-session-events）但 append 写入口仍无——撤除结构性成立，复投影不开案。`e717b2d`。**README 无漂移。**
-- 2026-09-08｜**A8 会话记录投影撤除批（FULL 三审全采纳收口；ADR `2026-09-08-a8-session-record-projection-removal` implemented；0.2.2 发版）**：读路径对未标 ignorable 插件事件 fail-closed → 投影面退役，A2 地图与能力层保留。`1eb742e→bee3a35`。**节点：0.2.1 重验判据作废改写（todos → 0.2.2）。** README 核对有变更已同步。
 ## 背景
 
 Noogenesis（心源）：DeepSeek Harness 之上的"蜂群进化框架"；终极北极星 AGI（只定方向）；当前落地 = 第一个进化胶囊「AI 协作编码方法论」——四源（devops-template / dotnet-deepseek-harness-desktop / dsh-frecency / work 区）提炼搬迁，self-hosting：用心源体系开发心源。设计基准 `docs/research/dsh-swarm-evolution-framework-design.md`；搬迁计划（已实施冻结）[journal/capsule-01-migration-plan.md](journal/capsule-01-migration-plan.md)（评审定稿 2026-09-05）。
@@ -79,7 +80,7 @@ Noogenesis（心源）：DeepSeek Harness 之上的"蜂群进化框架"；终极
 - **编码规范机器强制已落地**（ADR [2026-09-08-c2-lint-enforcement](.agents/notes/implemented/architecture/2026-09-08-c2-lint-enforcement.md) implemented，FULL 三审全采纳）：oxlint 1.82.0 显式白名单（根 `.oxlintrc.json`，逐条理由）+ 导出面契约注释闸（`verify-export-docs.mts`，`adapters/dsh` + `scripts`）入 `engine/gates.json`（15 条，pre-commit/pre-push/CI 同判据）；首轮清 19 处真实缺陷 + 4 处注释缺口 + 1 死导出；[code-standards](docs/method/code-standards.md) 档位同步（2.1 存在性 / 2.3 词面 / §3 机械子集升 `[M]`，2.4 留 `[R]`）。
 - 门禁第一梯队全绿（含 self-test；清单单源 `engine/gates.json`，入口见根 AGENTS「质量门」）；engine self-test 与 CI 同跑（run 33976291727 绿）。
 - **编码强制两轨已闭环**（批 1 ADR [2026-09-08-lint-in-loop-feedback](.agents/notes/implemented/architecture/2026-09-08-lint-in-loop-feedback.md) + 批 2 ADR [2026-09-08-coding-enforcement-track-b](.agents/notes/implemented/architecture/2026-09-08-coding-enforcement-track-b.md)，均 implemented + `Review: FULL/2026-09-08`）：A4 写码在环 lint 反馈（建议档 `context`，8 条合同 + A2 指针行）；宿主 API 类型契约（键存在 + 形状相容两组断言）；发布面不变量闸（gates.json 15→16，15 夹具）；`arguments` 不实收窄修正；type-aware lint 以证据延后（触发 = 真实 async 失守）。**真机复验待装机**（todos B 条）。
-- 技能 noo-* 7 个已被 DSH 自动发现；评审机械闸已落地（verify-review-tier + verify-review-brief，ADR [2026-09-05-review-mechanical-gate](.agents/notes/implemented/process/2026-09-05-review-mechanical-gate.md)）。
+- 技能 noo-* 7 个已被 DSH 自动发现；trim-cot-leakage / prose-standard 两件已补 `references/`（示例库 + 扫描电池/三分对照，B0 件 4 实拆触发兑现，ADR [2026-09-10-skill-references-fill](.agents/notes/implemented/process/2026-09-10-skill-references-fill.md)）；评审机械闸已落地（verify-review-tier + verify-review-brief，ADR [2026-09-05-review-mechanical-gate](.agents/notes/implemented/process/2026-09-05-review-mechanical-gate.md)）。
 - 四项拍板：评审闸延后 v0.2 ✅ / journal 入 git ✅ / 技能前缀 noo-* ✅ / cookbook 首批 15 条 ✅。
 
 ## 待办
