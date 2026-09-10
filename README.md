@@ -13,7 +13,7 @@ Capsule 01, the "AI collaboration coding methodology", **self-hosts in this repo
 Two runtime layers are live:
 
 - **Evolution engine** — `engine/` exposes five commands (`select` / `propose` / `evaluate` / `solidify` / `pull`) with zero Node dependencies, a validation whitelist (`engine/gates.json`), and the gene/event protocol.
-- **DSH adapter** — this repository is also a DSH plugin package, [`noogenesis-dsh`](https://www.npmjs.com/package/noogenesis-dsh)@0.2.3 (AGPL-3.0). The adapter wires the engine into the session lifecycle via a single spawn CLI contract and distributes the seven `noo-*` skills with the gene bank.
+- **DSH adapter** — this repository is also a DSH plugin package, [`noogenesis-dsh`](https://www.npmjs.com/package/noogenesis-dsh)@0.2.4 (AGPL-3.0). The adapter wires the engine into the session lifecycle via a single spawn CLI contract and distributes the seven `noo-*` skills with the gene bank.
 
 Prerequisite: the working repository must be a git repository with the `git` CLI available. Engine commands fail closed (exit 2) outside a git repository; a missing git binary gets a distinct diagnostic instead of a false "not a git repo" report.
 

@@ -43,6 +43,14 @@ Review: FULL/2026-09-09/R1=ok R2=ok R3=ok
 - 实机验证：`release-note.mts v0.2.3 0.2.4` 输出双语分节 + @ZK-Andy + compare 链；bump 错误路径（工作树不净）fail-closed 实证；tsc / lint / gates 16 条全绿。
 - **lock 漂移修复**：bump 脚本实现时发现 package.json 0.2.3 vs package-lock.json 0.2.2（0.2.3 发版漏同步）——`npm install --package-lock-only` 对齐 0.2.3，同批提交（cookbook [环境] 版本 bump 漏连动 lock 教训实例）。
 
+## 首次实发（2026-09-10，`noogenesis-dsh@0.2.4`）
+
+- `node scripts/release/bump.mts 0.2.4 --msg ...` 产 `chore(release)` commit（`6fe74ea`）+ lock 同提交（package.json 与 package-lock 两处 version 一致）。
+- annotated tag `dsh-v0.2.4` 推送过 pre-push：tag 目标 commit 已可达 origin 远端 refs → 走「零 outgoing 跳过档位强制」档，脚本输出该判据行。
+- `release-note.mts v0.2.3 0.2.4` 输出双语分节 + `@ZK-Andy`（git author `zhangkun` 映射）+ 跨前缀 `Full Changelog`（`v0.2.3...dsh-v0.2.4`，可解析）。
+- npm `latest` = 0.2.4（35 件 / 97.2 kB，含新件 `skill-guard.mjs`、`export-docs-feedback.mjs`）；GitHub Release 建（Latest、非 draft）。
+- **跨大批次归并缺口**（首验实遇）：`v0.2.3..0.2.4` 跨 59 笔时「其他变更」节输出 47 条过程条目（body 147 行），发布者须手工按批次归并成 3 条——归并档缺失入 [HANDOFF-todos](../../../../HANDOFF-todos.md)（C）条。
+
 ## Risks
 
 - **双语 body 手工对齐漂移**：release-note 脚本输出的英文节逐字镜像 commit 标题（本仓 commit 标题为中文）——英文节需发布者翻译润色；保持「脚本生成骨架 + 发布者润色」分工，脚本输出含 `EN_POLISH_HINT` 提示行防照贴即发。
