@@ -5,11 +5,13 @@
 
 > **⚡ 最高优先级（框架重建）：charter ADR + 七层蓝图 → [.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md) · [docs/research/framework-rebuild-blueprint.md](docs/research/framework-rebuild-blueprint.md)**——用户拍板推倒重建（先框架后协作层、本仓原地重建），蓝图定稿（七层三段式 + A1–A8 挂载面 + M1–M3 + C1–C15）；**B0–B5 全批闭环（协作层重建收官，C1–C15 全绿）**——B5 切换批（gates.json cmd 全量重指 TS + 旧机器件零残留 + CI/钩子单轨 + 发版 0.2.0；实现 ADR [.agents/notes/implemented/architecture/2026-09-08-b5-switch.md](.agents/notes/implemented/architecture/2026-09-08-b5-switch.md)，批次表 [.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md](.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md)）；**优化轮已收口（2026-09-10）**：问题池条目全部判终态、池文档冻结为调研档案（技能清单补全拍板暂不新增技能 + 既有技能 references 实拆补全；记忆库线另立档案页 [memory-system-dossier.md](docs/research/memory-system-dossier.md)；规范展开 c1/c2 已交付；[收口 ADR](.agents/notes/implemented/process/2026-09-10-optimization-round-closure.md) + [池文档 §2.3 收口账](docs/research/capsule-01-optimization-round.md)）。
 
-> **⏭ 下一步：候选排期（框架侧无待启动批次）**——记忆库线**第一期实现批已落地**（2026-09-11：观测输入面 + Select 建议档 + 凭据绊线，[实现 ADR](.agents/notes/implemented/architecture/2026-09-11-memory-line-phase1-observation-face.md)；线状态唯一家 = [档案页](docs/research/memory-system-dossier.md)）。余项候选：护栏建设轮（触发已满足 = 待排期）/ 记忆库线第二期（行为评估自建形态待裁）/ 档案页制度批（触发 = 试点评估）/ 技能清单「等等」候选收集（触发 = 用户再给候选）。
+> **⏭ 下一步：候选排期（框架侧无待启动批次）**——两批已落地（2026-09-11）：记忆库线第一期（观测输入面 + Select 建议档 + 凭据绊线，[实现 ADR](.agents/notes/implemented/architecture/2026-09-11-memory-line-phase1-observation-face.md)；线状态唯一家 = [档案页](docs/research/memory-system-dossier.md)）与**评审发现机械化**（命令面/版本行/模式覆盖三类判据，[机械化 ADR](.agents/notes/implemented/process/2026-09-11-review-finding-mechanization.md)）。余项候选：护栏建设轮（触发已满足 = 待排期）/ 记忆库线第二期（行为评估自建形态待裁）/ 档案页制度批（触发 = 试点评估）/ 技能清单「等等」候选收集（触发 = 用户再给候选）。
 
 ## 交接更新记录（摘要滚动窗）
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
+
+- 2026-09-11｜**评审发现机械化批（FULL 三审 R1 0B/2S、R2 1B/6S、R3 4B/9S；采纳 12 拒绝 1）**：新增 `verify-command-surface`（命令面事实源 ↔ 声明区/计数面）+ 版本锚判据 6（三面）+ 模式双向覆盖元断言；门槛 = 复发 ≥2 或代价高；[ADR](.agents/notes/implemented/process/2026-09-11-review-finding-mechanization.md)。
 
 - 2026-09-11｜**记忆库线第一期实现批（FULL 三审逐条裁决）**：`observe` 观测输入面（gitignored；写 fail-closed／读 warn-skip）+ `select` 建议档 `advice:` 行（不进常驻节）+ 凭据绊线 `verify-secrets`（三面）；ADR [实现件](.agents/notes/implemented/architecture/2026-09-11-memory-line-phase1-observation-face.md)。
 
@@ -57,8 +59,6 @@
 
 - 2026-09-09｜**批 1 真机复验（todo B 勾账；0.2.3 实机判据全命中，journal 在案）**：var 写码同轮 block 拦回 / 修正重写零反馈 / 连续 ×3 后第 4 次降级 context 不死锁 / 干净写码复位 / edit 同拦 / 非 .ts 零反馈 / staged 红。**节点：0.2.3 实机生效；宿主基线已升 0.1.5-alpha.1（用户确认主动升级）。** README 无漂移。
 
-- 2026-09-09｜**noogenesis-dsh 0.2.3 发版（release-flow；tag `v0.2.3`，npm latest）**：A4 在环 lint block 拦回 + pre-commit `--staged` 收窄（09-09 升格批）；GitHub Release 建（Latest 非 draft）。**节点：真机复验待用户重装。** README 无漂移。
-
 
 ## 背景
 
@@ -88,6 +88,7 @@ Noogenesis（心源）：DeepSeek Harness 之上的"蜂群进化框架"；终极
 - **护栏延后拍板**（ADR [2026-09-06-guardrail-defer-trigger](.agents/notes/proposed/architecture/2026-09-06-guardrail-defer-trigger.md) proposed）：护栏三件（token-meter 真测量 / 严格改进度量 / canary）需要但延后；**触发「首个胶囊优化完成」已满足（2026-09-10 收口 ADR 定义三条件并兑现）→ 待排期**，立项时逐件拍板接入形态与验收口径（见该 ADR Alternatives）。
 - **编码规范机器强制已落地**（ADR [2026-09-08-c2-lint-enforcement](.agents/notes/implemented/architecture/2026-09-08-c2-lint-enforcement.md) implemented，FULL 三审全采纳）：oxlint 1.82.0 显式白名单（根 `.oxlintrc.json`，逐条理由）+ 导出面契约注释闸（`verify-export-docs.mts`，`adapters/dsh` + `scripts`）入 `engine/gates.json`（pre-commit/pre-push/CI 同判据）；首轮清 19 处真实缺陷 + 4 处注释缺口 + 1 死导出；[code-standards](docs/method/code-standards.md) 档位同步（2.1 存在性 / 2.3 词面 / §3 机械子集升 `[M]`，2.4 留 `[R]`）。
 - 门禁第一梯队全绿（含 self-test；清单单源 `engine/gates.json`，入口见根 AGENTS「质量门」）；engine self-test 与 CI 同跑（run 33976291727 绿）。
+- **评审发现机械化已落地**（ADR [2026-09-11-review-finding-mechanization](.agents/notes/implemented/process/2026-09-11-review-finding-mechanization.md) implemented，FULL 三审全裁决）：三类复发缺陷机械化——`verify-command-surface`（新，白名单条目 `command-surface`；`engine/bin.ts` 命令分支为事实源，校核 `usage()` 区间与 README 首个含调用的代码块，以及计数面里点名 CLI/engine 的「N 命令」）、`verify-package-invariants` 判据 6（三面版本锚：两 README 各自必须声明、HANDOFF 声明了就必须对）、`verify-secrets` 模式双向覆盖元断言；门槛 = 复发 ≥2 次或单次代价高，「变更史词面闸」经实测（19 命中/18 规则自指）判不立；`gates.json` 17→18 条。
 - **记忆库线第一期已落地**（ADR [实现件](.agents/notes/implemented/architecture/2026-09-11-memory-line-phase1-observation-face.md) implemented，FULL 三审全裁决）：`engine observe` 观测输入面（`.noogenesis/observations/`，gitignored/可丢弃；写路径 fail-closed、读路径 warn-skip）+ `select` 追加式建议档（`advice: <signal> :: <ref> ok/fail/last`，零观测零行、不进常驻命中节）+ 独立门禁件 `scripts/verify-secrets.mts`（凭据绊线扫 genes/ + events/ + 观测面，best-effort 非安全属性）；CLI 合同面 5→6 命令，`gates.json` 白名单 16→17 条。
 - **编码强制两轨已闭环**（批 1 ADR [2026-09-08-lint-in-loop-feedback](.agents/notes/implemented/architecture/2026-09-08-lint-in-loop-feedback.md) + 批 2 ADR [2026-09-08-coding-enforcement-track-b](.agents/notes/implemented/architecture/2026-09-08-coding-enforcement-track-b.md)，均 implemented + `Review: FULL/2026-09-08`）：A4 写码在环 lint 反馈（建议档 `context`，8 条合同 + A2 指针行）；宿主 API 类型契约（键存在 + 形状相容两组断言）；发布面不变量闸（gates.json 15→16，15 夹具）；`arguments` 不实收窄修正；type-aware lint 以证据延后（触发 = 真实 async 失守）。**真机复验待装机**（todos B 条）。
 - 技能 noo-* 7 个已被 DSH 自动发现；trim-cot-leakage / prose-standard 两件已补 `references/`（示例库 + 扫描电池/三分对照，B0 件 4 实拆触发兑现，ADR [2026-09-10-skill-references-fill](.agents/notes/implemented/process/2026-09-10-skill-references-fill.md)）；评审机械闸已落地（verify-review-tier + verify-review-brief，ADR [2026-09-05-review-mechanical-gate](.agents/notes/implemented/process/2026-09-05-review-mechanical-gate.md)）。
