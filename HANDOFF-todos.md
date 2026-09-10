@@ -50,10 +50,10 @@
 - [x] （A）编码强制两轨闭环：批 1（`2026-09-08-lint-in-loop-feedback`）+ 批 2（`2026-09-08-coding-enforcement-track-b`）均 implemented + FULL 三审全采纳（R1/R2 各 2B、R3 1B，全修）；批 3 测量 → 延后。
 - [x] （A）编码规范机器拦升格批 2026-09-09（FULL 三审 0B 全采纳），ADR [2026-09-09-lint-block-and-staged-hook](.agents/notes/implemented/architecture/2026-09-09-lint-block-and-staged-hook.md)；0.2.3 发版含本批。
 - [x] （B）批 1 真机复验 2026-09-09（用户重装 0.2.3 + 重启；全判据命中，journal 在案）：var 写码同轮 block / 修正零反馈 / 连续 ×3 第 4 次降级 context / 干净写码复位 / edit 同拦 / 非 .ts 零反馈 / staged 红。宿主基线已升 0.1.5-alpha.1（用户确认主动升级）。
-- [ ] （B）M1 守卫三件套 + 防过度契约块真机复验（`noogenesis-dsh@0.2.4` 已发 2026-09-10，待重装该版）：A2 地图含技能路标行；写 docs/ 未载技能 → advice 一行不阻断、重复写不重提、载入后消失；session-close 对账步可跑。
+- [x] （B）M1 守卫三件套 + 防过度契约块真机复验 2026-09-10（0.2.4 装机）：A2 技能路标行在场；A3 对 `docs/` 写码投递 advice 一行不阻断、重复不重提、载对口技能后消失；契约块随基座注入（journal 在案）。
 - [x] （B）release 工具族首验 2026-09-10（0.2.4 实发）：bump 产 `chore(release)`+lock 同提交（`6fe74ea`）、tag `dsh-v0.2.4` 过 pre-push、npm latest 0.2.4、双语 Release Latest；证据 = ADR `release-shape-alignment` 落地验证节。
 - [ ] （C）宿主 OpenCode Go 会话头收尾（2026-09-10 诊断批遗留，本地环境不入仓）：官方 sessionHeader（pi-ai 包方向，上游 pi#9326）落地后退役 `dsh-opencode-session` 插件（`dsh plugin --profile dotnet-desktop remove`）；`~/.dsh/settings.yaml` 的 omenalpha 死块（含静态 headers 行）随用户清理删除。坑与解法已入 cookbook [环境]。
-- [ ] （B）注释面在环判据真机复验（`noogenesis-dsh@0.2.4` 已发 2026-09-10，待重装该版）：写含无 JSDoc 导出函数的 `.ts` → 当轮 `block`（英文 FAIL 行，工具结果被替换）；补注释重写 → 通过；同文件连续 3 次后降级 `context`；非 `.ts`/域外（`engine/**`）写码零反馈；判据件缺席仓静默降级（每会话至多一条 warn）。
+- [x] （B）注释面在环判据真机复验 2026-09-10（0.2.4 装机）：域内缺 JSDoc → 当轮 `block`（英文违约行替换结果）；连续 3 次后第 4 次降级 `context`；合规写通过并复位；域外/非 `.ts` 零反馈；判据件缺席降级面 = self-test 夹具（journal 在案）。
 - [ ] （C）verify-review-brief 明细输出缺口（2026-09-10 实遇）：范围分歧类违规串无泳道前缀，被输出循环 `violations.filter(v => v.startsWith(lane + ":"))` 静默吞掉（只报计数）——修法 = 明细打印兜底未命中前缀的项。触发 = 下次触碰该件时随批（触碰即 FULL，须走三审）。坑与规避已入 cookbook [门禁]。
 - [ ] （C）release-note 大批次归并档缺失（2026-09-10 0.2.4 首验实遇）：v0.2.3→0.2.4 跨 59 笔时「其他变更」节输出 47 条过程条目（body 147 行），发布者须手工按批次归并；修法 = 脚本增按批次/scope 的聚合档。触发 = 下次发版仍须手工归并。
 - [ ] （C）档案页制度批（2026-09-10 试点拍板的后续）：试点件 = [memory-system-dossier.md](docs/research/memory-system-dossier.md)；内容 = 全仓推广评估 + 骨架四段机器闸（仿 verify-handoff-structure）+ tier 归口拍板（research 层「非当下状态」vs 状态页先例）+ ADR 立项（proposed→implemented）。触发 = 试点跑一段评估。
