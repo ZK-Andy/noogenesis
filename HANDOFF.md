@@ -11,6 +11,8 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-10｜**宿主 OpenCode Go 会话头诊断（无仓变更；cookbook [环境] 入档）**：本机静态 `x-opencode-session` 实证为反模式（亲和桶塌缩）；社区插件 `dsh-opencode-session` 兜底（自定义 provider 名须补路由键坑在案）；用户切内置 opencode-go 路由实证通。**节点：官方 sessionHeader 落地后退役插件（todos C）。** README 无漂移。
+
 - 2026-09-10｜**D 批简化候选 5 项收口（FULL 三审 R1 0B、R2 1B/1S、R3 1B/1S 全采纳；ADR `standards-audit-simplification-candidates` implemented；`3da3257`→`c5f7c46`）**：class 集单源 import、自测临时目录 17/17 异常安全、模型面英文拍板落地、splitLines 归口、maxGenes 必传。**节点：下一步 = 优化轮问题池。** README 无漂移。
 
 - 2026-09-10｜**规范语义面审计修复批 + pypara 归口批（FULL 三审全采纳；ADR `standards-audit-fix-batch` + `pypara-fold-responsibility-split`；`086a1ce`/`fd0e4b9`+`a8d43e0`/`e32143f`）**：三族 `[R]` 审计行为 7 处 + 注释批全修；pypara 立原语七族单源、夹具同件拍板、职责判别式入文档。**节点：D 批剩 5 项。** README 无漂移。
@@ -47,9 +49,6 @@
 - 2026-09-08｜**B4 实机重验 + M1/M2 修复收口（FULL 三审全采纳；ADR `2026-09-08-mount-exec-arguments-field` implemented；0.2.1 发版）**：根因 = exec 字段 `arguments` 被误读 `exec.args`（夹具复刻假设 = 冒烟假绿教训）；B4 ADR 同步/勘误。（勘误随 A8 撤除批：「持久化容忍度 ✅」撤回，投影面退役。）README 无变更。
 - 2026-09-08｜**B5 切换批收口（FULL 三审全采纳；ADR `2026-09-08-b5-switch` implemented；`00b84ff`→`93de846` 含 0.2.0 发版）**：gates.json cmd 全量重指 TS + 旧机器件零残留 + CI/钩子单轨 + 例外机制单家迁 gates.mts 头注；基因指针经 solidify updated 刷新。**节点：B0–B5 收官，C1–C15 全绿。** README 核对已同步。
 - 2026-09-08｜**B4 挂载面接线批收口（FULL 三审全采纳；ADR `2026-09-08-b4-mount-wiring` implemented；`610fe7e`→`13440a0`）**：六点接线合并语义单源 + M1/M2/M3 记录/建议件零阻断 + peer dep dsh-llm；R2 两 Blocker（A8 drain 死接线/M2 游标错位）全修；C15 双候选均不立。**节点：C7/C8/C15 落账，下一批 = B5。** README 核对已同步。
-- 2026-09-08｜**B3 钩子面批收口（FULL 三审全采纳；ADR `2026-09-08-b3-hooks-install` implemented；`61d074b`→`d2527a6`）**：pre-commit lefthook 分域 + pre-push 单编排器 TS（tier 循环同构 + 并行组 + dist 自测）+ e2e 四态 TS 重建；bash 三件退役；tier 触发集改指 `lefthook.yml`；C6 实测 3.83s vs 6.3s。**节点：下一批 = B4。**
-
-
 ## 背景
 
 Noogenesis（心源）：DeepSeek Harness 之上的"蜂群进化框架"；终极北极星 AGI（只定方向）；当前落地 = 第一个进化胶囊「AI 协作编码方法论」——四源（devops-template / dotnet-deepseek-harness-desktop / dsh-frecency / work 区）提炼搬迁，self-hosting：用心源体系开发心源。设计基准 `docs/research/dsh-swarm-evolution-framework-design.md`；搬迁计划（已实施冻结）[journal/capsule-01-migration-plan.md](journal/capsule-01-migration-plan.md)（评审定稿 2026-09-05）。

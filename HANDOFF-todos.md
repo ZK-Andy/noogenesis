@@ -51,3 +51,4 @@
 - [x] （A）编码规范机器拦升格批 2026-09-09（FULL 三审 0B 全采纳），ADR [2026-09-09-lint-block-and-staged-hook](.agents/notes/implemented/architecture/2026-09-09-lint-block-and-staged-hook.md)；0.2.3 发版含本批。
 - [x] （B）批 1 真机复验 2026-09-09（用户重装 0.2.3 + 重启；全判据命中，journal 在案）：var 写码同轮 block / 修正零反馈 / 连续 ×3 第 4 次降级 context / 干净写码复位 / edit 同拦 / 非 .ts 零反馈 / staged 红。宿主基线已升 0.1.5-alpha.1（用户确认主动升级）。
 - [ ] （B）release 工具族首次实发验证（ADR [2026-09-09-release-shape-alignment](.agents/notes/implemented/process/2026-09-09-release-shape-alignment.md)）：下一发版走 `release:bump` + tag `dsh-v<版本>` + `release:note`（双语 body+@作者）；验收 bump 产 chore(release)+lock 同步、dsh-v tag 过 pre-push。触发 = 下一发版轮。
+- [ ] （C）宿主 OpenCode Go 会话头收尾（2026-09-10 诊断批遗留，本地环境不入仓）：官方 sessionHeader（pi-ai 包方向，上游 pi#9326）落地后退役 `dsh-opencode-session` 插件（`dsh plugin --profile dotnet-desktop remove`）；`~/.dsh/settings.yaml` 的 omenalpha 死块（含静态 headers 行）随用户清理删除。坑与解法已入 cookbook [环境]。

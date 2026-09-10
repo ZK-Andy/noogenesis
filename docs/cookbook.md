@@ -54,6 +54,8 @@
 - **[环境] 版本 bump 漏连动 package-lock（2026-09-08 来源：noogenesis 0.2.0 发版）**：症状——`chore(release)` 手改 package.json version 后 npm publish 成功，但 package-lock.json 根节点 version 仍为旧版（lock 入 git 钉版纪律下即漂移，需补笔）。根因——sed bump 只改 package.json；锁文件同步靠 `npm install --package-lock-only`，发版提交漏了这步。规避——bump 与 lock 同一提交：改 version 后即跑 `npm install --package-lock-only` 再提交；只读缓存沙箱加 `--cache <临时目录>`。
 
 - **[环境] npm ≥12 默认不跑依赖树安装脚本，装完 DSH 起不来（2026-09-09 来源：宿主升级实机失败，OpenCode 修复）**：症状——全局升级 `@deepseek-ai/dsh` 后安装退出正常但 `dsh` 启动失败；回钉 `0.1.3-alpha.2` + 放行脚本后恢复（回钉与放行双因子同变，死因未分离复现）。根因——npm 12 供应链加固：依赖树 install 脚本默认不执行（`allow-scripts` 缺省空，`npm config list` 实证）；dsh 包本身预构建零脚本，但依赖树原生模块（koffi / node-pty / fs-ext / `@deepseek-ai/dsh-subprocess-local` 等）的构建脚本被拦，绑定缺构建即崩——「新版要编译」的体感来自这里，不是上游要求手工编译。规避——单次安装放行：`npm install -g --force --allow-scripts=@deepseek-ai/dsh-subprocess-local,koffi,fs-ext,node-pty,@google/genai,protobufjs @deepseek-ai/dsh@<版本>`；常用机器持久化 `npm config set allow-scripts="<同清单>" --location=user`（落 `~/.npmrc`，装机实测在案）；升级重试换版本号即可，同根 lefthook postinstall 拦截另条。
+- **[环境] OpenCode Go 网关强制按会话 `x-opencode-session`，静态 headers 值是反模式（2026-09-10 来源：deepseek-harness discussion #5495 + 本机 settings 实诊）**：症状——09-05 起网关对缺头请求回 400 MissingSessionID；社区流行解法是在 provider `headers` 写固定值——能过 400 但所有会话共用一个亲和桶，切换会话后前缀缓存全落空（实测变慢变贵）。根因——DSH 请求链只给官方 DeepSeek 适配器带 `x-deepseek-harness-session-id`，第三方网关拿不到会话身份；静态头把「每会话」需求写成了「每部署」常量。规避——过渡期装社区插件 `dsh-opencode-session`（按 DSH 会话 id 注入，默认路由键 opencode/opencode-go；自定义 provider 名须在 providers 清单补路由键，否则白装）；官方修复定调落 pi-ai 包（sessionHeader 配置字段方向），落地后退役插件、删静态行；自定义 provider 块整体删除时静态头随块消失，无需单独处理。
+
 ## 上游
 
 - **[上游] 发版正文类型映射漏 bucket 静默少一节（2026-09-05 来源：desktop v0.4.1 教训）**：症状——某 conventional commit 类型（refactor）未映射，发行说明静默缺节。根因——映射表不全且无断言。规避——类型映射集中一处 + `--self-test` 断言全类型有归属。
