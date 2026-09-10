@@ -1,15 +1,16 @@
 # Agent Note: 吸收升为与评审同级的流程阶段——四出口 + 吸收账
 
 Status: implemented
+Review: FULL/2026-09-11/R1=ok R2=ok R3=ok
 
-Related: 触发件 [2026-09-11-review-finding-mechanization](2026-09-11-review-finding-mechanization.md)（阈值与首例；本批改写其 Decision 1/4/5）；清单与动作的家 [feature-flow](../../../workflows/feature-flow.md) §5；对账 [session-close](../../../workflows/session-close.md) §3；findings 裁决入口 [review](../../../../docs/method/review.md) §6；踩坑出口格式 [cookbook](../../../../docs/cookbook.md)。
+Related: 触发件 [2026-09-11-review-finding-mechanization](2026-09-11-review-finding-mechanization.md)（阈值与首例；本批改写其 Decision 1/4/5）；清单与动作的家 [feature-flow](../../../workflows/feature-flow.md) §5；对账 [session-close](../../../workflows/session-close.md) §3；findings 裁决入口 [review](../../../../docs/method/review.md) §6；踩坑出口格式 [cookbook](../../../../docs/cookbook.md)；过程留痕 [journal 2026-09 卷](../../../../journal/2026-09.md)（偏差发现、用户三拍、五问树外壳被否的记录）。
 
 ## Problem
 
 吸收一直按「评审的一个子步」落地（`feature-flow` §4.6），且立闸带「复发 ≥2 次或单次代价高」的门槛，产出主要落在 journal 复发计数。用户 2026-09-11 指出偏差并判成立：其模型是**审核完走一个与审核同级的吸收流程**——在吸收中对缺陷做分类整理，可机械化的机械校验，不可的落入踩坑记录。现形态有三个后果：
 
 - **动作不可见**：吸收挂在评审节里（编号 §4.6，且排在 §4.5 之前）——结构上位评审子步，与「同级阶段」的形态不符；【推断 · 未证】其后果是读者把它当评审的可选尾声。
-- **可机械判的类进不了机器面**：base 口径 = 「复发 ≥2 次或单次代价高」才落机械校验，首现的类分流到既有归口，机器面缺口留到复发之后。
+- **可机械判的类进不了机器面**：改写前口径 = 「复发 ≥2 次或单次代价高」才落机械校验，首现的类分流到既有归口，机器面缺口留到复发之后。
 - **无账可核**：本批收了多少、每条去哪了，没有固定产出面（只散在 journal 类记里）。
 
 前情：2026-09-11 讨论轮里「缺陷吸收环 + 五问树 + 基因」整版被否——否掉的是那层外壳，不是「吸收阶段」本身。
@@ -24,6 +25,7 @@ Related: 触发件 [2026-09-11-review-finding-mechanization](2026-09-11-review-f
 4. **执行者 = 主会话**：吸收的输入是主会话已裁决的 findings，分类是判断动作，不新立泳道或子代理。
 5. **产出 = 吸收账**（字段与形态单源 = `feature-flow` §5），随批汇报；发现的**类**记入 journal，复发计数只用于形态与噪声判断，不再用于门槛。
 6. **接线**：`session-close` §3 的机械化对账改为吸收对账（对账 ≠ 动作，动作只在 §5）；根 AGENTS 流程卡索引的主链路加上吸收。
+7. **取代分类**：[机械化 ADR](2026-09-11-review-finding-mechanization.md) 是触发件与部分重叠件——保留并交叉链接，不归档；其 Decision 1（门槛口径）与 Decision 4（阶段位置）随本批改写（改写前口径与理由见本件 Problem），判据面三件与其 Decision 2/3/5 不在本件范围。
 
 ## Alternatives considered
 
