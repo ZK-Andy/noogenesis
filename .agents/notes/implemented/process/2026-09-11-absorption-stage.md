@@ -3,7 +3,7 @@
 Status: implemented
 Review: FULL/2026-09-11/R1=ok R2=ok R3=ok
 
-Related: 触发件 [2026-09-11-review-finding-mechanization](2026-09-11-review-finding-mechanization.md)（阈值与首例；本批改写其 Decision 1/4/5）；清单与动作的家 [feature-flow](../../../workflows/feature-flow.md) §5；对账 [session-close](../../../workflows/session-close.md) §3；findings 裁决入口 [review](../../../../docs/method/review.md) §6；踩坑出口格式 [cookbook](../../../../docs/cookbook.md)；过程留痕 [journal 2026-09 卷](../../../../journal/2026-09.md)（偏差发现、用户三拍、五问树外壳被否的记录）。
+Related: 形态与时点表述随 [2026-09-11-stage-card-structure](2026-09-11-stage-card-structure.md) 同步（四出口 / 门槛 / 同级位置不变）；触发件 [2026-09-11-review-finding-mechanization](2026-09-11-review-finding-mechanization.md)（阈值与首例；本批改写其 Decision 1/4/5）；清单与动作的家 [feature-flow](../../../workflows/feature-flow.md) §5；对账 [session-close](../../../workflows/session-close.md) §3；findings 裁决入口 [review](../../../../docs/method/review.md) §6；踩坑出口格式 [cookbook](../../../../docs/cookbook.md)；过程留痕 [journal 2026-09 卷](../../../../journal/2026-09.md)（偏差发现、用户三拍、五问树外壳被否的记录）。
 
 ## Problem
 
@@ -23,7 +23,7 @@ Related: 触发件 [2026-09-11-review-finding-mechanization](2026-09-11-review-f
 2. **四出口**（清单与形态的家 = §5）：**机械校验** / **cookbook 踩坑** / **流程卡纪律** / **不入库**；逐条 findings 落且只落一家。
 3. **立闸门槛改写**（单源 = [机械化 ADR](2026-09-11-review-finding-mechanization.md) Decision 1，本批同改）：判据稳定（形状可枚举、不看语义）且噪声实测过关即立——「复发 ≥2 次」不再作为门槛；单次代价高者（凭据泄漏 / 发布事故 / 数据丢失）不受噪声实测约束。
 4. **执行者 = 主会话**：吸收的输入是主会话已裁决的 findings，分类是判断动作，不新立泳道或子代理。
-5. **产出 = 吸收账**（字段与形态单源 = `feature-flow` §5），随批汇报；发现的**类**记入 journal，复发计数只用于形态与噪声判断，不再用于门槛。
+5. **产出 = 吸收账回执**（步序、字段与形态单源 = `feature-flow` §5）：账以整账为单位经用户确认（§5 第 2 步）后逐出口执行，回执含确认状态与每条落点、随批汇报；发现的**类**记入 journal，复发计数只用于形态与噪声判断，不再用于门槛。
 6. **接线**：`session-close` §3 的机械化对账改为吸收对账（对账 ≠ 动作，动作只在 §5）；根 AGENTS 流程卡索引的主链路加上吸收。
 7. **取代分类**：[机械化 ADR](2026-09-11-review-finding-mechanization.md) 是触发件与部分重叠件——保留并交叉链接，不归档；其 Decision 1（门槛口径）与 Decision 4（阶段位置）随本批改写（改写前口径与理由见本件 Problem），判据面三件与其 Decision 2/3/5 不在本件范围。
 
@@ -35,6 +35,6 @@ Related: 触发件 [2026-09-11-review-finding-mechanization](2026-09-11-review-f
 
 ## Consequences
 
-- 每批收尾汇报必须含吸收账；`session-close` §3 按其对账。
+- 每批收尾汇报必须含吸收账回执；`session-close` §3 按其对账（账已呈用户确认 + 四出口已执行 + 逐条落点）。
 - 机械化判据仍以「可机器判、形状可枚举」为界，语义面照旧留评审三路——吸收阶段不把语义面机械化的口子打开。
 - 四出口之外不预铺第五出口：出现无法归口的新形态时，先判它是不是既有出口的形态误判。

@@ -11,6 +11,8 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-11｜**阶段卡结构批（FULL 三审 R1 1B/4S、R2 2B/4S、R3 3B/5S；采纳 15）**：铁律 7（步序/角色位/关口）+ AGENTS 检查项 6 + §5 四步序（整账确认关口）+ §8 前置门按回执；同批执行上批遗留出口（简报闸 head 判据）；[ADR](.agents/notes/implemented/process/2026-09-11-stage-card-structure.md)。README 无漂移。
+
 - 2026-09-11｜**档位触发面精度批（FULL 三审 R1 1B/5S、R2 0B/3S、R3 4B/7S；采纳 14）**：`engine/**`+`adapters/**`+`cordis.patch.yml` 入 FULL 触发面，自诺与证据判定共用 `adrHeadStatus`；[ADR](.agents/notes/implemented/process/2026-09-11-review-tier-classification-precision.md)。README 无漂移。
 
 - 2026-09-11｜**技能触点提醒触发面扩面批（FULL 三审 R1 0B/2S、R2 0B/4S、R3 2B/4S；采纳 11+拒绝 1）**：三类匹配 + bash 重定向通道；缺省表补 `.md`→prose-standard、`git push`→pre-push-checks；[ADR](.agents/notes/implemented/architecture/2026-09-11-skill-guard-trigger-faces.md)。README 无漂移。
@@ -57,7 +59,6 @@
 
 - 2026-09-10｜**架构规范实现批收口（FULL 三审三轮全采纳；charter ADR implemented；`33ee07e`）**：新建 [architecture-standards.md](docs/method/architecture-standards.md)——判别式 R1a–R9 + blast-radius 四类表 + 失败传导两态 + §4 触发条件集五候选全不立；import 环实测 n=46/81 零环。**节点：规范四篇齐。** README 无漂移。
 
-- 2026-09-10｜**架构规范立项收口（讨论轮，无实现；charter ADR 2026-09-10-architecture-standards-charter proposed；`1f8a483`）**：基准蒸馏四源 + 本仓专属例外；四题拍板（TS 实写+通则 / blast-radius 判据互链 review.md / content-only+触发条件 / §4 互链）；现状地图不另立。**节点：实现批待开。** README 无漂移。
 
 
 ## 背景
@@ -90,7 +91,8 @@ Noogenesis（心源）：DeepSeek Harness 之上的"蜂群进化框架"；终极
 - **档位触发面已扩精度**（ADR [2026-09-11-review-tier-classification-precision](.agents/notes/implemented/process/2026-09-11-review-tier-classification-precision.md) implemented，FULL 三审 14 项全采纳）：`FULL_TRIGGERS` 增三条 —— 产品源码 `engine/**`、`adapters/**`（顶层目录）与装载补丁面 `cordis.patch.yml`（文件名判据）；「proposed ADR 自诺」判定与证据判定共用 `adrHeadStatus`（头部 15 行窗口、围栏内不算）；`review.md` §1 行为契约面口径按本仓改写（源仓遗留的 `src/**`/`tests/**` 措辞删除）；2026-09-05 闸件 ADR 的手抄副本改指针 + 三处 `.py` 死指针同步。噪声实测 n=296：仅产品源码提交 26（8.8%），过度触发面 6 笔（纯文档/夹具）。
 - **技能触点提醒触发面已扩面**（ADR [2026-09-11-skill-guard-trigger-faces](.agents/notes/implemented/architecture/2026-09-11-skill-guard-trigger-faces.md) implemented，FULL 三审全裁决）：`config.skillGuards` 条目 = `{kind, pattern, skill}`（`path`|`suffix`|`command`，旧形态拒收）；缺省 4 条（`docs`→doc-standards、`.md`→prose-standard、`.agents/notes`→archive-agent-notes、`\bgit\s+push\b`→pre-push-checks）；写码目标两条通道（write/edit `file_path` + bash `>`/`>>`/`tee` 目标）；一次 advice 列全命中项、每会话每技能至多一条、非阻断档不变。真机复验待装机 = todos（B）条。
 - 门禁第一梯队全绿（含 self-test；清单单源 `engine/gates.json`，入口见根 AGENTS「质量门」）；engine self-test 与 CI 同跑（run 33976291727 绿）。
-- **吸收阶段已落地**（ADR [2026-09-11-absorption-stage](.agents/notes/implemented/process/2026-09-11-absorption-stage.md) implemented，FULL 三审全裁决）：吸收升为与 §4 评审同级的流程阶段（`feature-flow` §5）——四出口（机械校验 / cookbook 踩坑 / 流程卡纪律 / 不入库）+ 吸收账随批汇报；立闸门槛改写为「判据稳定即立、须先实测噪声」（单源 = 机械化 ADR Decision 1）；`session-close` §3 改吸收对账。
+- **吸收阶段已落地**（ADR [2026-09-11-absorption-stage](.agents/notes/implemented/process/2026-09-11-absorption-stage.md) implemented，FULL 三审全裁决）：吸收升为与 §4 评审同级的流程阶段（`feature-flow` §5）——四步序（出账 → 呈报与确认〔人工关口〕 → 逐出口执行 → 回执）+ 四出口（机械校验 / cookbook 踩坑 / 流程卡纪律 / 不入库）；立闸门槛 = 「判据稳定即立、须先实测噪声」（单源 = 机械化 ADR Decision 1）；`session-close` §3 按回执对账。
+- **阶段卡结构规范已落地**（ADR [2026-09-11-stage-card-structure](.agents/notes/implemented/process/2026-09-11-stage-card-structure.md) implemented，FULL 三审全采纳）：`doc-standards` §2 铁律 7（流程卡/阶段卡写成步序 + 角色位 + 关口；义务面 = 新增与改写的卡）+ 根 AGENTS 评审检查项第 6 条（流程与机制结构面）+ `feature-flow` §5 四步序（整账确认 / 改判回关口 / 回执作 §8 前置门）+ `session-close` §3/§10 按回执核与汇报。
 - **评审发现机械化已落地**（ADR [2026-09-11-review-finding-mechanization](.agents/notes/implemented/process/2026-09-11-review-finding-mechanization.md) implemented，FULL 三审全裁决）：三类复发缺陷机械化——`verify-command-surface`（新，白名单条目 `command-surface`；`engine/bin.ts` 命令分支为事实源，校核 `usage()` 区间与 README 首个含调用的代码块，以及计数面里点名 CLI/engine 的「N 命令」）、`verify-package-invariants` 判据 6（三面版本锚：两 README 各自必须声明、HANDOFF 声明了就必须对）、`verify-secrets` 模式双向覆盖元断言；判据与门槛单源 = [机械化 ADR](.agents/notes/implemented/process/2026-09-11-review-finding-mechanization.md)（判据稳定即立、先实测噪声），「变更史词面闸」经实测（19 命中/18 规则自指）判不立；`gates.json` 17→18 条。
 - **记忆库线第一期已落地**（ADR [实现件](.agents/notes/implemented/architecture/2026-09-11-memory-line-phase1-observation-face.md) implemented，FULL 三审全裁决）：`engine observe` 观测输入面（`.noogenesis/observations/`，gitignored/可丢弃；写路径 fail-closed、读路径 warn-skip）+ `select` 追加式建议档（`advice: <signal> :: <ref> ok/fail/last`，零观测零行、不进常驻命中节）+ 独立门禁件 `scripts/verify-secrets.mts`（凭据绊线扫 genes/ + events/ + 观测面，best-effort 非安全属性）；CLI 合同面 5→6 命令，`gates.json` 白名单 16→17 条。
 - **编码强制两轨已闭环**（批 1 ADR [2026-09-08-lint-in-loop-feedback](.agents/notes/implemented/architecture/2026-09-08-lint-in-loop-feedback.md) + 批 2 ADR [2026-09-08-coding-enforcement-track-b](.agents/notes/implemented/architecture/2026-09-08-coding-enforcement-track-b.md)，均 implemented + `Review: FULL/2026-09-08`）：A4 写码在环 lint 反馈（建议档 `context`，8 条合同 + A2 指针行）；宿主 API 类型契约（键存在 + 形状相容两组断言）；发布面不变量闸（gates.json 15→16，15 夹具）；`arguments` 不实收窄修正；type-aware lint 以证据延后（触发 = 真实 async 失守）。**真机复验待装机**（todos B 条）。

@@ -38,7 +38,8 @@
 - [x] （A）框架重建立项收口 2026-09-06（推倒重建/先框架后协作层/原地重建；FULL 三审 R1 0B/5S、R2 2B/6S、R3 1B/3S 全采纳），ADR [2026-09-06-framework-rebuild-charter](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md)。
 - [x] （C）main 领先包体出包 2026-09-08 随 B5 0.2.0 断点销账（git 前置条件 + ENOENT 诊断 `b5fcb2e`→`10745e2` 已带出；tag `v0.2.0` + npm latest 在案）。
 - [x] （A）术语口径 2026-09-11 拍板：内容包层保留「胶囊」（含包内知识原子），`Capsule` 原语写英文原名、不译（其余原语中文通名照旧）——规则落根 AGENTS「文档纪律」，ADR [2026-09-11-capsule-term-layering](.agents/notes/implemented/process/2026-09-11-capsule-term-layering.md)。
-- [ ] （C）评审机械面收尾小批（本批吸收账的两个待办出口）：① `verify-review-brief` 增判据「简报 head 必须等于 HEAD」（本批实测：amend 后旧 head 悬空仍可解析、闸照跑而 classify diff 另一对象）；② `session-close` §10 收尾汇报字段加「吸收账」（吸收在计划/汇报里被漏命名，两次都由用户点名）。判据稳定、噪声面 = 流程违反本身。出处 = 档位精度 ADR 吸收账。
+- [x] （C）`session-close` §10 收尾汇报字段加「吸收账回执」2026-09-11 随阶段卡结构批兑现（§10 字段在案；另 §5 增四步序含人工关口 = [阶段卡结构 ADR](.agents/notes/implemented/process/2026-09-11-stage-card-structure.md)）。
+- [x] （C）`verify-review-brief` 增判据「简报 head 须钉住 HEAD」2026-09-11 随阶段卡结构批 §5 出口执行兑现（夹具 13→14 块；review.md §3 登记为发射前判据）。
 - [ ] （B）技能触点提醒触发面扩面真机复验（触发 = 含本批的版本装机后新会话）：判据——写 `.md` 未载 prose-standard 收到一行 advice；`git push` 未载 pre-push-checks 收到 advice（含 `cd X && git push`、`timeout N git push` 形态）；bash 重定向写 `journal/*.md` 命中；已载技能不再提醒；异仓命令面如实记。ADR [触发面扩面](.agents/notes/implemented/architecture/2026-09-11-skill-guard-trigger-faces.md)（发版另走 release-flow）。
 - [ ] （D）技能清单「等等」候选收集（优化轮收口遗留，显式挂起）：用户拍板暂不新增技能（用不上不写），既有技能 references/ 已补；触发 = 用户再给候选时重开（先例参照 = HERO-Anti-OverDefense）。决定单源 = [skill-references-fill](.agents/notes/implemented/process/2026-09-10-skill-references-fill.md)；池文档收口账 = [§2.3](docs/research/capsule-01-optimization-round.md)。
 - [ ] （D）优化轮收口遗留缓议两件：技能 A3 写入前阻断档 + 评审收口触点提醒。触发 = 会话内出现需要写入前阻断的真实场景 / step-2 对账抓到真实漏网。判据与预拍板单源 = [lint-in-loop](.agents/notes/implemented/architecture/2026-09-08-lint-in-loop-feedback.md) + [review-exec](.agents/notes/implemented/architecture/2026-09-10-review-execution-reconciliation.md)。

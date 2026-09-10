@@ -24,7 +24,7 @@
 
 判据用法：逐一对照，任一命中 → 重三审；全部未命中且测试/门禁绿 → 轻审。**模棱两可宁可重三审**——轻审只省时间，漏审的代价是行为缺陷漏网。FULL 档路径命中（行为契约面/门禁判据/承诺三审的 ADR）即强制重审，通用轻审判据**不得覆盖**。路径触发的机械化单一事实源 = `scripts/verify-review-tier.mts`（`FULL_TRIGGERS`，含本清单路径面 + `scripts/**` 门禁共享件）；其触发集与本节口径漂移即违约。
 
-**证据随变更**（机械强制，ADR [2026-09-05-review-mechanical-gate](../../.agents/notes/implemented/process/2026-09-05-review-mechanical-gate.md)）：FULL 档变更的评审证据 = 同变更集内 implemented ADR 头部 `Review: FULL/<日期>/R1=ok R2=ok R3=ok` 行（真实日历日；R 值严格 =ok；proposed ADR 不得自证）。push 前 `verify-review-tier --since <远端 sha> --enforce` 拒推缺证据的 FULL 变更；无 ADR 可承载的 FULL 批次加一枚最小 process 笔记。
+**证据随变更**（机械强制，ADR [2026-09-05-review-mechanical-gate](../../.agents/notes/implemented/process/2026-09-05-review-mechanical-gate.md)）：FULL 档变更的评审证据 = 同变更集内 implemented ADR 头部 `Review: FULL/<日期>/R1=ok R2=ok R3=ok` 行（真实日历日；R 值严格 =ok；proposed ADR 不得自证）。push 前 `verify-review-tier --since <远端 sha> --enforce` 拒推缺证据的 FULL 变更；无 ADR 可承载的 FULL 批次加一枚最小 process 笔记。评审在飞期间 ADR 头部可写**占位**行 `Review: FULL/<日期>/pending（三重审核进行中，收口时回填真实结论）`——占位不计证据（闸只认 `R1=ok R2=ok R3=ok` 全值行），收口必须回填真值。
 
 改动前的**影响面识别通则**（合同/机器/数据/散文四类清单 + 同变更义务）的家 = [architecture-standards](architecture-standards.md) §2.4——定档判据单源在本节，识别通则彼处不重抄。
 
@@ -58,7 +58,7 @@
 
 字段规则：**「门禁自证」与「陪跑文件」耦合**——声明「已盖」必须同简报携带主会话实跑且 exit 全 0 的门禁清单；漏跑门禁却写「已盖」会把成本转嫁给评审代理（desktop 2026-09-04 exit-2 教训）。`陪跑文件：无` 不声明已盖，免自证。**简报给「材料 + 检查项」，不给「结论倾向」**——评审代理须独立判读，不得被简报带偏。自证只覆盖机器门禁；**ADR↔代码一致性、语义判读永远不属"已盖"**。
 
-**发射前机械闸**：每路简报写毕、评审代理发射前，主会话实跑 `node scripts/verify-review-brief.mts --enforce`（结构合规 + 门禁自证耦合；所需 lane 集由简报自身 base..head 的档位推导——FULL→R1/R2/R3，LIGHT→R2，`--lanes` 可显式覆盖）。简报缺项或自证含非 0 exit 即发射被拦。
+**发射前机械闸**：每路简报写毕、评审代理发射前，主会话实跑 `node scripts/verify-review-brief.mts --enforce`（结构合规 + 门禁自证耦合；所需 lane 集由简报自身 base..head 的档位推导——FULL→R1/R2/R3，LIGHT→R2，`--lanes` 可显式覆盖）。简报缺项、自证含非 0 exit、或简报声明的 `head` 未钉住本仓 HEAD（悬空/异对象 ref 与 HEAD 前移都会让评审对象与记录漂移）即发射被拦——`head` 判据是**发射前判据**（评审期间不得提交，故发射时 head 恒等于 HEAD）。
 
 ## 4. 三路默认收窄
 

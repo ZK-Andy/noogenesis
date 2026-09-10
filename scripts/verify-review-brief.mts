@@ -296,6 +296,35 @@ function inconsistentRangeViolations(briefs: Record<string, string>, repo: strin
   return [];
 }
 
+/** 飞行中简报声明的 head 必须钉住本仓 HEAD（**发射前判据**）：悬空孪生 ref
+ *  （改写历史后旧提交仍可解析）与写简报后 HEAD 前移都会让评审对象与记录漂移
+ *  而闸照跑。评审期间不得提交（feature-flow §4.5），故发射时 head 恒等于 HEAD。
+ *  非 git 上下文（HEAD 不可解析）跳过——与同族范围判据的保守回退一致。 */
+function headPinsHeadViolations(briefs: Record<string, string>, repo: string): string[] {
+  const r = spawnSync("git", ["rev-parse", "HEAD"], { cwd: repo, encoding: "utf-8" });
+  if (r.error !== undefined || r.status !== 0) return [];
+  const headOid = (r.stdout ?? "").trim();
+  if (headOid === "") return [];
+  const out: string[] = [];
+  for (const lane of LANES) {
+    const p = briefs[lane];
+    if (p === undefined) continue;
+    const text = fs.readFileSync(path.join(repo, p), "utf-8");
+    const mh = HEAD_RE.exec(text);
+    if (mh === null) continue;
+    const declared = mh[1]!;
+    const rr = spawnSync("git", ["rev-parse", "--verify", `${declared}^{commit}`],
+      { cwd: repo, encoding: "utf-8" });
+    const oid = rr.error === undefined && rr.status === 0 ? (rr.stdout ?? "").trim() : null;
+    if (oid === null) {
+      out.push(`${lane}: brief head '${declared}' is not a resolvable commit in this repo (launch-time check)`);
+    } else if (oid !== headOid) {
+      out.push(`${lane}: brief head '${declared}' != HEAD ${headOid.slice(0, 7)} — 发射前判据：简报须钉住本仓 HEAD（悬空/异对象 ref 与 HEAD 前移都会让评审对象与记录漂移）`);
+    }
+  }
+  return out;
+}
+
 /** 跨所需泳道汇总全部违规（结构合规时空）。
  *
  * lanes 缺省 ⇒ 由简报自报范围的 tier 推导（FULL 需 R1/R2/R3，LIGHT 需 R2）。
@@ -307,10 +336,10 @@ function checkRepo(repo: string, lanes?: string[] | null): string[] {
   let required: string[];
   if (lanes === null || lanes === undefined) {
     if (LANES.every((l) => paths[l] === undefined)) return duplicates;
-    out = [...duplicates, ...inconsistentRangeViolations(paths, repo)];
+    out = [...duplicates, ...inconsistentRangeViolations(paths, repo), ...headPinsHeadViolations(paths, repo)];
     required = lanesFromBriefRange(repo, paths);
   } else {
-    out = [...duplicates];
+    out = [...duplicates, ...headPinsHeadViolations(paths, repo)];
     required = lanes;
   }
   for (const lane of required) {
@@ -605,12 +634,17 @@ function selfTest(): number {
     fs.writeFileSync(path.join(repo, "scripts", "verify-x.py"), "# gate\n", "utf-8");
     git("add", "-A");
     git("commit", "-qm", "full change");
+    // 第三个提交 = 只动 docs/（LIGHT 范围用它作 head，使 head 恒等于 HEAD——发射前判据）
+    fs.writeFileSync(path.join(repo, "docs", "note.md"), "base\nlight\n", "utf-8");
+    git("add", "-A");
+    git("commit", "-qm", "light change");
     const revParse = (ref: string): string => {
       const r = spawnSync("git", ["rev-parse", ref], { cwd: repo, encoding: "utf-8" });
       if (r.error !== undefined || r.status !== 0) throw new Error(`fixture git rev-parse failed: ${r.stderr}`);
       return (r.stdout ?? "").trim();
     };
-    const base = revParse("HEAD~1");
+    const base = revParse("HEAD~2");
+    const lightBase = revParse("HEAD~1");
     const head = revParse("HEAD");
 
     const briefText = (lane: string, b: string, h: string): string =>
@@ -628,9 +662,17 @@ function selfTest(): number {
       `fixture 11a (FULL range) should derive three lanes, got ${reprList(vsFull)}`);
     assertOk(!anyMatch(vsFull, (s) => s.includes("R2")),
       `fixture 11a: R2 brief itself is well-formed, got ${reprList(vsFull)}`);
-    // LIGHT 范围（base..HEAD~1 只动 docs/）→ R2 即足
-    fs.writeFileSync(path.join(root11, "R2-a.md"), briefText("R2", base, "HEAD~1"), "utf-8");
+    // LIGHT 范围（只动 docs/ 的末笔）→ R2 即足，且 head 仍是 HEAD（过发射前判据）
+    fs.writeFileSync(path.join(root11, "R2-a.md"), briefText("R2", lightBase, head), "utf-8");
     assertOk(checkRepo(repo).length === 0, "fixture 11b (LIGHT range) should derive R2-only and pass");
+
+    // fixture 14：发射前判据——head 落后 HEAD（祖先）与不可解析 ref 都拦
+    fs.writeFileSync(path.join(root11, "R2-a.md"), briefText("R2", base, lightBase), "utf-8");
+    assertOk(anyMatch(checkRepo(repo, ["R2"]), (s) => s.includes("!= HEAD")),
+      "fixture 14a (brief head behind HEAD) should be flagged");
+    fs.writeFileSync(path.join(root11, "R2-a.md"), briefText("R2", base, "deadbeefdeadbeef"), "utf-8");
+    assertOk(anyMatch(checkRepo(repo, ["R2"]), (s) => s.includes("not a resolvable commit")),
+      "fixture 14b (brief head unresolvable) should be flagged");
 
     // 声明范围分歧 → 违约（防降级闸）
     const root12 = path.join(td, "f12");
@@ -650,7 +692,7 @@ function selfTest(): number {
     assertOk(printed.filter((s) => s === OUTSIDE_LANE_LABEL).length === 1,
       `fixture 13 (fallback section label present exactly once), got ${reprList(printed)}`);
 
-    console.log("verify-review-brief --self-test OK (13 fixtures: structure/self-assertion/lane-derivation/output-fallback)");
+    console.log("verify-review-brief --self-test OK (14 fixtures: structure/self-assertion/lane-derivation/head-pin/output-fallback)");
     return 0;
   } finally {
     fs.rmSync(td, { recursive: true, force: true });
