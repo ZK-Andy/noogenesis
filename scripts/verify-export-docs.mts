@@ -17,17 +17,28 @@
  * - TS 的 JSDoc 归属把「文件头块直接紧邻首个导出」计为该导出的注释（本仓文件头后
  *   必有 import 或非导出声明，实测无此形态）。
  *
- * 用法（仓库根运行，同其余 verify-*）：node scripts/verify-export-docs.mts [--self-test]
- * 退出码：0 = PASS，1 = FAIL（导出函数/类缺契约注释），2 = fail-closed（任一根缺失）。
+ * 用法（仓库根运行，同其余 verify-*）：
+ *   node scripts/verify-export-docs.mts [--self-test]     # 全量：SOURCE_ROOTS 下全部源码
+ *   node scripts/verify-export-docs.mts <file>...         # 文件目标模式（在环面消费）
+ * 退出码：0 = PASS，1 = FAIL（导出函数/类缺契约注释），2 = 参数误用 / 全量模式任一根缺失（fail-closed）。
+ *
+ * 文件目标模式（适配层 A4 注释面在环消费，ADR 2026-09-10-export-docs-inloop）：只判给定目标中
+ * 落在 SOURCE_ROOTS 内、存在且为 .ts/.mts 的件；**域归属由本件单源判定**——调用方不复刻域表
+ * （复刻即双源：域表一改，漏判静默）。无参调用 = 全量扫描，门禁面（gates.json / pre-commit / CI）
+ * 条目与行为零变化。
+ * **在环消费协议**：stdout 的 `FAIL: ` 前缀行 = 判据违约行（适配层 `export-docs-feedback.mts`
+ * 按此协议取反馈文本；改前缀即破在环面）。
  * 运行前提：node ≥22.18（原生 type stripping）+ devDependency typescript（解析器）。
  * 模块形态：显式 .mts（ESM）——本仓 package.json type=commonjs，裸 .ts 装不下 import。
  */
 import * as fs from "node:fs";
 import * as path from "node:path";
+import * as os from "node:os";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
 
 const PROGRAM = "verify-export-docs.mts";
+const USAGE = `usage: ${PROGRAM} [--self-test] [file ...]\n`;
 const SOURCE_ROOTS = ["adapters/dsh", "scripts"];
 const SOURCE_EXT_RE = /\.(ts|mts)$/;
 
@@ -102,6 +113,47 @@ function checkSource(file: string, text: string): Violation[] {
   return out;
 }
 
+/** 目标件域归属判定（域表单源 = SOURCE_ROOTS）；POSIX 形态 rel 入参。 */
+function inScope(relPosix: string): boolean {
+  return SOURCE_ROOTS.some((root) => relPosix === root || relPosix.startsWith(`${root}/`));
+}
+
+/**
+ * 文件目标模式判据面：逐目标解析（相对 cwd）→ 域内 + 存在 + 源码扩展名才判；
+ * 其余计入 skipped（判据对它们无语义：域外不是违规、不存在无从判）。
+ */
+function judgeTargets(repoRoot: string, targets: string[]): { judged: number; skipped: number; violations: Violation[] } {
+  const violations: Violation[] = [];
+  let judged = 0;
+  let skipped = 0;
+  for (const target of targets) {
+    const abs = path.resolve(process.cwd(), target);
+    const rel = path.relative(repoRoot, abs);
+    const relPosix = rel.split(path.sep).join("/");
+    const outside = rel === ".." || rel.startsWith(`..${path.sep}`) || path.isAbsolute(rel);
+    if (outside || !inScope(relPosix) || !SOURCE_EXT_RE.test(relPosix) || !fs.existsSync(abs)) {
+      skipped += 1;
+      continue;
+    }
+    judged += 1;
+    violations.push(...checkSource(relPosix, fs.readFileSync(abs, "utf-8")));
+  }
+  return { judged, skipped, violations };
+}
+
+/** 文件目标模式执行面：违约 → FAIL 行 + exit 1；无违约 → OK 行 + exit 0（域外/不存在只计跳过）。 */
+function runFileTargets(repoRoot: string, targets: string[]): number {
+  const { judged, skipped, violations } = judgeTargets(repoRoot, targets);
+  if (violations.length === 0) {
+    console.log(`OK: ${judged} 件文件目标（跳过 ${skipped} 件域外/非源码/不存在）`);
+    return 0;
+  }
+  for (const v of violations) {
+    console.log(`FAIL: ${v.file}:${v.line}: 导出 ${v.kind} ${v.name} 缺契约注释（/** */ 紧邻声明）`);
+  }
+  return 1;
+}
+
 function realRun(repoRoot: string): number {
   const files: string[] = [];
   const missingRoots: string[] = [];
@@ -149,16 +201,60 @@ function selfTest(): number {
     false,
     "合规样例（重载组内一份 JSDoc）被误判 FAIL",
   );
+  // 文件目标模式（在环面消费）：域归属 / 存在性 / 源码扩展名三分支 + 绝对与相对目标。
+  const repo = fs.mkdtempSync(path.join(os.tmpdir(), "export-docs-"));
+  try {
+    const write = (rel: string, text: string): string => {
+      const abs = path.join(repo, rel);
+      fs.mkdirSync(path.dirname(abs), { recursive: true });
+      fs.writeFileSync(abs, text);
+      return abs;
+    };
+    const goodAbs = write("adapters/dsh/good.ts", "/** 契约：返回 1。 */\nexport function foo(): number { return 1; }\n");
+    const badAbs = write("adapters/dsh/bad.ts", "export function foo(): number { return 1; }\n");
+    const scriptsAbs = write("scripts/ok.ts", "/** 契约：返回 1。 */\nexport function bar(): number { return 1; }\n");
+    const engineAbs = write("engine/out.ts", "export function baz(): number { return 1; }\n");
+    const jsonAbs = write("scripts/data.json", "{}\n");
+
+    const mixed = judgeTargets(repo, [goodAbs, badAbs, scriptsAbs]);
+    if (mixed.judged !== 3 || mixed.skipped !== 0 || mixed.violations.length !== 1 || mixed.violations[0]?.file !== "adapters/dsh/bad.ts") {
+      failures.push(`文件目标模式（域内混合）判定不符：${JSON.stringify(mixed)}`);
+    }
+    const clean = judgeTargets(repo, [goodAbs, scriptsAbs]);
+    if (clean.judged !== 2 || clean.violations.length !== 0) failures.push(`文件目标模式（域内全合规）应判 2 件零违约，got ${JSON.stringify(clean)}`);
+    const outOfScope = judgeTargets(repo, [engineAbs, jsonAbs, path.join(repo, "nope.ts")]);
+    if (outOfScope.judged !== 0 || outOfScope.skipped !== 3) failures.push(`文件目标模式（域外/非源码/不存在）应全跳过，got ${JSON.stringify(outOfScope)}`);
+    const relative = judgeTargets(repo, [path.relative(process.cwd(), badAbs)]);
+    if (relative.judged !== 1 || relative.violations.length !== 1) failures.push(`文件目标模式（相对目标）未命中，got ${JSON.stringify(relative)}`);
+  } finally {
+    fs.rmSync(repo, { recursive: true, force: true });
+  }
   if (failures.length > 0) {
     for (const f of failures) console.log(`SELF-TEST FAIL: ${f}`);
     return 1;
   }
-  console.log(`${PROGRAM} self-test: 11 fixtures passed`);
+  console.log(`${PROGRAM} self-test: 11 判据夹具 + 4 文件目标模式夹具 passed`);
   return 0;
 }
 
-if (process.argv[2] === "--self-test") {
-  process.exit(selfTest());
+/** CLI 分发：`--self-test` 独占；无参 = 全量（门禁面）；`<file>...` = 文件目标模式（在环面）。 */
+function main(): number {
+  const argv = process.argv.slice(2);
+  if (argv.includes("--self-test")) {
+    if (argv.length !== 1) {
+      process.stderr.write(`${USAGE}${PROGRAM}: error: --self-test takes no other arguments\n`);
+      return 2;
+    }
+    return selfTest();
+  }
+  const flag = argv.find((a) => a.startsWith("-") && a !== "-");
+  if (flag !== undefined) {
+    process.stderr.write(`${USAGE}${PROGRAM}: error: unrecognized arguments: ${flag}\n`);
+    return 2;
+  }
+  const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+  if (argv.length > 0) return runFileTargets(repoRoot, argv);
+  return realRun(repoRoot);
 }
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-process.exit(realRun(repoRoot));
+
+process.exit(main());
