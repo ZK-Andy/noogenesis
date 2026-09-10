@@ -13,7 +13,11 @@
  *
  * 在环执行面（A4 首次执行仓内脚本，纪律四条）：文件名固定（不做通用「跑任意仓内
  * 脚本」——形态泛化判不立）、参数数组直传无 shell 拼接、`cwd` = 仓根、timeout 5s；
- * 只读判据件。
+ * 只读判据件。env 按继承面（同 lint 判据；引擎通道的 `minimalEnv` 白名单是另一
+ * 执行面，不在此件纪律面内）。
+ *
+ * 模型面语言：判据件违约行与降级 warn 均为英文（口径单源 = adapters/dsh/README.md
+ * 「模型面字符串语言口径」行）——判据件的违约行文案由适配层消费，故其语言属该口径面。
  *
  * 降级纪律（同 lint-feedback）：策略件自身永不抛；判据件缺席、退出码 ∉ {0,1}、
  * spawn 异常 —— 一律 void + 每会话至多一条 warn（判据件故障不是写码方的违规）。
@@ -22,7 +26,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import { createSessionStore, createSessionWarnOnce } from "./mount.mjs";
+import { createBlockGate, createSessionWarnOnce } from "./mount.mjs";
 import type { ToolPostPolicy } from "./mount.mjs";
 import { resolveInLoopTarget } from "./engine-bridge.mjs";
 import type { RepoRootConfig } from "./engine-bridge.mjs";
@@ -55,8 +59,6 @@ const EXPORT_DOCS_SCRIPT_REL = path.join("scripts", "verify-export-docs.mts");
 const FEEDBACK_PREFIX = "FAIL: ";
 const RUN_TIMEOUT_MS = 5_000;
 const MAX_FEEDBACK_LINES = 10;
-/** 同文件连续 block 上限：达上限后降级 context（同 lint 判据，防改不对无限重试死锁）。 */
-const MAX_BLOCK_PER_FILE = 3;
 
 /** 默认执行面：仓内判据件文件目标模式（node 直跑 .mts）；启动失败即抛（策略层统一降级）。 */
 function defaultRunExportDocs({ script, file, cwd }: ExportDocsRunContext): ExportDocsRunResult {
@@ -71,7 +73,7 @@ function feedbackLines(stdout: string): string[] {
 		.split("\n")
 		.filter((line) => line.startsWith(FEEDBACK_PREFIX))
 		.map((line) => line.slice(FEEDBACK_PREFIX.length));
-	return lines.length > 0 ? lines : ["export-docs 判据未通过（退出码 1 但无 FAIL 行输出——判据件输出协议面）"];
+	return lines.length > 0 ? lines : ["export-docs judge failed (exit 1 without FAIL lines — judge output protocol face, see scripts/verify-export-docs.mts)"];
 }
 
 /**
@@ -81,12 +83,9 @@ function feedbackLines(stdout: string): string[] {
 export function createExportDocsPolicies(config: RepoRootConfig, deps: ExportDocsFeedbackDeps = {}): { toolPost: ToolPostPolicy } {
 	const runExportDocs = deps.runExportDocs ?? defaultRunExportDocs;
 	const warn = deps.warn ?? (() => {});
-	const store = createSessionStore();
-	interface State {
-		/** 同文件连续 block 计数（文件维度防死锁；成功写码即复位）。 */
-		blockCounts: Map<string, number>;
-	}
 	const warnOnce = createSessionWarnOnce(warn);
+	// 档位门（升格批死锁纪律单源，与 lint 判据共用）：计数协议见 mount.mts。
+	const blockGate = createBlockGate();
 	const toolPost: ToolPostPolicy = (exec, result) => {
 		try {
 			// 目标解析前言与 lint 判据折叠单源（engine-bridge.resolveInLoopTarget）。
@@ -99,25 +98,20 @@ export function createExportDocsPolicies(config: RepoRootConfig, deps: ExportDoc
 				return;
 			}
 			const run = runExportDocs({ script, file: abs, cwd: repoRoot });
-			if (run.code === 0) {
-				// 干净写码：复位该文件计数（成功即解除死锁降级）。
-				store.of<State>(exec.agent?.session, () => ({ blockCounts: new Map() })).blockCounts.delete(abs);
-				return;
-			}
-			if (run.code !== 1) {
-				// 退出码 2/超时/spawn 异常：判据件自身故障，不是写码方的违规。
+			if (run.code !== 0 && run.code !== 1) {
+				// 退出码 2/超时/spawn 异常：判据件自身故障，不是写码方的违规；
+				// 无可靠判据信息 → 不触档位门（既不拦也不复位计数）。
 				warnOnce(exec.agent?.session, `noogenesis export-docs feedback skipped: judge exited ${run.code}`);
 				return;
 			}
+			const tier = blockGate.decide(exec.agent?.session, abs, run.code === 1);
+			if (tier === null) return;
 			const lines = feedbackLines(run.stdout);
 			const capped = lines.slice(0, MAX_FEEDBACK_LINES);
 			if (lines.length > MAX_FEEDBACK_LINES) capped.push(`…(+${lines.length - MAX_FEEDBACK_LINES} more)`);
-			const state = store.of<State>(exec.agent?.session, () => ({ blockCounts: new Map() }));
-			const blockCount = (state.blockCounts.get(abs) ?? 0) + 1;
-			state.blockCounts.set(abs, blockCount);
-			// 死锁降级：同文件连续 block 达上限后稳定降级 context（不清计数——
-			// 保持降级态），直到一次干净写码复位。
-			if (blockCount > MAX_BLOCK_PER_FILE) return { kind: "context", lines: capped };
+			// 死锁降级：同文件连续 block 达上限后稳定降级 context（保持降级态），
+			// 直到一次干净写码复位（`decide` 的 hit=false 分支）。
+			if (tier === "context") return { kind: "context", lines: capped };
 			return { kind: "block", feedback: capped.join("\n") };
 		} catch (cause) {
 			warnOnce(exec.agent?.session, `noogenesis export-docs feedback failed: ${cause instanceof Error ? cause.message : String(cause)}`);

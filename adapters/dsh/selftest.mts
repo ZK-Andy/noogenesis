@@ -1100,10 +1100,10 @@ function writeFixtureGene(repoRoot: string): void {
 			},
 		);
 
-	const failing = withStub({ code: 1, stdout: "FAIL: adapters/dsh/a.ts:12: 导出 function foo 缺契约注释（/** */ 紧邻声明）\n" });
+	const failing = withStub({ code: 1, stdout: "FAIL: adapters/dsh/a.ts:12: exported function foo lacks an adjacent JSDoc contract comment\n" });
 	assert.deepEqual(failing.toolPost(writeExec, {}), {
 		kind: "block",
-		feedback: "adapters/dsh/a.ts:12: 导出 function foo 缺契约注释（/** */ 紧邻声明）",
+		feedback: "adapters/dsh/a.ts:12: exported function foo lacks an adjacent JSDoc contract comment",
 	});
 	assert.equal(stubCalls[0]!.cwd, repo);
 	assert.equal(stubCalls[0]!.file, path.join(repo, "sample.ts"));
@@ -1147,14 +1147,14 @@ function writeFixtureGene(repoRoot: string): void {
 
 	// 截断（≤10 行 + 尾行）与协议面兜底（退出码 1 却无 FAIL 行）。
 	{
-		const many = Array.from({ length: 13 }, (_, i) => `FAIL: f.ts:${i + 1}: 导出 function f${i} 缺契约注释`).join("\n");
+		const many = Array.from({ length: 13 }, (_, i) => `FAIL: f.ts:${i + 1}: exported function f${i} lacks an adjacent JSDoc contract comment`).join("\n");
 		const truncated = withStub({ code: 1, stdout: `${many}\n` }).toolPost(writeExec, {});
 		assert.ok(truncated && truncated.kind === "block");
 		assert.match(truncated.feedback, /\+3 more/);
 		assert.match(truncated.feedback, /f0.*f9/s);
 		const protocol = withStub({ code: 1, stdout: "unexpected output without FAIL lines\n" }).toolPost(writeExec, {});
 		assert.ok(protocol && protocol.kind === "block");
-		assert.match(protocol.feedback, /无 FAIL 行输出/);
+		assert.match(protocol.feedback, /without FAIL lines/);
 		ok("export-docs-feedback: >10 FAIL lines truncated; exit 1 without FAIL lines → protocol line");
 	}
 
@@ -1164,7 +1164,7 @@ function writeFixtureGene(repoRoot: string): void {
 		const flipper = createExportDocsPolicies(
 			{ repoRoot: repo },
 			{
-				runExportDocs: () => (violating ? { code: 1, stdout: "FAIL: f.ts:1: 导出 function f 缺契约注释\n" } : { code: 0, stdout: "OK\n" }),
+				runExportDocs: () => (violating ? { code: 1, stdout: "FAIL: f.ts:1: exported function f lacks an adjacent JSDoc contract comment\n" } : { code: 0, stdout: "OK\n" }),
 			},
 		);
 		const first = flipper.toolPost(writeExec, {});
@@ -1210,7 +1210,7 @@ function writeFixtureGene(repoRoot: string): void {
 		fs.writeFileSync(path.join(real, target), "export function bad(): number { return 1; }\n");
 		const blocked = policies.toolPost(realExec, {});
 		assert.ok(blocked && blocked.kind === "block");
-		assert.match(blocked.feedback, /adapters\/dsh\/bad\.ts:1: 导出 function bad 缺契约注释/);
+		assert.match(blocked.feedback, /adapters\/dsh\/bad\.ts:1: exported function bad lacks an adjacent JSDoc contract comment/);
 		fs.writeFileSync(path.join(real, target), "/** 契约：返回 1。 */\nexport function bad(): number { return 1; }\n");
 		assert.equal(policies.toolPost(realExec, {}), undefined);
 		ok("export-docs-feedback: default runner e2e — real judge blocks missing contract comment; compliant write → void");

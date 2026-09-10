@@ -15,7 +15,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { spawnSync } from "node:child_process";
-import { createSessionStore, createSessionWarnOnce } from "./mount.mjs";
+import { createBlockGate, createSessionWarnOnce } from "./mount.mjs";
 import type { ToolPostPolicy } from "./mount.mjs";
 import { resolveInLoopTarget } from "./engine-bridge.mjs";
 import type { RepoRootConfig } from "./engine-bridge.mjs";
@@ -50,8 +50,6 @@ const OXLINT_BIN_REL = path.join("node_modules", "oxlint", "bin", "oxlint");
 const OXLINT_CONFIG_REL = ".oxlintrc.json";
 const LINT_TIMEOUT_MS = 5_000;
 const MAX_FEEDBACK_LINES = 10;
-/** 同文件连续 block 上限：达上限后降级 context（违规仍可见、不再拦）——防模型改不对无限重试死锁。 */
-const MAX_BLOCK_PER_FILE = 3;
 
 /** oxlint `-f json` 输出中本件消费的窄面（其余字段不读）。 */
 interface OxlintJson {
@@ -90,12 +88,9 @@ function defaultRunLint({ bin, config, file, cwd }: LintRunContext): LintDiagnos
 export function createLintFeedbackPolicies(config: RepoRootConfig, deps: LintFeedbackDeps = {}): { toolPost: ToolPostPolicy } {
 	const runLint = deps.runLint ?? defaultRunLint;
 	const warn = deps.warn ?? (() => {});
-	const store = createSessionStore();
-	interface State {
-		/** 同文件连续 block 计数（文件维度防死锁；成功写码即复位）。 */
-		blockCounts: Map<string, number>;
-	}
 	const warnOnce = createSessionWarnOnce(warn);
+	// 档位门（升格批死锁纪律单源，与注释面判据共用）：计数协议见 mount.mts。
+	const blockGate = createBlockGate();
 	const toolPost: ToolPostPolicy = (exec, result) => {
 		try {
 			// 目标解析前言与 export-docs 判据折叠单源（engine-bridge.resolveInLoopTarget）。
@@ -109,22 +104,13 @@ export function createLintFeedbackPolicies(config: RepoRootConfig, deps: LintFee
 				return;
 			}
 			const diagnostics = runLint({ bin, config: lintConfig, file: abs, cwd: repoRoot });
-			if (diagnostics.length === 0) {
-				// 干净写码：复位该文件计数（成功即解除死锁降级）。
-				const state = store.of<State>(exec.agent?.session, () => ({ blockCounts: new Map() }));
-				state.blockCounts.delete(abs);
-				return;
-			}
+			const tier = blockGate.decide(exec.agent?.session, abs, diagnostics.length > 0);
+			if (tier === null) return;
 			const lines = diagnostics.slice(0, MAX_FEEDBACK_LINES).map((d) => `${rel}:${d.line}:${d.column} ${d.rule}: ${d.message}`);
 			if (diagnostics.length > MAX_FEEDBACK_LINES) lines.push(`…(+${diagnostics.length - MAX_FEEDBACK_LINES} more)`);
-			const state = store.of<State>(exec.agent?.session, () => ({ blockCounts: new Map() }));
-			const blockCount = (state.blockCounts.get(abs) ?? 0) + 1;
-			state.blockCounts.set(abs, blockCount);
-			// 死锁降级：同文件连续 block 达上限后稳定降级 context（不清计数——
-			// 保持降级态），直到一次干净写码复位（上方零诊断分支 delete 重武装）。
-			if (blockCount > MAX_BLOCK_PER_FILE) {
-				return { kind: "context", lines };
-			}
+			// 死锁降级：同文件连续 block 达上限后稳定降级 context（保持降级态），
+			// 直到一次干净写码复位（`decide` 的 hit=false 分支）。
+			if (tier === "context") return { kind: "context", lines };
 			// 升格档（lint-block-and-staged-hook ADR）：机器可判违规 → block 拦回。
 			return { kind: "block", feedback: lines.join("\n") };
 		} catch (cause) {

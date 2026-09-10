@@ -27,7 +27,8 @@
  * （复刻即双源：域表一改，漏判静默）。无参调用 = 全量扫描，门禁面（gates.json / pre-commit / CI）
  * 条目与行为零变化。
  * **在环消费协议**：stdout 的 `FAIL: ` 前缀行 = 判据违约行（适配层 `export-docs-feedback.mts`
- * 按此协议取反馈文本；改前缀即破在环面）。
+ * 按此协议取反馈文本并原样呈现给模型；改前缀即破在环面）。违约行语言 = 英文（模型面字符串
+ * 语言口径，单源 = adapters/dsh/README.md「模型面字符串语言口径」行）；本件其余输出仍为中文（人面）。
  * 运行前提：node ≥22.18（原生 type stripping）+ devDependency typescript（解析器）。
  * 模块形态：显式 .mts（ESM）——本仓 package.json type=commonjs，裸 .ts 装不下 import。
  */
@@ -47,6 +48,11 @@ interface Violation {
   line: number;
   kind: "function" | "class";
   name: string;
+}
+
+/** 违约行输出（全量/文件目标两模式共用——该行是在环消费协议面，文案单源）。 */
+function printViolation(v: Violation): void {
+  console.log(`FAIL: ${v.file}:${v.line}: exported ${v.kind} ${v.name} lacks an adjacent JSDoc contract comment`);
 }
 
 /** 递归收集源树下的 .ts/.mts（目录缺失记为空集，由调用方判 fail-closed）。 */
@@ -149,7 +155,7 @@ function runFileTargets(repoRoot: string, targets: string[]): number {
     return 0;
   }
   for (const v of violations) {
-    console.log(`FAIL: ${v.file}:${v.line}: 导出 ${v.kind} ${v.name} 缺契约注释（/** */ 紧邻声明）`);
+    printViolation(v);
   }
   return 1;
 }
@@ -172,7 +178,7 @@ function realRun(repoRoot: string): number {
     return 0;
   }
   for (const v of violations) {
-    console.log(`FAIL: ${v.file}:${v.line}: 导出 ${v.kind} ${v.name} 缺契约注释（/** */ 紧邻声明）`);
+    printViolation(v);
   }
   return 1;
 }

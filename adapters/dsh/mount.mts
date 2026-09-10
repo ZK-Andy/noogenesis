@@ -8,14 +8,15 @@
  * 语义的本地蒸馏（蓝图 §7 边界：不建两方言桥，deny→A3 阻断并回消息 /
  * block→A4 结果面拦回 / additionalContexts→A4 上下文附加 / advice→A3
  * 非阻断建议行（agent.inject 投递，M1 守卫②）/ 非阻断→降级日志）。
- * 策略件在 mount-policies.mts（存留件 = A2 开场地图 + A4 写码在环 lint
- * 反馈 + A3 技能触点提醒，记录件不挂——撤除 ADR）；宿主 ctx.on 胶水与消息构造在 index.mts。本模块零宿主依赖（防火墙
+ * 策略件在 mount-policies.mts（存留件 = A2 开场地图 + A4 写码在环两判据
+ * 〔lint + 注释面〕+ A3 技能触点提醒，记录件不挂——撤除 ADR）；宿主 ctx.on 胶水与消息构造在 index.mts。本模块零宿主依赖（防火墙
  * 规则 2，selftest 机器扫描）——宿主 payload 只取本地窄结构面（同
  * engine-bridge AgentCarrier 口径）。
  *
- * 档位纪律（B4 ADR Decision 7 + 升格批 2026-09-09-lint-block-and-staged-hook）：
- * 合并器提供 deny/block 能力（A3/A4 的阻断语义单源在案）；A4 lint 反馈已用
- * block 拦回档（同文件连续 block 达上限降级 context 防死锁），A3 deny/ask 仍
+ * 档位纪律（B4 ADR Decision 7 + 升格批 2026-09-09-lint-block-and-staged-hook +
+ * 扩面批 2026-09-10-export-docs-inloop）：合并器提供 deny/block 能力（A3/A4 的
+ * 阻断语义单源在案）；A4 两判据均已用 block 拦回档（同文件连续 block 达上限降级
+ * context 防死锁，计数协议单源 = `createBlockGate`），A3 deny/ask 仍
  * 零策略件（记录档不挂——撤除 ADR）；其余升格逐件过 HERO 另案。宿主事件与
  * 决策形态实证记录见 B4 ADR Problem 节。
  */
@@ -121,6 +122,37 @@ export function createSessionWarnOnce(warn: (message: string) => void): (session
 		} catch {
 			// 降级提示面自身不得抛出（策略件永不抛合同）。
 		}
+	};
+}
+
+/** A4 判据的档位门：`null` = 本次干净（void），`block` / `context` = 拦回 / 降级可见。 */
+export interface BlockGate {
+	/** 判定一次写码结果：`hit=false` 复位该文件并返回 `null`；`hit=true` 按连续计数定档。 */
+	decide(session: unknown, file: string, hit: boolean): "block" | "context" | null;
+}
+
+/**
+ * A4 两判据共用的死锁门（升格批纪律单源，R1 评审 2026-09-10 折叠两份手写实现）：
+ * per-session per-file 连续命中计数——达上限后稳定降级 `context`（不清计数，
+ * 保持降级态），一次干净写码（`hit=false`）复位重武装。`maxPerFile` 缺省 3
+ * （升格批 N 单源）。状态按会话 WeakMap 隔离（GC 自清）。
+ */
+export function createBlockGate(maxPerFile = 3): BlockGate {
+	const store = createSessionStore();
+	interface GateState {
+		counts: Map<string, number>;
+	}
+	return {
+		decide(session, file, hit) {
+			const state = store.of<GateState>(session, () => ({ counts: new Map() }));
+			if (!hit) {
+				state.counts.delete(file);
+				return null;
+			}
+			const count = (state.counts.get(file) ?? 0) + 1;
+			state.counts.set(file, count);
+			return count > maxPerFile ? "context" : "block";
+		},
 	};
 }
 

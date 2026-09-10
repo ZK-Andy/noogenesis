@@ -15,7 +15,7 @@
 
 停档理由：导出函数/类的注释**存在性**机器可判（`export-docs` 闸）；注释是否说清契约是语义面，机器不可判。
 
-- 机器面：`adapters/dsh/` + `scripts/` 的**导出函数/类声明**必须有紧邻 `/** */` 块（[verify-export-docs.mts](../../scripts/verify-export-docs.mts)）；两种导出形态（声明修饰符 / 文件尾 `export { }`）都认，重载组一份注释即可；类型/接口/常量不判——契约常由类型自身承载，强制注释产 slop。该闸只在门禁面（判据是声明面整体，写码中途不成立）。
+- 机器面：`adapters/dsh/` + `scripts/` 的**导出函数/类声明**必须有紧邻 `/** */` 块（[verify-export-docs.mts](../../scripts/verify-export-docs.mts)）；两种导出形态（声明修饰符 / 文件尾 `export { }`）都认，重载组一份注释即可；类型/接口/常量不判——契约常由类型自身承载，强制注释产 slop。该闸判据按文件判定（`checkSource` = 单文件 AST；早前「判据是声明面整体」的记法已由扩面批实读证伪），门禁面（pre-commit 无条件 + pre-push + CI）与写码在环面（`block` 拦回，ADR [2026-09-10-export-docs-inloop](../../.agents/notes/proposed/architecture/2026-09-10-export-docs-inloop.md)）消费同一判据件与同一域表。
 - **`engine/` 不在闸内**：其导出是引擎内部接缝（适配层只 spawn CLI、不 import），公共契约 = CLI（[engine/README.md](../../engine/README.md)）；内部注释沿用 `//` 块（engine 约定）。
 - **契约** = 调用方/被调方/实现者所依赖的义务、不变量、前置/后置条件、兼容承诺（prose-standard 定义）。
 - **必须注释**（代码/类型本身说不出的契约）：返回区别、抛出/拒绝、副作用、所有权、时序、取消、持久性——调用方可见即算公共。

@@ -32,7 +32,7 @@
   7. 诊断空 → `void`；非空 → `{kind:"context", lines}`，≤10 条 + `…(+N more)` 尾行；
   8. 任何异常 → `void`（策略件自身不抛；index.mts 胶水已 catch + warn）。
 - 接线：`mount-policies.mts` 的 `createMountPolicies` 把该策略（与 §1-A5 注释面判据同面）挂进 `toolPost`；`index.mts` 只把既有 `logger.warn` 透传进 deps（不新增 listener；偏离本计划原「零改动」字面，理由见 ADR Decision 2）。
-- A-2b 指针行：`createSubtreeRulesPolicies` 的地图在 `docs/method/code-standards.md` 实存时追加一行 `- 写码规范：docs/method/code-standards.md（机器面 lint 写码后自动反馈；export-docs 在门禁面）`。
+- A-2b 指针行：`createSubtreeRulesPolicies` 的地图在 `docs/method/code-standards.md` 实存时追加一行写码规范指针——**文案单源 = `adapters/dsh/mount-policies.mts`（selftest 夹具钉死）**；本计划不复述串面（复述即第二家，随文案演进漂移）。
 
 ### A-3 测试（`adapters/dsh/selftest.mts` 追加夹具组）
 

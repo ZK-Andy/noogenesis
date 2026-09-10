@@ -31,7 +31,7 @@ Related: 实施计划 [coding-enforcement-impl-plan](../../../../docs/research/c
    - `RunLint = (ctx: LintRunContext) => LintDiagnostic[]`（`LintRunContext` = `{ bin; config; file; cwd }`）为执行面注入缝；默认实现 `spawnSync(process.execPath, [bin, "--config", config, "--deny-warnings", "-f", "json", file])`（timeout 5s，`cwd` = 仓根），解析 oxlint JSON 的 `diagnostics[].labels[0].span`（行/列 1 基）。
    - 状态键 = `exec.agent?.session`（`createSessionStore`，同 [M2](2026-09-06-m2-adapter-wiring.md) 口径）；无会话键时降级为即席状态（warn 可能重复，与 M2 同款边界）。降级提示自身经 try/catch 自保（注入的 `warn` 抛错不得逃出策略件）。
 
-2. **接线**：`createMountPolicies(config, deps)` 组装 `toolPost: [lintFeedback.toolPost]`；`index.mts` 只把既有 `logger.warn` 透传进 deps。**这偏离实施计划 §1-A2「`index.mts` 零改动」的字面**：计划同条要求「每会话 warn 一次」，而策略层若无 logger 注入则该要求不可达；透传既有 logger 不触宿主接线面（不新增 listener、不改注入声明），形态同 `registerBankSkills(ctx, {config, logger})` / `createBankPullScheduler({... logger ...})` 既有两件。计划该句的括号理由（每挂载点恰一个 listener）仍然成立。
+2. **接线**：`createMountPolicies(config, deps)` 组装 `toolPost`（本批 = `[lintFeedback.toolPost]`；现行 = lint 判据 + 注释面判据两件，后者随扩面批接入——[扩面批](../../proposed/architecture/2026-09-10-export-docs-inloop.md)）；`index.mts` 只把既有 `logger.warn` 透传进 deps。**这偏离实施计划 §1-A2「`index.mts` 零改动」的字面**：计划同条要求「每会话 warn 一次」，而策略层若无 logger 注入则该要求不可达；透传既有 logger 不触宿主接线面（不新增 listener、不改注入声明），形态同 `registerBankSkills(ctx, {config, logger})` / `createBankPullScheduler({... logger ...})` 既有两件。计划该句的括号理由（每挂载点恰一个 listener）仍然成立。
 
 3. **A2 指针行**：`createSubtreeRulesPolicies` 的开场地图在 `docs/method/code-standards.md` 实存时追加一行写码规范指针（文案单源 = `adapters/dsh/mount-policies.mts`，由 selftest 夹具钉死；本笔记不复述串面——复述即第二家，随文案演进漂移）——地图已承载「动工前先读哪份规则」，写码规范指针与 A4 反馈同批落地；零布点件、或缺 `docs/method/code-standards.md` 的仓不加（指针行与布点件同款存在性过滤）。反馈本身另需仓根 `.oxlintrc.json` + oxlint 二进制，缺席时静默降级（第 1 节第 6 条）。
 

@@ -100,11 +100,10 @@ export interface InLoopTarget {
 	rel: string;
 }
 
-/** 在环目标解析入参窄面（与 mount.mts 的 `ToolExecLike` 结构相容，免跨件类型依赖）。 */
-export interface InLoopExecLike {
+/** 在环目标解析入参窄面（extends `AgentCarrier` 取会话 cwd；与 mount.mts 的 `ToolExecLike` 结构相容）。 */
+export interface InLoopExecLike extends AgentCarrier {
 	name?: string;
 	arguments?: unknown;
-	agent?: { session?: { header?: { cwd?: string } } };
 }
 
 /**
