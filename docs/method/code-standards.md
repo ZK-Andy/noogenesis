@@ -15,7 +15,7 @@
 
 停档理由：导出函数/类的注释**存在性**机器可判（`export-docs` 闸）；注释是否说清契约是语义面，机器不可判。
 
-- 机器面：`adapters/dsh/` + `scripts/` 的**导出函数/类声明**必须有紧邻 `/** */` 块（[verify-export-docs.mts](../../scripts/verify-export-docs.mts)）；两种导出形态（声明修饰符 / 文件尾 `export { }`）都认，重载组一份注释即可；类型/接口/常量不判——契约常由类型自身承载，强制注释产 slop。该闸判据按文件判定（`checkSource` = 单文件 AST），门禁面（pre-commit 无条件 + pre-push + CI）与写码在环面（`block` 拦回，ADR [2026-09-10-export-docs-inloop](../../.agents/notes/proposed/architecture/2026-09-10-export-docs-inloop.md)）消费同一判据件与同一域表。
+- 机器面：`adapters/dsh/` + `scripts/` 的**导出函数/类声明**必须有紧邻 `/** */` 块（[verify-export-docs.mts](../../scripts/verify-export-docs.mts)）；两种导出形态（声明修饰符 / 文件尾 `export { }`）都认，重载组一份注释即可；类型/接口/常量不判——契约常由类型自身承载，强制注释产 slop。该闸判据按文件判定（`checkSource` = 单文件 AST），门禁面（pre-commit 无条件 + pre-push + CI）与写码在环面（`block` 拦回，ADR [2026-09-10-export-docs-inloop](../../.agents/notes/implemented/architecture/2026-09-10-export-docs-inloop.md)）消费同一判据件与同一域表。
 - **`engine/` 不在闸内**：其导出是引擎内部接缝（适配层只 spawn CLI、不 import），公共契约 = CLI（[engine/README.md](../../engine/README.md)）；内部注释沿用 `//` 块（engine 约定）。
 - **契约** = 调用方/被调方/实现者所依赖的义务、不变量、前置/后置条件、兼容承诺（prose-standard 定义）。
 - **必须注释**（代码/类型本身说不出的契约）：返回区别、抛出/拒绝、副作用、所有权、时序、取消、持久性——调用方可见即算公共。
@@ -82,7 +82,7 @@
 
 - **已升档**：2.1 存在性 `[M]`（export-docs）；2.3 词面 `[M]`（`no-warning-comments`）；§3 未用变量 / `as const` `[M]`（`no-unused-vars` / `typescript/prefer-as-const`）。
 - **写码在环拦回**：写码工具成功后同步跑同一 `.oxlintrc.json`，机器可判违规经 A4 `block` **拦回**（工具结果被替换为纠正消息，模型须修正才能继续；同文件连续拦回达上限后降级 `context` 防死锁，干净写码复位）——[lint-feedback.mts](../../adapters/dsh/lint-feedback.mts)；ADR [2026-09-08-lint-in-loop-feedback](../../.agents/notes/implemented/architecture/2026-09-08-lint-in-loop-feedback.md) + 升格批 [2026-09-09-lint-block-and-staged-hook](../../.agents/notes/implemented/architecture/2026-09-09-lint-block-and-staged-hook.md)。**pre-commit lint 只拦暂存面**（`--staged`）；全仓穷尽归 pre-push/CI（`gates.json` `lint` 条目默认全仓）。判据不变，机器面从「git 边界后」提前到「写码当轮即拦」。
-- **注释面在环拦回**：同一 A4 面上，写码工具成功后同步跑仓根判据件 `scripts/verify-export-docs.mts <file>`（文件目标模式；域归属由判据件单源判定）——导出函数/类缺紧邻 JSDoc 经 A4 `block` 拦回，死锁降级与降级纪律与 lint 面同款——[export-docs-feedback.mts](../../adapters/dsh/export-docs-feedback.mts)；ADR [2026-09-10-export-docs-inloop](../../.agents/notes/proposed/architecture/2026-09-10-export-docs-inloop.md)。判据零新增：与 `export-docs` 闸同源同域（`gates.json` 条目与 pre-commit/pre-push/CI 行为零变化）。
+- **注释面在环拦回**：同一 A4 面上，写码工具成功后同步跑仓根判据件 `scripts/verify-export-docs.mts <file>`（文件目标模式；域归属由判据件单源判定）——导出函数/类缺紧邻 JSDoc 经 A4 `block` 拦回，死锁降级与降级纪律与 lint 面同款——[export-docs-feedback.mts](../../adapters/dsh/export-docs-feedback.mts)；ADR [2026-09-10-export-docs-inloop](../../.agents/notes/implemented/architecture/2026-09-10-export-docs-inloop.md)。判据零新增：与 `export-docs` 闸同源同域（`gates.json` 条目与 pre-commit/pre-push/CI 行为零变化）。
 - **宿主合同与发布面（轨道 B）**：`adapters/dsh/host-api-contract.mts` 断言宿主 API 合同（判据 = `ts-typecheck`）；`package-invariants` 闸校验 `main`/`exports` 实存、`files` 覆盖与契约件、dist 关键件——ADR [2026-09-08-coding-enforcement-track-b](../../.agents/notes/implemented/architecture/2026-09-08-coding-enforcement-track-b.md)。
 - **仍留评审**：2.1 内容质量、2.2 内部注释、2.4 格式约定、§3 命名意图与职责边界——语义判断，机器不可判（理由见各条停档理由），兜底在根 [AGENTS.md](../../AGENTS.md)「评审检查项」第 4 条。
 - **未纳入（有触发条件再立）**：type-aware 规则（`oxlint-tsgolint`）——2026-09-08 实测（规则命中 n=1、墙钟 n=5，【探索性】）：四目标规则零真实 async 缺陷；同时多报 11 条 `noUncheckedIndexedAccess` 语境断言命中（【推断 · 未证】：tsgolint 未应用该编译选项）。以证据延后（[轨道 B ADR](../../.agents/notes/implemented/architecture/2026-09-08-coding-enforcement-track-b.md) D6）；`no-explicit-any` / `no-non-null-assertion` 仍无失败类。触发 = 真实 async 失守或类型逃逸缺陷出现。

@@ -1,6 +1,7 @@
 # Agent Note: 注释面在环接入——导出契约注释随写码当轮拦回
 
-Status: proposed
+Status: implemented
+Review: FULL/2026-09-10/R1=ok R2=ok R3=ok
 
 Related: 轨道 A [2026-09-08-lint-in-loop-feedback](../../implemented/architecture/2026-09-08-lint-in-loop-feedback.md)（A4 在环面创始件；本批 = 该面扩一名判据，勘误面 = 其 Consequences「export-docs 不入在环面」句）；[2026-09-09-lint-block-and-staged-hook](../../implemented/architecture/2026-09-09-lint-block-and-staged-hook.md)（`block` 档 + 死锁降级纪律单源）；procedure 单源 [coding-enforcement-impl-plan](../../../../docs/research/coding-enforcement-impl-plan.md)；判据单源 [verify-export-docs.mts](../../../../scripts/verify-export-docs.mts) + [code-standards](../../../../docs/method/code-standards.md)；问题池 [capsule-01-optimization-round](../../../../docs/research/capsule-01-optimization-round.md) §2.1「规范事前接入」。
 
@@ -12,7 +13,7 @@ Related: 轨道 A [2026-09-08-lint-in-loop-feedback](../../implemented/architect
 - **体量实测**（2026-09-10 本机，n=3，【探索性】）：全量跑（38 件）0.83–0.85s；在环单文件跑（同适配层形态：绝对路径 + `cwd` = 仓根）0.50–0.52s——node 启动 + `typescript` 模块加载主导，文件数不是主要项。
 - **用户拍板**（2026-09-10）：在环扩面范围选「注释面补齐」；通用化候选未过 HERO 两问（判定见 Alternatives），lint 泛化维持后续（触发未满足，判定指针 = 优化轮 §2.1 状态注）。
 
-## Proposal
+## Decision
 
 **新件 `adapters/dsh/export-docs-feedback.mts` 承载 A4 注释面判据；`mount-policies.mts` 把它挂进 `toolPost`（序在 lint 判据之后）；仓内判据件 `verify-export-docs.mts` 增文件目标模式——判据单源，适配层不重写判定逻辑。**
 
@@ -32,7 +33,7 @@ Related: 轨道 A [2026-09-08-lint-in-loop-feedback](../../implemented/architect
 
 ## Alternatives considered
 
-- **全量跑，不给判据件加文件模式**：落败——0.85s/次同步阻塞宿主事件循环，约 lint 判据（轨道 A ADR 实测 0.07–0.12s，n=5）的 8 倍；文件模式 ~0.35s 且判据零复制。
+- **全量跑，不给判据件加文件模式**：落败——全量 0.85s/次同步阻塞宿主事件循环，约 lint 判据（轨道 A ADR 实测 0.07–0.12s，n=5）的 5–8 倍；文件模式实测 0.50–0.52s（n=3）且判据零复制。
 - **适配层自实现「导出声明缺 JSDoc」判定**：落败——需要 TS 解析器（适配层零宿主依赖面不引入 `typescript`），且判据必然与仓内闸双源（改一处忘一处即静默漂移）。
 - **通用化：`gates.json` 增 `inloop` 字段，声明式跑任意仓内门禁**：本批判不立——为「提交前修 → 写码当轮修」一步之差造机制（HERO-O 范围契约）；触发 = 第二件确有需要的仓内判据出现时再评估形态。
 - **只对 write 生效、不对 edit 生效**（规避中间态）：落败——lint 判据不作此区分（同为 A4 面），区别对待会让同一挂载点的两条判据纪律分裂；中间态由死锁降级兜底。
@@ -51,7 +52,7 @@ Related: 轨道 A [2026-09-08-lint-in-loop-feedback](../../implemented/architect
 
 ## Risks
 
-- **误报逼模型修非问题**：死锁上限（N=3 → `context`）兜底；判据误报本身按 c2 白名单纪律逐条复审（判据改动走门禁批）。
-- **同步延迟翻倍**（~0.1 → ~0.45s/次写码）：观测到可感知卡顿即触发异步化评估（触发条件单源 = 轨道 A ADR）。
+- **误报逼模型修非问题**：死锁上限（缺省值单源 = `createBlockGate` → `context`）兜底；判据误报本身按 c2 白名单纪律逐条复审（判据改动走门禁批）。
+- **同步延迟翻倍**（~0.1 → ~0.6s/次写码）：观测到可感知卡顿即触发异步化评估（触发条件单源 = 轨道 A ADR）。
 - **在环执行仓内脚本是新姿态**：以固定文件名 + 数组直传 + 超时 + 只读四条纪律约束；通用化需另过 HERO。
 - **判据件输出协议漂移**：`FAIL: ` 前缀行是适配层消费协议——改前缀或改其语言（模型面英文，见本件「模型面语言」条）即破在环面，故在判据件头注标为协议面。
