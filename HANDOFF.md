@@ -11,7 +11,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-10｜**优化轮收口批（FULL 三审 R1/R2/R3 全采纳）**：ADR [收口+验收口径](.agents/notes/implemented/process/2026-09-10-optimization-round-closure.md)、[brief 明细兜底](.agents/notes/implemented/bug-fix/2026-09-10-review-brief-detail-fallback.md)；`d1a014a`→`c242dc2`。README 无漂移。
+- 2026-09-10｜**优化轮收口批（FULL 三审 R1/R2/R3 全采纳）**：ADR [收口+验收口径](.agents/notes/implemented/process/2026-09-10-optimization-round-closure.md)、[brief 明细兜底](.agents/notes/implemented/bug-fix/2026-09-10-review-brief-detail-fallback.md)；`d1a014a`→`e11dd0e`。README 无漂移。
 
 - 2026-09-10｜**0.2.4 真机复验第二轮（新会话独立复现，零仓变更）**：A2 路标行在场；A3 首写一行 advice／重复不重提／载技能后消失；A4 lint 与注释面均 block×3 → 第 4 次 context → 合规写零反馈并复位 → 再违规回 block；域外 `.ts` 只判 lint、注释面静默（判据链在场反证）；非 `.ts` 零反馈。探针件全清。
 
