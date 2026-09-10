@@ -3,6 +3,7 @@
 > 全部待办明细、状态与预算的**唯一行动区**（HANDOFF.md 待办节只放指针）。`[ ]` 条 ≤16（每条 ≤340 字），`[x]` 压缩为一行指针（≤220 字），总条数 ≤70；由 `scripts/verify-handoff-structure.mts` 机器强制。
 > 分类速览约定见 [session-close](.agents/workflows/session-close.md)：A 待拍板 / B 待复验 / C 随手候选 / D 远期。
 > 胶囊 01 优化轮问题池与相关待办已迁出（2026-09-06）：唯一行动区 = [docs/research/capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)，本文件不再承载该轮条目。
+> 记忆库线（含痕迹提炼面 D 条）已迁出（2026-09-10）：唯一状态家 = [docs/research/memory-system-dossier.md](docs/research/memory-system-dossier.md)（档案页制度试点）。
 
 - [x] （A）胶囊 v0.2 评审机械闸 2026-09-05 落地（verify-review-tier + verify-review-brief），ADR [2026-09-05-review-mechanical-gate](.agents/notes/implemented/process/2026-09-05-review-mechanical-gate.md)。
 - [x] （A）npm/GitHub 占用核验与注册 2026-09-05：npm 双名占位完成（裸名 `noogenesis@0.0.0` + org `@noogenesis`/`@noogenesis/genesis`，账号 openorbit，真包随首发替换）；GitHub 休眠账号不阻碍 `<宿主>/noogenesis` 仓库名。细节见主设计未决问题 1。
@@ -39,7 +40,6 @@
 - [ ] （D）护栏延后拍板待收口（ADR [2026-09-06-guardrail-defer-trigger](.agents/notes/proposed/architecture/2026-09-06-guardrail-defer-trigger.md) proposed）：护栏三件（token-meter 真测量 / 严格改进度量 / canary 隔离）需但延后至胶囊优化后触发；收口时转 implemented + 修正骨架 ADR 归口 + 设计稿 §6/§11 API 名实测修正。**待证点** = 在环反馈是否让模型更合规（无度量）。余项：js-yaml + YAML 迁移器归口、Detect 信号源轮立项（D2 逐源解除，连带 M3 频次重议）。
 - [x] （D）架构规范实现批 2026-09-10（FULL 三审三轮全采纳收口；import 环实测 n=46/81 零环零跨族），ADR [2026-09-10-architecture-standards-charter](.agents/notes/implemented/architecture/2026-09-10-architecture-standards-charter.md)。
 - [x] （D）P2 实现轮 2026-09-06（FULL 三审 R1 1B/5S、R2 1B/8S、R3 0B/6S 全采纳），ADR [2026-09-06-p2-shared-consumer](.agents/notes/implemented/architecture/2026-09-06-p2-shared-consumer.md) implemented。
-- [ ] （D）痕迹提炼面归融合轮（2026-09-06 用户拍板：记录但不急）：「纪律留痕→无人提炼→下会话考古」缺口在案，解法随 dsh-continual-evolve 融合轮再议（触发 = 架构定稿，设计稿 §13.5）；旧项目 OBSERVATION 观察生命周期协议为实物参照（work 区）。边界：非自动沉淀复刻（#18 负面清单有效）、不让引擎扫会话，只议 session-close 摩擦点落点是否可寻址。
 - [x] （C）编码规范 c1 评审恢复与收口 2026-09-08（FULL 三审恢复重跑：R1 1B/4S、R2 1B/4S、R3 2B/3S 全采纳收口），ADR [2026-09-08-coding-standards](.agents/notes/implemented/architecture/2026-09-08-coding-standards.md) implemented。
 - [x] （C）mdref 共享件副本折叠 2026-09-10：mdref 增补 pyStrip 导出 + 四消费方删本地 split/pyStrip 副本（净 −2 行，豁免 7→3）；ADR [2026-09-10-mdref-py-primitives-fold](.agents/notes/implemented/simplification/2026-09-10-mdref-py-primitives-fold.md)。
 - [x] （B）规范语义面审计修复批 2026-09-10（FULL 三审 0B 全采纳；行为 7 处 + 注释批），ADR [2026-09-10-standards-audit-fix-batch](.agents/notes/implemented/bug-fix/2026-09-10-standards-audit-fix-batch.md)。
@@ -52,3 +52,4 @@
 - [x] （B）批 1 真机复验 2026-09-09（用户重装 0.2.3 + 重启；全判据命中，journal 在案）：var 写码同轮 block / 修正零反馈 / 连续 ×3 第 4 次降级 context / 干净写码复位 / edit 同拦 / 非 .ts 零反馈 / staged 红。宿主基线已升 0.1.5-alpha.1（用户确认主动升级）。
 - [ ] （B）release 工具族首次实发验证（ADR [2026-09-09-release-shape-alignment](.agents/notes/implemented/process/2026-09-09-release-shape-alignment.md)）：下一发版走 `release:bump` + tag `dsh-v<版本>` + `release:note`（双语 body+@作者）；验收 bump 产 chore(release)+lock 同步、dsh-v tag 过 pre-push。触发 = 下一发版轮。
 - [ ] （C）宿主 OpenCode Go 会话头收尾（2026-09-10 诊断批遗留，本地环境不入仓）：官方 sessionHeader（pi-ai 包方向，上游 pi#9326）落地后退役 `dsh-opencode-session` 插件（`dsh plugin --profile dotnet-desktop remove`）；`~/.dsh/settings.yaml` 的 omenalpha 死块（含静态 headers 行）随用户清理删除。坑与解法已入 cookbook [环境]。
+- [ ] （C）档案页制度批（2026-09-10 试点拍板的后续）：试点件 = [memory-system-dossier.md](docs/research/memory-system-dossier.md)；内容 = 全仓推广评估 + 骨架四段机器闸（仿 verify-handoff-structure）+ tier 归口拍板（research 层「非当下状态」vs 状态页先例）+ ADR 立项（proposed→implemented）。触发 = 试点跑一段评估。

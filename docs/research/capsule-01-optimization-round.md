@@ -57,7 +57,7 @@
 
 ## 2. 相关待办（自 HANDOFF-todos 迁入，行动项在此勾账）
 
-> 迁移说明：以下条目 2026-09-06 从 [HANDOFF-todos.md](../../HANDOFF-todos.md) 行动区迁出，迁出件已删除；本文件是其唯一行动区。
+> 迁移说明：以下条目 2026-09-06 从 [HANDOFF-todos.md](../../HANDOFF-todos.md) 行动区迁出，迁出件已删除；本文件是其唯一行动区。**记忆库线两处条目（§2.1 记忆库/记忆系统连接、§2.2-5 开题）2026-09-10 再迁出**：唯一状态家 = [memory-system-dossier.md](memory-system-dossier.md)，本文件不再承载该线。
 
 ### 2.1 待办
 
@@ -66,7 +66,7 @@
 - [ ] **评审实质执行在自觉区**（2026-09-06 会话发现、用户拍板记入）：verify-review-brief 机械可判定但无挂载点（gates.py 头注：仅本地预发射，不入 CI、pre-push 不跑——发射评审前无机器事件，靠主会话自觉想起跑）；pre-push/CI 挂载的 review-tier `--enforce` 只强制形式（ADR 带 Review 证据行），评审是否真跑、三路是否真审，机器验不了。推广问题 = git 边界之前的动作序列零挂载点，与「规范事前接入」同根；解法未定。〔状态 2026-09-08：B4 落为纯**记录件**（A4 观测评审机器面运行痕迹、A6 投影 review-surface 累计计数；HERO 判据答案在案）——**A8 撤除批随投影面整体退役**，「评审机器面标记」仍在 `tool/result` 事件文本持久在案，session-close 对账 grep 该面即得；阻断档依 §5 另案过判据。〕
 - [ ] **规范事前接入**（用户原话：软件架构、编码规范、注释规范等等规范并没有接入协作体系，这也是问题；「我觉得不一定是技能，而是有这个问题，需要事前进行。具体怎么解决，还没有思路」）：问题在案、解决形态未定，待讨论出思路；防上帝类机械校验另条。〔状态 2026-09-08：编码/注释规范已成文单源（[code-standards](../method/code-standards.md) + 根 AGENTS 兜底第 4 条，ADR [2026-09-08-coding-standards](../../.agents/notes/implemented/architecture/2026-09-08-coding-standards.md) implemented）；c2 机器强制已交付（lint 白名单 + export-docs 闸入 gates.json，ADR [2026-09-08-c2-lint-enforcement](../../.agents/notes/implemented/architecture/2026-09-08-c2-lint-enforcement.md)）——「成文 + 机器拦」面闭环；本条余项 = 「事前接入」机制形态（与评审实质执行条同根）；实施计划 = [coding-enforcement-impl-plan.md](coding-enforcement-impl-plan.md) 轨道 A（A4 在环反馈 + 指针）。**2026-09-08 续：轨道 A 已落地**（A4 写码在环 lint 反馈，ADR [2026-09-08-lint-in-loop-feedback](../../.agents/notes/implemented/architecture/2026-09-08-lint-in-loop-feedback.md) implemented + `Review` 行）——「事前接入」机制首版兑现（self-hosting 形态）；余项 = 泛化到按文件所属仓找 lint 配置 + A3 写入前阻断档（升格触发在 ADR）。**2026-09-10 续：架构规范已成文单源**（[architecture-standards](../method/architecture-standards.md)，charter [ADR](../../.agents/notes/implemented/architecture/2026-09-10-architecture-standards-charter.md) implemented，FULL 三审收口）——编码/注释/架构「成文」面齐（A2 开场地图双指针行齐，架构指针行本批接入）；余项不变。〕
 - [ ] **上帝类预防闸**：单文件行数/依赖扇出上限类机械门禁（engine 现状健康——最大 selftest.js 486 行、核心命令 ≤170，属预防非治病）；静态可计算 → 挂载即零自觉真强制（§3.4 谱系）；对应设计稿 §10「机械校验（scope/blast-radius）」面。〔状态 2026-09-08：B4 C15 评估**判不立**——实测 n=38 行数 p50=152/p90=516/max=1158 无自然拐点、零失控件，立闸 = 防 speculative（HERO-O）；触发条件 = 真实失控件出现（改写困难/评审反复抓同一文件）时以 max×1.5 为候选阈值再过判据，见 [B4 ADR Decision 6](../../.agents/notes/implemented/architecture/2026-09-08-b4-mount-wiring.md)。〕
-- [ ] **记忆库/记忆系统连接**（用户定调：文档漂移清账后再议——清账已完成 2026-09-06）：零前案新议题（durable 全域 grep 零命中）；相邻线 = EvoMap memory-graph 精华未建（P1 只落 Gene/Event）+ 痕迹提炼面（仍在 HANDOFF-todos，触发 = 架构定稿）；方向选项 = 本地记忆库立项 / memory-graph 原语 / 融合轮前半场，未拍板。〔状态 2026-09-08：触发条件已全部满足——文档漂移清账 ✅（2026-09-06）、架构定稿 ✅（charter implemented + 蓝图定稿）；本项仍待方案设计阶段开题轮拍板方向。〕
+- 记忆库/记忆系统连接 → 已迁出（2026-09-10）：唯一状态家 = [memory-system-dossier.md](memory-system-dossier.md)。
 - [ ] **事实面定案（免行动留档）**：①懒加载已实证——技能目录只发 ≤500 字摘要、正文经 skill 工具按名注入（设计稿 §8 as-needed 生效），rank 600 = 最弱 bundled 层、同名静默遮蔽，兜底位设计安全非缺陷；②技能脱离本仓可运行性分级实证——2 纯方法论 / 3 半绑定 / 2 实质绑定，「正文可带走、机器检查带不走」，SKILL.md 宿主口径行已自认，免行动。
 
 ### 2.2 方案设计工作面（2026-09-06 起进入求解阶段——材料已集齐，先出方案，无拍板项）
@@ -77,7 +77,7 @@
 2. **防过度编码/过度设计的方案设计**：以 HERO 细读（§3.7）为参照设计解决形态——技能 / 常驻注入块（HERO 是常驻档实例，作者自认非 enforcement）/ 门禁补挂 / 混合，先用 §3.4 谱系逐档过一遍再定。
 3. **小落差评估**：钩子自动安装 / 门禁 DAG 并行 / CI 文件名契约闸 / archived-notes 校验件 / 技能 references/ 形态——逐项评估要不要纳入及何时纳入。
 4. **技能清单补全**：第一题的「等等」项——架构/编码/注释算不算技能、还缺什么，与用户继续收集归纳（先例参照 = HERO）。〔状态 2026-09-10：架构/编码/注释均已按规范篇落地（非技能形态）——[architecture-standards](../method/architecture-standards.md) + [code-standards](../method/code-standards.md)；「等等」项清单仍待收集。〕
-5. **记忆库线开题**：漂移清账已完成，记忆系统连接（含 EvoMap memory-graph 未建面）如何开题，随方案设计阶段排期。〔状态 2026-09-08：开题前置（漂移清账 + 架构定稿）均已满足，排期未定，待拍板方向后启动。〕
+5. **记忆库线开题** → 已迁出（2026-09-10）：唯一状态家 = [memory-system-dossier.md](memory-system-dossier.md)。
 6. **语言统一 = 全栈 TypeScript**（2026-09-06 用户最终定调）〔**状态 2026-09-08：已随框架重建 B1/B2/B3/B5 全部落地**——gates 族 13 件 py + change-scope.sh 退役为 .mts、engine 10 .js + adapters 9 .mjs 退役为 TS/dist、npm 发布面切 dist、CI/钩子单轨（py/bash 零残留，C1/C13/C14 转绿）；语义门禁能力随 TS 统一解锁但未建（候选场景 = 宿主 API 签名核对/契约一致性/镜像比对，走 CI 穷尽矩阵，另案；实施计划 = [coding-enforcement-impl-plan.md](coding-enforcement-impl-plan.md) 轨道 B：宿主 API 签名核对 + 发布面不变量，镜像比对判死）。本段以下为 09-06 决策轨迹留档。〕：
    - 用户原话（决策轨迹）：「我们npm发包，都有node，直接跑nodejs 看来是最好的路径」→「我觉得不对，为什么我们不需要语义门禁呢？我们没有是因为我们不会写啊，为什么是不需要呢？」→「你很执拗，我们肯定统一语言啊，既然决定走TS了，那就都走TS，放弃nodejs。」
    - **定调：统一 TS。** agent 曾两度坚持「零依赖纯 JS」中间路线（以裸 checkout 钩子可用性为由），用户否决——语言统一优先，不为省 node_modules 拆成两套栈。agent 的零依赖方案作废。

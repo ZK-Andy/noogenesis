@@ -3,13 +3,15 @@
 > 项目交接主文档（**唯一入口**）：背景 / 位置 / 当前状态 / 待办 / 开始步骤 / 记录索引。
 > 文件架构（ADR [2026-09-05-journal-in-git](.agents/notes/implemented/process/2026-09-05-journal-in-git.md)）：**稳定区 + 更新摘要**在本文件；**行动区（待办）**在 [HANDOFF-todos.md](HANDOFF-todos.md)；**叙事全文**在 `journal/`（**入 git**——过程即资产）。
 
-> **⚡ 最高优先级（框架重建）：charter ADR + 七层蓝图 → [.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md) · [docs/research/framework-rebuild-blueprint.md](docs/research/framework-rebuild-blueprint.md)**——用户拍板推倒重建（先框架后协作层、本仓原地重建），蓝图定稿（七层三段式 + A1–A8 挂载面 + M1–M3 + C1–C15）；**B0–B5 全批闭环（协作层重建收官，C1–C15 全绿）**——B5 切换批（gates.json cmd 全量重指 TS + 旧机器件零残留 + CI/钩子单轨 + 发版 0.2.0；实现 ADR [.agents/notes/implemented/architecture/2026-09-08-b5-switch.md](.agents/notes/implemented/architecture/2026-09-08-b5-switch.md)，批次表 [.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md](.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md)）；优化轮问题池余项（技能清单补全/记忆库）随重建后进行（规范展开 c1/c2 已交付；行动区仍在 [docs/research/capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)）。
+> **⚡ 最高优先级（框架重建）：charter ADR + 七层蓝图 → [.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md) · [docs/research/framework-rebuild-blueprint.md](docs/research/framework-rebuild-blueprint.md)**——用户拍板推倒重建（先框架后协作层、本仓原地重建），蓝图定稿（七层三段式 + A1–A8 挂载面 + M1–M3 + C1–C15）；**B0–B5 全批闭环（协作层重建收官，C1–C15 全绿）**——B5 切换批（gates.json cmd 全量重指 TS + 旧机器件零残留 + CI/钩子单轨 + 发版 0.2.0；实现 ADR [.agents/notes/implemented/architecture/2026-09-08-b5-switch.md](.agents/notes/implemented/architecture/2026-09-08-b5-switch.md)，批次表 [.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md](.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md)）；优化轮问题池余项（技能清单补全）随重建后进行（记忆库线已另立档案页 [memory-system-dossier.md](docs/research/memory-system-dossier.md)；规范展开 c1/c2 已交付；行动区仍在 [docs/research/capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md)）。
 
-> **⏭ 下一步：D 批简化候选 5 项已收口（`c5f7c46`，FULL 三审全采纳修毕）**。其余候选：优化轮问题池余项（记忆库开题触发条件已齐 / 技能挂载守卫 / 技能清单补全）[capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md) / release 工具族首验（B 条，随下一发版）/ 护栏延后收口（D 条，触发 = 胶囊优化后）；随手待办 [HANDOFF-todos.md](HANDOFF-todos.md)。
+> **⏭ 下一步：D 批简化候选 5 项已收口（`c5f7c46`，FULL 三审全采纳修毕）**。其余候选：优化轮问题池余项（技能挂载守卫 / 技能清单补全）[capsule-01-optimization-round.md](docs/research/capsule-01-optimization-round.md) / 记忆库线（含痕迹提炼面，唯一状态家）[memory-system-dossier.md](docs/research/memory-system-dossier.md) / release 工具族首验（B 条，随下一发版）/ 护栏延后收口（D 条，触发 = 胶囊优化后）；随手待办 [HANDOFF-todos.md](HANDOFF-todos.md)。
 
 ## 交接更新记录（摘要滚动窗）
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
+
+- 2026-09-10｜**记忆库线开题讨论轮 + 档案页制度试点（讨论+实现批；无 ADR，制度待试点评估后另批）**：拆词定名——线 = 引擎记忆原语（memory-graph）+ 痕迹提炼面，不立项知识库（durable 四家即知识库）；方向倾向融合轮。用户拍板先以记忆库线试点档案页；唯一状态家 [memory-system-dossier.md](docs/research/memory-system-dossier.md)，痕迹提炼面自 todos 迁出、优化轮两处迁出留指针。README 无漂移。
 
 - 2026-09-10｜**宿主 OpenCode Go 会话头诊断（无仓变更；cookbook [环境] 入档）**：本机静态 `x-opencode-session` 实证为反模式（亲和桶塌缩）；社区插件 `dsh-opencode-session` 兜底（自定义 provider 名须补路由键坑在案）；用户切内置 opencode-go 路由实证通。**节点：官方 sessionHeader 落地后退役插件（todos C）。** README 无漂移。
 
@@ -48,7 +50,6 @@
 - 2026-09-08｜**A8 会话记录投影撤除批（FULL 三审全采纳收口；ADR `2026-09-08-a8-session-record-projection-removal` implemented；0.2.2 发版）**：读路径对未标 ignorable 插件事件 fail-closed → 投影面退役，A2 地图与能力层保留。`1eb742e→bee3a35`。**节点：0.2.1 重验判据作废改写（todos → 0.2.2）。** README 核对有变更已同步。
 - 2026-09-08｜**B4 实机重验 + M1/M2 修复收口（FULL 三审全采纳；ADR `2026-09-08-mount-exec-arguments-field` implemented；0.2.1 发版）**：根因 = exec 字段 `arguments` 被误读 `exec.args`（夹具复刻假设 = 冒烟假绿教训）；B4 ADR 同步/勘误。（勘误随 A8 撤除批：「持久化容忍度 ✅」撤回，投影面退役。）README 无变更。
 - 2026-09-08｜**B5 切换批收口（FULL 三审全采纳；ADR `2026-09-08-b5-switch` implemented；`00b84ff`→`93de846` 含 0.2.0 发版）**：gates.json cmd 全量重指 TS + 旧机器件零残留 + CI/钩子单轨 + 例外机制单家迁 gates.mts 头注；基因指针经 solidify updated 刷新。**节点：B0–B5 收官，C1–C15 全绿。** README 核对已同步。
-- 2026-09-08｜**B4 挂载面接线批收口（FULL 三审全采纳；ADR `2026-09-08-b4-mount-wiring` implemented；`610fe7e`→`13440a0`）**：六点接线合并语义单源 + M1/M2/M3 记录/建议件零阻断 + peer dep dsh-llm；R2 两 Blocker（A8 drain 死接线/M2 游标错位）全修；C15 双候选均不立。**节点：C7/C8/C15 落账，下一批 = B5。** README 核对已同步。
 ## 背景
 
 Noogenesis（心源）：DeepSeek Harness 之上的"蜂群进化框架"；终极北极星 AGI（只定方向）；当前落地 = 第一个进化胶囊「AI 协作编码方法论」——四源（devops-template / dotnet-deepseek-harness-desktop / dsh-frecency / work 区）提炼搬迁，self-hosting：用心源体系开发心源。设计基准 `docs/research/dsh-swarm-evolution-framework-design.md`；搬迁计划（已实施冻结）[journal/capsule-01-migration-plan.md](journal/capsule-01-migration-plan.md)（评审定稿 2026-09-05）。
