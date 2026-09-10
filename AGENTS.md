@@ -12,7 +12,7 @@
 
 - [session-modes](.agents/workflows/session-modes.md) — 模式契约：讨论/调研/实现/发布的许可边界；开场必须声明模式。
 - [session-open](.agents/workflows/session-open.md) / [session-close](.agents/workflows/session-close.md) — 会话开、收尾检查单。
-- [feature-flow](.agents/workflows/feature-flow.md) — 非平凡变更主链路：ADR→实现→门禁→评审→收尾。
+- [feature-flow](.agents/workflows/feature-flow.md) — 非平凡变更主链路：ADR→实现→门禁→评审→吸收→收尾。
 - [release-flow](.agents/workflows/release-flow.md) — 发版主链路。
 - [github-research](.agents/workflows/github-research.md) — GitHub 调研六步配方（强制：gh CLI，禁 web 检索开局）。
 

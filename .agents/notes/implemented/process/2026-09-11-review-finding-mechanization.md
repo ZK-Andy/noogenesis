@@ -3,7 +3,7 @@
 Status: implemented
 Review: FULL/2026-09-11/R1=ok R2=ok R3=ok
 
-Related: 评审契约 [review](../../../../docs/method/review.md)（findings 形态与三路收窄）、主链路 [feature-flow](../../../workflows/feature-flow.md) §4.6（挂载点）、收尾检查单 [session-close](../../../workflows/session-close.md)（机械化对账行）、门槛判据 [anti-overdesign](../../../../docs/method/anti-overdesign.md)；落地件 [verify-command-surface](../../../../scripts/verify-command-surface.mts)、[verify-package-invariants](../../../../scripts/verify-package-invariants.mts)、[verify-secrets](../../../../scripts/verify-secrets.mts)；写作面 [doc-standards](../../../../docs/method/doc-standards.md) 铁律 6。
+Related: 评审契约 [review](../../../../docs/method/review.md)（findings 形态与三路收窄）、阶段位置 [吸收阶段 ADR](2026-09-11-absorption-stage.md) + 主链路 [feature-flow](../../../workflows/feature-flow.md) §5（挂载点）、收尾检查单 [session-close](../../../workflows/session-close.md)（吸收对账行）、门槛判据 [anti-overdesign](../../../../docs/method/anti-overdesign.md)；落地件 [verify-command-surface](../../../../scripts/verify-command-surface.mts)、[verify-package-invariants](../../../../scripts/verify-package-invariants.mts)、[verify-secrets](../../../../scripts/verify-secrets.mts)；写作面 [doc-standards](../../../../docs/method/doc-standards.md) 铁律 6。
 
 ## Problem
 
@@ -17,7 +17,7 @@ Related: 评审契约 [review](../../../../docs/method/review.md)（findings 形
 
 ## Decision
 
-**1. 机械化判据 = 该类复发 ≥2 次，或单次代价高**（凭据泄漏 / 发布事故 / 数据丢失）。首现且代价低者不进机器面——门禁自身是维护面且会带缺陷（[verify-secrets](../../../../scripts/verify-secrets.mts) 的 URL 族误报实证）。**先实测再立闸**：噪声率高的类不立（见第 3 条）。
+**1. 机械化判据 = 可机械判（形状可枚举、不看语义）且判据稳定即立**；立闸前先实测噪声率，噪声率高才不立——门禁自身是维护面且会带缺陷（[verify-secrets](../../../../scripts/verify-secrets.mts) 的 URL 族误报；本件 Decision 3 的变更史词面闸实测噪声 ≈95% 即不立）。单次代价高者（凭据泄漏 / 发布事故 / 数据丢失）不受噪声实测约束。口径与阶段位置单源 = [吸收阶段 ADR](2026-09-11-absorption-stage.md)。
 
 **2. 本次机械化三件**：
 
@@ -27,13 +27,13 @@ Related: 评审契约 [review](../../../../docs/method/review.md)（findings 形
 
 **3. 评估未过（附实测，不装成已解）**：durable 文档「变更史词面闸」不立。【探索性 · n=1 次本机实测】口径 = 扫 `.agents/notes/{implemented,proposed}` + `docs/method` + 两 README + 根 AGENTS（共 64 件 md），标记表 = 英文 5 条（`previously` / `no longer` / `used to be` / `renamed` / `was changed to`）+ 中文 5 条（`曾经` / `之前是` / `改自` / `不再(是|支持|走|用)` / `原先`），逐行正则计数。**现象**：命中 19 处，其中 18 处落在**定义这条禁令的规则文档自身**（`doc-standards` / 根 AGENTS / `code-standards` / `ai-collaboration-method` 引用被禁词表）或正当用法。**该面继续归评审语义面 + `noo-trim-cot-leakage` 技能**（成因未证，不列机制结论）。
 
-**4. 接线与动作点**：[feature-flow](../../../workflows/feature-flow.md) §4.6「发现机械化」= 评审收尾后的确定性动作（逐条判可机械判性与门槛；未达门槛或语义面按既有归口，**不新造载体**）；[session-close](../../../workflows/session-close.md) 增机械化对账一行。新门禁的 self-test 入 CI 抽查清单。
+**4. 接线与动作点**：[feature-flow](../../../workflows/feature-flow.md) §5「吸收」= 评审结论齐后的同级阶段（逐条 findings 分类归口四出口；不可机械判项按既有归口，**不新造载体**）；[session-close](../../../workflows/session-close.md) 增吸收对账一行（对账 ≠ 动作）。新门禁的 self-test 入 CI 抽查清单。
 
-**5. 反哺**：发现的**类**随批记入 journal（动作在 [feature-flow](../../../workflows/feature-flow.md) §4.6），类复发达到第 1 条门槛即机械化——本批即首例（三个类各带 ≥2 次复发证据）。
+**5. 反哺**：发现的**类**随批记入 journal（动作在 [feature-flow](../../../workflows/feature-flow.md) §5）——复发计数用于判断类的形态与噪声，不再作为立闸门槛。
 
 ## Alternatives considered
 
-- **每个 finding 都建门禁**：落败——门禁是维护面且自身会带缺陷（[verify-secrets](../../../../scripts/verify-secrets.mts) 的 URL 族误报实证）；判据必须带门槛。
+- **每个 finding 都建门禁**：落败——门禁是维护面且自身会带缺陷（[verify-secrets](../../../../scripts/verify-secrets.mts) 的 URL 族误报实证）；该落机器面的前提是判据稳定且噪声实测过关，不是 findings 数量。
 - **让三路评审代理顺手机械化**：落败——机械化需要跨路视野（同一类常横跨 R1/R2：声明面漂移两路各现一次），且评审的有效载荷应保持 findings 原样；机械化集中一次做。
 - **变更史词面闸**：实测噪声约 95%（数据在案），落败——中文标记与"规则自指"把误报推高到不可用。
 - **收尾单源同步闸**（档案页/行动区 ↔ 已落地 ADR）：判据模糊——「待启动」字样与 ADR 存在性之间没有稳定关系，不立。
@@ -42,6 +42,6 @@ Related: 评审契约 [review](../../../../docs/method/review.md)（findings 形
 ## Consequences
 
 - **三类复发不再进评审**：命令面漂移、README 版本漂移、凭据模式表的双向覆盖（后者的夹具面）。
-- **成本护栏**：每加一条门禁 = 多一个维护面；门槛（复发 ≥2 或代价高）与「先实测再立闸」（见 Decision 3 的变更史词面闸实测：噪声过高即不立）是其约束；`command-surface` 的白名单扫描面防止把历史叙事面一并卷入。
+- **成本护栏**：每加一条门禁 = 多一个维护面；判据稳定性与「先实测再立闸」（见 Decision 3 的变更史词面闸实测：噪声过高即不立）是其约束；`command-surface` 的白名单扫描面防止把历史叙事面一并卷入。
 - **漂移面先删、必留的落成锚点**：[doc-standards](../../../../docs/method/doc-standards.md) 铁律 6 收紧为「无闸覆盖的计数不进正文」——无闸的漂移面先删；用户面必须保留的计数则落成被 `command-surface` 逐处校核的锚点。门禁只兜底，不替代删除。
 - **明确未机械化**（不装成已解）：命名/措辞/证据形态/单源撕裂/外部证据可复现性等语义面，仍靠评审三路 + 根 AGENTS「评审检查项」AI 兜底清单。
