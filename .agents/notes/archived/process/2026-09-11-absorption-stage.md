@@ -1,6 +1,7 @@
 # Agent Note: 吸收升为与评审同级的流程阶段——四出口 + 吸收账
 
 Status: implemented
+Archived: 2026-09-12
 Review: FULL/2026-09-11/R1=ok R2=ok R3=ok
 
 Related: 形态与时点表述随 [2026-09-11-stage-card-structure](2026-09-11-stage-card-structure.md) 同步（四出口 / 门槛 / 同级位置不变）；触发件 [2026-09-11-review-finding-mechanization](2026-09-11-review-finding-mechanization.md)（阈值与首例；本批改写其 Decision 1/4/5）；清单与动作的家 [feature-flow](../../../workflows/feature-flow.md) §5；对账 [session-close](../../../workflows/session-close.md) §3；findings 裁决入口 [review](../../../../docs/method/review.md) §6；踩坑出口格式 [cookbook](../../../../docs/cookbook.md)；过程留痕 [journal 2026-09 卷](../../../../journal/2026-09.md)（偏差发现、用户三拍、五问树外壳被否的记录）。

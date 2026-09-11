@@ -5,7 +5,8 @@
  * 判据（四条，蓝图 §2）：
  * 1. 封闭类树：archived/ 下仅允许 `{class}/yyyy-mm-dd-<kebab>.md`，class 六类封闭集；
  * 2. Status 行（implemented|rejected，允许 ` — <理由>` 尾注，与 verify-adr-format 同语法）
- *    + `Archived: YYYY-MM-DD` 行在位且为合法日历日（不晚于今日）；
+ *    + `Archived: YYYY-MM-DD` 行在位且为合法日历日（≤ today_utc+1，时区容差同
+ *    verify-adr-format 的笔记日期判据）；
  * 3. 冻结内容清单（scripts/archived-notes.freeze.json，append-only）：归档件 SHA-256 与清单比对，
  *    改写已归档内容 = FAIL；清单对 HEAD 只允许追加条目；
  * 4. 本件不校验出站链接（链接面归 verify-md-links）。
@@ -38,6 +39,18 @@ function isValidDate(s: string, allowFuture = false): boolean {
   const d = new Date(`${s}T00:00:00Z`);
   if (Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== s) return false;
   return allowFuture || d.getTime() <= Date.now();
+}
+
+/** 归档日时限：合法日历日且 ≤ today_utc+1（时区容差与 verify-adr-format 的笔记日期同口径——
+ *  作者本地可领先 UTC 至多 1 天，CI runner 是 UTC；本地凌晨归档时「Archived: <本地今日>」
+ *  不能判成未来）。 */
+function isWithinUtcSkewDay(s: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
+  const d = new Date(`${s}T00:00:00Z`);
+  if (Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== s) return false;
+  const now = new Date();
+  const limit = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) + 86400000;
+  return d.getTime() <= limit;
 }
 
 function sha256(buf: Buffer | string): string {
@@ -84,7 +97,7 @@ function checkTree(archivedDir: string): { violations: Violation[]; files: strin
         continue;
       }
       const archivedLine = (lines[statusIdx + 2] ?? "").match(ARCHIVED_RE);
-      if (!archivedLine || !isValidDate(archivedLine[1]!)) {
+      if (!archivedLine || !isWithinUtcSkewDay(archivedLine[1]!)) {
         violations.push({ entry: rel, reason: "Status 下缺 `Archived: YYYY-MM-DD` 行或日期非法" });
         continue;
       }
@@ -254,6 +267,14 @@ function selfTest(): number {
     if (checkTree(archRoot).violations.length === 0) failures.push("违约样例（缺 Archived 行）未被拒");
     fs.writeFileSync(path.join(archivedDir, "2099-01-01-future.md"), "# Agent Note: x\n\nStatus: implemented\nArchived: 2099-01-01\n");
     if (checkTree(archRoot).violations.length === 0) failures.push("违约样例（未来 Archived 日期）未被拒");
+    // 归档日时区容差边界：UTC 今日+1 通过（作者本地已跨日）、+2 被拒
+    const utcDay = (offsetDays: number): string => new Date(Date.now() + offsetDays * 86400000).toISOString().slice(0, 10);
+    fs.writeFileSync(path.join(archivedDir, "2026-09-07-archived-skew.md"), `# Agent Note: x\n\nStatus: implemented\nArchived: ${utcDay(1)}\n`);
+    if (checkTree(archRoot).violations.some((v) => v.entry.includes("archived-skew.md"))) failures.push("合规样例（Archived = UTC 今日+1 时区容差）被误判 FAIL");
+    fs.unlinkSync(path.join(archivedDir, "2026-09-07-archived-skew.md"));
+    fs.writeFileSync(path.join(archivedDir, "2026-09-07-archived-skew2.md"), `# Agent Note: x\n\nStatus: implemented\nArchived: ${utcDay(2)}\n`);
+    if (!checkTree(archRoot).violations.some((v) => v.entry.includes("archived-skew2.md"))) failures.push("违约样例（Archived = UTC 今日+2）未被拒");
+    fs.unlinkSync(path.join(archivedDir, "2026-09-07-archived-skew2.md"));
     // 合规回归：Status 带 ` — <理由>` 尾注与 verify-adr-format 同语法
     fs.writeFileSync(path.join(archivedDir, "2026-09-06-rejected-tail.md"), "# Agent Note: x\n\nStatus: rejected — 理由可防重蹈覆辙\nArchived: 2026-09-06\n");
     const tail = checkTree(archRoot).violations.filter((v) => v.entry.includes("rejected-tail"));

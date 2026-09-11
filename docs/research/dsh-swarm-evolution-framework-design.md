@@ -193,6 +193,7 @@ DSH 的官方设计哲学（[Everything is a plugin](https://www.deepseek.com/ha
 - **只修异常、不修低分**：门禁失败才重试；绝不为弱评分者/自报分过拟合。
 - **保守入档**：只有"严格改进且无回归（奖励/延迟/成本 任一维真改进）"才进资产库；否则档案不变 → **前沿单调不降**，更差的永不污染归档。
 - **多目标/门控**：效率通道以"成绩不缩水"门控（防牺牲准确率换低延迟），奖励主通道 ≥ 基线才计（防单维刷分）。
+- **演化动作面异步于变更批次**：门禁 / 流程卡 / 规则 / cookbook / 基因的**框架级**改动不随变更批次执行；findings 的类与可机械化候选先归集（家 = [HANDOFF-todos](../../HANDOFF-todos.md)），由独立演化轮成批拍板落地（决策 = ADR [2026-09-12-absorption-async-round](../../.agents/notes/implemented/process/2026-09-12-absorption-async-round.md)，动作面 = `feature-flow` §4.6）。
 
 ---
 

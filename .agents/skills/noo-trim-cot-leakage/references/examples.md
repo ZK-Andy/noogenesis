@@ -34,7 +34,7 @@
 
 **泄漏：**「收口按新方案 §3.1 的顺序走（T2 批之后）。」
 
-**修复：**「收口顺序见流程卡 [feature-flow](../../../workflows/feature-flow.md)：ADR → 实现 → 门禁 → 评审 → 吸收。」
+**修复：**「收口顺序见流程卡 [feature-flow](../../../workflows/feature-flow.md)：ADR → 实现 → 门禁 → 评审 → 收尾。」
 
 没有已提交草稿拥有「新方案 §3.1」和「T2 批」，删引用、用已提交主替代。对照：「问题池 §3.4（谱系）」「问题池 §2.2-6」有已提交主（[capsule 问题池](../../../../docs/research/capsule-01-optimization-round.md)）且自有编号——按节引用合法；外部标准（RFC §10.1.5）在仓外自解析，保留。判据是 HEAD 可解析，不是模式形态。
 

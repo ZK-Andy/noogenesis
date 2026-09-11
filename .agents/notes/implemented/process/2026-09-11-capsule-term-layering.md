@@ -29,7 +29,7 @@ Related: 原语清单的家 [主设计 §5.1](../../../../docs/research/dsh-swar
 5. `capsules/` 路径的两种指代不由本口径裁定；adapters 面「按胶囊过滤」读作内容包成员集，合本口径。该面既有权属留在 [skills-ride-bank](../architecture/2026-09-06-skills-ride-bank.md) D6（胶囊过滤只立设计约束、过滤本身后置）与 [p2-shared-consumer](../architecture/2026-09-06-p2-shared-consumer.md) D3（`capsules/` 原语后置）——本条与之部分重叠，不取代，只补词面归属。
 6. 规则落点 = 根 AGENTS.md「文档纪律」一行（正向口径：谁指、禁什么），写法细则（括注形态、并列写法）以本条为家；分工合该文件「规则 → 本文件 + 链接」的口诀。主设计 §5.1 正文不改（它已写英文原名）。
 7. 同变更对齐现存违例面：共享层设计稿三处「基因/胶囊」改为 `gene/capsule`；主设计 §3.2「Gene/胶囊」改为「原子胶囊」。
-8. 不立词面门禁：本类违规须语义判断（判断某处「胶囊」是否在指 `Capsule` 原语），形状不可枚举，进不了机械校验出口——该面留评审语义面（出口形态单源 = [feature-flow](../../../workflows/feature-flow.md) §5）。
+8. 不立词面门禁：本类违规须语义判断（判断某处「胶囊」是否在指 `Capsule` 原语），形状不可枚举，进不了机械校验面——该面留评审语义面（findings 处置单源 = [review.md](../../../../docs/method/review.md) §6）。
 
 ## Alternatives considered
 
