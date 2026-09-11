@@ -1,6 +1,6 @@
 {
   "name": "noogenesis-dsh",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "Noogenesis (心源) DSH adapter — swarm evolution framework on the DSH plugin architecture: zero-dependency evolution engine (P1) wired into the session lifecycle.",
   "license": "AGPL-3.0-only",
   "repository": {
