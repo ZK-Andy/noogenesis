@@ -264,8 +264,10 @@ function selfTest(): number {
     if (checkTree(archRoot).violations.length === 0) failures.push("违约样例（缺 Archived 行）未被拒");
     fs.writeFileSync(path.join(archivedDir, "2099-01-01-future.md"), "# Agent Note: x\n\nStatus: implemented\nArchived: 2099-01-01\n");
     if (checkTree(archRoot).violations.length === 0) failures.push("违约样例（未来 Archived 日期）未被拒");
-    // 归档日时区容差边界：UTC 今日+1 通过（作者本地已跨日）、+2 被拒
-    const utcDay = (offsetDays: number): string => new Date(Date.now() + offsetDays * 86400000).toISOString().slice(0, 10);
+    // 归档日时区容差边界：UTC 今日+1 通过（作者本地已跨日）、+2 被拒（锚 UTC 日界，同 verify-adr-format case D 口径）
+    const utcNow = new Date();
+    const utcMidnight = Date.UTC(utcNow.getUTCFullYear(), utcNow.getUTCMonth(), utcNow.getUTCDate());
+    const utcDay = (offsetDays: number): string => new Date(utcMidnight + offsetDays * 86400000).toISOString().slice(0, 10);
     fs.writeFileSync(path.join(archivedDir, "2026-09-07-archived-skew.md"), `# Agent Note: x\n\nStatus: implemented\nArchived: ${utcDay(1)}\n`);
     if (checkTree(archRoot).violations.some((v) => v.entry.includes("archived-skew.md"))) failures.push("合规样例（Archived = UTC 今日+1 时区容差）被误判 FAIL");
     fs.unlinkSync(path.join(archivedDir, "2026-09-07-archived-skew.md"));

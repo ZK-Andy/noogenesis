@@ -1,7 +1,7 @@
 # Agent Note: 吸收撤出变更主链路——演化动作面改为异步归集轮
 
 Status: implemented
-Review: FULL/2026-09-12/pending（三重审核进行中，收口时回填真实结论）
+Review: FULL/2026-09-12/R1=ok R2=ok R3=ok
 
 Related: 被撤件 [吸收阶段 ADR](../../archived/process/2026-09-11-absorption-stage.md)（归档冻结）；准则条款家 [主设计 §6「关键纪律」](../../../../docs/research/dsh-swarm-evolution-framework-design.md)；动作面 [feature-flow](../../../workflows/feature-flow.md) §4.6 与 [session-close](../../../workflows/session-close.md) §3；门槛单源 [发现机械化 ADR](2026-09-11-review-finding-mechanization.md) Decision 1；写作规则 [阶段卡结构 ADR](2026-09-11-stage-card-structure.md)（铁律 7 与根 AGENTS 检查项第 6 条保留）；归集面 [HANDOFF-todos](../../../../HANDOFF-todos.md)；过程留痕 [journal 2026-09 卷](../../../../journal/2026-09.md)。
 
@@ -10,7 +10,7 @@ Related: 被撤件 [吸收阶段 ADR](../../archived/process/2026-09-11-absorpti
 吸收阶段（`feature-flow` §5：出账 → 呈报与确认〔关口〕 → 逐出口执行 → 回执）落在变更主链路内、提交之前。两道在册实证后果：
 
 - **交付链被非交付动作阻塞**：关口规定整账经用户确认前不得执行出口、不得提交与推送；四条出口里三条（cookbook 踩坑 / 流程卡纪律 / 就地修）是本批可当场完成的动作，却要占一次人工往返。
-- **投入产出不成立**：首例整账 14 类归口——新立机械校验出口 0、流程卡纪律 2，其余为不入库或语义面就地修（[journal 2026-09 卷](../../../../journal/2026-09.md)）；同批两处「先提交推送、后汇报」，关口在实际执行里被绕过。
+- **投入产出不成立**：首例整账 14 类归口——新立机械校验出口 0、流程卡纪律 2，其余为不入库或语义面就地修（[journal 2026-09 卷](../../../../journal/2026-09.md)）；关口在实践里被绕过——2026-09-11 两批连续以「先提交推送、后汇报」形态走完（举证单源 = [阶段卡结构 ADR](2026-09-11-stage-card-structure.md) Problem，两次均由用户点名）。
 
 **根因【推断 · 未证】**：本仓的演化动作有两处落点而节奏相反——引擎面的 gene solidify 挂 `agent/disposed`（会话末、人工确认，[主设计](../../../../docs/research/dsh-swarm-evolution-framework-design.md) §6 与 [蓝图](../../../../docs/research/framework-rebuild-blueprint.md) §7 A7）；内容面的四出口在批次内同步执行且阻塞提交。「演化动作面异步于变更批次」缺成文准则，同一处机制在两天内三次改向（子步 → 同级阶段 + 关口 → 撤除）。
 
