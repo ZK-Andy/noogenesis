@@ -11,6 +11,8 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-12｜**演化轮池独立成件批（FULL 三审全 ok；采纳 8 拒绝 1）**：新增池件 [HANDOFF-evolution-pool.md](HANDOFF-evolution-pool.md)（含吸收后处置待定）+ [池件 ADR](.agents/notes/implemented/process/2026-09-12-evolution-pool-file.md)；归集面指针全域改指；`6b95e36`→`6376d92`。README 已同步（结构表加池件）。
+
 - 2026-09-12｜**技能 provider 失效取证轮（零代码变更）**：bank 技能 provider 在宿主未注册——普查 desktop 199/199、dsh-frecency 11/11 会话的 `noo-*`=0，自举仓由文件系统面掩盖；三件修复立项 [proposed](.agents/notes/proposed/bug-fix/2026-09-12-bank-skill-provider-registration.md)。README/HANDOFF 口径同步更正。
 
 - 2026-09-12｜**吸收撤除批（FULL 三审 R1 1B/5S、R2 1B/1S、R3 0B/2S；采纳 9 拒绝 1）**：吸收撤出主链路（演化动作面异步归集）——准则落主设计 §6 第 5 条、findings 去向归 `feature-flow` §4.6 + 待办区、被撤件归档冻结；[ADR](.agents/notes/implemented/process/2026-09-12-absorption-async-round.md)。README 无漂移。
@@ -57,7 +59,6 @@
 
 - 2026-09-10｜**宿主 OpenCode Go 会话头诊断（无仓变更；cookbook [环境] 入档）**：本机静态 `x-opencode-session` 实证为反模式（亲和桶塌缩）；社区插件 `dsh-opencode-session` 兜底（自定义 provider 名须补路由键坑在案）；用户切内置 opencode-go 路由实证通。**节点：官方 sessionHeader 落地后退役插件（todos C）。** README 无漂移。
 
-- 2026-09-10｜**D 批简化候选 5 项收口（FULL 三审 R1 0B、R2 1B/1S、R3 1B/1S 全采纳；ADR `standards-audit-simplification-candidates` implemented；`3da3257`→`c5f7c46`）**：class 集单源 import、自测临时目录 17/17 异常安全、模型面英文拍板落地、splitLines 归口、maxGenes 必传。**节点：下一步 = 优化轮问题池。** README 无漂移。
 
 
 
