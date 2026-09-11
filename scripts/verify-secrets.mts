@@ -176,13 +176,24 @@ function evaluateSecrets(repoRoot: string): { code: number; report: string } {
 }
 
 /**
- * 离线夹具自测，三类断言：
+ * 分片拼接凭据样例：源码里不留完整可匹配模式，运行期仍是完整样例。
+ * 外部扫描器（GitHub secret scanning）对无校验位的 provider 形状只能报不能验，
+ * 夹具留字面量必被误报——见 ADR 2026-09-12-secret-fixture-fragment-encoding。
+ */
+function credentialSample(...parts: string[]): string {
+	return parts.join("");
+}
+
+/**
+ * 离线夹具自测，四类断言：
  *   1. **模式双向覆盖（元断言）**：`SECRET_PATTERNS` 每条必须有一条绑定它的正样例
  *      （命中且 label 相符——按序扫描，落在更早模式上即判不合格），带 `reject` 的
  *      还必须有一条绑定它的「匹配后被 reject 否决」负样例。这是本件自身盲区的机械
  *      化（判据来源 = ADR 2026-09-11-review-finding-mechanization）。
  *   2. 上游即挡的负样例：不得被任何模式命中。
  *   3. 扫描面：genes/events/observations 三面 + 面缺席 + 仓根不可用。
+ *   4. **源码自洁（元断言）**：本件源码不得含无校验位 provider 形状的完整字面量——
+ *      外部扫描器对这类形状只能报不能验，夹具必被误报（样例一律经 `credentialSample` 分片）。
  * 返回退出码（0 全过 / 1 有夹具违约）。
  */
 function selfTest(): number {
@@ -203,7 +214,7 @@ function selfTest(): number {
 		["GitHub token", "token ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"],
 		["GitHub fine-grained PAT", "token github_pat_ABCDEFGHIJKLMNOPQRSTUVWX"],
 		["AWS access key", '{"key":"AKIAIOSFODNN7EXAMPLE"}'],
-		["Google API key", "key AIzaSyABCDEFGHIJKLMNOPQRSTUVWXYZ0123456"],
+		["Google API key", "key " + credentialSample("AIzaSyABCDEFGHIJ", "KLMNOPQRSTUVWXYZ0123456")],
 		["Slack token", "token xoxb-1234567890-abcdefghij"],
 		["npm grant token", "npm_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"],
 		["private key block", "-----BEGIN OPENSSH PRIVATE KEY-----"],
@@ -271,6 +282,18 @@ function selfTest(): number {
 		if (hit) failures.push(`pattern negative matched (${hit.label}): ${label}`);
 	}
 
+	// 元断言 4（源码自洁）：外部扫描器无法自校验的 provider 形状，不得以完整字面量留在本件
+	// 源码里——它们只能被报、不能被验，本件夹具因此必被误报；形状取自模式表（单一事实源），
+	// 此处只列"无校验位"的 label，新增此类形状即加行。
+	const unverifiableShapes = ["Google API key"];
+	const selfSource = fs.readFileSync(selfPath, "utf8");
+	for (const label of unverifiableShapes) {
+		const shape = SECRET_PATTERNS.find((pattern) => pattern.label === label);
+		if (shape !== undefined && shape.regex.test(selfSource)) {
+			failures.push(`self source carries a complete unverifiable credential shape (${label}): build the fixture with credentialSample(...)`);
+		}
+	}
+
 	const dir = fs.mkdtempSync(path.join(os.tmpdir(), "verify-secrets-"));
 	try {
 		const mk = (name: string, files: Record<string, string>): string => {
@@ -317,7 +340,8 @@ function selfTest(): number {
 	return 0;
 }
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const selfPath = fileURLToPath(import.meta.url);
+const repoRoot = path.resolve(path.dirname(selfPath), "..");
 if (process.argv.includes("--self-test")) {
 	process.exit(selfTest());
 }

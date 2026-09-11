@@ -23,7 +23,7 @@ Related: 评审契约 [review](../../../../docs/method/review.md)（findings 形
 
 - `scripts/verify-command-surface.mts`（新件，白名单条目 `command-surface`）：事实源 = `engine/bin.ts` 的命令分支（`cmd === '…'`）；判据 = ①`bin.ts` 的 `usage()` 数组区间、②`engine/README.md` 首个含调用的 fenced 代码块——两处**声明区**的命令集逐字等于分支集；③计数面白名单里**同行点名 CLI/engine** 的「N 命令 / N commands」等于核心命令数（去 `self-test`）。声明区清单与计数面白名单的单源 = 该件 `SET_SURFACES` / `COUNT_SURFACES` 常量（本件不抄其条数）。**历史叙事面**（journal / ADR / HANDOFF 滚动窗）不扫（它们合法地记载当时的命令数）；「N 命令各一」描述命令件个数，是显式例外；普通英文散文里的「one command」不是命令面声明（同行无 CLI/engine 即跳过）。
 - `scripts/verify-package-invariants.mts` 判据 6（并入既有发布面不变量闸，不新增条目）：三个版本面 —— 两个 README **各自**必须声明 `noogenesis-dsh@X.Y.Z` 且等于 `package.json.version`；`HANDOFF.md` 属状态面（声明了就必须对，不强制有锚）。面清单单源 = 该件 `VERSION_SURFACES` 常量。
-- `scripts/verify-secrets.mts` 元断言：`SECRET_PATTERNS` 每条必须有**绑定它的正样例**（命中且 label 相符——按序扫描，落在更早模式上即不合格），带 `reject` 的每条必须有**「匹配后被 reject 否决」的绑定负样例**。首跑即抓出两条名义覆盖夹具（Google key 长度不足、连接串样例被赋值族先命中）。
+- `scripts/verify-secrets.mts` 元断言：`SECRET_PATTERNS` 每条必须有**绑定它的正样例**（命中且 label 相符——按序扫描，落在更早模式上即不合格），带 `reject` 的每条必须有**「匹配后被 reject 否决」的绑定负样例**。首跑即抓出两条名义覆盖夹具（Google key 长度不足、连接串样例被赋值族先命中）。**样例编码附加约束**（外部扫描器误报治理 + 元断言 4 源码自洁）见 [2026-09-12-secret-fixture-fragment-encoding](2026-09-12-secret-fixture-fragment-encoding.md)。
 
 **3. 评估未过（附实测，不装成已解）**：durable 文档「变更史词面闸」不立。【探索性 · n=1 次本机实测】口径 = 扫 `.agents/notes/{implemented,proposed}` + `docs/method` + 两 README + 根 AGENTS（共 64 件 md），标记表 = 英文 5 条（`previously` / `no longer` / `used to be` / `renamed` / `was changed to`）+ 中文 5 条（`曾经` / `之前是` / `改自` / `不再(是|支持|走|用)` / `原先`），逐行正则计数。**现象**：命中 19 处，其中 18 处落在**定义这条禁令的规则文档自身**（`doc-standards` / 根 AGENTS / `code-standards` / `ai-collaboration-method` 引用被禁词表）或正当用法。**该面继续归评审语义面 + `noo-trim-cot-leakage` 技能**（成因未证，不列机制结论）。
 

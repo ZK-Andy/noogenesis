@@ -31,6 +31,8 @@
 - **[门禁] `no-duplicate-imports` 误伤值/类型分行 import（2026-09-08 来源：noogenesis C2 白名单）**：症状——TS 惯用的 `import { x } from "m"` + `import type { T } from "m"` 被报同模块重复导入（10 处里仅 1 处是真重复值导入）。根因——规则默认不区分 type-only import。规避——配 `["error", { "allowSeparateTypeImports": true }]`；白名单落地前先跑一遍看噪声分布，别按规则名望文生义。
 - **[门禁] 评审变异检查的临时副本靠相对路径落点，会被 `git add -A` 扫进提交（2026-09-10 来源：noogenesis 收口批 R2 泳道实测 + 主会话复核）**：症状——泳道做变异检查时把在审件复制去 `/tmp` 实验，一条 `cd` 失败使副本落在仓根，`git status` 出现未跟踪同名件；主会话若正用 `git add -A` 收尾，该副本会被一并带走。根因——变异检查必须改文件，而在审文件受「评审期间不动 diff」约束，临时副本落点于是依赖一串相对路径命令，任一处 `cd` 失败即改落当前目录。规避——变体一律 `mkdir -p /tmp/<name>` + 绝对路径 `cp`，改完即 `rm -rf`；每次变异后核 `git status --porcelain` 为空；主会话收尾把「未跟踪件」列入对账。
 
+- **[门禁] 门禁自身夹具被外部扫描器误报（2026-09-12 来源：noogenesis GitHub secret scanning 告警 #1）**：症状——公开仓的 secret scanning 对 `scripts/verify-secrets.mts` 正样例报 Google API key 泄露，而本仓凭据闸全绿：该闸只扫 genes/events/observations 三面，不含 `scripts/`，两个扫描面的口径不同。根因——该形状无校验位、外部扫描器对它只能报不能验，而自测元断言 1 又要求每条模式必须有完整可匹配的绑定样例，夹具与告警结构性冲突。规避——这类形状的样例一律分片拼接（`credentialSample(...)` + `--self-test` 元断言 4 源码自洁），告警按 GitHub 的 `used_in_tests` 处置；不要用 paths-ignore 排除夹具文件，那会把真泄露一起遮住。
+
 ## 文档
 
 - **[文档] 预算管字数不管段落密度（2026-09-05 来源：desktop feature-flow 321 词单段）**：症状——流程卡单段塞十余个子契约，人读不动、agent 难解析。根因——doc-budgets 只统计总词数。规避——段落密度纪律：单段 ≤120 词，多契约拆小节/表格；已知盲区记录在案（见 [doc-standards.md](method/doc-standards.md) slop 清单"段落墙"）。
