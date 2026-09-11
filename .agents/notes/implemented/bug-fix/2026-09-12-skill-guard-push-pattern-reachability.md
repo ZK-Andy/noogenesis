@@ -38,4 +38,4 @@ Review: FULL/2026-09-12/R1=ok R2=ok R3=ok
 - **采用面**：`config.mts`（`GIT_PUSH_PATTERN` + 缺省表条目）、`selftest.mts`（配置缺省断言 + 守卫夹具 5 正 2 负 + 缺省表单一来源）、`adapters/dsh/README.md` 配置表、触发面 ADR 事实句、HANDOFF 当前状态句。
 - **行为面**：`git -c … push`、`git -C <dir> push`、`git --git-dir[=…] push`、`git --<flag> push` 进入提醒面；`push` 作为其它子命令参数的调用不新增命中。
 - **残余边界（文本正则的固有）**：`git -C "含 空格的路径" push`（取值被引号包）不命中；`git` 经 shell 别名 / 封装脚本调用不可见。同族残余（字面量假阳、脚本体内的写）仍归触发面 ADR Consequences。
-- **真机复验**：判据补 `-c` 形态，随下一版装机复核（跨会话遗留 = [HANDOFF-todos](../../../../HANDOFF-todos.md)（B）条）。
+- **真机复验（2026-09-12，0.2.5 装机）**：装机件 `dist/adapters/dsh/config.mjs` 的缺省表与新正则经矩阵实测（`git -c … push` / `cd X && git push` / `timeout N git push` / `-C <dir>` / `--git-dir[=]` / `--no-pager` 全中；`git commit -m push` 等五负例全不中）；实机新实例对 `git -c credential.helper=… push` 投递一行 `noo-pre-push-checks` advice，重复调用不再提醒。
