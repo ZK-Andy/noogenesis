@@ -193,8 +193,9 @@ function credentialSample(...parts: string[]): string {
  *   2. 上游即挡的负样例：不得被任何模式命中。
  *   3. 扫描面：genes/events/observations 三面 + 面缺席 + 仓根不可用。
  *   4. **源码自洁（元断言）**：本件源码不得含无校验位 provider 形状的完整字面量——
- *      外部扫描器对这类形状只能报不能验，夹具必被误报（样例一律经 `credentialSample` 分片）。
- * 返回退出码（0 全过 / 1 有夹具违约）。
+ *      外部扫描器对这类形状只能报不能验，夹具留字面量必被误报（判据只判结果，样例经
+ *      `credentialSample` 分片拼接是满足它的形态；形状 label 命不中模式表即违约）。
+ * 返回退出码（0 全过 / 1 有夹具违约 / 2 fail-closed：自身源码不可读）。
  */
 function selfTest(): number {
 	const failures: string[] = [];
@@ -284,12 +285,23 @@ function selfTest(): number {
 
 	// 元断言 4（源码自洁）：外部扫描器无法自校验的 provider 形状，不得以完整字面量留在本件
 	// 源码里——它们只能被报、不能被验，本件夹具因此必被误报；形状取自模式表（单一事实源），
-	// 此处只列"无校验位"的 label，新增此类形状即加行。
+	// 此处只列"无校验位"的 label，新增此类形状即加行；label 命不中模式表即违约（防拼写漂移
+	// 静默解除本闸）。
 	const unverifiableShapes = ["Google API key"];
-	const selfSource = fs.readFileSync(selfPath, "utf8");
+	let selfSource: string;
+	try {
+		selfSource = fs.readFileSync(selfPath, "utf8");
+	} catch (error: unknown) {
+		console.log(`${PROGRAM} self-test: FAIL-CLOSED — own source unreadable: ${selfPath} (${error instanceof Error ? error.message : String(error)})\n`);
+		return 2;
+	}
 	for (const label of unverifiableShapes) {
 		const shape = SECRET_PATTERNS.find((pattern) => pattern.label === label);
-		if (shape !== undefined && shape.regex.test(selfSource)) {
+		if (shape === undefined) {
+			failures.push(`unverifiable shape label not found in SECRET_PATTERNS: ${label}`);
+			continue;
+		}
+		if (shape.regex.test(selfSource)) {
 			failures.push(`self source carries a complete unverifiable credential shape (${label}): build the fixture with credentialSample(...)`);
 		}
 	}

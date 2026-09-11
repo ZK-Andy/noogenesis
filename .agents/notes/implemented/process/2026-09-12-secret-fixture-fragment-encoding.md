@@ -7,7 +7,7 @@ Related: 元断言族与夹具覆盖 [2026-09-11-review-finding-mechanization](2
 
 ## Problem
 
-公开仓 `ZK-Andy/noogenesis` 的 GitHub secret scanning 对 `scripts/verify-secrets.mts:206` 报出一条 `google_api_key` 告警（仓库 public，`publicly_leaked: true`，`validity: unknown`）。该字符串是门禁自测"正样例"表里的一条夹具，不是凭据：
+公开仓 `ZK-Andy/noogenesis` 的 GitHub secret scanning 对 `scripts/verify-secrets.mts` 正样例表（`positives`）的 Google 行报出一条 `google_api_key` 告警（仓库 public，`publicly_leaked: true`，`validity: unknown`）。该字符串是门禁自测的一条夹具，不是凭据：
 
 - **现象**：字符体为 `A`–`Z` 顺序字母 + `0`–`6`，即手敲字母表；真 Google key 的 35 字符体是 64 符号 base64url 上的均匀随机串。该单样例的分布检验：小写仅 1 个、互异字符 34 个，在真 key 模型下 P(小写 ≤ 1) = 3.0×10⁻⁷、P(互异 ≥ 34) = 1.8×10⁻⁴（n=1，组合概率而非抽样统计；两条件近似独立合并 ≈5×10⁻¹¹）。
 - **机制**【推断 · 未证】：Google 形状无校验位，而 GitHub 对该 provider 未做活性验证（告警 `validity: unknown` 是可观测面），因此外部扫描器对这类字符串只能报、不能验——判据只能落在形状上。
@@ -16,8 +16,8 @@ Related: 元断言族与夹具覆盖 [2026-09-11-review-finding-mechanization](2
 
 ## Decision
 
-- provider 形状中**外部扫描器无法自校验**者，其正样例一律经 `credentialSample(...)` 分片拼接，源码不留完整可匹配模式。当前唯一已知形状 = Google API key，清单落在 `selfTest` 的 `unverifiableShapes`。
-- 该约束由 `--self-test` 的**元断言 4（源码自洁）**机器强制：形状正则取自模式表（单一事实源仍是 `SECRET_PATTERNS`，本件不复写形状），扫本件自身源码文本，命中即 FAIL 并指路 `credentialSample`。
+- provider 形状中**外部扫描器无法自校验**者，其正样例不得以完整字面量留在本件源码里。当前唯一已知形状 = Google API key，清单落在 `selfTest` 的 `unverifiableShapes`；`credentialSample(...)` 分片拼接是满足该约束的形态（判据只判结果，不规定拼法）。
+- 该约束由 `--self-test` 的**元断言 4（源码自洁）**机器强制：形状正则取自模式表（单一事实源仍是 `SECRET_PATTERNS`，本件不复写形状），扫本件自身源码文本，命中即 FAIL 并指路 `credentialSample`；`unverifiableShapes` 的 label 命不中模式表同样违约——防拼写漂移静默解除该闸。自身源码不可读时按本件既有档位 fail-closed（exit 2）。
 - 告警按 GitHub 设计的 `used_in_tests` 处置（2026-09-12 已 resolve）。**不**排除路径、**不**收窄扫描面。
 
 ## Alternatives considered
