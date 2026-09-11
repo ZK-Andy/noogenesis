@@ -51,6 +51,15 @@ Review: FULL/2026-09-09/R1=ok R2=ok R3=ok
 - npm `latest` = 0.2.4（35 件 / 97.2 kB，含新件 `skill-guard.mjs`、`export-docs-feedback.mjs`）；GitHub Release 建（Latest、非 draft）。
 - **跨大批次归并缺口**（首验实遇）：`v0.2.3..0.2.4` 跨 59 笔时「其他变更」节输出 47 条过程条目（body 147 行），发布者须手工按批次归并成 3 条——归并档缺失入 [HANDOFF-todos](../../../../HANDOFF-todos.md)（C）条。
 
+## 第二次实发（2026-09-12，`noogenesis-dsh@0.2.5`）
+
+- `chore(release)` commit `7cdb625`（package.json + lock 同提交）→ 版本面同步提交 `66b40d1`（双语 README + HANDOFF M2 行）；annotated tag `dsh-v0.2.5` 指向 `66b40d1`（使 tag 树的三面版本锚自洽——0.2.4 首发的 tag 停在 bump 提交，tag 树里 README 仍写上一版）。
+- **判据 6 与 bump 的时序（新交叉点）**：`package-invariants` 判据 6（三面版本锚，2026-09-11 机械化批落）会拦下 README/HANDOFF 尚未同步的 bump 提交——本批首跑 `bump.mts` 的 `chore(release)` 提交被 pre-commit 拒，工作树留下已 staged 的 package.json + lock。正确次序 = 先把 README/HANDOFF 版本面改到新版本（工作树），再落 bump 提交（门禁读工作树），最后把版本面单独提交。
+- **pre-push 两 leg 次序**：分支 leg 先过（tier `--enforce` + 门禁组 + engine/adapter 双 self-test）；tag leg 在分支推送前 fail-closed（`tag 目标 commit 未被 origin 远端 refs 包含`，报「无法定 outgoing base」）。正确次序 = 先推分支、再推 tag（tag 目标可达后走零 outgoing 跳过档位强制）。
+- **npm 发布**：`npm latest` = 0.2.5（36 件 / 110.6 kB）；本机 `~/.npm` 只读，发布须带 `--cache=/tmp/npm-publish-cache`（否则 EROFS）。
+- **GitHub Release**：`dsh-v0.2.5`（Latest、非 draft），正文 = `.cache/release-body-0.2.5.md`。
+- **归并缺口第二次实证（触发再达成）**：`dsh-v0.2.4..0.2.5` 跨 67 笔，「其他变更」节输出 42 条过程条目 → 手工归并为 14 条（中英各 14），单条换行前 8 行为主。首验记在 [HANDOFF-todos](../../../../HANDOFF-todos.md)（C）条。
+
 ## Risks
 
 - **双语 body 手工对齐漂移**：release-note 脚本输出的英文节逐字镜像 commit 标题（本仓 commit 标题为中文）——英文节需发布者翻译润色；保持「脚本生成骨架 + 发布者润色」分工，脚本输出含 `EN_POLISH_HINT` 提示行防照贴即发。
