@@ -67,3 +67,4 @@
 - [x] （A）M1 批 A 守卫三件套 2026-09-10（FULL 三审全采纳；三件 v0 落地），ADR [2026-09-10-m1-guard-anti-overdesign](.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) implemented（分批批注）。
 - [x] （A）M1 批 B 防过度混合 D 2026-09-10（FULL 三审全采纳；契约块 + 蒸馏篇 + cases 索引 + 检查项第 5 条），ADR [2026-09-10-m1-guard-anti-overdesign](.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) 第二条 Review 行在案。
 - [ ] （C）verify-review-brief 未判简报 base 可解析（2026-09-12 实遇）：base 全 SHA 笔误时 `--enforce` 仍 exit 0，三路靠评审 agent 自核出真值；该闸只判 head。修法 = 加 base `git rev-parse --verify` 存在性判据 + 违约夹具。出处 = ADR [secret-fixture-fragment-encoding](.agents/notes/implemented/process/2026-09-12-secret-fixture-fragment-encoding.md)。
+- [ ] （C）技能触点提醒的 push 面正则不覆盖 `git -c … push`（2026-09-12 收尾复核实遇）：`adapters/dsh/config.mts:36` 用 `\bgit\s+push\b`（要求相邻），无凭据助手的本机只能 `git -c credential.helper=… push` → 本会话 3 次推送 0 次命中，push 前 pre-push-checks 提醒结构上不可达。修法 = 允许 `-c`/`--git-dir` 等前置选项 + 夹具；与待办（B）触发面复验同批复核。
