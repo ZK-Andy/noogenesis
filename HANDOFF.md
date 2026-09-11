@@ -11,6 +11,8 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-12｜**吸收撤除批（FULL 三审 R1 1B/5S、R2 1B/1S、R3 0B/2S；采纳 9 拒绝 1）**：吸收撤出主链路（演化动作面异步归集）——准则落主设计 §6 第 5 条、findings 去向归 `feature-flow` §4.6 + 待办区、被撤件归档冻结；[ADR](.agents/notes/implemented/process/2026-09-12-absorption-async-round.md)。README 无漂移。
+
 - 2026-09-12｜**凭据夹具误报治理批（FULL 三审 R1 0B/0S、R2 1B/3S、R3 0B/3S；采纳 6 + 候选 1 拒绝 1）**：夹具分片编码 + 元断言 4 源码自洁 + 自测 fail-closed 补档；GitHub 告警按 `used_in_tests` 处置；[ADR](.agents/notes/implemented/process/2026-09-12-secret-fixture-fragment-encoding.md)。README 无漂移。
 
 - 2026-09-11｜**阶段卡结构批（FULL 三审 R1 1B/4S、R2 2B/4S、R3 3B/5S；采纳 15）**：铁律 7（步序/角色位/关口）+ AGENTS 检查项 6 + §5 四步序（整账确认关口）+ §8 前置门按回执；同批执行上批遗留出口（简报闸 head 判据）；[ADR](.agents/notes/implemented/process/2026-09-11-stage-card-structure.md)。README 无漂移。
