@@ -24,7 +24,7 @@ Related: 机制立项 [2026-09-10-m1-guard-anti-overdesign](2026-09-10-m1-guard-
 3. **一次列全**：同一事件命中的全部未载技能一次列出（命中即返单行的形态改为多行），每条仍受「每会话每技能至多提醒一次」约束。
 4. **缺省表补两条实证条目**：`suffix ".md"` → `noo-prose-standard`、`command "\bgit\s+push\b"` → `noo-pre-push-checks`；原两条保留，共 4 条。
 5. **档位不变**：advice 非阻断、每会话每技能至多一次；阻断档仍判不立（「该不该用技能」是语义判断，机器给不出必报失败——理由单源 = [M1 Alternatives](2026-09-10-m1-guard-anti-overdesign.md)）。
-6. **归属**：本件补的三处结构面归机制；`noo-code-review` / `noo-find-simplifications` / `noo-trim-cot-leakage` 等任务型技能仍是语义面，归 `session-close` §2 对账与 `feature-flow` §5 吸收——不为它们新增行动区条目（机制与既有对账步即 owner）。
+6. **归属**：本件补的三处结构面归机制；`noo-code-review` / `noo-find-simplifications` / `noo-trim-cot-leakage` 等任务型技能仍是语义面，归 `session-close` §2 对账与 [feature-flow](../../../workflows/feature-flow.md) §4.6 findings 去向——不为它们新增行动区条目（机制与既有对账步即 owner）。
 7. **取代分类**：M1 立项 ADR 保留（其 Decision 1② 仍是守卫机制的家，本件只扩触发面），不归档、不删；无其他笔记主张同一决定。
 
 ## Alternatives considered

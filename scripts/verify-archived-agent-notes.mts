@@ -33,24 +33,21 @@ const ARCHIVED_RE = /^Archived: (\d{4}-\d{2}-\d{2})\s*$/;
 interface Violation { entry: string; reason: string }
 interface FreezeList { version: number; files: Record<string, string> }
 
-/** 合法日历日且不晚于今日（与 verify-adr-format 命名日期口径一致）。 */
-function isValidDate(s: string, allowFuture = false): boolean {
+/** 合法日历日（ISO yyyy-mm-dd 且真实存在）。 */
+function isCalendarDate(s: string): boolean {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
   const d = new Date(`${s}T00:00:00Z`);
-  if (Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== s) return false;
-  return allowFuture || d.getTime() <= Date.now();
+  return !Number.isNaN(d.getTime()) && d.toISOString().slice(0, 10) === s;
 }
 
 /** 归档日时限：合法日历日且 ≤ today_utc+1（时区容差与 verify-adr-format 的笔记日期同口径——
  *  作者本地可领先 UTC 至多 1 天，CI runner 是 UTC；本地凌晨归档时「Archived: <本地今日>」
  *  不能判成未来）。 */
 function isWithinUtcSkewDay(s: string): boolean {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
-  const d = new Date(`${s}T00:00:00Z`);
-  if (Number.isNaN(d.getTime()) || d.toISOString().slice(0, 10) !== s) return false;
+  if (!isCalendarDate(s)) return false;
   const now = new Date();
   const limit = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()) + 86400000;
-  return d.getTime() <= limit;
+  return new Date(`${s}T00:00:00Z`).getTime() <= limit;
 }
 
 function sha256(buf: Buffer | string): string {
@@ -58,7 +55,7 @@ function sha256(buf: Buffer | string): string {
 }
 
 /** 树结构 + 头部行校验（不含冻结清单面）。返回违规列表与每件相对路径。
- *  未来日期由 isValidDate 默认口径（allowFuture=false）拒绝，此处不再单判。 */
+ *  文件名日期只判日历合法性；`Archived:` 行日期由 isWithinUtcSkewDay 判 ≤ today_utc+1。 */
 function checkTree(archivedDir: string): { violations: Violation[]; files: string[] } {
   const violations: Violation[] = [];
   const files: string[] = [];
@@ -83,7 +80,7 @@ function checkTree(archivedDir: string): { violations: Violation[]; files: strin
         continue;
       }
       const date = ent.name.slice(0, 10);
-      if (!isValidDate(date, true)) {
+      if (!isCalendarDate(date)) {
         violations.push({ entry: rel, reason: "文件名日期非法（非日历日）" });
         continue;
       }
