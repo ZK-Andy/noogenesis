@@ -1,7 +1,7 @@
 # Agent Note: 技能触点提醒 push 面正则对带全局选项的推送不可达——匹配面须容忍 `git` 全局选项前缀
 
 Status: implemented
-Review: FULL/2026-09-12/pending（三重审核进行中，收口时回填真实结论）
+Review: FULL/2026-09-12/R1=ok R2=ok R3=ok
 
 > Related：触发面机制 [2026-09-11-skill-guard-trigger-faces](../architecture/2026-09-11-skill-guard-trigger-faces.md)（本件只改其缺省表 push 条目的匹配面，条目形状、档位与残余边界不变）；候选出处 = 演化轮池 2026-09-12 取证轮 findings（本件为其结论家）；真机复验判据 = [HANDOFF-todos](../../../../HANDOFF-todos.md)（B）条。
 
