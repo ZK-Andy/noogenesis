@@ -178,7 +178,7 @@ function evaluateSecrets(repoRoot: string): { code: number; report: string } {
 /**
  * 分片拼接凭据样例：源码里不留完整可匹配模式，运行期仍是完整样例。
  * 外部扫描器（GitHub secret scanning）对无校验位的 provider 形状只能报不能验，
- * 夹具留字面量必被误报——见 ADR 2026-09-12-secret-fixture-fragment-encoding。
+ * 夹具留字面量必被误报——见 .agents/notes/implemented/process/2026-09-12-secret-fixture-fragment-encoding.md。
  */
 function credentialSample(...parts: string[]): string {
 	return parts.join("");

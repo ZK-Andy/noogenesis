@@ -1,7 +1,7 @@
 # Agent Note: 凭据夹具分片编码——外部扫描器误报的根因治理
 
 Status: implemented
-Review: FULL/2026-09-12/pending（三重审核进行中，收口时回填真实结论）
+Review: FULL/2026-09-12/R1=ok R2=ok R3=ok
 
 Related: 元断言族与夹具覆盖 [2026-09-11-review-finding-mechanization](2026-09-11-review-finding-mechanization.md)（其 Decision 2 的元断言 1/2 不动，本件加第 4 条）；落地件 [verify-secrets](../../../../scripts/verify-secrets.mts)（判据与扫描面头注）；踩坑出口 [cookbook](../../../../docs/cookbook.md) §门禁。
 
