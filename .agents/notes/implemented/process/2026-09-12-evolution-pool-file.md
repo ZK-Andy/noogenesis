@@ -17,7 +17,7 @@ Related: 部分取代 [2026-09-12-absorption-async-round](2026-09-12-absorption-
 - **归集面 = [HANDOFF-evolution-pool.md](../../../../HANDOFF-evolution-pool.md)**（HANDOFF 家庭行动区新件，仓库根）。待办区不再承载池条目，只在待办件留一行指针以保证行动区可见性。
 - **攒账义务不变**：每批评审的可机械判的类 / 纪律漏项 / 带症状根因的踩坑，主会话当场各写一行进池件；开轮触发与成批处理口径照旧（步序 = `feature-flow` §4.6，门槛 = 机械化 ADR Decision 1）。
 - **指针改指池件**：`feature-flow` §4.6、`session-close` §3、主设计 §6、`HANDOFF.md` 待办节与状态节、`HANDOFF-todos.md` 头部与池指针条、bank 技能 proposed ADR 的攒账入口。
-- **吸收后处置本次只记录需求**：池件的「待定」节记下「候选被吸收后如何销账 / 是否归档」，不在本批设计形态。
+- **吸收后处置本次只记录需求**：池件的「待定」节记下「候选被吸收后如何销账 / 是否归档」，不在本批设计形态（延后项已由 [销账 ADR](2026-09-12-evolution-pool-candidate-disposal.md) 随触发落地）。
 
 ## Alternatives considered
 

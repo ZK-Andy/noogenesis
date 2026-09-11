@@ -22,7 +22,7 @@ Related: 被撤件 [吸收阶段 ADR](../../archived/process/2026-09-11-absorpti
 
 **3. 义务各有其家，不新造载体**：逐条裁决 = [review.md](../../../../docs/method/review.md) §6「主会话裁决」；拍板结论只落 durable 四家 = [session-close](../../../workflows/session-close.md) §3；立闸门槛（判据稳定 + 噪声实测过关）= [发现机械化 ADR](2026-09-11-review-finding-mechanization.md) Decision 1，条文不动。
 
-**4. 归集面 = [HANDOFF-evolution-pool](../../../../HANDOFF-evolution-pool.md)**（落点由 [2026-09-12-evolution-pool-file](2026-09-12-evolution-pool-file.md) 部分取代——池独立成件，下句的「不新建池文件」随之作废；义务面与门槛不变）：每批评审发现的**类**与可机械化候选，由主会话当场写一行进池件；攒到可拍板或用户点名即开演化轮，成批落闸 / 落卡 / 落条目。
+**4. 归集面 = [HANDOFF-evolution-pool](../../../../HANDOFF-evolution-pool.md)**（落点由 [2026-09-12-evolution-pool-file](2026-09-12-evolution-pool-file.md) 部分取代——池独立成件，下句的「不新建池文件」随之作废；义务面与门槛不变）：每批评审发现的**类**与可机械化候选，由主会话当场写一行进池件；攒到可拍板或用户点名即开演化轮，成批落闸 / 落卡 / 落条目 / 转变更批，落账后按 [销账 ADR](2026-09-12-evolution-pool-candidate-disposal.md) 销账。
 
 **5. 归档日判据的时区口径对齐（本批阻塞项的就地修）**：`verify-archived-agent-notes` 的 `Archived:` 日期改按 ≤ today_utc+1 判（与 [verify-adr-format](../../../../scripts/verify-adr-format.mts) 的笔记日期同口径，自测夹具补「+1 通过 / +2 被拒」两例）——被撤件归档在本机 CST 00:00–08:00 窗口会把「本地今日」判成未来，逼出 UTC 昨日的假归档日。
 

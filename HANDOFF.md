@@ -11,7 +11,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-12｜**演化轮池独立成件批（FULL 三审全 ok；采纳 8 拒绝 1）**：新增池件 [HANDOFF-evolution-pool.md](HANDOFF-evolution-pool.md)（含吸收后处置待定）+ [池件 ADR](.agents/notes/implemented/process/2026-09-12-evolution-pool-file.md)；归集面指针全域改指；`6b95e36`→`6376d92`。README 已同步（结构表加池件）。
+- 2026-09-12｜**演化轮池独立成件批（FULL 三审全 ok；采纳 8 拒绝 1）**：新增池件 [HANDOFF-evolution-pool.md](HANDOFF-evolution-pool.md)（吸收后处置规则已落地）+ [池件 ADR](.agents/notes/implemented/process/2026-09-12-evolution-pool-file.md)；归集面指针全域改指；`6b95e36`→`6376d92`。README 已同步（结构表加池件）。
 
 - 2026-09-12｜**技能 provider 失效取证轮（零代码变更）**：bank 技能 provider 在宿主未注册——普查 desktop 199/199、dsh-frecency 11/11 会话的 `noo-*`=0，自举仓由文件系统面掩盖；三件修复立项 [proposed](.agents/notes/proposed/bug-fix/2026-09-12-bank-skill-provider-registration.md)。README/HANDOFF 口径同步更正。
 

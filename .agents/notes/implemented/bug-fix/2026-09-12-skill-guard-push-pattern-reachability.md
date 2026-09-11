@@ -23,7 +23,7 @@ Review: FULL/2026-09-12/pending（三重审核进行中，收口时回填真实�
 
    实现单源 = [config.mts](../../../../adapters/dsh/config.mts) 的 `GIT_PUSH_PATTERN`（缺省表条目引用它）。
 2. **噪声边界不放宽**：只容许「选项前缀 + 子命令」形态——`git commit -m push`、`git log --grep push`、`git remote add push` 保持不命中；文本字面量命中（`echo 'git push'`）仍是已接受噪声（触发面 ADR 假阳面）。
-3. **夹具改行为面**：缺省表断言拆为「前三条字面量钉死 + 第四条行为验」；守卫夹具直接吃 `validateConfig({}).skillGuards`（原先硬抄一份缺省表 = 改一处漏一处），并加 4 正例（`-c k=v` / `-C <dir>` / `--git-dir=<dir>` / `--no-pager`）+ 2 负例。
+3. **夹具改行为面**：缺省表断言拆为「前三条字面量钉死 + 第四条行为验」；守卫夹具直接吃 `validateConfig({}).skillGuards`（原先硬抄一份缺省表 = 改一处漏一处），并加 5 正例（`-c k=v` / `-C <dir>` / `--git-dir <dir>` / `--git-dir=<dir>` / `--no-pager`——前两条与第三条钉白名单的取值形，后两条钉开关形）+ 2 负例。
 4. **载体事实同步**：`adapters/dsh/README.md` 配置表、触发面 ADR Decision 4 的条目事实句、HANDOFF 当前状态句按现态改写（决定不变）。
 
 ## Alternatives considered
@@ -35,7 +35,7 @@ Review: FULL/2026-09-12/pending（三重审核进行中，收口时回填真实�
 
 ## Consequences
 
-- **采用面**：`config.mts`（`GIT_PUSH_PATTERN` + 缺省表条目）、`selftest.mts`（配置缺省断言 + 守卫夹具 4 正 2 负 + 缺省表单一来源）、`adapters/dsh/README.md` 配置表、触发面 ADR 事实句、HANDOFF 当前状态句。
+- **采用面**：`config.mts`（`GIT_PUSH_PATTERN` + 缺省表条目）、`selftest.mts`（配置缺省断言 + 守卫夹具 5 正 2 负 + 缺省表单一来源）、`adapters/dsh/README.md` 配置表、触发面 ADR 事实句、HANDOFF 当前状态句。
 - **行为面**：`git -c … push`、`git -C <dir> push`、`git --git-dir[=…] push`、`git --<flag> push` 进入提醒面；`push` 作为其它子命令参数的调用不新增命中。
 - **残余边界（文本正则的固有）**：`git -C "含 空格的路径" push`（取值被引号包）不命中；`git` 经 shell 别名 / 封装脚本调用不可见。同族残余（字面量假阳、脚本体内的写）仍归触发面 ADR Consequences。
 - **真机复验**：判据补 `-c` 形态，随下一版装机复核（跨会话遗留 = [HANDOFF-todos](../../../../HANDOFF-todos.md)（B）条）。
