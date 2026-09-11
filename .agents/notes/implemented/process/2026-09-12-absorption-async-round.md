@@ -3,7 +3,7 @@
 Status: implemented
 Review: FULL/2026-09-12/R1=ok R2=ok R3=ok
 
-Related: 被撤件 [吸收阶段 ADR](../../archived/process/2026-09-11-absorption-stage.md)（归档冻结）；准则条款家 [主设计 §6「关键纪律」](../../../../docs/research/dsh-swarm-evolution-framework-design.md)；动作面 [feature-flow](../../../workflows/feature-flow.md) §4.6 与 [session-close](../../../workflows/session-close.md) §3；门槛单源 [发现机械化 ADR](2026-09-11-review-finding-mechanization.md) Decision 1；写作规则 [阶段卡结构 ADR](2026-09-11-stage-card-structure.md)（铁律 7 与根 AGENTS 检查项第 6 条保留）；归集面 [HANDOFF-todos](../../../../HANDOFF-todos.md)；过程留痕 [journal 2026-09 卷](../../../../journal/2026-09.md)。
+Related: 被撤件 [吸收阶段 ADR](../../archived/process/2026-09-11-absorption-stage.md)（归档冻结）；准则条款家 [主设计 §6「关键纪律」](../../../../docs/research/dsh-swarm-evolution-framework-design.md)；动作面 [feature-flow](../../../workflows/feature-flow.md) §4.6 与 [session-close](../../../workflows/session-close.md) §3；门槛单源 [发现机械化 ADR](2026-09-11-review-finding-mechanization.md) Decision 1；写作规则 [阶段卡结构 ADR](2026-09-11-stage-card-structure.md)（铁律 7 与根 AGENTS 检查项第 6 条保留）；归集面 [HANDOFF-evolution-pool](../../../../HANDOFF-evolution-pool.md)（本件 Decision 4 与 Alternatives 丁的落点由 [2026-09-12-evolution-pool-file](2026-09-12-evolution-pool-file.md) 部分取代）；过程留痕 [journal 2026-09 卷](../../../../journal/2026-09.md)。
 
 ## Problem
 
@@ -22,7 +22,7 @@ Related: 被撤件 [吸收阶段 ADR](../../archived/process/2026-09-11-absorpti
 
 **3. 义务各有其家，不新造载体**：逐条裁决 = [review.md](../../../../docs/method/review.md) §6「主会话裁决」；拍板结论只落 durable 四家 = [session-close](../../../workflows/session-close.md) §3；立闸门槛（判据稳定 + 噪声实测过关）= [发现机械化 ADR](2026-09-11-review-finding-mechanization.md) Decision 1，条文不动。
 
-**4. 归集面 = [HANDOFF-todos](../../../../HANDOFF-todos.md)**：每批评审发现的**类**与可机械化候选，由主会话当场写一行进待办区（不新建池文件、不新建目录）；攒到可拍板或用户点名即开演化轮，成批落闸 / 落卡 / 落条目。
+**4. 归集面 = [HANDOFF-evolution-pool](../../../../HANDOFF-evolution-pool.md)**（落点由 [2026-09-12-evolution-pool-file](2026-09-12-evolution-pool-file.md) 部分取代——池独立成件，下句的「不新建池文件」随之作废；义务面与门槛不变）：每批评审发现的**类**与可机械化候选，由主会话当场写一行进池件；攒到可拍板或用户点名即开演化轮，成批落闸 / 落卡 / 落条目。
 
 **5. 归档日判据的时区口径对齐（本批阻塞项的就地修）**：`verify-archived-agent-notes` 的 `Archived:` 日期改按 ≤ today_utc+1 判（与 [verify-adr-format](../../../../scripts/verify-adr-format.mts) 的笔记日期同口径，自测夹具补「+1 通过 / +2 被拒」两例）——被撤件归档在本机 CST 00:00–08:00 窗口会把「本地今日」判成未来，逼出 UTC 昨日的假归档日。
 
@@ -31,7 +31,7 @@ Related: 被撤件 [吸收阶段 ADR](../../archived/process/2026-09-11-absorpti
 - **甲 保留吸收节、只删人工关口与提交绑定**：落败——阶段仍在主链路内，「框架级改动随批次同步执行」这一根因不变；逐条裁决已有家（review.md §6），剩下的是重复面。
 - **乙 彻底删除吸收概念（四出口与类记一并停）**：落败——「什么时候立闸」的动作通路随之消失，门槛变成无人执行的判据；Decision 4 是该通路成本最低的载体。
 - **丙 改成批次内零关口自查**：落败——同一批既产 findings 又产框架级改动，等于把演化动作拉回同步面；无产出面时类记与候选随会话蒸发。
-- **丁 归集面单开档案页 / 池文件**：落败——超出当前体量（用不上不写）；HANDOFF-todos 已有条数预算与结构闸，够用。
+- **丁 归集面单开档案页 / 池文件**：当时落败——超出当时体量（用不上不写）、HANDOFF-todos 已有条数预算与结构闸；该选择已由 [2026-09-12-evolution-pool-file](2026-09-12-evolution-pool-file.md) 翻转（池与待办两套节奏共享同一预算）。
 
 ## Consequences
 

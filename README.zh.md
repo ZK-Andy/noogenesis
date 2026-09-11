@@ -57,7 +57,7 @@ node dist/engine/bin.js self-test  # 引擎自检（消费预构建 dist）
 ├── lefthook.yml            # git 钩子单源（pre-commit 分域 job / pre-push 单编排器；lefthook 内建 postinstall 自动安装）
 ├── events/                 # 演化事件月卷（JSONL 审计面，入 git）
 ├── templates/              # ADR / AGENTS 分层模板
-├── HANDOFF.md + HANDOFF-todos.md   # 交接家庭
+├── HANDOFF.md + HANDOFF-todos.md + HANDOFF-evolution-pool.md   # 交接家庭
 └── journal/                # 会话叙事月卷（过程即资产，入 git）
 ```
 

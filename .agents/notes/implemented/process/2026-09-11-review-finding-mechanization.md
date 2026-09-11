@@ -27,9 +27,9 @@ Related: 评审契约 [review](../../../../docs/method/review.md)（findings 形
 
 **3. 评估未过（附实测，不装成已解）**：durable 文档「变更史词面闸」不立。【探索性 · n=1 次本机实测】口径 = 扫 `.agents/notes/{implemented,proposed}` + `docs/method` + 两 README + 根 AGENTS（共 64 件 md），标记表 = 英文 5 条（`previously` / `no longer` / `used to be` / `renamed` / `was changed to`）+ 中文 5 条（`曾经` / `之前是` / `改自` / `不再(是|支持|走|用)` / `原先`），逐行正则计数。**现象**：命中 19 处，其中 18 处落在**定义这条禁令的规则文档自身**（`doc-standards` / 根 AGENTS / `code-standards` / `ai-collaboration-method` 引用被禁词表）或正当用法。**该面继续归评审语义面 + `noo-trim-cot-leakage` 技能**（成因未证，不列机制结论）。
 
-**4. 接线与动作点**：[feature-flow](../../../workflows/feature-flow.md) §4.6 归集 findings 去向（可机械判的类当场写一行进 [HANDOFF-todos](../../../../HANDOFF-todos.md)；不可机械判项按既有归口，**不新造载体**）；[session-close](../../../workflows/session-close.md) 的对账行改按 §4.6 核（对账 ≠ 动作）。新门禁的 self-test 入 CI 抽查清单（阶段与归集面位置随 [撤除 ADR](2026-09-12-absorption-async-round.md) 改写）。
+**4. 接线与动作点**：[feature-flow](../../../workflows/feature-flow.md) §4.6 归集 findings 去向（可机械判的类当场写一行进 [HANDOFF-evolution-pool](../../../../HANDOFF-evolution-pool.md)；不可机械判项按既有归口，**不新造载体**）；[session-close](../../../workflows/session-close.md) 的对账行改按 §4.6 核（对账 ≠ 动作）。新门禁的 self-test 入 CI 抽查清单（阶段与归集面位置随 [撤除 ADR](2026-09-12-absorption-async-round.md) 改写）。
 
-**5. 反哺**：发现的**类**随批记入 journal 并写一行进 [HANDOFF-todos](../../../../HANDOFF-todos.md)（动作在 [feature-flow](../../../workflows/feature-flow.md) §4.6）——复发计数用于判断类的形态与噪声，不再作为立闸门槛。
+**5. 反哺**：发现的**类**随批记入 journal 并写一行进 [HANDOFF-evolution-pool](../../../../HANDOFF-evolution-pool.md)（动作在 [feature-flow](../../../workflows/feature-flow.md) §4.6）——复发计数用于判断类的形态与噪声，不再作为立闸门槛。
 
 ## Alternatives considered
 

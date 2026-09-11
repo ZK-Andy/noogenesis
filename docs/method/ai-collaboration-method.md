@@ -67,7 +67,7 @@ durable 文档写**当前状态**，禁止 "previously / now / no longer / renam
 │   └── workflows/            # 流程卡：会话模式/开收尾/开发/发版/调研
 ├── templates/                # adr-proposed / adr-implemented / agents-hierarchy
 ├── scripts/                  # verify-* 门禁 + change-scope（零依赖，随仓库走）
-├── HANDOFF.md + HANDOFF-todos.md   # 交接家庭（入 git）
+├── HANDOFF.md + HANDOFF-todos.md + HANDOFF-evolution-pool.md   # 交接家庭（入 git）
 └── journal/                  # 会话叙事月卷（入 git；过程即资产）
 ```
 

@@ -57,7 +57,7 @@ node dist/engine/bin.js self-test  # engine self-test (consumes prebuilt dist)
 ├── lefthook.yml            # git hooks single source (pre-commit scoped jobs / pre-push orchestrator; installed by lefthook's built-in postinstall)
 ├── events/                 # evolution event monthly volumes (JSONL audit surface, in git)
 ├── templates/              # ADR / AGENTS layered templates
-├── HANDOFF.md + HANDOFF-todos.md   # handoff family
+├── HANDOFF.md + HANDOFF-todos.md + HANDOFF-evolution-pool.md   # handoff family
 └── journal/                # session narrative monthly volumes (process as asset, in git)
 ```
 

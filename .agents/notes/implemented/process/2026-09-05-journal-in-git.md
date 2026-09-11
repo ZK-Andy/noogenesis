@@ -8,7 +8,7 @@ Status: implemented
 
 ## Decision
 
-`journal/`（月卷，如 `journal/2026-09.md`）纳入 git 跟踪；HANDOFF.md / HANDOFF-todos.md 同样提交。durable 结论仍只落四家（ADR/cookbook/README/AGENTS），journal 只承载过程叙事，不复述 durable 结论（单源原则不变）。`.gitignore` 不含 HANDOFF 与 journal。
+`journal/`（月卷，如 `journal/2026-09.md`）纳入 git 跟踪；HANDOFF.md / HANDOFF-todos.md / HANDOFF-evolution-pool.md 同样提交。durable 结论仍只落四家（ADR/cookbook/README/AGENTS），journal 只承载过程叙事，不复述 durable 结论（单源原则不变）。`.gitignore` 不含 HANDOFF 与 journal。
 
 边界（同步 2026-09-05）：评审简报 `.review-briefs/` **不入 git**——它是一次性调度工件（生命止于该次评审收口），其结论与证据落 journal/交接条目；这与 Problem 中批评的"评审档案整体 gitignore 换机即丢"不冲突：入 git 的是有演化价值的轨迹（叙事卷/交接），一次性调度件不是。
 

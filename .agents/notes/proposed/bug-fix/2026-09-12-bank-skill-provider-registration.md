@@ -2,7 +2,7 @@
 
 Status: proposed
 
-Related: 被更正的实现件 [2026-09-06-skills-ride-bank](../../implemented/architecture/2026-09-06-skills-ride-bank.md)（决定不变，交付现实更正）；机制件 [skill-provider.mts](../../../../adapters/dsh/skill-provider.mts) / [index.mts](../../../../adapters/dsh/index.mts)；提醒面 [mount-policies.mts](../../../../adapters/dsh/mount-policies.mts) 与 [config.mts](../../../../adapters/dsh/config.mts)；攒账入口 [HANDOFF-todos](../../../../HANDOFF-todos.md)（异步演化轮）；取证留痕 [journal 2026-09 卷](../../../../journal/2026-09.md)。
+Related: 被更正的实现件 [2026-09-06-skills-ride-bank](../../implemented/architecture/2026-09-06-skills-ride-bank.md)（决定不变，交付现实更正）；机制件 [skill-provider.mts](../../../../adapters/dsh/skill-provider.mts) / [index.mts](../../../../adapters/dsh/index.mts)；提醒面 [mount-policies.mts](../../../../adapters/dsh/mount-policies.mts) 与 [config.mts](../../../../adapters/dsh/config.mts)；攒账入口 [HANDOFF-evolution-pool](../../../../HANDOFF-evolution-pool.md)（演化轮池）；取证留痕 [journal 2026-09 卷](../../../../journal/2026-09.md)。
 
 ## Problem
 
@@ -37,4 +37,4 @@ Related: 被更正的实现件 [2026-09-06-skills-ride-bank](../../implemented/a
 
 - 未修前：自举仓之外 `noo-*` 不可用（现状）；提醒面修正后至少不再误导，README / HANDOFF 按更正口径写。
 - 修复后仍留的缺口：provider 依赖 `<repoRoot>/.noogenesis/genes-cache` 存在（pull 未跑 = 空面，属设计内降级）；`capsules/` 过滤面仍后置（被更正件 Decision 6 不变）。
-- 攒账与开轮：本件入 [HANDOFF-todos](../../../../HANDOFF-todos.md) 的异步演化轮池（`feature-flow` §4.6 findings 去向）——攒到可拍板或用户点名即开轮，演进动作不随其他变更批次执行。
+- 攒账与开轮：本件入 [HANDOFF-evolution-pool](../../../../HANDOFF-evolution-pool.md)（演化轮池，`feature-flow` §4.6 findings 去向）——攒到可拍板或用户点名即开轮，演进动作不随其他变更批次执行。
