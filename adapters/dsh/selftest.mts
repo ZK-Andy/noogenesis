@@ -33,7 +33,6 @@ import { listStagingCandidates, buildSolidifyArgs, solidifyNotice, runSolidifyTr
 import { buildPullArgs, pullBankOnce, createBankPullScheduler } from "./bank-pull.mjs";
 import { BUNDLED_SKILL_RANK, PROVIDER_NAME, createBankSkillProvider, parseSkillFile, registerBankSkills } from "./skill-provider.mjs";
 import { validateConfig, DEFAULT_GENE_BANK_URL } from "./config.mjs";
-import type { SkillGuardEntry } from "./config.mjs";
 import { createSessionStore, mergePreStep, mergeSessionStart, mergeToolPost, mergeToolPre } from "./mount.mjs";
 import { createMountPolicies, createSubtreeRulesPolicies, SKILL_DIR_CANDIDATES } from "./mount-policies.mjs";
 import { createLintFeedbackPolicies } from "./lint-feedback.mjs";
@@ -333,12 +332,13 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.equal(cfg.askOnDispose, true);
 	assert.equal(cfg.actor, "noogenesis");
 	assert.equal(cfg.maxIndexGenes, 12);
-	assert.deepEqual(cfg.skillGuards, [
+	assert.deepEqual(cfg.skillGuards.slice(0, 3), [
 		{ kind: "path", pattern: "docs", skill: "noo-doc-standards" },
 		{ kind: "suffix", pattern: ".md", skill: "noo-prose-standard" },
 		{ kind: "path", pattern: ".agents/notes", skill: "noo-archive-agent-notes" },
-		{ kind: "command", pattern: "\\bgit\\s+push\\b", skill: "noo-pre-push-checks" },
 	]);
+	// 第四条是正则，字面量钉死会让改匹配面必须改两处——形态面在守卫夹具里逐条验。
+	assert.deepEqual(cfg.skillGuards.slice(3).map(({ kind, skill }) => ({ kind, skill })), [{ kind: "command", skill: "noo-pre-push-checks" }]);
 	ok("config: defaults complete");
 
 	// skillGuards：显式数组整体替换缺省表；条目形状与三类模式各自违约即抛错。
@@ -866,17 +866,11 @@ function writeFixtureGene(repoRoot: string): void {
 		ok("mounts: policy set assembly — A2 map + A3 skill guard + A4 lint/export-docs judges + A5 zero-policy lane");
 	}
 
-	// M1 守卫②：A3 触点提醒策略逐条合同（守卫表直调，零宿主依赖）。三类匹配面
-	// （path / suffix / command）+ 两条写码目标通道（写码工具 + bash 重定向）。
+	// M1 守卫②：A3 触点提醒策略逐条合同（缺省守卫表直调，零宿主依赖）。三类
+	// 匹配面（path / suffix / command）+ 两条写码目标通道（写码工具 + bash 重定向）。
 	{
 		const repo = tempRepo("skill-guard");
-		const guards: SkillGuardEntry[] = [
-			{ kind: "path", pattern: "docs", skill: "noo-doc-standards" },
-			{ kind: "suffix", pattern: ".md", skill: "noo-prose-standard" },
-			{ kind: "path", pattern: ".agents/notes", skill: "noo-archive-agent-notes" },
-			{ kind: "command", pattern: "\\bgit\\s+push\\b", skill: "noo-pre-push-checks" },
-		];
-		const { toolPre } = createSkillGuardPolicies({ repoRoot: repo }, guards);
+		const { toolPre } = createSkillGuardPolicies({ repoRoot: repo }, validateConfig({}).skillGuards);
 		// 新会话探针（状态按会话隔离）。
 		const session = () => ({ session: { header: { cwd: repo } } });
 		// 一次事件命中多条 → 一次列全（表序），且各技能随之进入 reminded。
@@ -920,6 +914,14 @@ function writeFixtureGene(repoRoot: string): void {
 		assert.match(pushAdvice.lines[0]!, /running a command matching/);
 		assert.equal(toolPre({ name: "bash", arguments: { command: "git push --force-with-lease=main:abc" }, agent: pushAgent }), undefined);
 		assert.equal(toolPre({ name: "bash", arguments: { command: "git status --short" }, agent: session() }), undefined);
+		// 全局选项前缀：取值形（白名单）与开关形都命中；`push` 作为其它子命令的
+		// 参数不命中（噪声边界）。
+		for (const command of ["git -c credential.helper=store push", "git -C /tmp/other push", "git --git-dir=/x/.git push", "git --no-pager push"]) {
+			assert.ok(toolPre({ name: "bash", arguments: { command }, agent: session() }), command);
+		}
+		for (const command of ["git commit -m push", "git log --grep push"]) {
+			assert.equal(toolPre({ name: "bash", arguments: { command }, agent: session() }), undefined, command);
+		}
 		// 命令面是文本正则：字符串字面量里的 `git push` 同样命中——已接受噪声
 		// （一行、每会话一次；扩面 ADR Consequences）。
 		const literal = toolPre({ name: "bash", arguments: { command: "echo 'git push'" }, agent: session() });

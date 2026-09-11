@@ -29,11 +29,21 @@ export interface SkillGuardEntry {
  * 重复提醒稀释真守卫信号）——只配实证过「该载未载」的强相关条目；噪声上界
  * 由触发器给（每会话每技能至多一条），不靠条目节制；任务型语义映射不进本表。
  */
+/**
+ * push 面命令正则：`git` 与子命令之间容许全局选项前缀。取值为独立 token 的
+ * 全局选项走白名单（git 全局选项的取值集是封闭的：`-C` / `-c` / `--git-dir`
+ * / `--work-tree` / `--namespace` / `--exec-path` / `--config-env` /
+ * `--attr-source`），开关形（`-<flag>`、`--<flag>[=<value>]`）通用覆盖。
+ * 只容许「选项前缀 + 子命令」形态——`push` 作为其它子命令的参数
+ * （`git commit -m push`、`git log --grep push`）不命中。
+ */
+const GIT_PUSH_PATTERN = "\\bgit(?:\\s+(?:-C|-c|--git-dir|--work-tree|--namespace|--exec-path|--config-env|--attr-source)\\s+\\S+|\\s+-{1,2}[\\w-]+(?:=\\S+)?)*\\s+push\\b";
+
 export const DEFAULT_SKILL_GUARDS: readonly SkillGuardEntry[] = [
 	{ kind: "path", pattern: "docs", skill: "noo-doc-standards" },
 	{ kind: "suffix", pattern: ".md", skill: "noo-prose-standard" },
 	{ kind: "path", pattern: ".agents/notes", skill: "noo-archive-agent-notes" },
-	{ kind: "command", pattern: "\\bgit\\s+push\\b", skill: "noo-pre-push-checks" },
+	{ kind: "command", pattern: GIT_PUSH_PATTERN, skill: "noo-pre-push-checks" },
 ];
 
 /** 触点提醒匹配面封闭集（配置校验的拒收判据）。 */

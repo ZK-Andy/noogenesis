@@ -22,7 +22,7 @@ Related: 机制立项 [2026-09-10-m1-guard-anti-overdesign](2026-09-10-m1-guard-
 1. **条目形状**：`config.skillGuards` 条目 = `{ kind, pattern, skill }`，`kind ∈ { path, suffix, command }`——`path` = 写码目标路径的 POSIX 相对目录前缀（每段为常规段：绝对形态与 `.` / `..` / 空段在配置面拒收，它们永不命中前缀匹配）；`suffix` = 目标路径后缀（扩展名，如 `.md`）；`command` = bash 命令文本的正则。旧形态 `{ path, skill }` 拒收（配置 schema 变更，fail-closed 指名字段）。
 2. **写码目标两条通道**：`write` / `edit` 的 `file_path`，以及 bash 命令里的 `>` / `>>` / `tee`（含 `-a` / `--append`）目标——双引号包、单引号包或裸 token（按会话 cwd 解析，出仓即弃；`$VAR` / `~` 未展开式与 `->` / `=>` 不算重定向）；两类通道同样参与 `path` / `suffix` 匹配。脚本体内的写（python heredoc 的 `sub(path, …)`、`sed -i` 等）与 heredoc 体内文本不可枚举，留作残余边界（见 Consequences）。
 3. **一次列全**：同一事件命中的全部未载技能一次列出（命中即返单行的形态改为多行），每条仍受「每会话每技能至多提醒一次」约束。
-4. **缺省表补两条实证条目**：`suffix ".md"` → `noo-prose-standard`、`command "\bgit\s+push\b"` → `noo-pre-push-checks`；原两条保留，共 4 条。
+4. **缺省表补两条实证条目**：`suffix ".md"` → `noo-prose-standard`、`command` = `git`〔可带全局选项前缀〕`push` → `noo-pre-push-checks`（匹配面按 [修复件](../bug-fix/2026-09-12-skill-guard-push-pattern-reachability.md) 的现态）；原两条保留，共 4 条。
 5. **档位不变**：advice 非阻断、每会话每技能至多一次；阻断档仍判不立（「该不该用技能」是语义判断，机器给不出必报失败——理由单源 = [M1 Alternatives](2026-09-10-m1-guard-anti-overdesign.md)）。
 6. **归属**：本件补的三处结构面归机制；`noo-code-review` / `noo-find-simplifications` / `noo-trim-cot-leakage` 等任务型技能仍是语义面，归 `session-close` §2 对账与 [feature-flow](../../../workflows/feature-flow.md) §4.6 findings 去向——不为它们新增行动区条目（机制与既有对账步即 owner）。
 7. **取代分类**：M1 立项 ADR 保留（其 Decision 1② 仍是守卫机制的家，本件只扩触发面），不归档、不删；无其他笔记主张同一决定。
