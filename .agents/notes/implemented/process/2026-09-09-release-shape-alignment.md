@@ -58,7 +58,7 @@ Review: FULL/2026-09-09/R1=ok R2=ok R3=ok
 - **pre-push 两 leg 次序**：分支 leg 先过（tier `--enforce` + 门禁组 + engine/adapter 双 self-test）；tag leg 在分支推送前 fail-closed（`tag 目标 commit 未被 origin 远端 refs 包含`，报「无法定 outgoing base」）。正确次序 = 先推分支、再推 tag（tag 目标可达后走零 outgoing 跳过档位强制）。
 - **npm 发布**：`npm latest` = 0.2.5（36 件 / 110.6 kB）；本机 `~/.npm` 只读，发布须带 `--cache=/tmp/npm-publish-cache`（否则 EROFS）。
 - **GitHub Release**：`dsh-v0.2.5`（Latest、非 draft），正文 = `.cache/release-body-0.2.5.md`。
-- **归并缺口第二次实证（触发再达成）**：`dsh-v0.2.4..0.2.5` 跨 67 笔，「其他变更」节输出 42 条过程条目 → 手工归并为 14 条（中英各 14），单条换行前 8 行为主。首验记在 [HANDOFF-todos](../../../../HANDOFF-todos.md)（C）条。
+- **归并缺口第二次实证（触发再达成）**：`dsh-v0.2.4..0.2.5` 跨 67 笔，「其他变更」节输出 42 条过程条目 → 手工归并为 14 条（中英各 14）。首验记在 [HANDOFF-todos](../../../../HANDOFF-todos.md)（C）条。
 
 ## Risks
 
