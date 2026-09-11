@@ -1,9 +1,7 @@
 # HANDOFF-evolution-pool — 演化轮池（候选归集区）
 
-> 本件 = 演化轮候选的**归集面**（HANDOFF 家庭行动区的一件）：每批评审发现的**可机械判的类 / 纪律漏项 / 带症状根因的踩坑**，由主会话当场各写一行进下方「候选」区。
-> 攒账步序单源 = [feature-flow](.agents/workflows/feature-flow.md) §4.6；归集面决策 = [池件 ADR](.agents/notes/implemented/process/2026-09-12-evolution-pool-file.md)；立闸门槛单源 = [发现机械化 ADR](.agents/notes/implemented/process/2026-09-11-review-finding-mechanization.md) Decision 1；准则条文 = [主设计 §6](docs/research/dsh-swarm-evolution-framework-design.md)。
-> 开轮触发 = 候选攒到可拍板或用户点名；处理 = 成批落闸 / 落卡 / 落条目，**不随其他变更批次执行**。
-> 与冻结的调研档案 [capsule-01 问题池](docs/research/capsule-01-optimization-round.md) 分层不同：本件是行动面，彼是已收口的调研记录。
+> 本件 = 演化轮候选的**归集面**（HANDOFF 家庭行动区的第二件）；规则与步序单源 = [feature-flow](.agents/workflows/feature-flow.md) §4.6（攒账三类 / 开轮触发 / 成批处理）。
+> 归集面决策 = [池件 ADR](.agents/notes/implemented/process/2026-09-12-evolution-pool-file.md)；立闸门槛单源 = [发现机械化 ADR](.agents/notes/implemented/process/2026-09-11-review-finding-mechanization.md) Decision 1；准则条文 = [主设计 §6](docs/research/dsh-swarm-evolution-framework-design.md)。
 
 ## 候选
 
