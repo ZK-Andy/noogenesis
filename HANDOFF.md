@@ -11,6 +11,8 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-12｜**凭据夹具误报治理批（FULL 三审 R1 0B/0S、R2 1B/3S、R3 0B/3S；采纳 6 + 候选 1 拒绝 1）**：夹具分片编码 + 元断言 4 源码自洁 + 自测 fail-closed 补档；GitHub 告警按 `used_in_tests` 处置；[ADR](.agents/notes/implemented/process/2026-09-12-secret-fixture-fragment-encoding.md)。README 无漂移。
+
 - 2026-09-11｜**阶段卡结构批（FULL 三审 R1 1B/4S、R2 2B/4S、R3 3B/5S；采纳 15）**：铁律 7（步序/角色位/关口）+ AGENTS 检查项 6 + §5 四步序（整账确认关口）+ §8 前置门按回执；同批执行上批遗留出口（简报闸 head 判据）；[ADR](.agents/notes/implemented/process/2026-09-11-stage-card-structure.md)。README 无漂移。
 
 - 2026-09-11｜**档位触发面精度批（FULL 三审 R1 1B/5S、R2 0B/3S、R3 4B/7S；采纳 14）**：`engine/**`+`adapters/**`+`cordis.patch.yml` 入 FULL 触发面，自诺与证据判定共用 `adrHeadStatus`；[ADR](.agents/notes/implemented/process/2026-09-11-review-tier-classification-precision.md)。README 无漂移。
@@ -56,8 +58,6 @@
 - 2026-09-10｜**规范语义面审计修复批 + pypara 归口批（FULL 三审全采纳；ADR `standards-audit-fix-batch` + `pypara-fold-responsibility-split`；`086a1ce`/`fd0e4b9`+`a8d43e0`/`e32143f`）**：三族 `[R]` 审计行为 7 处 + 注释批全修；pypara 立原语七族单源、夹具同件拍板、职责判别式入文档。**节点：D 批剩 5 项。** README 无漂移。
 
 - 2026-09-10｜**规范连接收紧批收口（FULL 三审三轮全采纳；ADR `2026-09-10-standards-crosslink-closure` implemented；`72e2e12`）**：G1–G6——A2 地图架构指针行 + review §1 回指 + §4 改指 R6 + §2.4 两链 + 问题池/feature-flow 指针；反向审计 12 面零缺口落档。**节点：两篇规范连接闭合。** README 无漂移。
-
-- 2026-09-10｜**架构规范实现批收口（FULL 三审三轮全采纳；charter ADR implemented；`33ee07e`）**：新建 [architecture-standards.md](docs/method/architecture-standards.md)——判别式 R1a–R9 + blast-radius 四类表 + 失败传导两态 + §4 触发条件集五候选全不立；import 环实测 n=46/81 零环。**节点：规范四篇齐。** README 无漂移。
 
 
 
