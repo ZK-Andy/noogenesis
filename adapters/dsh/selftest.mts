@@ -337,7 +337,7 @@ function writeFixtureGene(repoRoot: string): void {
 		{ kind: "suffix", pattern: ".md", skill: "noo-prose-standard" },
 		{ kind: "path", pattern: ".agents/notes", skill: "noo-archive-agent-notes" },
 	]);
-	// 第四条是正则，字面量钉死会让改匹配面必须改两处——形态面在守卫夹具里逐条验。
+	// 第四条是正则，形态面在守卫夹具里逐条验。
 	assert.deepEqual(cfg.skillGuards.slice(3).map(({ kind, skill }) => ({ kind, skill })), [{ kind: "command", skill: "noo-pre-push-checks" }]);
 	ok("config: defaults complete");
 
@@ -916,7 +916,7 @@ function writeFixtureGene(repoRoot: string): void {
 		assert.equal(toolPre({ name: "bash", arguments: { command: "git status --short" }, agent: session() }), undefined);
 		// 全局选项前缀：取值形（白名单）与开关形都命中；`push` 作为其它子命令的
 		// 参数不命中（噪声边界）。
-		for (const command of ["git -c credential.helper=store push", "git -C /tmp/other push", "git --git-dir=/x/.git push", "git --no-pager push"]) {
+		for (const command of ["git -c credential.helper=store push", "git -C /tmp/other push", "git --git-dir /x/.git push", "git --git-dir=/x/.git push", "git --no-pager push"]) {
 			assert.ok(toolPre({ name: "bash", arguments: { command }, agent: session() }), command);
 		}
 		for (const command of ["git commit -m push", "git log --grep push"]) {

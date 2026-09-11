@@ -17,7 +17,11 @@ Review: FULL/2026-09-12/pending（三重审核进行中，收口时回填真实�
 
 ## Decision
 
-1. **匹配面容忍全局选项前缀**：`git` 与子命令之间容许①取值为独立 token 的全局选项（白名单：`-C` / `-c` / `--git-dir` / `--work-tree` / `--namespace` / `--exec-path` / `--config-env` / `--attr-source`——git 全局选项的取值集封闭）与②开关形（`-<flag>`、`--<flag>[=<value>]`）。实现单源 = [config.mts](../../../../adapters/dsh/config.mts) 的 `GIT_PUSH_PATTERN`。
+1. **匹配面容忍全局选项前缀**：`git` 与子命令之间容许①取值为独立 token 的全局选项（白名单：`-C` / `-c` / `--git-dir` / `--work-tree` / `--namespace` / `--exec-path` / `--config-env` / `--attr-source`——git 全局选项的取值集封闭）与②开关形（`-<flag>`、`--<flag>[=<value>]`）。正则字面量（可复制，供手写 `config.skillGuards` 条目）：
+
+   `\bgit(?:\s+(?:-C|-c|--git-dir|--work-tree|--namespace|--exec-path|--config-env|--attr-source)\s+\S+|\s+-{1,2}[\w-]+(?:=\S+)?)*\s+push\b`
+
+   实现单源 = [config.mts](../../../../adapters/dsh/config.mts) 的 `GIT_PUSH_PATTERN`（缺省表条目引用它）。
 2. **噪声边界不放宽**：只容许「选项前缀 + 子命令」形态——`git commit -m push`、`git log --grep push`、`git remote add push` 保持不命中；文本字面量命中（`echo 'git push'`）仍是已接受噪声（触发面 ADR 假阳面）。
 3. **夹具改行为面**：缺省表断言拆为「前三条字面量钉死 + 第四条行为验」；守卫夹具直接吃 `validateConfig({}).skillGuards`（原先硬抄一份缺省表 = 改一处漏一处），并加 4 正例（`-c k=v` / `-C <dir>` / `--git-dir=<dir>` / `--no-pager`）+ 2 负例。
 4. **载体事实同步**：`adapters/dsh/README.md` 配置表、触发面 ADR Decision 4 的条目事实句、HANDOFF 当前状态句按现态改写（决定不变）。

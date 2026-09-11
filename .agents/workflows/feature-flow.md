@@ -46,7 +46,7 @@
 1. **逐条裁决（主会话）**：每路结论逐条采纳 / 拒绝并附证据（契约单源 = [review.md](../../docs/method/review.md) §6）；本批缺陷就地修，拍板结论只落 durable 四家（[session-close](session-close.md) §3）。
 2. **框架级候选归集（主会话）**：可机械判的类、纪律漏项、带症状/根因的踩坑，当场各写一行进 [HANDOFF-evolution-pool](../../HANDOFF-evolution-pool.md)。
 3. **演化轮处理（用户关口）**：候选攒到可拍板或用户点名时开轮，成批落闸 / 落卡 / 落条目 / 转变更批——演化动作不随本批次执行（准则 = [主设计 §6](../../docs/research/dsh-swarm-evolution-framework-design.md)，决策 = [撤除 ADR](../notes/implemented/process/2026-09-12-absorption-async-round.md)）。
-4. **销账（主会话）**：落账后把被处理的候选从 [池件](../../HANDOFF-evolution-pool.md)「候选」节删除——结论家 = 其落地件（门禁条目 / 流程卡 / ADR / 变更批的 ADR），不设勾账态；池件只留未处理候选与待定需求。对账点 = [session-close](session-close.md) §3（本会话开过演化轮的，核候选是否已销账）；口径单源 = [销账 ADR](../notes/implemented/process/2026-09-12-evolution-pool-candidate-disposal.md)。
+4. **销账（主会话）**：落账后把被处理的候选从 [池件](../../HANDOFF-evolution-pool.md)「候选」节删除，结论家 = 其落地件（门禁条目 / 流程卡 / ADR / 变更批的 ADR）。对账点 = [session-close](session-close.md) §3（本会话开过演化轮的，核候选是否已销账）；口径单源 = [销账 ADR](../notes/implemented/process/2026-09-12-evolution-pool-candidate-disposal.md)。
 
 ## 5. 提交
 

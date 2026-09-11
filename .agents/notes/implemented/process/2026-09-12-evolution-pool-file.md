@@ -30,5 +30,5 @@ Related: 部分取代 [2026-09-12-absorption-async-round](2026-09-12-absorption-
 
 - 待办件回到「跨会话遗留的唯一落点」单一职责，池的增长不再挤占其条数预算。
 - **池件无机器闸**（`verify-handoff-structure` 只管 `HANDOFF.md` + `HANDOFF-todos.md`）：攒账仍是主会话的手工义务，如实记，不宣称机器已盖。
-- **吸收后处置规则**：本件延后（Decision 4），[销账 ADR](2026-09-12-evolution-pool-candidate-disposal.md) 随触发（首次演化轮落账，2026-09-12）落地——销账 = 删除条目、结论家 = 落地件。
+- **吸收后处置规则**：本件延后（Decision 4），[销账 ADR](2026-09-12-evolution-pool-candidate-disposal.md) 随触发（首次演化轮落账，2026-09-12）落地。
 - 部分取代 Decision 4 的指向面，吸收撤除批其余决定（异步准则 / 撤除主链路 / 义务归家）继续有效。
