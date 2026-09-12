@@ -11,7 +11,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-13｜**宿主 peer 集升代批（FULL 三审 R1 0B/5S、R2 0B/2S、R3 1B/3S；采纳 10 拒绝 1）**：全件同代 `0.1.5-rc.2` + tokenMeter 类型契约断言（断言面与宿主实跑代同源）；[ADR](.agents/notes/implemented/architecture/2026-09-13-host-peer-generation-upgrade.md)；`40ca159`→`e8a68b2`。README 无漂移。
+- 2026-09-13｜**宿主 peer 集升代批（FULL 三审 R1 0B/5S、R2 0B/2S、R3 1B/3S；采纳 10 拒绝 1）**：全件同代 `0.1.5-rc.2` + tokenMeter 类型契约断言（断言面与宿主实跑代同源）；[ADR](.agents/notes/implemented/architecture/2026-09-13-host-peer-generation-upgrade.md)；`40ca159`→`ee261c0`。README 无漂移。
 
 - 2026-09-13｜**ADR 终局态治理批 + 两处附带修复**：两条已执行/被取代的 `proposed/` 记录收口（延后件删除 + 入站链重定向；批量方案件转 implemented）；池指针移入 todos 头部说明块；P1 后置项两条归口 + 在环反馈无家断言落户；[治理 ADR](.agents/notes/implemented/process/2026-09-13-adr-terminal-state-governance.md)；`b978567`→`653e1b2`，CI 绿。
 
