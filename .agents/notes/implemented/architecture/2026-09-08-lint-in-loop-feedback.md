@@ -58,4 +58,5 @@ Related: 实施计划 [coding-enforcement-impl-plan](../../../../docs/research/c
 - A4 决策 = `block` 拦回（同文件连续拦回达上限降级 `context` 防死锁；合并器单源承载，见 [升格批](2026-09-09-lint-block-and-staged-hook.md)）。
 - **同步面代价**：`spawnSync` 在 A4 listener 的同步段、早于 `next()` 执行——每次 write/edit 阻塞宿主事件循环 ~0.1s（非仅该会话往返；「流式输出同受影响」为【推断 · 未证】）。异步化见 Alternatives 升格触发。
 - **出仓判定语义**：`path.relative` 三段判据（`..` 自身 / `..<sep>` 前缀 / 绝对路径）；仓内经 symlink 指向仓外的文件按仓内处理（v1 无 realpath 解析）。
+- **未覆盖缺口（显式接受）**：在环反馈是否真的提高模型合规率无本地判据——本仓没有模型行为实验面，可观测的只有拦回次数与降级档；重议触发 = 出现需要为该反馈面追加投入的依据（如连续多批的拦回集中在同一条规则）。
 - 评审收口（2026-09-08 FULL 三审）：R1 抓出指针行「export-docs 在环」口径矛盾（改文案）+ 三处可简化（`rel === ""` 冗余、运行入参类型三写、空串校验冗余）；R2 抓出 A4「零策略」口径五处未同步（`README.md` / `mount.mts` ×3 / `index.mts`）、`warnOnce` 未自保、出仓前缀判定过宽、指针行缺存在性过滤、夹具五处弱断言/缺正例；R3 抓出两处未标【推断 · 未证】的成因/影响、A8 撤除 ADR 的 A4 零策略事实未同步、实施计划 procedure 单源与偏离自陈矛盾，另采纳测量设置补全、指针行门条件口径、Related 补链、`adapters/AGENTS.md` 常量去重、README 拍板单源补链、本笔记归 `architecture/` 类目。**全采纳**。
