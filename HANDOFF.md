@@ -11,7 +11,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-13｜**批次 1 序 2 Mutation 原语（FULL 三审 R1 0B/2S、R2 0B/4S、R3 0B/4S；全采纳）**：`mutations/` 封闭六字段 + `mutation add|show` + 闸件扩一节（kind 五件、键集三面）。[ADR](.agents/notes/implemented/architecture/2026-09-13-mutation-primitive.md)；`438e509`→`603dbaa`。README 有变更（七→八）。
+- 2026-09-13｜**批次 1 序 2 Mutation 原语（FULL 三审 R1 0B/2S、R2 0B/4S、R3 0B/4S；全采纳）**：`mutations/` 封闭六字段 + `mutation add|show` + 闸件扩一节（kind 五件、键集三面）。[ADR](.agents/notes/implemented/architecture/2026-09-13-mutation-primitive.md)；`438e509`→`b4b9f65`。README 有变更（七→八）。
 
 - 2026-09-13｜**批次 1 序 1 Capsule 原语（FULL 三审 R1 0B/4S、R2 2B/2S、R3 0B/3S；全采纳）**：`capsules/` 封闭七字段 + `capsule add|show` + 闸件扩展与复算；重拍 D3/S2 两项。[ADR](.agents/notes/implemented/architecture/2026-09-13-capsule-primitive.md)；`ebc035a`→`7cc2dba`。README 有变更（六→七）。
 
