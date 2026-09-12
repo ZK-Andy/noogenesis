@@ -55,7 +55,7 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/archit
 ### C5（重拍两项，均收窄不松绑）
 
 - **骨架 D3 重拍**：产出面由「只有基因」扩为「基因 + Capsule」。D3 的实质（propose 是确定性渲染器、变异不自动发生）不变——Capsule 也由显式声明产生，不接 LLM、不自动变异。
-- **schema S2 重拍**：kind 封闭集三件 → 四件（增 `capsule.added`）；事件键集由固定七键改为**按 kind 条件化**——五键共通（`ts` / `actor` / `kind` / `outcome` / `evidence`）+ gene 面 `gene` / `gene_sha` 或 capsule 面 `capsule` / `capsule_sha`。S2 的落盘语义与复算分型不变。**现值随序 2 第二次重拍**（kind 五件、键集三面）：见 [Mutation ADR](../../proposed/architecture/2026-09-13-mutation-primitive.md) C4。
+- **schema S2 重拍**：kind 封闭集三件 → 四件（增 `capsule.added`）；事件键集由固定七键改为**按 kind 条件化**——五键共通（`ts` / `actor` / `kind` / `outcome` / `evidence`）+ gene 面 `gene` / `gene_sha` 或 capsule 面 `capsule` / `capsule_sha`。S2 的落盘语义与复算分型不变。**现值随序 2 第二次重拍**（kind 五件、键集三面）：见 [Mutation ADR](2026-09-13-mutation-primitive.md) C4。
 
 ## Alternatives considered
 

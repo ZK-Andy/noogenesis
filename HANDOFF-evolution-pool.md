@@ -5,6 +5,12 @@
 
 ## 候选
 
+- **（2026-09-13）简化候选：同族原语的第三份拷贝已到共享件拐点**：症状 = `engine/mutation.ts` 的身份/读入外壳与 `capsule.ts`/`gene.ts` 逐字节同形（`validate*` 字段守卫 10 行、`read*` 读入抛物、`assert*IdUnique`、`*Path` 四组），`recordMutation` 与 `recordCapsule` 只差一行引用校验；`verify-gene-format.mts` 的 mutations 布局段与 capsules 段约 2/3 行是标识符替换，复算段同理。抽 `engine/protocol.ts` / 按 `{dir,noun,idKey,shaKey}` 参数化闸件段的收益 = 消除第三份拷贝且错误文案可保面名；代价 = 回触已冻结的 `gene.ts`/`capsule.ts` 与 py-parity 移植件「每面一段」的直读形状。触发 = 第 4 个原语落地前（序 3 或后续）。出处 = 批次 1 序 2 R1 评审 Suggestion 1/2。
+
+- **（2026-09-13）契约候选：`capsule add` / `mutation add` 静默吞多余位置参数与重复 `--actor`**：症状 = `mutation add m.json --actor t extra.json` → exit 0（`extra.json` 被吞）、`--actor a --actor b` → exit 0 且事件 `actor='a'`；两命令同款（既有形态，非本批引入）。判据面 = 位置参数筛选式 `rest.find(...)` 无「恰一个候选」收窄、旗标无重复计数。若判为契约缺陷应与两条命令同批收紧（多余/未知参数 → exit 2），并同步 `engine/README.md` 合同面。出处 = 批次 1 序 2 R2 评审 Suggestion 4。
+
+- **（2026-09-13）踩坑候选【探索性 n=1】：bash 调用之间的 `/tmp` 不持久**：症状 = 第一次 `bash` 调用把待改文件备份到 `/tmp` 后，第二次调用 `cp /tmp/... ` 报 `no such file`——变异检查的恢复步骤失效，在审/在改文件停在变异态（本会话实测一次，靠逐行反向编辑才复原；`git status` 与 `git diff` 即对账出口）。根因（【推断 · 未证】）= 会话沙箱每次 `bash` 调用使用独立临时面。规避 = 备份、变异、恢复、对账放**同一次**调用内完成；跨调用一律以 git 为恢复面（提交后再变异，或 `git checkout -- <path>`）。是否入 [cookbook](docs/cookbook.md)（[门禁] 条已有同族「变异副本落点」条目）= 待判，先攒账。出处 = 批次 1 序 2 R2 收口变异复核。
+
 - **（2026-09-13）踩坑候选：`git add` 后 commit 失败会留下暂存态残留**：症状 = 入档命令（solidify / capsule add）commit 挂红后回滚了工作树文件，索引里仍留 `AD <path>`，下一次任何提交都会把已回滚的记录扫入（HEAD 与工作树分叉）；根因 = 回滚只清写面不清索引。本批已就地修（`commitPaths` 失败时 `git reset -- <本函数 paths>`，两侧夹具断言 `--cached` 无残留）。未机械化面 = 此教训是否该入 [cookbook](docs/cookbook.md)（该件 2688/2700 词，无余量）。出处 = 批次 1 序 1 R1 评审 Suggestion 1。
 
 - **（2026-09-13）机械化候选：「判据分支是否都有可证伪夹具」可静态抽查**：形态 = 对新增判据逐分支做「只删该分支」变异后跑 `--self-test`，仍全绿即该分支无夹具（本批 12 处变异命中 9 处，已补 8 组）。成本 = 每次变异一跑，判据是否稳定到可上闸待实测。出处 = 批次 1 序 1 R2 评审 Suggestion 1。

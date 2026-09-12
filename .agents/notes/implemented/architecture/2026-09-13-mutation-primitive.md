@@ -1,8 +1,9 @@
 # Agent Note: Mutation 原语——落盘协议、写读命令与校验（批次 1 序 2）
 
-Status: proposed
+Status: implemented
+Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 
-Related: 批次表 [2026-09-13-feature-completion-backlog](2026-09-13-feature-completion-backlog.md) · 相邻原语 [Capsule 原语](../../implemented/architecture/2026-09-13-capsule-primitive.md)（序 1） · 主设计 [§5.1/§6](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 既有协议 [gene-event-schema](../../implemented/architecture/2026-09-05-gene-event-schema.md)（S1–S3） · 骨架拍板 [p1-engine-skeleton](../../implemented/architecture/2026-09-05-p1-engine-skeleton.md)（D2/D3） · 新顶层目录准入 [architecture-standards](../../../../docs/method/architecture-standards.md)（R2）
+Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 相邻原语 [Capsule 原语](2026-09-13-capsule-primitive.md)（序 1） · 主设计 [§5.1/§6](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 既有协议 [gene-event-schema](2026-09-05-gene-event-schema.md)（S1–S3） · 骨架拍板 [p1-engine-skeleton](2026-09-05-p1-engine-skeleton.md)（D2/D3） · 新顶层目录准入 [architecture-standards](../../../../docs/method/architecture-standards.md)（R2）
 
 ## Problem
 
@@ -14,7 +15,7 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](2026-09-13-feature-co
 
 落位判据来自下游：§6 的 Hypothesize（批次表序 16）要记「信号 + gene + mutation → 预期结果」，其左边第二项要求 mutation 是**可引用对象**；而「声明了但未执行」在 Capsule 面没有落点（Capsule 的存在前提是执行已发生）。
 
-## Proposal
+## Decision
 
 ### C1（语义与落位）：`mutations/` = Mutation 原语目录，语义以主设计 §5.1 为准
 
@@ -77,3 +78,4 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](2026-09-13-feature-co
 - **单源指针**：协议细节单源 = 本 ADR + `engine/README.md`「Mutation 面」节；S2 的其余口径仍在 schema ADR，本 ADR 只记与其相异处（kind 集与键集）。
 - **遗留面（逐条归口）**：Event 扩字段四件（`mutation_id` / `capsule_id` / `env_fingerprint` / `validation_report_id`）随批次表序 3；Hypothesize（序 16）与 memory-graph 因果边（序 18）是本原语的下游消费者；`category` 的封闭集随真实种群出现再拍（触发 = 同一 category 值在多条声明中稳定复用）。
 - **已命名的覆盖缺口**：本批无实测 Mutation 落盘（`mutations/` 尚无成员）——首个真实声明要等「动改动面前显式声明意图」成为流程动作；同一路径由闸件夹具与引擎 self-test 覆盖，缺口是 e2e 证据而非判据。
+- **批次表状态**：序 2 已收口，批次表对应行标 done 并指向本笔记。

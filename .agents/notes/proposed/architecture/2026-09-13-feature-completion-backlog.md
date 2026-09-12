@@ -12,8 +12,8 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 
 现状事实（2026-09-13 实读，只列差集判定相关者）：
 
-- **已交付**：Gene 协议 + 引擎七命令（select/propose/evaluate/solidify/pull/observe/capsule）+ `gates.json` 白名单 + Capsule 原语与事件 kind 四件；适配层 A1–A4 / A5（仅会话开始位）/ A7 接线；M1 技能守卫 + M2 规范面接入；token 基线两轨（预算判据 + 宿主读数）；技能随库分发；P2 只读消费（pull + manifest + 缓存合并）；记忆线第一期观测面与 `advice:` 建议档；胶囊 01 内容主体（7 技能 + method/cookbook/流程卡/门禁）。
-- **未交付**：下方批次表余 45 项（序 1 已 done）。
+- **已交付**：Gene 协议 + 引擎八命令（select/propose/evaluate/solidify/pull/observe/capsule/mutation）+ `gates.json` 白名单 + Capsule / Mutation 两原语与事件 kind 五件；适配层 A1–A4 / A5（仅会话开始位）/ A7 接线；M1 技能守卫 + M2 规范面接入；token 基线两轨（预算判据 + 宿主读数）；技能随库分发；P2 只读消费（pull + manifest + 缓存合并）；记忆线第一期观测面与 `advice:` 建议档；胶囊 01 内容主体（7 技能 + method/cookbook/流程卡/门禁）。
+- **未交付**：下方批次表余 44 项（序 1、序 2 已 done）。
 - **受宿主约束未交付**：A8 会话事件轨 / 状态投影——撤除理由 = 宿主读路径对未标 `ignorable` 的下游插件事件 fail-closed，且 `Session.append` 无 `ignorable` 写入口。
 
 ## Proposal
@@ -35,7 +35,7 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 | 序 | 功能 | 设计出处 | 备注 |
 |---|---|---|---|
 | 1 | Capsule 原语：`capsules/<domain>/<id>.json` 落盘 + 写读命令 + 校验闸 + 复算规则 | 主设计 §5.1/§6；共享层稿 §6.2 | done（[Capsule ADR](../../implemented/architecture/2026-09-13-capsule-primitive.md)）；Event/S2 的 kind 面同批定 |
-| 2 | Mutation 原语：`category`/`target`/`expected_effect`/`risk_level` | 主设计 §5.1 | P1 D3 被否备选 C 的合理内核，原定「留待 M2/P3 蒸馏轮」 |
+| 2 | Mutation 原语：`category`/`target`/`expected_effect`/`risk_level` | 主设计 §5.1 | done（[Mutation ADR](../../implemented/architecture/2026-09-13-mutation-primitive.md)）；P1 D3 被否备选 C 的合理内核已兑现 |
 | 3 | Event 扩字段：`mutation_id`/`capsule_id`/`env_fingerprint`/`validation_report_id` | 主设计 §5.1 | S2 现口径「字段先于原语 = 死字段」，原语到位后解锁 |
 | 4 | Evaluate 的 blast-radius：改动面度量（文件 / 行 / 范围） | 主设计 §6 Evaluate | 与 `constraints.max_files` 判据对接 |
 | 5 | 候选比较 / 答案盲选择机制（无金标代理信号） | 主设计 §7.1-5/§7.2 | 完全未建；先定判据再动手（防造不可判定信号） |
