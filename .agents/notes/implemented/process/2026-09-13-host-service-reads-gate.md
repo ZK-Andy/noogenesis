@@ -13,17 +13,18 @@ Review: FULL/2026-09-13/pending（三重审核进行中，收口时回填真实�
 - `ctx.tokenMeter` 直读两处（[护栏建设轮](../architecture/2026-09-13-guardrail-construction-round.md) R1/R2 Blocker）；
 - `ctx.userQuestions` 直读（[修复件](../bug-fix/2026-09-13-adapter-service-read-lazy-get.md)）。
 
-形态在本层可枚举：`ctx.<name>` 属性读取，白名单 = `inject` 声明 ∪ cordis mixin（`get` / `on` / `inject` / `logger` / `provide`）。判据不看语义、只看形状——正合 [机械化门槛](2026-09-11-review-finding-mechanization.md) Decision 1（判据稳定 + 先实测噪声）。
+形态在本层可枚举：对 `ctx` 的读取，白名单 = `inject` 声明 ∪ cordis `Context` 混入/代理面（`ctx.get` / `ctx.on` / `ctx.logger` / `ctx.emit` …）。判据不看语义、只看形状——正合 [机械化门槛](2026-09-11-review-finding-mechanization.md) Decision 1（判据稳定 + 先实测噪声）。
 
 噪声实测【探索性 · n=1 次本机实跑】：闸实现后在修复前的树上（`cef2ff3`，装脚本入独立 worktree）实跑 = 16 件适配层源码中 1 处命中（`adapters/dsh/index.mts:78` 的 `ctx.userQuestions`，真阳性）+ 假阳性 0；修复后同树 = 0 命中、exit 0。两类误报源（注释里的 `ctx.tokenMeter`、字符串与模板串文本）在 AST 判据下天然不计。
 
 ## Decision
 
 1. **立闸** `scripts/verify-host-service-reads.mts`，白名单条目 `host-service-reads`（登记 [`engine/gates.json`](../../../../engine/gates.json)）——pre-push / CI 随平面清单跑，engine evaluate 白名单同步可见。
-2. **判据**：`adapters/**` 的 .ts/.mts 中 `ctx.<name>` 属性读取 ∈ ①`inject` 声明（各件 `export const inject = […]` 的字符串面并集，从源码解析、不手抄）∪ ②cordis mixin（mixin 名单单源 = 闸件 `MIXIN_NAMES` 常量）。读取面用 TypeScript AST（devDependency 既有，`verify-export-docs` 同款解析器）。
-3. **判据边界**（闸件头注如实记）：只认标识符 `ctx` 的属性读取（改名或换载体不在判据内）；类型面的服务声明不判；注释 / 字符串 / 模板串文本天然不计，模板串插值内照判；`ctx.get("<name>")` 的服务名字符串不受约束（无 inject 要求即合法读法）。
-4. **覆盖面 fail-closed**：源根 `adapters/` 缺失或零源码件 → exit 2（覆盖面不得静默归零）；14 判据夹具 + 1 声明解析夹具入 `--self-test`，违约样例必拒、合规样例必放行。
+2. **判据**：`adapters/**` 的 .ts/.mts 中对 `ctx` 的读取 ∈ ①`inject` 声明（各件 `export const inject = […]` 的字符串面并集，从源码解析、不手抄）∪ ②cordis `Context` 的混入/代理面（闸件 `CTX_SURFACE` 常量，名单枚举自 devDependency `@deepseek-ai/cordis` 的 Context 声明面：context / events / reflect / registry / fiber；宿主升代后按新声明复核）。读取面用 TypeScript AST（devDependency 既有，`verify-export-docs` 同款解析器）。
+3. **判据边界**（闸件头注如实记）：只认标识符 `ctx`（改名或换载体不在判据内）；读法只判三种——属性读取 `ctx.x`、字面量元素访问 `ctx["x"]`、字面量键解构 `const { x } = ctx`（含重命名）；**不判**计算属性键（`ctx[expr]`、计算键解构）、rest 元素与嵌套解构；类型面的服务声明不判；注释 / 字符串 / 模板串文本天然不计，模板串插值内照判；`ctx.get("<name>")` 的服务名字符串不受约束（无 inject 要求即合法读法）。
+4. **覆盖面 fail-closed**：源根 `adapters/` 缺失或零源码件 → exit 2（覆盖面不得静默归零）；`--self-test` = 18 判据夹具 + 1 声明解析夹具 + 4 源树/覆盖面夹具（`judgeTree` 直跑真树，含非源码件过滤与两条 fail-closed 档），违约样例必拒、合规样例必放行；夹具随 CI「self-test 抽查」清单消费（[`validate.yml`](../../../../.github/workflows/validate.yml)）。
 5. **本件只登记这批的第四件机械化**：机械化 ADR 保留其三类清单的历史表述并加本件指针，不重抄条数；后续机械化件的家 = 各自批次 ADR。
+6. **共享扫描原语单源**：源码扩展名过滤与递归列举落 `scripts/srctree.mts`，本闸与 [verify-export-docs](../../../../scripts/verify-export-docs.mts) 同消费（`scripts/AGENTS.md` 共享件纪律；域根与判据语义仍留各闸）。
 
 ## Alternatives considered
 
@@ -35,6 +36,7 @@ Review: FULL/2026-09-13/pending（三重审核进行中，收口时回填真实�
 
 ## Consequences
 
-- **采用面**：`engine/gates.json`（18 → 19 条）、`scripts/verify-host-service-reads.mts`（新件）、[adapters/AGENTS.md](../../../../adapters/AGENTS.md) 规则条目（挂闸指针）、[机械化 ADR](2026-09-11-review-finding-mechanization.md) Consequences 指针。
+- **采用面**：`engine/gates.json`（18 → 19 条）、`scripts/verify-host-service-reads.mts`（新件）、`.github/workflows/validate.yml`（self-test 抽查清单）、`scripts/srctree.mts`（共享扫描件；`scripts/verify-export-docs.mts` 改消费它）、[adapters/AGENTS.md](../../../../adapters/AGENTS.md) 规则条目（挂闸指针）、[机械化 ADR](2026-09-11-review-finding-mechanization.md) Consequences 指针。
 - **成本护栏**：每加一条门禁 = 多一个维护面；本件的约束是判据只认形状、白名单从源码解析、覆盖面显式 fail-closed（三处都在闸件头注里写成合同）。
-- **未覆盖（如实记）**：语义面仍留评审——服务是否**应当**经 `ctx.get` 取（把该进 `inject` 声明的服务写成懒取用）不在判据内；`ctx` 之外的上下文命名同样不在判据内（本层无此形态，触发 = 真实出现第二命名）。
+- **判据外的规避形（如实记）**：计算属性键 `ctx[expr]`、rest 元素与嵌套解构不在判据内（可读但非常见形态）；`ctx` 之外的上下文命名同样不判（本层无此形态，触发 = 真实出现第二命名或计算键读取的漏网）。
+- **未覆盖**：语义面仍留评审——服务是否**应当**经 `ctx.get` 取（把该进 `inject` 声明的服务写成懒取用）不在判据内。

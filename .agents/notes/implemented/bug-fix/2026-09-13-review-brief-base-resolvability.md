@@ -17,7 +17,7 @@ Review: FULL/2026-09-13/pending（三重审核进行中，收口时回填真实�
 
 1. **加发射前判据**：简报声明的 `base` 必须可解析（`git rev-parse --verify <base>^{commit}` 成功），否则违约——文案与同族 `head` 判据同形：`<lane>: brief base '<ref>' is not a resolvable commit in this repo (launch-time check)`。
 2. **非 git 上下文跳过**（HEAD 不可解析即返回空集）：与同族范围判据的保守回退一致，评测无 git 时不误红。
-3. **判据面清单同步**：闸件头注的判据列表、`--self-test` 夹具（14 → 15：base 不可解析必拒 + 可解析 base 放行）与汇总行同变更更新；[review.md](../../../../docs/method/review.md) §3 的发射前拦截面补 `base` 不可解析一项。
+3. **判据面清单同步**：闸件头注的判据列表、`--self-test` 夹具（14 → 15：base 不可解析必拒 + 可解析 base 放行）与汇总行同变更更新；[review.md](../../../../docs/method/review.md) §3 的发射前拦截面补 `base` 不可解析一项。base 与 head 两个 ref 判据共用 `resolveCommit` / `forEachDeclaredRef` 两个小助手（同一 `rev-parse --verify <ref>^{commit}` + 非 git 跳过；判据语义各自保留：base 只判可解析，head 另判等值）。
 
 ## Alternatives considered
 
@@ -28,6 +28,6 @@ Review: FULL/2026-09-13/pending（三重审核进行中，收口时回填真实�
 
 ## Consequences
 
-- **行为面**：简报发射前 `--enforce` 会拒 base 笔误的简报（此前静默放行）；非 git 上下文与无简报在飞两态行为不变。
+- **行为面**：简报 `base` 不可解析 → 发射前 `--enforce` 拒（无此判据时笔误静默放行：泳道推导保守回退三条全要、闸照绿）；非 git 上下文与无简报在飞两态行为不变。
 - **采用面**：`scripts/verify-review-brief.mts`（判据函数 + 两处调用点 + 头注 + 夹具）、[review.md](../../../../docs/method/review.md) §3。
 - **未覆盖（如实记）**：base 是否 head 的祖先不判；`base` 与 `head` 相等（空范围）同样不判——两者都等真实漏网或形态定论再议，不预铺判据。

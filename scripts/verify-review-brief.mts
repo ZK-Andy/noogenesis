@@ -297,32 +297,43 @@ function inconsistentRangeViolations(briefs: Record<string, string>, repo: strin
   return [];
 }
 
+/** ref → 本仓 commit oid；不可解析或非 git 上下文返回 null（两个 ref 判据共用守卫）。 */
+function resolveCommit(repo: string, ref: string): string | null {
+  const r = spawnSync("git", ["rev-parse", "--verify", `${ref}^{commit}`],
+    { cwd: repo, encoding: "utf-8" });
+  if (r.error !== undefined || r.status !== 0) return null;
+  const oid = (r.stdout ?? "").trim();
+  return oid === "" ? null : oid;
+}
+
+/** 逐泳道取简报声明的 ref（缺简报 / 缺该行 → 跳过；ref 面判据共用遍历）。 */
+function forEachDeclaredRef(briefs: Record<string, string>, repo: string, refRe: RegExp,
+  visit: (lane: string, ref: string) => void): void {
+  for (const lane of LANES) {
+    const p = briefs[lane];
+    if (p === undefined) continue;
+    const m = refRe.exec(fs.readFileSync(path.join(repo, p), "utf-8"));
+    if (m === null) continue;
+    visit(lane, m[1]!);
+  }
+}
+
 /** 飞行中简报声明的 head 必须钉住本仓 HEAD（**发射前判据**）：悬空孪生 ref
  *  （改写历史后旧提交仍可解析）与写简报后 HEAD 前移都会让评审对象与记录漂移
  *  而闸照跑。评审期间不得提交（feature-flow §4.5），故发射时 head 恒等于 HEAD。
  *  非 git 上下文（HEAD 不可解析）跳过——与同族范围判据的保守回退一致。 */
 function headPinsHeadViolations(briefs: Record<string, string>, repo: string): string[] {
-  const r = spawnSync("git", ["rev-parse", "HEAD"], { cwd: repo, encoding: "utf-8" });
-  if (r.error !== undefined || r.status !== 0) return [];
-  const headOid = (r.stdout ?? "").trim();
-  if (headOid === "") return [];
+  const headOid = resolveCommit(repo, "HEAD");
+  if (headOid === null) return [];
   const out: string[] = [];
-  for (const lane of LANES) {
-    const p = briefs[lane];
-    if (p === undefined) continue;
-    const text = fs.readFileSync(path.join(repo, p), "utf-8");
-    const mh = HEAD_RE.exec(text);
-    if (mh === null) continue;
-    const declared = mh[1]!;
-    const rr = spawnSync("git", ["rev-parse", "--verify", `${declared}^{commit}`],
-      { cwd: repo, encoding: "utf-8" });
-    const oid = rr.error === undefined && rr.status === 0 ? (rr.stdout ?? "").trim() : null;
+  forEachDeclaredRef(briefs, repo, HEAD_RE, (lane, declared) => {
+    const oid = resolveCommit(repo, declared);
     if (oid === null) {
       out.push(`${lane}: brief head '${declared}' is not a resolvable commit in this repo (launch-time check)`);
     } else if (oid !== headOid) {
       out.push(`${lane}: brief head '${declared}' != HEAD ${headOid.slice(0, 7)} — 发射前判据：简报须钉住本仓 HEAD（悬空/异对象 ref 与 HEAD 前移都会让评审对象与记录漂移）`);
     }
-  }
+  });
   return out;
 }
 
@@ -331,22 +342,13 @@ function headPinsHeadViolations(briefs: Record<string, string>, repo: string): s
  *  （评审范围与记录随之漂移）。非 git 上下文（HEAD 不可解析）跳过——与同族范围
  *  判据的保守回退一致。 */
 function basePinsCommitViolations(briefs: Record<string, string>, repo: string): string[] {
-  const probe = spawnSync("git", ["rev-parse", "HEAD"], { cwd: repo, encoding: "utf-8" });
-  if (probe.error !== undefined || probe.status !== 0) return [];
+  if (resolveCommit(repo, "HEAD") === null) return [];
   const out: string[] = [];
-  for (const lane of LANES) {
-    const p = briefs[lane];
-    if (p === undefined) continue;
-    const text = fs.readFileSync(path.join(repo, p), "utf-8");
-    const mb = BASE_RE.exec(text);
-    if (mb === null) continue;
-    const declared = mb[1]!;
-    const rr = spawnSync("git", ["rev-parse", "--verify", `${declared}^{commit}`],
-      { cwd: repo, encoding: "utf-8" });
-    if (rr.error !== undefined || rr.status !== 0) {
+  forEachDeclaredRef(briefs, repo, BASE_RE, (lane, declared) => {
+    if (resolveCommit(repo, declared) === null) {
       out.push(`${lane}: brief base '${declared}' is not a resolvable commit in this repo (launch-time check)`);
     }
-  }
+  });
   return out;
 }
 

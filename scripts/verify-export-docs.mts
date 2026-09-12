@@ -37,11 +37,11 @@ import * as path from "node:path";
 import * as os from "node:os";
 import { fileURLToPath } from "node:url";
 import ts from "typescript";
+import { SOURCE_EXT_RE, listSources } from "./srctree.mts";
 
 const PROGRAM = "verify-export-docs.mts";
 const USAGE = `usage: ${PROGRAM} [--self-test] [file ...]\n`;
 const SOURCE_ROOTS = ["adapters/dsh", "scripts"];
-const SOURCE_EXT_RE = /\.(ts|mts)$/;
 
 interface Violation {
   file: string;
@@ -53,18 +53,6 @@ interface Violation {
 /** 违约行输出（全量/文件目标两模式共用——该行是在环消费协议面，文案单源）。 */
 function printViolation(v: Violation): void {
   console.log(`FAIL: ${v.file}:${v.line}: exported ${v.kind} ${v.name} lacks an adjacent JSDoc contract comment`);
-}
-
-/** 递归收集源树下的 .ts/.mts（目录缺失记为空集，由调用方判 fail-closed）。 */
-function listSources(root: string): string[] {
-  if (!fs.existsSync(root)) return [];
-  const out: string[] = [];
-  for (const ent of fs.readdirSync(root, { withFileTypes: true })) {
-    const p = path.join(root, ent.name);
-    if (ent.isDirectory()) out.push(...listSources(p));
-    else if (SOURCE_EXT_RE.test(ent.name)) out.push(p);
-  }
-  return out;
 }
 
 function isFnOrClass(node: ts.Node): node is ts.FunctionDeclaration | ts.ClassDeclaration {
