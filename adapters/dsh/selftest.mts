@@ -214,21 +214,29 @@ function writeFixtureGene(repoRoot: string): void {
 	const reports: string[] = [];
 	const warns: string[] = [];
 	let present = true;
+	let mode: "ok" | "meterThrows" | "measureThrows" = "ok";
 	let measurement: unknown = { surfaceTokens: 4321 };
-	let mode: "ok" | "throw" = "ok";
 	const read = createTokenBaselineReading({
-		meter: () => (present
-			? { measure: () => {
-				if (mode === "throw") throw new Error("replay tail unreadable");
-				return measurement;
-			} }
-			: undefined),
+		meter: () => {
+			if (!present) return undefined;
+			if (mode === "meterThrows") throw new Error("service lookup exploded");
+			return {
+				measure: () => {
+					if (mode === "measureThrows") throw new Error("replay tail unreadable");
+					return measurement;
+				},
+			};
+		},
 		report: (line) => reports.push(line),
 		warn: (message) => warns.push(message),
 	});
 
-	// 在场：每会话恰一行，读数进 report 不进 warn。
+	// 首步不读（宿主系统提示面在 pre-step 派发之后才追加进 session log）：
+	// 首步即使服务在场也不发行；第二步读一次，此后每会话不再读。
 	const session = {};
+	read(session);
+	assert.equal(reports.length, 0);
+	assert.equal(warns.length, 0);
 	read(session);
 	read(session);
 	read(session);
@@ -236,11 +244,12 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.match(reports[0]!, /surfaceTokens=4321/);
 	assert.match(reports[0]!, /observation only/);
 	assert.equal(warns.length, 0);
-	ok("token baseline: one reading per session, reported once");
+	ok("token baseline: first step skipped (host system face lands after pre-step), then exactly one reading per session");
 
 	// 缺席：静默且**不消耗**该会话的读数预算——服务晚挂载后仍读得到。
 	present = false;
 	const late = {};
+	read(late);
 	read(late);
 	assert.equal(reports.length, 1);
 	assert.equal(warns.length, 0);
@@ -261,22 +270,50 @@ function writeFixtureGene(repoRoot: string): void {
 	measurement = 1234;
 	const primitive = {};
 	read(primitive);
+	read(primitive);
 	assert.equal(reports.length, 2);
 	assert.match(warns[1]!, /shape mismatch \(surfaceTokens=undefined\)/);
 	ok("token baseline: shape mismatch degrades with one warn per session, never reports");
 
-	// measure 抛错：同上降级面；无会话对象（宿主合同必带）静默零动作。
-	mode = "throw";
-	const failed = {};
-	read(failed);
+	// 两条失败路径（measure 抛错 / 服务读法抛错）都只留一条 warn 并记账——
+	// 每会话至多一条的承诺在**全部**路径成立（不靠 warn 侧去重）。
+	mode = "measureThrows";
+	const replayFailed = {};
+	read(replayFailed);
+	read(replayFailed);
 	assert.equal(reports.length, 2);
+	assert.equal(warns.length, 3);
 	assert.match(warns[2]!, /token baseline unavailable \(replay tail unreadable\)/);
+	mode = "meterThrows";
+	const lookupFailed = {};
+	read(lookupFailed);
+	read(lookupFailed);
+	assert.equal(reports.length, 2);
+	assert.equal(warns.length, 4);
+	assert.match(warns[3]!, /token baseline unavailable \(service lookup exploded\)/);
+	mode = "ok";
+	ok("token baseline: measure and service-lookup failures each degrade with one warn, then stay quiet");
+
+	// 发行面自身抛错被吞：logger 抛出不得中止一步（同 createSessionWarnOnce 先例）。
+	const emitting = createTokenBaselineReading({
+		meter: () => ({ measure: () => ({ surfaceTokens: 7 }) }),
+		report: () => { throw new Error("logger exploded"); },
+		warn: () => { throw new Error("logger exploded"); },
+	});
+	const noisy = {};
+	assert.doesNotThrow(() => {
+		emitting(noisy);
+		emitting(noisy);
+	});
+	ok("token baseline: emit failures are swallowed — the reading never breaks a step");
+
+	// 无会话对象（宿主合同必带；此处只做形状守卫）静默零动作。
 	read(undefined);
 	read(null);
 	read("session-id");
-	assert.equal(warns.length, 3);
+	assert.equal(warns.length, 4);
 	assert.equal(reports.length, 2);
-	ok("token baseline: measure failure degrades with one warn; missing session object is a silent no-op");
+	ok("token baseline: missing session object is a silent no-op");
 }
 
 // ── 3) tools：依赖注入面（假 defineTool + 假引擎，退出码映射全路径） ──────
@@ -1253,11 +1290,14 @@ function writeFixtureGene(repoRoot: string): void {
 		const warns: string[] = [];
 		const infos: string[] = [];
 		const injectCalls: Array<{ deps: string[]; callback: (scoped: unknown) => void }> = [];
+		let fakeTokenMeter: { measure(session: unknown): unknown } | undefined;
 		const fakeMountCtx = {
 			tools: { register: () => {} },
 			systemPrompt: { section: () => {} },
 			provide: () => {},
 			logger: () => ({ info: (m: string) => infos.push(m), warn: (m: string) => warns.push(m) }),
+			// 宿主服务读面：`ctx.get(name)`（无 inject 要求；缺席 undefined）——观察面经此懒取用。
+			get: (name: string) => (name === "tokenMeter" ? fakeTokenMeter : undefined),
 			on: (event: string, listener: (...args: any[]) => unknown) => {
 				const list = listeners.get(event) ?? [];
 				list.push(listener);
@@ -1266,7 +1306,6 @@ function writeFixtureGene(repoRoot: string): void {
 			inject: (deps: string[], callback: (scoped: unknown) => void) => {
 				injectCalls.push({ deps, callback });
 			},
-			tokenMeter: undefined as { measure(session: unknown): unknown } | undefined,
 		};
 		apply(fakeMountCtx as never, { repoRoot: repo, geneBankUrl: false });
 		for (const event of ["agent/session-start", "agent/pre-step", "tools/pre-execute", "tools/post-execute"]) {
@@ -1296,19 +1335,21 @@ function writeFixtureGene(repoRoot: string): void {
 		assert.equal(rejected.kind, "reject");
 		ok("mounts: A2 wiring — opening map appended once; unregistered bank cache keeps the roster line out with one warn; later steps and reject passthrough");
 
-		// 观察面读数（护栏 ADR 决定 1 建议行）：走既有 pre-step listener。A2 的三次
-		// preStep 已在 meter 缺席下走过同一会话——挂上 meter 后仍读得到（缺席不消耗
-		// 读数预算）；同会话恰一行；宿主 measure 抛错 → 一条 warn、不阻断一步。
-		fakeMountCtx.tokenMeter = { measure: () => ({ surfaceTokens: 4242 }) };
+		// 观察面读数（护栏 ADR 决定 1 建议行）：走既有 pre-step listener，自会话第二步
+		// 起读一次（首步 = 宿主系统提示面尚未落盘，只登记）。A2 的三次 preStep 已把
+		// `agent` 会话推过首步——挂上服务后这次调用即读得到（服务缺席不消耗读数预算）；
+		// 同会话恰一行；宿主 measure 抛错 → 一条 warn、不阻断一步。
+		fakeTokenMeter = { measure: () => ({ surfaceTokens: 4242 }) };
 		await preStep({ agent, turn: 1, step: 3 }, async () => ({ kind: "enter", messages: [] }));
 		assert.equal(infos.filter((m) => m.includes("surfaceTokens=4242")).length, 1);
 		await preStep({ agent, turn: 1, step: 4 }, async () => ({ kind: "enter", messages: [] }));
 		assert.equal(infos.filter((m) => m.includes("surfaceTokens=4242")).length, 1, "one reading per session");
-		fakeMountCtx.tokenMeter = { measure: () => { throw new Error("replay tail unreadable"); } };
+		fakeTokenMeter = { measure: () => { throw new Error("replay tail unreadable"); } };
 		const unstable = { session: { header: { cwd: repo } } };
 		await preStep({ agent: unstable, turn: 1, step: 1 }, async () => ({ kind: "enter", messages: [] }));
+		await preStep({ agent: unstable, turn: 1, step: 2 }, async () => ({ kind: "enter", messages: [] }));
 		assert.equal(warns.filter((m) => m.includes("token baseline unavailable")).length, 1);
-		ok("mounts: token baseline reading rides the existing pre-step listener — absent service preserved the budget; one reading per session; host failure degrades with one warn");
+		ok("mounts: token baseline reading rides the existing pre-step listener — first step skipped; absent service preserved the budget; one reading per session; host failure degrades with one warn");
 
 		// A3：无策略决策 → next 透传（能力位在场；exec 形状 = 宿主合同冒烟，无观测语义）。
 		const passthroughMarker = { marker: true };
