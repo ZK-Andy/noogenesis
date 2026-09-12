@@ -1,7 +1,7 @@
 # Agent Note: 简报闸补 base 可解析判据——base 笔误时泳道推导静默保守回退
 
 Status: implemented
-Review: FULL/2026-09-13/pending（三重审核进行中，收口时回填真实结论）
+Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 
 > Related：同族先例 = [简报闸明细兜底](2026-09-10-review-brief-detail-fallback.md)、[head 钉住 HEAD 判据](../process/2026-09-11-stage-card-structure.md)（阶段卡结构批出口）；契约家 = [review.md](../../../../docs/method/review.md) §3；出处 = [演化轮池](../../../../HANDOFF-evolution-pool.md) 候选「简报闸未判 base 可解析」。
 
@@ -11,7 +11,7 @@ Review: FULL/2026-09-13/pending（三重审核进行中，收口时回填真实�
 
 于是 base 写成笔误的全 SHA 时无人知：泳道集看起来更严（三条全要），但简报声明的评审范围与实际评审对象不一致（记录漂移）。三份简报若写**同一个**错 base，跨泳道范围分歧判据也不触发（`distinct.size === 1`）——闸全绿、范围声明失真。
 
-证据强度：漏网路径 = 【实测】夹具 14b/15a 同款形态（`git rev-parse --verify <ref>^{commit}` 对笔误 SHA 非 0）；真实漏网为池候选在评审自核中发现（该批 `--enforce` 静默 exit 0），非本件新增测量。
+证据强度：漏网路径 = 【实测】夹具 15a（base 面不可解析档；同族 head 面是 14b）——`git rev-parse --verify <ref>^{commit}` 对笔误 SHA 非 0；真实漏网为池候选在评审自核中发现（该批 `--enforce` 静默 exit 0），非本件新增测量。
 
 ## Decision
 
@@ -30,4 +30,5 @@ Review: FULL/2026-09-13/pending（三重审核进行中，收口时回填真实�
 
 - **行为面**：简报 `base` 不可解析 → 发射前 `--enforce` 拒（无此判据时笔误静默放行：泳道推导保守回退三条全要、闸照绿）；非 git 上下文与无简报在飞两态行为不变。
 - **采用面**：`scripts/verify-review-brief.mts`（判据函数 + 两处调用点 + 头注 + 夹具）、[review.md](../../../../docs/method/review.md) §3。
+- **评审收口（2026-09-13，FULL 三审）**：R3 指出证据行把 head 面夹具 14b 与 base 面夹具 15a 并列引用不当——改为只引 15a；三路计数与采纳明细单源 = [上闸 ADR](../process/2026-09-13-host-service-reads-gate.md) 的评审收口条。
 - **未覆盖（如实记）**：base 是否 head 的祖先不判；`base` 与 `head` 相等（空范围）同样不判——两者都等真实漏网或形态定论再议，不预铺判据。

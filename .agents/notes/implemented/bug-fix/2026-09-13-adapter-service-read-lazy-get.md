@@ -1,7 +1,7 @@
 # Agent Note: 可选宿主服务读取面统一走 `ctx.get`——直读属性在插件 runtime fiber 上缺席即抛
 
 Status: implemented
-Review: FULL/2026-09-13/pending（三重审核进行中，收口时回填真实结论）
+Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 
 > Related：同族先例 = [bank 技能 provider 修复件](2026-09-12-bank-skill-provider-registration.md)（`ctx.skills` 直读）、[护栏建设轮](../architecture/2026-09-13-guardrail-construction-round.md) 决定 1（`ctx.tokenMeter` 直读，探针实测 fiber 语义）；机制判据 = [适配层宿主服务读取面闸](../process/2026-09-13-host-service-reads-gate.md)；出处 = [演化轮池](../../../../HANDOFF-evolution-pool.md) 候选（护栏轮余项收尾批 R1/R2 Blocker 同族面）；装载契约家 = [M2 适配层 ADR](../architecture/2026-09-06-m2-adapter-wiring.md)。
 
@@ -35,4 +35,5 @@ cordis runtime fiber 对未 inject 的服务直读属性即抛（`cannot get pro
 - **采用面**：`adapters/dsh/index.mts`（读面 / 类型面 / 头注）、`adapters/dsh/selftest.mts`（问答面两条腿夹具）、`adapters/AGENTS.md`、`adapters/dsh/README.md`、[M2 ADR](../architecture/2026-09-06-m2-adapter-wiring.md) Alternatives 的读法事实同步。
 - **判据边界**：静态闸只认标识符 `ctx` 的属性读取；服务名经字符串传参（`ctx.get("…")`）不受约束——无 inject 要求即合法读法，不是缺口。
 - **真机面**：提问面缺席的宿主不可按需构造（在装 profile 均带提问面），故行为证据 = selftest 假件（fiber 语义复刻）+ 闸的修复前实测；装机面随下次发版一并复验（[HANDOFF-todos](../../../../HANDOFF-todos.md) 的读数建议行 (B) 条同批次装机）。
+- **评审收口（2026-09-13，FULL 三审）**：R1 0B/3S、R2 1B/3S、R3 0B/5S——本件无随批修改（两路定向检查对本件的断言面与夹具区分力判「无发现」）；三路计数与采纳明细单源 = [上闸 ADR](../process/2026-09-13-host-service-reads-gate.md) 的评审收口条。
 - **勘误通道**：若 cordis 变更 fiber 语义（未 inject 服务直读不再抛），本件的机制前提失效——按 [notes/README](../../README.md) Erratum 通道处理，闸的白名单面不受影响。

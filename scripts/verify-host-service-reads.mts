@@ -43,9 +43,10 @@ const SOURCE_ROOT = "adapters";
 const CTX_IDENT = "ctx";
 /**
  * cordis `Context` 的混入/代理面：读这些名字不走 service resolver、不会因未 inject 而抛。
- * 名单枚举自 `@deepseek-ai/cordis` 的 Context 声明面（context.d.ts 的根属性、events.d.ts
- * 的事件总线方法、reflect.d.ts 的 `get`/`set`/`provide`/`accessor`/`mixin`、registry.d.ts 的
- * `inject`/`plugin`、fiber.d.ts 的 `fiber`/`effect`）。
+ * 名单来自两处权威面（宿主升代后按新声明复核）：①`@deepseek-ai/cordis` 的 Context 声明
+ * （lib/types 的 context / events / reflect / registry / fiber）；②运行时转发面
+ * `src/reflect.ts` 的 `ctx.mixin(...)` 调用（把各服务成员挂到 ctx，如 `fiber` → `runtime`
+ * / `effect`）。
  */
 const CTX_SURFACE = new Set([
   "root",
@@ -56,6 +57,7 @@ const CTX_SURFACE = new Set([
   "registry",
   "fiber",
   "effect",
+  "runtime",
   "on",
   "once",
   "emit",
@@ -213,6 +215,12 @@ function selfTest(): number {
     "合规样例（inject 声明 ∪ cordis Context 混入面）被误判 FAIL",
   );
   expect(
+    "ctx-surface.ts",
+    'function f(ctx: any) {\n  ctx.runtime;\n  ctx.fiber;\n  ctx.mixin("x", []);\n}\n',
+    0,
+    "合规样例（cordis 转发面 runtime/fiber/mixin）被误判 FAIL",
+  );
+  expect(
     "bad-undeclared.ts",
     'function f(ctx: any) {\n  ctx.userQuestions;\n}\n',
     1,
@@ -364,7 +372,7 @@ function selfTest(): number {
     return 1;
   }
   console.log(
-    `${PROGRAM} self-test: 18 判据夹具 + 1 声明解析夹具 + 4 源树/覆盖面夹具 passed`,
+    `${PROGRAM} self-test: 20 判据夹具 + 1 声明解析夹具 + 4 源树/覆盖面夹具 passed`,
   );
   return 0;
 }
