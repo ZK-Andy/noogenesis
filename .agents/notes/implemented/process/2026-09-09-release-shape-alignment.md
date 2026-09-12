@@ -49,7 +49,7 @@ Review: FULL/2026-09-09/R1=ok R2=ok R3=ok
 - annotated tag `dsh-v0.2.4` 推送过 pre-push：tag 目标 commit 已可达 origin 远端 refs → 走「零 outgoing 跳过档位强制」档，脚本输出该判据行。
 - `release-note.mts v0.2.3 0.2.4` 输出双语分节 + `@ZK-Andy`（git author `zhangkun` 映射）+ 跨前缀 `Full Changelog`（`v0.2.3...dsh-v0.2.4`，可解析）。
 - npm `latest` = 0.2.4（35 件 / 97.2 kB，含新件 `skill-guard.mjs`、`export-docs-feedback.mjs`）；GitHub Release 建（Latest、非 draft）。
-- **跨大批次归并缺口**（首验实遇）：`v0.2.3..0.2.4` 跨 59 笔时「其他变更」节输出 47 条过程条目（body 147 行），发布者须手工按批次归并成 3 条——归并档缺失入 [HANDOFF-todos](../../../../HANDOFF-todos.md)（C）条，已由[聚合档 ADR](2026-09-12-release-note-daily-aggregation.md) 收口（末节按提交日归并，条目零丢弃）。
+- **跨大批次归并缺口**（首验实遇）：`v0.2.3..0.2.4` 跨 59 笔时「其他变更」节输出 42 条过程条目（body 147 行），发布者须手工按批次归并成 3 条（中英各 3）——归并档缺失入 [HANDOFF-todos](../../../../HANDOFF-todos.md)（C）条，已由[聚合档 ADR](2026-09-12-release-note-daily-aggregation.md) 收口（末节按提交日归并，条目零丢弃）。
 
 ## 第二次实发（2026-09-12，`noogenesis-dsh@0.2.5`）
 
@@ -58,7 +58,7 @@ Review: FULL/2026-09-09/R1=ok R2=ok R3=ok
 - **pre-push 两 leg 次序**：分支 leg 先过（tier `--enforce` + 门禁组 + engine/adapter 双 self-test）；tag leg 在分支推送前 fail-closed（`tag 目标 commit 未被 origin 远端 refs 包含`，报「无法定 outgoing base」）。正确次序 = 先推分支、再推 tag（tag 目标可达后走零 outgoing 跳过档位强制）。
 - **npm 发布**：`npm latest` = 0.2.5（36 件 / 110.6 kB）；本机 `~/.npm` 只读，发布须带 `--cache=/tmp/npm-publish-cache`（否则 EROFS）。
 - **GitHub Release**：`dsh-v0.2.5`（Latest、非 draft），正文 = `.cache/release-body-0.2.5.md`。
-- **归并缺口第二次实证（触发再达成）**：`dsh-v0.2.4..0.2.5` 跨 67 笔，「其他变更」节输出 42 条过程条目 → 手工归并为 14 条（中英各 14）。首验记在 [HANDOFF-todos](../../../../HANDOFF-todos.md)（C）条；末节归并形态已由[聚合档 ADR](2026-09-12-release-note-daily-aggregation.md) 落定。
+- **归并缺口第二次实证（触发再达成）**：`dsh-v0.2.4..0.2.5` 跨 67 笔，「其他变更」节输出 42 条过程条目 → 发布者手工重写四节（末节成 5 条，中英各 5）。首验记在 [HANDOFF-todos](../../../../HANDOFF-todos.md)（C）条；末节归并形态已由[聚合档 ADR](2026-09-12-release-note-daily-aggregation.md) 落定。
 
 ## Risks
 

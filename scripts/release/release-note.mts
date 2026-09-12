@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 /**
  * release-note.mts — 生成双语 GitHub Release 正文（对齐 DSH 上游 release 形态；
- * ADR .agents/notes/implemented/process/2026-09-09-release-shape-alignment.md）。
+ * ADR .agents/notes/implemented/process/2026-09-09-release-shape-alignment.md；
+ * 末节归并形态 = .agents/notes/implemented/process/2026-09-12-release-note-daily-aggregation.md）。
  *
  * 从 `git log <base-tag>..HEAD` 按 conventional commit 类型分节，输出借鉴上游
  * deepseek-ai/deepseek-harness Release（如 dsh-v0.1.5-alpha.1）的正文：
