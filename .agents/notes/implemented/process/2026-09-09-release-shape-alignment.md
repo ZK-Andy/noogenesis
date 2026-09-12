@@ -60,6 +60,15 @@ Review: FULL/2026-09-09/R1=ok R2=ok R3=ok
 - **GitHub Release**：`dsh-v0.2.5`（Latest、非 draft），正文 = `.cache/release-body-0.2.5.md`。
 - **归并缺口第二次实证（触发再达成）**：`dsh-v0.2.4..0.2.5` 跨 67 笔，「其他变更」节输出 42 条过程条目 → 发布者手工重写四节（末节成 5 条，中英各 5）。首验记在 [HANDOFF-todos](../../../../HANDOFF-todos.md)（C）条；末节归并形态已由[聚合档 ADR](2026-09-12-release-note-daily-aggregation.md) 落定。
 
+## 第三次实发（2026-09-13，`noogenesis-dsh@0.2.6`）
+
+- 内容 = bank 技能 provider 注册时序修复 + 提醒面可达性门（[修复件](../bug-fix/2026-09-12-bank-skill-provider-registration.md)）。
+- `chore(release)` commit `a43c63c`（package.json + lock 同提交）→ 版本面 `ad2e549`（双语 README 版本锚 + HANDOFF M2 行）；annotated tag `dsh-v0.2.6` 指向 `ad2e549`（tag 树三面版本锚自洽）。
+- **判据 6 与 bump 的时序（第二次实证，次序照记）**：`bump.mts` 前置要求工作树干净，故「先改版本面」只能在工作树里做——首次 `bump.mts 0.2.6` 的 `chore(release)` 提交被 `package-invariants` 判据 6 拒（README 仍 0.2.5），package.json + lock 留在 staged/0.2.6；随后改版本面（双语 README + HANDOFF）→ `git commit` 落 bump 件（门禁读工作树通过）→ 单独提交版本面。
+- **新交叉点（判据 6 的扫描面 = HANDOFF 全文）**：历史滚动窗条目里的 `noogenesis-dsh@0.2.5` 声明形式会与当前版本比对而违约（本次两处）。处置 = 历史条目改用非声明记法（`npm latest 0.2.5`），与 0.2.4 发版条既有写法一致；判定口径不变（HANDOFF 属状态面，声明了就必须对）。
+- `npm latest` = 0.2.6（36 件 / 116.0 kB，含本批 `dist` 重构建件）；GitHub Release `dsh-v0.2.6`（Latest、非 draft），正文 = `.cache/release-body-0.2.6.md`（脚本骨架 + 按批次归并 3 笔收口提交进两条用户可读修复 + 英文节逐条翻译）；CI run `34706452446`（head `ad2e549`）绿。
+- 次序照旧：分支 leg 先推（`7b41759..ad2e549`），tag leg 后推（`dsh-v0.2.6`，目标 commit 已可达 → 零 outgoing 跳过档位强制）；`npm publish --cache=/tmp/npm-publish-cache`（本机 `~/.npm` 只读；`npm view` 同需该 flag）。
+
 ## Risks
 
 - **双语 body 手工对齐漂移**：release-note 脚本输出的英文节逐字镜像 commit 标题（本仓 commit 标题为中文）——英文节需发布者翻译润色；保持「脚本生成骨架 + 发布者润色」分工，脚本输出含 `EN_POLISH_HINT` 提示行防照贴即发。
