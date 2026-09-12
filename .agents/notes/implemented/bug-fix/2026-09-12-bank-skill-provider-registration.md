@@ -2,9 +2,9 @@
 
 Status: implemented
 
-> Provenance：本仓原创（2026-09-12 实机普查取证 + 真 cordis 注入语义探针 + 同会话修复批；FULL 三审）。
+> Provenance：本仓原创（2026-09-12 实机普查取证立项；2026-09-13 真 cordis 注入语义探针 + 修复批，FULL 三审）。
 
-Review: pending
+Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 
 中文（本仓正文中文单语）
 
@@ -27,7 +27,7 @@ Review: pending
 1. **注册合同 = 可重试注入**：`registerBankSkills` 走 `ctx.inject(["skills"], callback)`（cordis 动态注入子 fiber）——skills 服务装载前已在场则回调同步执行并注册，晚到则到场时补注册（探针 B）。**不**把 `skills` 加进插件 `inject` 声明：全局声明让整个插件等到服务到场才 `apply`，服务永不到场则插件完全不装载（探针 C/C2），与适配层既有的 userQuestions 教训同型。`ctx.inject` / skills 服务 / `registerProvider` 三态缺席或抛错各自 warn 留痕降级，绝不阻塞装载。返回值 `{ isRegistered, invalidate }`：`isRegistered` = provider 已交给宿主（第 2 条的可达性门消费），`invalidate` 语义不变。
 2. **提醒面只点名可达技能**：可达集 = 两条交付通道的目录实况并集（只认 `<name>/SKILL.md` 在场的目录，与 provider 的实服条件对齐）——活副本 `<repoRoot>/.agents/skills`（宿主文件系统 provider，与随库注册无关）+ 随库缓存 `<repoRoot>/.noogenesis/genes-cache/.agents/skills`（**仅在 provider 注册成功后计入**）。A2 路标行按可达集渲染（任务→技能映射表结构化，不可达技能剔除，零可达不发行）；A3 触点提醒命中后按可达集过滤（不可达条目静默，且不消耗该技能的提醒预算）；命中后才求值可达集——零命中零 fs 访问。诊断留痕：缓存里有技能而 provider 未注册 = 交付未发生，每会话一条 warn。
 3. **验收判据换血**：夹具改为「来源可区分 + 注册时序可判」——(a) 注册件三态 + 晚到/在场两路（`ctx.inject` 收到的 deps、回调前 `isRegistered()` 为假、回调后为真、`invalidate` 生效）；(b) 可达性门逐条（缓存未注册仓静默 + 诊断 warn；注册后同名技能开始被点名；部分可达只点名在场件；不可达命中不消耗预算）；(c) 来源区分（缓存单通道仓里 provider 只服务缓存件、candidate 带 `noogenesis-bank` 与 rank 600，活副本是另一 provider）；(d) index 接线冒烟走完整路径（假 ctx 捕获 `ctx.inject(["skills"], …)`，注册前提醒静默、注册后投递，证明 `isRegistered` 真的透传进策略件）；(e) 门 ↔ provider 对账（缓存里放 1 个合规技能 + 1 个无 `SKILL.md` 的半成品目录：可达集与 `list()` 实服集对账，半成品目录两边都不计）；(f) 同一技能挂多条守卫条目时一次事件只发行一行（每会话每技能至多一行的回归夹具）。
-4. **交付口径回填**：`skills-ride-bank` 的交付更正句与 `adapters/dsh/README.md` 技能面/配置表/挂载面三处按现态改写。
+4. **交付口径回填**：`skills-ride-bank` 的交付更正句与 `adapters/dsh/README.md` 技能面/配置表/挂载面三处按现态改写；同批回填两处同族旧口径（`2026-09-10-m1-guard-anti-overdesign` 的改名符号与旧判据、`2026-09-11-skill-guard-trigger-faces` 的缓议条）。
 
 ## Alternatives considered
 

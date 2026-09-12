@@ -11,6 +11,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-13｜**bank provider 注册时序修复批（FULL 三审全采纳）**：注册改 `ctx.inject(["skills"], …)` 可重试路径 + 提醒面按可达集点名；[修复件 ADR](.agents/notes/implemented/bug-fix/2026-09-12-bank-skill-provider-registration.md)；`5dcca48`→`aa9be0f`。README 有变更；真机复验 = todos (B) 条。
 - 2026-09-12｜**release-note 聚合档批（FULL 三审 R1 0B/3S、R2 1B/2S、R3 2B/4S；采纳 8 拒绝 3）**：Release 正文末节按提交日归并成每日一条（0.2.4 区间 42 条 → 3 条；条目零丢弃、按 `%cs` 日期串建 Map）；[聚合档 ADR](.agents/notes/implemented/process/2026-09-12-release-note-daily-aggregation.md)。README 无漂移。
 
 - 2026-09-12｜**0.2.5 真机复验轮（零仓变更）**：装机件矩阵三形态 push 全中／五负例全不中；实机新实例 `git -c … push` 命中一行 advice、重复不重提、bash 重定向写 `.md` 走后缀面命中、跨通道抑制成立；重启后守卫状态复位（新实例）。异仓腿随 bank 批。
@@ -21,7 +22,7 @@
 
 - 2026-09-12｜**演化轮池独立成件批（FULL 三审全 ok；采纳 8 拒绝 1）**：新增池件 [HANDOFF-evolution-pool.md](HANDOFF-evolution-pool.md)（吸收后处置规则已落地）+ [池件 ADR](.agents/notes/implemented/process/2026-09-12-evolution-pool-file.md)；归集面指针全域改指；`6b95e36`→`6376d92`。README 已同步（结构表加池件）。
 
-- 2026-09-12｜**技能 provider 失效取证轮（零代码变更）**：普查 desktop 199/199 + dsh-frecency 11/11 会话 `noo-*`=0（自举仓由文件系统面掩盖）；修复立项后同日落地（[ADR](.agents/notes/implemented/bug-fix/2026-09-12-bank-skill-provider-registration.md)：注册走可重试注入）。
+- 2026-09-12｜**技能 provider 失效取证轮（零代码变更）**：普查 desktop 199/199 + dsh-frecency 11/11 会话 `noo-*`=0（自举仓由文件系统面掩盖）；修复立项后次会话落地（[ADR](.agents/notes/implemented/bug-fix/2026-09-12-bank-skill-provider-registration.md)：注册走可重试注入）。
 
 - 2026-09-12｜**吸收撤除批（FULL 三审 R1 1B/5S、R2 1B/1S、R3 0B/2S；采纳 9 拒绝 1）**：吸收撤出主链路（演化动作面异步归集）——准则落主设计 §6 第 5 条、findings 去向归 `feature-flow` §4.6 + 待办区、被撤件归档冻结；[ADR](.agents/notes/implemented/process/2026-09-12-absorption-async-round.md)。README 无漂移。
 
@@ -57,7 +58,6 @@
 
 - 2026-09-10｜**技能 references 实拆补全（暂不新增技能；LIGHT 评审 4B+5S 全采纳；ADR [skill-references-fill](.agents/notes/implemented/process/2026-09-10-skill-references-fill.md)）**：trim + prose 补 `references/`（B0 件 4 触发兑现）；优化轮合并账（`1deb6be`）。**节点：技能清单补全收口。** README 无漂移。
 
-- 2026-09-10｜**M1 批 B 防过度混合 D 收口（FULL 三审 R1 1B/3S、R2 3B/6S、R3 5B/4S 全采纳；ADR 第二条 Review 行随批落；`5b0ad9b`→`d277c47`→收尾批）**：anti-overdesign 完整蒸馏篇 + 根 AGENTS 契约块 9 条（547/800）+ cases 质询索引 18 例（不进加载面）+ 检查项第 5 条 + NOTICES 补 HERO 行。**节点：M1 两批闭环。** README 无漂移。
 
 
 
