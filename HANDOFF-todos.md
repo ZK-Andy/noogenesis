@@ -63,7 +63,7 @@
 - [x] （B）注释面在环判据真机复验 2026-09-10（0.2.4 装机）：域内缺 JSDoc → 当轮 `block`（英文违约行替换结果）；连续 3 次后第 4 次降级 `context`；合规写通过并复位；域外/非 `.ts` 零反馈；判据件缺席降级面 = self-test 夹具（journal 在案）。
 - [x] （C）verify-review-brief 明细输出缺口 2026-09-10 修复（随收口批）：明细打印兜底无泳道前缀项，fixtures 12→13；ADR [2026-09-10-review-brief-detail-fallback](.agents/notes/implemented/bug-fix/2026-09-10-review-brief-detail-fallback.md)。
 - [x] （C）release-note 大批次归并档 2026-09-12 兑现（FULL 三审采纳 8 拒绝 3）：末节按提交日归并成每日一条（条目零丢弃、按 `%cs` 日期串建 Map）；[聚合档 ADR](.agents/notes/implemented/process/2026-09-12-release-note-daily-aggregation.md)。
-- [ ] （B）bank provider 注册修复真机复验（0.2.6 已发，待重装）：判据 = 含 `.noogenesis/genes-cache` 技能的外仓里，新会话 `<available_skills>` 出现 `noo-*`（来源 = `noogenesis-bank` provider），且提醒面只点名实际可载技能；触发 = 用户重装 0.2.6 并重启。修复件 = [ADR](.agents/notes/implemented/bug-fix/2026-09-12-bank-skill-provider-registration.md)。
+- [x] （B）bank provider 注册修复真机复验 2026-09-13 通过：外仓 desktop 新会话目录含 7 件 `noo-*`（来源 = `noogenesis-bank`），零诊断 warn。修复件 = [ADR](.agents/notes/implemented/bug-fix/2026-09-12-bank-skill-provider-registration.md)。
 - [ ] （C）档案页制度批（2026-09-10 试点拍板的后续）：试点件 = [memory-system-dossier.md](docs/research/memory-system-dossier.md)；内容 = 全仓推广评估 + 骨架四段机器闸（仿 verify-handoff-structure）+ tier 归口拍板（research 层「非当下状态」vs 状态页先例）+ ADR 立项（proposed→implemented）。触发 = 试点跑一段评估。
 - [x] （A）M1 批 A 守卫三件套 2026-09-10（FULL 三审全采纳；三件 v0 落地），ADR [2026-09-10-m1-guard-anti-overdesign](.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) implemented（分批批注）。
 - [x] （A）M1 批 B 防过度混合 D 2026-09-10（FULL 三审全采纳；契约块 + 蒸馏篇 + cases 索引 + 检查项第 5 条），ADR [2026-09-10-m1-guard-anti-overdesign](.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) 第二条 Review 行在案。

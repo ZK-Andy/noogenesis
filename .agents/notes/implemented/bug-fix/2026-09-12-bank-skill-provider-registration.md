@@ -42,7 +42,7 @@ Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 
 - 注册不再依赖装载顺序：宿主提供 skills 服务即在位（含晚到补注册）；宿主无 `ctx.inject` 或 skills 服务时留 warn 后降级（技能面缺席，其余面照常）。
 - 提醒面在两条交付通道之外零点名。残余边界：本插件看不到宿主用户级技能目录，显式 `skillGuards` 条目若指向那类技能则不发行（宁可不说，也不指一个载不到的技能）；可达集只对齐到 `<name>/SKILL.md` 在场这一层，frontmatter 坏掉的技能由 provider 读文件时 warn 跳过（门不复算，极小概率下仍可能点名一个载不到的技能——两个校验器不值得）。
-- **真机验收未闭环**：判据 = 外仓（其 `.noogenesis/genes-cache` 有技能）新会话的 `<available_skills>` 出现 `noo-*`，且提醒不再指向载不到的技能（todos (B) 条）。
+- **真机验收已闭环（2026-09-13，0.2.6 装机重启后）**：外仓 `/mnt/work/dotnet-deepseek-harness-desktop`（活副本 `.agents/skills` 只有 `dsh-*`、随库缓存恰 7 件 `noo-*`）的新会话 `<available_skills>` 含那 7 件——来源可判；装机件 `createBankSkillProvider().list()` 对同仓返回同 7 件且 `provider = noogenesis-bank`（rank 600）；A2 路标行只点名该 7 件；transcript 与 `host.log` 零诊断 warn（注册成功）。未覆盖面：该会话无触发事件，A3 触点提醒的外仓腿由夹具 + 「点名项已在目录内」的构造性事实兜住。
 - provider 仍依赖 `<repoRoot>/.noogenesis/genes-cache` 存在（pull 未跑 = 空面，设计内降级）；`capsules/` 过滤面仍后置（`skills-ride-bank` Decision 6 不变）。
 
 ## Evidence
