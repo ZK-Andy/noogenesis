@@ -42,7 +42,7 @@ Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 
 - 注册不再依赖装载顺序：宿主提供 skills 服务即在位（含晚到补注册）；宿主无 `ctx.inject` 或 skills 服务时留 warn 后降级（技能面缺席，其余面照常）。
 - 提醒面在两条交付通道之外零点名。残余边界：本插件看不到宿主用户级技能目录，显式 `skillGuards` 条目若指向那类技能则不发行（宁可不说，也不指一个载不到的技能）；可达集只对齐到 `<name>/SKILL.md` 在场这一层，frontmatter 坏掉的技能由 provider 读文件时 warn 跳过（门不复算，极小概率下仍可能点名一个载不到的技能——两个校验器不值得）。
-- **真机验收已闭环（2026-09-13，0.2.6 装机重启后）**：外仓 `/mnt/work/dotnet-deepseek-harness-desktop`（活副本 `.agents/skills` 只有 `dsh-*`、随库缓存恰 7 件 `noo-*`）的新会话 `<available_skills>` 含那 7 件——来源可判；装机件 `createBankSkillProvider().list()` 对同仓返回同 7 件且 `provider = noogenesis-bank`（rank 600）；A2 路标行只点名该 7 件；transcript 与 `host.log` 零诊断 warn（注册成功）。未覆盖面：该会话无触发事件，A3 触点提醒的外仓腿由夹具 + 「点名项已在目录内」的构造性事实兜住。
+- **真机验收已闭环（2026-09-13，0.2.6 装机重启后）**：外仓（活副本零 `noo-*`）新会话目录出现那 7 件 `noo-*`——来源可判 = 本 provider；A2 路标行与 A3 触点提醒只点名可达技能，reminder → skill 载入成功、跨会话零 `is unknown or no longer available`（修复前的用户可见失败形态）。证据表见 Evidence。
 - provider 仍依赖 `<repoRoot>/.noogenesis/genes-cache` 存在（pull 未跑 = 空面，设计内降级）；`capsules/` 过滤面仍后置（`skills-ride-bank` Decision 6 不变）。
 
 ## Evidence
@@ -60,6 +60,22 @@ Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 **夹具（`node dist/adapters/dsh/selftest.mjs`）**：95 组全绿；本批组 = 注册件三态 + 晚到补注册、来源区分、可达性门逐条（含同技能多条目只发行一行）、A2 路标行两通道、index 接线可达性门、门 ↔ provider 实服集对账。防火墙机器检查（值 import 仅 `index.mts`）仍绿——未新增宿主依赖。
 
 **门禁**：`gates.mts --run` 全绿——adr-format / doc-budgets / md-links / cookbook / skill-format / archived-notes / postmortem-naming / handoff-structure / manifest / lint / secrets / command-surface / export-docs / package-invariants / ts-typecheck（review-tier / review-brief / change-scope 三件结构性例外按各自契约跑）。
+
+**真机复验（2026-09-13，0.2.6 装机重启后）**：
+
+- 装机面：`~/.dsh/profiles/dotnet-desktop/node_modules/noogenesis-dsh` = 0.2.6，dist 含本批修复路径（`inject` 降级串 / `inspectSkillSurface` / `provider is not registered` / `SKILL.md` 过滤）。
+- 外仓 A：`/mnt/work/dotnet-deepseek-harness-desktop`——活副本 `.agents/skills` 只有 `dsh-*`、随库缓存恰 7 件；重启后新会话（`session-1ff06817`）`<available_skills>` = 6 件 `dsh-*` + 7 件 `noo-*`，更新前建立的 `session-92ede812` 为 0 件（对照）；A2 路标行只点名那 7 件；transcript 与 `host.log` 零诊断 warn；装机件 `list({cwd: 该仓})` 返回同 7 件、`provider = noogenesis-bank`、rank 600。
+- 外仓 B（用户实任务）：`/mnt/work/dsh-frecency`——活副本零 `noo-*`、缓存 7 件；重启后四个会话目录各含 7 件 `noo-*`（更新前会话 0 件）：
+
+| 会话（mtime） | 目录 `noo-*` | A3 投递 | `noo-*` 载入 | `is unknown…` |
+|---|---|---|---|---|
+| 09-10 11:28（更新前） | 0 | 0 | 0 | 0 |
+| 09-13 02:05 | 7 | 1 | 1 | 0 |
+| 09-13 02:06 | 7 | 0 | 1 | 0 |
+| 09-13 02:08 | 7 | 0 | 1 | 0 |
+| 09-13 02:11（实任务） | 7 | 1 | 3 | 0 |
+
+- 投递计数口径：只数 `agent/inbox/spliced` 事件（`user/message` 是同一投递的物化记录，两条记录 ≠ 两次提醒）；实测该任务会话对 `noo-doc-standards` 只投递一次并随后成功载入——「每会话每技能至多一行」成立。
 
 ## Related
 
