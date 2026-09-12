@@ -41,6 +41,7 @@
 - [x] （C）`session-close` §10 「吸收账回执」字段 2026-09-11 随阶段卡结构批兑现；该字段与 §5 四步序已随 [撤除 ADR](.agents/notes/implemented/process/2026-09-12-absorption-async-round.md) 撤除。
 - [x] （C）`verify-review-brief` 增判据「简报 head 须钉住 HEAD」2026-09-11 随阶段卡结构批兑现（夹具 13→14 块；review.md §3 登记为发射前判据）。
 - [x] （B）技能触点提醒触发面真机复验 2026-09-12（0.2.5 装机重启后复跑）：`git -c … push` 命中一行 advice、重复不重提；bash 重定向写 `.md` 走后缀面命中、跨通道抑制成立；装机件正则矩阵三形态全中/五负例全不中。异仓腿随 bank 批（journal 在案）。
+- [ ] （B）护栏读数建议行真机复验（触发 = 下次发版装机后）：宿主日志里每会话自第二步起恰一行 `noogenesis token baseline reading: surfaceTokens=<n>`（非零、随会话增长 = 含系统提示面），无 token-meter 的 profile 里零 warn（缺席静默）、`measure` 抛错时该会话恰一条 warn。判据与口径单源 = [护栏建设轮 ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md) 决定 1 落账节。
 - [ ] （D）技能清单「等等」候选收集（优化轮收口遗留，显式挂起）：用户拍板暂不新增技能（用不上不写），既有技能 references/ 已补；触发 = 用户再给候选时重开（先例参照 = HERO-Anti-OverDefense）。决定单源 = [skill-references-fill](.agents/notes/implemented/process/2026-09-10-skill-references-fill.md)；池文档收口账 = [§2.3](docs/research/capsule-01-optimization-round.md)。
 - [ ] （D）优化轮收口遗留缓议两件：技能 A3 写入前阻断档 + 评审收口触点提醒。触发 = 会话内出现需要写入前阻断的真实场景 / step-2 对账抓到真实漏网。判据与预拍板单源 = [lint-in-loop](.agents/notes/implemented/architecture/2026-09-08-lint-in-loop-feedback.md) + [review-exec](.agents/notes/implemented/architecture/2026-09-10-review-execution-reconciliation.md)。
 - [ ] （D）护栏建设轮残余两件：js-yaml 归口 + Detect 信号源轮立项（D2 逐源解除，连带 M3 重议）；待证点 = 在环反馈是否让模型更合规。触发 = 用户点名 / 真实场景出现。判据与拍板单源 = [护栏建设轮 ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md)。
