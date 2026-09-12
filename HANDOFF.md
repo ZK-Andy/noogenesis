@@ -5,11 +5,13 @@
 
 > **⚡ 最高优先级（框架重建）：charter ADR + 七层蓝图 → [.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md) · [docs/research/framework-rebuild-blueprint.md](docs/research/framework-rebuild-blueprint.md)**——用户拍板推倒重建（先框架后协作层、本仓原地重建），蓝图定稿（七层三段式 + A1–A8 挂载面 + M1–M3 + C1–C15）；**B0–B5 全批闭环（协作层重建收官，C1–C15 全绿）**——B5 切换批（gates.json cmd 全量重指 TS + 旧机器件零残留 + CI/钩子单轨 + 发版 0.2.0；实现 ADR [.agents/notes/implemented/architecture/2026-09-08-b5-switch.md](.agents/notes/implemented/architecture/2026-09-08-b5-switch.md)，批次表 [.agents/notes/implemented/architecture/2026-09-06-collab-rebuild-impl.md](.agents/notes/implemented/architecture/2026-09-06-collab-rebuild-impl.md)）；**优化轮已收口（2026-09-10）**：问题池条目全部判终态、池文档冻结为调研档案（技能清单补全拍板暂不新增技能 + 既有技能 references 实拆补全；记忆库线另立档案页 [memory-system-dossier.md](docs/research/memory-system-dossier.md)；规范展开 c1/c2 已交付；[收口 ADR](.agents/notes/implemented/process/2026-09-10-optimization-round-closure.md) + [池文档 §2.3 收口账](docs/research/capsule-01-optimization-round.md)）。
 
-> **⏭ 下一步：待选轮**——候选 = 演化轮（池件候选 3 条，用户点名即开轮，见 [HANDOFF-evolution-pool](HANDOFF-evolution-pool.md)）/ 发版 0.2.7（交付常驻注入读数与提问面懒取用，并解锁 [HANDOFF-todos](HANDOFF-todos.md) 的读数建议行 (B) 条真机复验）/ 宿主 peer 集升代批（触发 = host peer 集整体升代，完成后把常驻注入读数升为类型契约断言；判据 = [护栏建设轮 ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md) 勘误）/ 记忆库线第二期、`capsules/` 路径两义、档案页制度批、技能清单候选（触发与判据见 [HANDOFF-todos](HANDOFF-todos.md) D 条）。最新批 = 2026-09-13 **ADR 终局态治理批（LIGHT）**：两条已执行/被取代的 proposed 记录收口——`guardrail-defer-trigger` 删除（决定与备选由护栏建设轮 ADR 承接）+ 入站链重定向；`collab-rebuild-impl` 转 implemented（B0–B5 批次方案），[治理 ADR](.agents/notes/implemented/process/2026-09-13-adr-terminal-state-governance.md)。前序批次见下方滚动窗。
+> **⏭ 下一步：待选轮**——候选 = 演化轮（池件候选 3 条，用户点名即开轮，见 [HANDOFF-evolution-pool](HANDOFF-evolution-pool.md)）/ 发版 0.2.7（交付常驻注入读数与提问面懒取用，并解锁 [HANDOFF-todos](HANDOFF-todos.md) 的读数建议行 (B) 条真机复验）/ 记忆库线第二期、`capsules/` 路径两义、档案页制度批、技能清单候选（触发与判据见 [HANDOFF-todos](HANDOFF-todos.md) D 条）。最新批 = 2026-09-13 **宿主 peer 集升代批（FULL 三审）**：宿主 peer 全件同代 `0.1.0-rc.8`→`0.1.5-rc.2`（lock 同提交，断言面与宿主实跑代同源）+ tokenMeter 读数升为 `host-api-contract.mts` 类型契约断言，[升代 ADR](.agents/notes/implemented/architecture/2026-09-13-host-peer-generation-upgrade.md)。前序批次见下方滚动窗。
 
 ## 交接更新记录（摘要滚动窗）
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
+
+- 2026-09-13｜**宿主 peer 集升代批（FULL 三审 R1 0B/5S、R2 0B/2S、R3 1B/3S；采纳 10 拒绝 1）**：全件同代 `0.1.5-rc.2` + tokenMeter 类型契约断言（断言面与宿主实跑代同源）；[ADR](.agents/notes/implemented/architecture/2026-09-13-host-peer-generation-upgrade.md)；`40ca159`→`e8a68b2`。README 无漂移。
 
 - 2026-09-13｜**ADR 终局态治理批 + 两处附带修复**：两条已执行/被取代的 `proposed/` 记录收口（延后件删除 + 入站链重定向；批量方案件转 implemented）；池指针移入 todos 头部说明块；P1 后置项两条归口 + 在环反馈无家断言落户；[治理 ADR](.agents/notes/implemented/process/2026-09-13-adr-terminal-state-governance.md)；`b978567`→`653e1b2`，CI 绿。
 
@@ -49,8 +51,6 @@
 - 2026-09-11｜**评审发现机械化批（FULL 三审 R1 0B/2S、R2 1B/6S、R3 4B/9S；采纳 12 拒绝 1）**：新增 `verify-command-surface`（命令面事实源 ↔ 声明区/计数面）+ 版本锚判据 6（三面）+ 模式双向覆盖元断言；[ADR](.agents/notes/implemented/process/2026-09-11-review-finding-mechanization.md)。
 
 - 2026-09-11｜**记忆库线第一期实现批（FULL 三审逐条裁决）**：`observe` 观测输入面（gitignored；写 fail-closed／读 warn-skip）+ `select` 建议档 `advice:` 行（不进常驻节）+ 凭据绊线 `verify-secrets`（三面）；ADR [实现件](.agents/notes/implemented/architecture/2026-09-11-memory-line-phase1-observation-face.md)。
-
-- 2026-09-10｜**记忆库线融合轮开题讨论轮（立宪 + 接口契约 + 第一期范围；零代码变更）**：ADR [融合立宪](.agents/notes/proposed/architecture/2026-09-10-memory-line-fusion-charter.md)（proposed，D1–D10）+ [档案页](docs/research/memory-system-dossier.md) 对账；`5d0a0da`→`a16fedf`。README 无漂移。
 
 ## 背景
 

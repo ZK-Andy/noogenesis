@@ -1,13 +1,13 @@
 # Agent Note: 宿主 peer 集升代批——全件同代至 0.1.5-rc.2 + tokenMeter 读数升为类型契约断言
 
 Status: implemented
-Review: FULL/2026-09-13/pending（三重审核进行中，收口时回填真实结论）
+Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 
 ## Problem
 
 本仓树的宿主 peer 钉在 `0.1.0-rc.8` 世代，宿主实跑树已是 `0.1.5-rc.2`（2026-09-13 实测：`/home/zk/.local/lib/node_modules/@deepseek-ai/dsh@0.1.5-rc.2` 及其内嵌 `dsh-llm` / `dsh-tools` / `dsh-token-meter` / `dsh-compaction` / `dsh-session` / `dsh-util-values` 全为 `0.1.5-rc.2`）。断言面与运行面因而不同源：`host-api-contract.mts` 的类型断言可以在旧代 d.ts 上编译绿，而宿主机跑的是另一代合同。
 
-护栏建设轮 ADR 决定 1 的 tokenMeter 漂移通道暂为运行期形状闸（`surfaceTokens` 非数值或 `measure` 抛错 → 每会话一条 warn），其触发条（host peer 集整体升代）由本批到达。运行期闸只能发现已发生的漂移，且只在有会话时才响；类型断言把同一条漂移提前到 `tsc` 面。
+护栏建设轮 [ADR](2026-09-13-guardrail-construction-round.md) 决定 1 的 tokenMeter 漂移通道暂为运行期形状闸（`surfaceTokens` 非数值或 `measure` 抛错 → 每会话一条 warn），其触发条（host peer 集整体升代）由本批到达。运行期闸只能发现已发生的漂移，且只在有会话时才响；类型断言把同一条漂移提前到 `tsc` 面。
 
 单件跨代装不可行——`dsh-token-meter` 的 peer 面指向同世代多件，在旧世代树上 `npm install` 报 ERESOLVE（现象、根因与规避见 [cookbook](../../../../docs/cookbook.md)「环境」条）。host 世代是整组换的。
 
@@ -39,7 +39,7 @@ Review: FULL/2026-09-13/pending（三重审核进行中，收口时回填真实�
 | 合同面 | 根 `peerDependencies` 版本区间（消费者可见）；新增 type-only 契约依赖 | 本 ADR 承载；跨边界契约 → FULL 定档。旧件里作为**决策时记录**的 peer 钉法串不改写（先例：M2 的 `^0.1.0-rc.6` 未随 B4 改写为 rc.8）——当前值的家 = `package.json` |
 | 机器面 | 无判据/夹具改动 | selftest 两条 import 面断言逐条复核未受影响：type-only 闭集按**文件**、值允许集按 **index.\* 包名**，两者均未变 |
 | 数据面 | 无 | — |
-| 散文面 | 护栏 ADR 的「待补」表述转当前态；cookbook 条的前提句「本仓树钉 `0.1.0-rc.8`」随本批失效 | 两处同变更改写为当前态/指针（cookbook 预算 2687/2700，改写不增字） |
+| 散文面 | 护栏 [ADR](2026-09-13-guardrail-construction-round.md) 的「待补」表述转当前态；cookbook 条的前提句「本仓树钉 `0.1.0-rc.8`」随本批失效 | 两处同变更改写为当前态/指针（cookbook 预算 2688/2700，净 +1 词） |
 
 ## 实现落账（2026-09-13）
 
