@@ -57,7 +57,7 @@ Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 - **正面**：常驻注入面获得与 doc-budgets 同族的机器判据，且落在 pre-push 与 CI 实跑的既有自测里；`ctx.tokenMeter` 由「延后的测量层」转为在环观察面，主体形状已实测（服务在场、API 名、返回值形状）。
 - **负面（自诺的账）**：token 基线不是真测量——4 字符启发式对 CJK 与 JSON schema 系统性低估（包 README「已知限制」自陈），阈值语义是「注入面字符预算」而非「模型侧 token」。该自诺的落账 = 本件实现落账节的成本模型（字符口径，无 token 换算）。
 - **依赖与环境**：建议行的接线依赖 tokenMeter 在场（本 profile 已实测在场），缺席时静默降级为不写行——不阻断 prompt 组装，也不改工具面。
-- **API 漂移残留风险**：实测版本为 `0.1.5-rc.2`（延后 ADR 记 0.1.2-rc.1）；建议行接线点须对 `measure` 返回值做形状断言（照 [coding-enforcement-track-b](../../implemented/architecture/2026-09-08-coding-enforcement-track-b.md) 的宿主 API 契约断言先例），宿主升级致形状变更时以契约断言暴露而非静默降级。
+- **API 漂移残留风险**：实测版本为 `0.1.5-rc.2`（延后 ADR 记 0.1.2-rc.1）；漂移通道 = 运行期形状闸（`surfaceTokens` 非数值或 `measure` 抛错 → 每会话一条 warn，不静默降级）；类型契约断言待 host peer 集升代后补（理由与触发条见「决定 1 建议行的实现落账」勘误）。
 - **未覆盖缺口（显式接受）**：两本账无门槛 → 「评审通过但效用为负」的批次只能事后观察，不能事前拒绝；记录本身不构成护栏。
 - **流程归口**：本 ADR 收口转 implemented 时同步三处归口——延后 ADR 的「触发点到达」条款指向本件、[2026-09-05-p1-engine-skeleton](../../implemented/architecture/2026-09-05-p1-engine-skeleton.md)「遗留面」三件护栏（含 canary，原写「等 M2 常驻形态」）改指本件终局、[framework-rebuild-blueprint](../../../../docs/research/framework-rebuild-blueprint.md) 的 token 基线归口行由「非本层事」改为指向本件（阻断面已落适配层）。
 
@@ -67,3 +67,14 @@ Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 - **评审收口（FULL 三审，2026-09-13；R1 0B/4S、R2 0B/4S、R3 1B/8S，采纳 16 条拒绝 0 条）**：代码面（R1/R2）——上界与判据共用导出常量（原两处各推一遍公式，仅因余数巧合同值）、行开销收回模块私有并改为「具名上界 + 自测逐件核验真实基因 ref」、固定开销按实文与位数上界改正、判据去掉与 `config.mts` 重复的正整数守卫（原诊断会把非整数归因成超预算）、删模块装载期断言与无因果的基因夹具；ADR 面（R3）——本 Problem 段原写「命中节随基因库累积单调增长」为假（行封顶 + 逐行截断使其不随库增长），已改为「上界无机器判据」并统一单价口径；设计稿 §7.1/§7.3 与 blueprint 的 token-meter 归口行同步为「阻断面 = 字面预算、token-meter = 观察面」。
 - **勘误（预算数值口径）**：决定 1 原拟「命中节字符预算（缺省 2048）」。实现期实测该值与**已发布缺省 `maxIndexGenes=12`** 不相容——12 行 ×（摘要上界 161 + 行开销）已超 2048，即插件会拿自己的缺省配置装载失败。改为**预算由已发布缺省推导**：`HITS_SECTION_CHAR_BUDGET = 固定开销 + MAX_HIT_LINES × 每行成本`（`MAX_HIT_LINES` = 缺省 + 1；评审收口后当前值 = 80 + 13 × 228 = 3044，可配上界 13）。决定语义（字面预算为阻断面）不变，变的只是阈值的推导来源与数值。
 - **判据覆盖面与假设面（如实记）**：基座节是常量（漂移由自测钉住 545 字符），命中节字面上界只随 `maxIndexGenes` 变化，故本判据覆盖「配置把行数调大」这一条路径；「基因库增长」路径由 `maxIndexGenes` 封顶**加逐行摘要截断**覆盖——上游超长 summary 不放大注入量。成本模型里唯一的估值项（命中行 ref 的 `MAX_HIT_REF_CHARS`）不再靠手抄：自测逐件遍历本仓 `genes/` 断言无一越界，越界即红并提示同变更调整常量；越界形态（引擎原样回显超长 domain/id）因而可被拦下。
+
+## 决定 1 建议行的实现落账（2026-09-13）
+
+- **落点**：`adapters/dsh/token-baseline.mts`（能力件——懒取用宿主服务、按会话至多一次、降级面内部消化）+ `index.mts`（复用 A2 `agent/pre-step` listener，每挂载点仍恰一个宿主 listener；`ctx.tokenMeter` 不进 `inject` 声明）；`adapters/dsh/selftest.mts` 断言组 5 条（每会话恰一行 / 缺席静默且不消耗该会话读数预算 / 形状不符每会话一条 warn / `measure` 抛错同降级 / 无会话对象静默）另加 index 接线冒烟 1 条。
+- **读数口径**：每会话至多一行 `noogenesis token baseline reading: surfaceTokens=<n> (whole hosted surface, host heuristic estimate; observation only)`——读的是整条 hosted system 面（含宿主 persona 与 AGENTS.md 注入），不是本插件注入面真值，不进任何判据。
+- **勘误（形状断言 → 运行期形状闸，2026-09-13）**：Consequences 原拟「照宿主 API 契约断言先例做类型断言」。实现期实测该断言要求引入跨代宿主依赖——`@deepseek-ai/dsh-token-meter@0.1.5-rc.2`（宿主实跑代）的 peer 指向同世代 `dsh-compaction` / `dsh-llm` 等，而本仓树钉 `0.1.0-rc.8` 世代，`npm install` 报 ERESOLVE；退到同世代 `0.1.0-rc.8` 则断言面与宿主实跑代**不同源**，证伪力可疑。故漂移通道改为运行期形状闸（非数值即 warn `host token-meter drift`），依赖面零变化。**触发条**：host peer 集整体升代（`0.1.0-rc.8` → `0.1.5-rc.x`，全件同代 + lock 同提交）时把该读数升为 `host-api-contract.mts` 的类型契约断言——断言面与运行面同源后零额外成本。现象与规避另入 [cookbook](../../../../docs/cookbook.md)「环境」条。
+
+## 决定 2 落点（2026-09-13）
+
+- **评审账**（各轮 Blocker 数与采纳数）：两处既有面——ADR 头 `Review:` 行（每批一行）+ [HANDOFF](../../../../HANDOFF.md) 滚动窗条目（每批一句带 R1/R2/R3 计数），零新工具。
+- **发版后修复账**（该版本区间内 bug-fix 类 ADR 批数）：落点 = [release-shape-alignment](../process/2026-09-09-release-shape-alignment.md) 各「实发」节末行；口径 = 相邻 tag 之间新增的 `.agents/notes/implemented/bug-fix/**` 件数（`git log --diff-filter=A --name-only <base>..<tag>` 手填），三次实发节已回填。

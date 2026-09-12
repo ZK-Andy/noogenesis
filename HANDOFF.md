@@ -5,12 +5,13 @@
 
 > **⚡ 最高优先级（框架重建）：charter ADR + 七层蓝图 → [.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md) · [docs/research/framework-rebuild-blueprint.md](docs/research/framework-rebuild-blueprint.md)**——用户拍板推倒重建（先框架后协作层、本仓原地重建），蓝图定稿（七层三段式 + A1–A8 挂载面 + M1–M3 + C1–C15）；**B0–B5 全批闭环（协作层重建收官，C1–C15 全绿）**——B5 切换批（gates.json cmd 全量重指 TS + 旧机器件零残留 + CI/钩子单轨 + 发版 0.2.0；实现 ADR [.agents/notes/implemented/architecture/2026-09-08-b5-switch.md](.agents/notes/implemented/architecture/2026-09-08-b5-switch.md)，批次表 [.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md](.agents/notes/proposed/architecture/2026-09-06-collab-rebuild-impl.md)）；**优化轮已收口（2026-09-10）**：问题池条目全部判终态、池文档冻结为调研档案（技能清单补全拍板暂不新增技能 + 既有技能 references 实拆补全；记忆库线另立档案页 [memory-system-dossier.md](docs/research/memory-system-dossier.md)；规范展开 c1/c2 已交付；[收口 ADR](.agents/notes/implemented/process/2026-09-10-optimization-round-closure.md) + [池文档 §2.3 收口账](docs/research/capsule-01-optimization-round.md)）。
 
-> **⏭ 下一步：护栏建设轮待排期（触发已满足）；池件余项候选 = [HANDOFF-evolution-pool](HANDOFF-evolution-pool.md)，用户点名即开轮**——最新批 = 2026-09-13 **0.2.6 发版（release-flow 第三次实走）**：`noogenesis-dsh@0.2.6` = latest（tag `dsh-v0.2.6`）+ 双语 Release Latest；内容 = bank 技能 provider 注册时序修复（可重试注入）+ 提醒面可达性门（[修复件](.agents/notes/implemented/bug-fix/2026-09-12-bank-skill-provider-registration.md)）；bump `a43c63c` → 版本面 `ad2e549`；CI run `34706452446` 绿。前序 2026-09-13 **bank provider 注册时序修复批（FULL 三审全采纳）**。余项候选：护栏建设轮（触发已满足 = 待排期）/ `capsules/` 路径指代两义（触发 = 共享库或目录立项）/ 记忆库线第二期（行为评估自建形态待裁）/ 档案页制度批（触发 = 试点评估）/ 技能清单「等等」候选收集（触发 = 用户再给候选）。
+> **⏭ 下一步：待选轮**——候选 = 演化轮（池件 3 条候选，用户点名即开轮，见 [HANDOFF-evolution-pool](HANDOFF-evolution-pool.md)）/ 宿主 peer 集升代批（触发 = 宿主读数建议行的类型契约断言回归，判据 = [护栏建设轮 ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md) 勘误）/ 记忆库线第二期、`capsules/` 路径两义、档案页制度批、技能清单候选（触发与判据见 [HANDOFF-todos](HANDOFF-todos.md) D 条）。最新批 = 2026-09-13 **护栏建设轮余项收尾批**（决定 1 建议行 + 决定 2 两本账落点 + HANDOFF 纠偏）：`adapters/dsh/token-baseline.mts` 每会话一行宿主读数（懒取用 / 缺席静默 / 形状异常一条 warn）+ selftest 断言组。前序批次见下方滚动窗。
 
 ## 交接更新记录（摘要滚动窗）
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-13｜**护栏建设轮余项收尾批（决定 1 建议行 + 决定 2 两本账落点）**：`adapters/dsh/token-baseline.mts` 每会话一行宿主读数（懒取用 / 缺席静默 / 形状异常一条 warn）+ selftest 断言组 6 条；勘误——类型契约断言要跨代宿主依赖（ERESOLVE），改运行期形状闸、触发条 = peer 集升代；发版后修复账落点 = release ADR 实发节并回填三次实发。README 已同步。
 - 2026-09-13｜**护栏建设轮实现批（决定 1 落地）**：常驻注入字面预算判据入 `section.mts` + `config.mts` 装载期拒收；实测**预算 2048 会把已发布缺省 12 行判违约** → 改由缺省推导；selftest 6 条断言；设计稿/blueprint token-meter 归口同步。README 已同步。
 - 2026-09-13｜**护栏建设轮立项讨论轮**：三题拍板 = token 基线两轨 / 改进度量两本账 / canary 判不立；[护栏建设轮 ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md)、[延后 ADR](.agents/notes/proposed/architecture/2026-09-06-guardrail-defer-trigger.md) 触发条标到达。
 - 2026-09-13｜**0.2.6 真机复验（零仓变更）**：外仓 desktop 与 dsh-frecency 新会话目录均含 7 件 `noo-*`（活副本零、缓存 7 件 → 来源 = `noogenesis-bank`）；A2 路标行与 A3 提醒只点名可达集，dsh-frecency 实任务会话提醒→载入成功、零 `unknown`、零诊断 warn。todos (B) 翻 x。
@@ -52,12 +53,7 @@
 
 - 2026-09-10｜**0.2.4 发版（release-flow 首走新工具族；ADR `release-shape-alignment` 落地验证在案）**：bump 产 `chore(release)`+lock 同提交（`6fe74ea`）→ tag `dsh-v0.2.4` 过 pre-push → npm latest 0.2.4 → 双语 Release Latest；CI 34480922485 绿。**节点：三条 (B) 真机复验待重装。** README 同步 0.2.4。
 
-- 2026-09-10｜**注释面在环扩面批收口（FULL 三审 R1 0B/3S、R2 1B/5S、R3 2B/5S 全采纳；ADR [export-docs-inloop](.agents/notes/implemented/architecture/2026-09-10-export-docs-inloop.md) implemented；`633b017`→`308561c`）**：A4 在环面扩到注释规范（判据件文件目标模式）。**节点：真机复验已过（见上）。** README 无漂移。
-
-
-
-
-
+## 背景
 
 
 
@@ -87,7 +83,7 @@ Noogenesis（心源）：DeepSeek Harness 之上的"蜂群进化框架"；终极
 - **胶囊 01 优化轮已收口**（ADR [2026-09-10-optimization-round-closure](.agents/notes/implemented/process/2026-09-10-optimization-round-closure.md) implemented）：验收口径 = 池零未判定 + 终态单源 + 成果实机生效，三条件均兑现（2026-09-10）；问题池与方案工作面全部判终态（[池文档 §2.3 收口账](docs/research/capsule-01-optimization-round.md)）；跨会话遗留转行动区（todos D 条三件）；护栏 D 条触发随之满足。
 - **注释面在环扩面已落地**（ADR [2026-09-10-export-docs-inloop](.agents/notes/implemented/architecture/2026-09-10-export-docs-inloop.md) implemented，FULL 三审全采纳）：A4 在环面 = lint + 注释面两判据（`export-docs-feedback.mts` 跑仓内判据件 `scripts/verify-export-docs.mts <file>` 文件目标模式，域归属单源；死锁门 `createBlockGate` 折叠单源）；模型面违约行英文（口径单源 = `adapters/dsh/README.md`）。真机复验已过（0.2.4 装机，2026-09-10）。
 - **评审实质执行已拍板落账**（ADR [2026-09-10-review-execution-reconciliation](.agents/notes/implemented/architecture/2026-09-10-review-execution-reconciliation.md) implemented，FULL 三审全采纳）：session-close 步骤 2 扩评审机器面闭集标记对账（假完成收尾必暴露 + 跨会话证据出口）；②收口触点提醒缓议（触发 = ③对账暴露真实漏网；接线候选 engine 代理 / 钩子桥停止前在案，advice 预拍板、阻断判不立）；F3 三路实质维持语义面不设防。
-- **护栏延后拍板**（ADR [2026-09-06-guardrail-defer-trigger](.agents/notes/proposed/architecture/2026-09-06-guardrail-defer-trigger.md) proposed）：护栏三件（token-meter 真测量 / 严格改进度量 / canary）需要但延后；**触发「首个胶囊优化完成」已满足（2026-09-10 收口 ADR 定义三条件并兑现）→ 待排期**，立项时逐件拍板接入形态与验收口径（见该 ADR Alternatives）。
+- **护栏三件均已终局**（拍板与判据单源 = [护栏建设轮 ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md)；延后件 [2026-09-06-guardrail-defer-trigger](.agents/notes/proposed/architecture/2026-09-06-guardrail-defer-trigger.md) 触发条已消耗并标到达）：token 基线两轨 = 常驻注入字面预算判据（装载期 fail-closed）+ 宿主读数建议行（每会话一行 info，`adapters/dsh/token-baseline.mts`；形状断言改运行期闸，理由与触发条见该 ADR 勘误）；改进度量 = 两本账（评审账 = ADR `Review:` 行 + 滚动窗条目；发版后修复账 = release ADR 实发节，三次已回填）；canary 判不立。
 - **编码规范机器强制已落地**（ADR [2026-09-08-c2-lint-enforcement](.agents/notes/implemented/architecture/2026-09-08-c2-lint-enforcement.md) implemented，FULL 三审全采纳）：oxlint 1.82.0 显式白名单（根 `.oxlintrc.json`，逐条理由）+ 导出面契约注释闸（`verify-export-docs.mts`，`adapters/dsh` + `scripts`）入 `engine/gates.json`（pre-commit/pre-push/CI 同判据）；首轮清 19 处真实缺陷 + 4 处注释缺口 + 1 死导出；[code-standards](docs/method/code-standards.md) 档位同步（2.1 存在性 / 2.3 词面 / §3 机械子集升 `[M]`，2.4 留 `[R]`）。
 - **档位触发面已扩精度**（ADR [2026-09-11-review-tier-classification-precision](.agents/notes/implemented/process/2026-09-11-review-tier-classification-precision.md) implemented，FULL 三审 14 项全采纳）：`FULL_TRIGGERS` 增三条 —— 产品源码 `engine/**`、`adapters/**`（顶层目录）与装载补丁面 `cordis.patch.yml`（文件名判据）；「proposed ADR 自诺」判定与证据判定共用 `adrHeadStatus`（头部 15 行窗口、围栏内不算）；`review.md` §1 行为契约面口径按本仓改写（源仓遗留的 `src/**`/`tests/**` 措辞删除）；2026-09-05 闸件 ADR 的手抄副本改指针 + 三处 `.py` 死指针同步。噪声实测 n=296：仅产品源码提交 26（8.8%），过度触发面 6 笔（纯文档/夹具）。
 - **技能触点提醒触发面已扩面**（ADR [2026-09-11-skill-guard-trigger-faces](.agents/notes/implemented/architecture/2026-09-11-skill-guard-trigger-faces.md) implemented，FULL 三审全裁决）：`config.skillGuards` 条目 = `{kind, pattern, skill}`（`path`|`suffix`|`command`，旧形态拒收）；缺省 4 条（`docs`→doc-standards、`.md`→prose-standard、`.agents/notes`→archive-agent-notes、`git`〔可带全局选项前缀〕`push`→pre-push-checks，匹配面按 [修复件](.agents/notes/implemented/bug-fix/2026-09-12-skill-guard-push-pattern-reachability.md)）；写码目标两条通道（write/edit `file_path` + bash `>`/`>>`/`tee` 目标）；一次 advice 列全命中项、每会话每技能至多一条、非阻断档不变。真机复验 2026-09-12 已过（0.2.5 装机：三形态 push 命中 + 重复不重提 + 重定向写后缀面命中，journal 在案）。

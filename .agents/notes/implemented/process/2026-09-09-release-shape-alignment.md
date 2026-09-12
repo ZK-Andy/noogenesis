@@ -49,6 +49,7 @@ Review: FULL/2026-09-09/R1=ok R2=ok R3=ok
 - annotated tag `dsh-v0.2.4` 推送过 pre-push：tag 目标 commit 已可达 origin 远端 refs → 走「零 outgoing 跳过档位强制」档，脚本输出该判据行。
 - `release-note.mts v0.2.3 0.2.4` 输出双语分节 + `@ZK-Andy`（git author `zhangkun` 映射）+ 跨前缀 `Full Changelog`（`v0.2.3...dsh-v0.2.4`，可解析）。
 - npm `latest` = 0.2.4（35 件 / 97.2 kB，含新件 `skill-guard.mjs`、`export-docs-feedback.mjs`）；GitHub Release 建（Latest、非 draft）。
+- **修复账**（发版后修复口径；定义与触发条单源 = [护栏建设轮 ADR](../architecture/2026-09-13-guardrail-construction-round.md) 决定 2）：本区间新增 bug-fix 类 ADR 2 件——`standards-audit-fix-batch`、`review-tier-evidence-ride-along`。
 - **跨大批次归并缺口**（首验实遇）：`v0.2.3..0.2.4` 跨 59 笔时「其他变更」节输出 42 条过程条目（body 147 行），发布者须手工按批次归并成 3 条（中英各 3）——归并档缺失入 [HANDOFF-todos](../../../../HANDOFF-todos.md)（C）条，已由[聚合档 ADR](2026-09-12-release-note-daily-aggregation.md) 收口（末节按提交日归并，条目零丢弃）。
 
 ## 第二次实发（2026-09-12，`noogenesis-dsh@0.2.5`）
@@ -58,6 +59,7 @@ Review: FULL/2026-09-09/R1=ok R2=ok R3=ok
 - **pre-push 两 leg 次序**：分支 leg 先过（tier `--enforce` + 门禁组 + engine/adapter 双 self-test）；tag leg 在分支推送前 fail-closed（`tag 目标 commit 未被 origin 远端 refs 包含`，报「无法定 outgoing base」）。正确次序 = 先推分支、再推 tag（tag 目标可达后走零 outgoing 跳过档位强制）。
 - **npm 发布**：`npm latest` = 0.2.5（36 件 / 110.6 kB）；本机 `~/.npm` 只读，发布须带 `--cache=/tmp/npm-publish-cache`（否则 EROFS）。
 - **GitHub Release**：`dsh-v0.2.5`（Latest、非 draft），正文 = `.cache/release-body-0.2.5.md`。
+- **修复账**：本区间新增 bug-fix 类 ADR 2 件——`skill-guard-push-pattern-reachability`、`review-brief-detail-fallback`。
 - **归并缺口第二次实证（触发再达成）**：`dsh-v0.2.4..0.2.5` 跨 67 笔，「其他变更」节输出 42 条过程条目 → 发布者手工重写四节（末节成 5 条，中英各 5）。首验记在 [HANDOFF-todos](../../../../HANDOFF-todos.md)（C）条；末节归并形态已由[聚合档 ADR](2026-09-12-release-note-daily-aggregation.md) 落定。
 
 ## 第三次实发（2026-09-13，`noogenesis-dsh@0.2.6`）
@@ -68,6 +70,7 @@ Review: FULL/2026-09-09/R1=ok R2=ok R3=ok
 - **新交叉点（判据 6 的扫描面 = HANDOFF 全文）**：历史滚动窗条目里的 `noogenesis-dsh@0.2.5` 声明形式会与当前版本比对而违约（本次两处）。处置 = 历史条目改用非声明记法（`npm latest 0.2.5`），与 0.2.4 发版条既有写法一致；判定口径不变（HANDOFF 属状态面，声明了就必须对）。
 - `npm latest` = 0.2.6（36 件 / 116.0 kB，含本批 `dist` 重构建件）；GitHub Release `dsh-v0.2.6`（Latest、非 draft），正文 = `.cache/release-body-0.2.6.md`（脚本骨架 + 按批次归并 3 笔收口提交进两条用户可读修复 + 英文节逐条翻译）；CI run `34706452446`（head `ad2e549`）绿。
 - 次序照旧：分支 leg 先推（`7b41759..ad2e549`），tag leg 后推（`dsh-v0.2.6`，目标 commit 已可达 → 零 outgoing 跳过档位强制）；`npm publish --cache=/tmp/npm-publish-cache`（本机 `~/.npm` 只读；`npm view` 同需该 flag）。
+- **修复账**：本区间新增 bug-fix 类 ADR 1 件——`bank-skill-provider-registration`。前两次实发节的修复账于 2026-09-13 回填（口径 = 相邻 tag 之间新增的 `.agents/notes/implemented/bug-fix/**` 件数；`git log --diff-filter=A` 手填，无新工具）。
 
 ## Risks
 
