@@ -6,7 +6,7 @@ Status: implemented
 
 `.agents/notes/proposed/` 的语义恒 = 活提案（[notes/README](../../README.md)：生命周期闭集 `proposed/` → `implemented/` → `archived/`，另有 `rejected/`）。实测四件里两件已不是提案，且都不是落败提案：
 
-- `2026-09-06-guardrail-defer-trigger`：护栏三件的时序延后决定已被 [护栏建设轮 ADR](../architecture/2026-09-13-guardrail-construction-round.md) 接管——该件就同一三件重新逐条拍板；延后件正文亦自述「不再有追随意向，保留为已消耗的提案记录」。
+- `2026-09-06-guardrail-defer-trigger`：护栏三件的时序延后决定已被 [护栏建设轮 ADR](../architecture/2026-09-13-guardrail-construction-round.md) 接管——该件就同一三件重新逐条拍板，延后件因此不再承载任何未决决定。
 - `2026-09-06-collab-rebuild-impl`：B0–B5 全批闭环、`noogenesis@0.2.0` 已发版，其决定（五批分法 / lefthook / 切换断点）执行完毕；它仍是七件实现轮 ADR 的父件，未被任何单件取代。
 
 留在 `proposed/` 的代价不是观感：读侧据此判「提案在飞」，`session-open` 与 `feature-flow` §4.6 的取代检查面也据此判活跃度——归口失真恰是延后件当初被记为缺陷的同一形态（其问题清单第一条即「归口写 M2 而无人接走」）。
