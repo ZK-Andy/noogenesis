@@ -23,11 +23,17 @@ function appendEvent(repoRoot: string, ev: any) {
 }
 
 // 提交指定路径；失败时回滚本函数组已做的写面，不留半应用状态。
+// commit 失败须同时退回索引：`git add` 已把 paths 写进 index，只清工作树会让它们
+// 以暂存态残留，下一次 `git commit` 会把刚回滚的变更扫进来。reset 只作用于本函数的
+// paths，不碰调用方自己的暂存面。
 function commitPaths(repoRoot: string, paths: string[], msg: string) {
   const r1 = git(repoRoot, ['add', '--', ...paths]);
   if (r1.code !== 0) throw new EngineError(`git add failed: ${r1.stderr.trim()}`);
   const r2 = git(repoRoot, ['commit', '-m', msg, '--', ...paths]);
-  if (r2.code !== 0) throw new EngineError(`git commit failed: ${r2.stderr.trim()}`);
+  if (r2.code !== 0) {
+    git(repoRoot, ['reset', '-q', '--', ...paths]);
+    throw new EngineError(`git commit failed: ${r2.stderr.trim()}`);
+  }
 }
 
 // 回滚 appendEvent：仅当文件以本行结尾时移除（不触碰并发追加的未知行）。

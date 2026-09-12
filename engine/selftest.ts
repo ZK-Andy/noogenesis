@@ -421,6 +421,8 @@ function selfTest() {
       const evFilesAfter = fs.readdirSync(path.join(td, 'events')).sort();
       const eventsAfter = fs.readFileSync(path.join(td, 'events', evFilesAfter[evFilesAfter.length - 1] ?? ''), 'utf8');
       ok(eventsAfter === eventsBefore, 'solidify: rollback removes appended event line');
+      ok(git(td, ['diff', '--cached', '--name-only']).trim().split('\n').filter((l) => l.includes('rollback-gene')).length === 0,
+        'solidify: rollback leaves no staged residue');
       git(td, ['config', '--unset', 'core.hooksPath']);
     }
   }
@@ -463,10 +465,20 @@ function selfTest() {
     ok(throwsEngine(() => recordCapsule(td, dPath, 'tester')), 'capsule: dangling gene ref refused');
     ok(throwsEngine(() => recordCapsule(td, cand, '   ')), 'capsule: blank actor refused');
 
-    // 读命令：确定性渲染
-    const rendered = renderCapsule(readCapsule(target));
-    ok(rendered.startsWith('[noo-capsule process/cap-1]'), 'capsule: render header');
-    ok(rendered === renderCapsule(readCapsule(target)), 'capsule: render deterministic');
+    // 读命令：确定性渲染（逐字金样，抓输出格式漂移而非仅抓非确定性）
+    const GOLDEN_CAPSULE =
+      '[noo-capsule process/cap-1]\n' +
+      '\n' +
+      'trigger: cap\n' +
+      'outcome: ok\n' +
+      'genes: process/cap-gene\n' +
+      '\n' +
+      'steps:\n' +
+      '1. s1\n' +
+      '\n' +
+      'evidence:\n' +
+      '- gate green\n';
+    ok(renderCapsule(readCapsule(target)) === GOLDEN_CAPSULE, 'capsule: golden render exact match');
 
     // CLI 面：add / show 与用法错三档
     const bin = path.join(__dirname, 'bin.js');
@@ -478,6 +490,23 @@ function selfTest() {
     ok(spawnCode([bin, 'capsule', 'show', 'process/missing'], td) === 2, 'bin: capsule show missing -> exit 2');
     ok(spawnCode([bin, 'capsule', 'add', cand], td) === 2, 'bin: capsule add without --actor -> exit 2');
     ok(spawnCode([bin, 'capsule', 'bogus'], td) === 2, 'bin: unknown capsule subcommand -> exit 2');
+
+    // commit 失败 → 写面与索引都回滚（只清工作树会让回滚的记录以暂存态残留）
+    {
+      const hooksDir = path.join(td, 'failing-hooks');
+      fs.mkdirSync(hooksDir);
+      fs.writeFileSync(path.join(hooksDir, 'pre-commit'), '#!/bin/sh\nexit 1\n', { mode: 0o755 });
+      git(td, ['config', 'core.hooksPath', 'failing-hooks']);
+      const rb = path.join(staging, 'cap-rb.json');
+      fs.writeFileSync(rb, JSON.stringify({ ...cap, id: 'cap-rb' }, null, 2) + '\n');
+      let threw = false;
+      try { recordCapsule(td, rb, 'tester'); } catch (e) { threw = e instanceof EngineError; }
+      ok(threw, 'capsule: commit failure raises EngineError');
+      ok(!fs.existsSync(capsulePath(td, 'process', 'cap-rb')), 'capsule: rollback removes placed capsule');
+      ok(git(td, ['diff', '--cached', '--name-only']).trim().split('\n').filter((l) => l.includes('cap-rb')).length === 0,
+        'capsule: rollback leaves no staged residue');
+      git(td, ['config', '--unset', 'core.hooksPath']);
+    }
   }
 
   // --- 5.5) bin.js 退出码三档端到端（fail-closed = exit 2，非堆栈 exit 1）---

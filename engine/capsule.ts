@@ -118,28 +118,11 @@ function assertCapsuleIdUnique(repoRoot: string, domain: string, id: string) {
   }
 }
 
-// 扫描 capsules/ 目录（镜像 scanGenes 的单层布局）：返回 [{ path, ref, obj }]。
-// 无缓存合并面——Capsule 只属本仓（共享/贡献面见批次表序 21/31）。
-function scanCapsules(repoRoot: string) {
-  const root = path.join(repoRoot, 'capsules');
-  const out: { path: string; ref: string; obj: any }[] = [];
-  if (!fs.existsSync(root)) return out;
-  for (const ent of fs.readdirSync(root, { withFileTypes: true }).sort((a, b) => a.name < b.name ? -1 : 1)) {
-    if (!ent.isDirectory()) continue;
-    for (const f of fs.readdirSync(path.join(root, ent.name), { withFileTypes: true }).sort((a, b) => a.name < b.name ? -1 : 1)) {
-      if (!f.isFile() || !f.name.endsWith('.json')) continue;
-      const p = path.join(root, ent.name, f.name);
-      out.push({ path: p, ref: `${ent.name}/${f.name.slice(0, -5)}`, obj: readCapsule(p) });
-    }
-  }
-  return out;
-}
-
 function capsulePath(repoRoot: string, domain: string, id: string) {
   return path.join(repoRoot, 'capsules', domain, `${id}.json`);
 }
 
-// 人读渲染（capsule show）：确定性输出，可用金样夹具测试（同 propose 姿态）。
+// 人读渲染（capsule show）：确定性输出，逐字断言见 engine self-test 的 GOLDEN 夹具。
 function renderCapsule(obj: any): string {
   const lines = [
     `[noo-capsule ${obj.domain}/${obj.id}]`,
@@ -158,6 +141,6 @@ function renderCapsule(obj: any): string {
 }
 
 export {
-  validateCapsule, readCapsule, scanCapsules, capsulePath,
+  validateCapsule, readCapsule, capsulePath,
   assertGeneRefsResolvable, assertCapsuleIdUnique, renderCapsule,
 };

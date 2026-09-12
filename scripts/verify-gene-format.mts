@@ -12,16 +12,25 @@
  *   应省略字段）；id 全树唯一（引用不歧义）；布局封闭 genes/<domain>/<id>.json。
  * - engine/gates.json（S3 — 白名单载体，fail-closed）：version 为数字；gates 非空、
  *   name kebab 且唯一、cmd 非空、args 字符串数组；引用的 scripts/** 路径必须存在。
- * - events/<YYYY-MM>.jsonl（S2 — 追加式事件审计）：每行 JSON 对象恰含
- *   {ts, actor, kind, gene, gene_sha, outcome, evidence}；kind ∈ 封闭集
- *   {gene.added, gene.updated, gene.retired}；ts 为 ISO-8601、卷内升序且落在卷
- *   月份内（±1 天时区容差，对齐 verify-adr-format）；outcome 为 "ok" 或
- *   "fail: <reason>"；gene_sha 为 64 位十六进制。
+ * - events/<YYYY-MM>.jsonl（S2 — 追加式事件审计）：每行 JSON 对象键集按 kind 条件化
+ *   —— 五键共通 {ts, actor, kind, outcome, evidence}，gene 面加 {gene, gene_sha}，
+ *   capsule 面加 {capsule, capsule_sha}；kind ∈ 封闭集
+ *   {gene.added, gene.updated, gene.retired, capsule.added}；ts 为 ISO-8601、卷内
+ *   升序且落在卷月份内（±1 天时区容差，对齐 verify-adr-format）；outcome 为 "ok" 或
+ *   "fail: <reason>"；gene_sha / capsule_sha 为 64 位十六进制。
+ * - capsules/<domain>/<id>.json（批次 1 序 1 — 封闭七字段 schema，镜像 engine/capsule.ts）：
+ *   id/domain kebab-case 且分别等于文件名 stem 与父目录名；gene_ids 为 ≥1 项
+ *   <domain>/<id> 引用；trigger 非空；steps/evidence 为 ≥1 项非空字符串数组；
+ *   outcome 键封闭（status ∈ {ok, fail}，fail 必带 reason，ok 不得带）；id 全树唯一；
+ *   布局封闭 capsules/<domain>/<id>.json。
  * - 工作树复算（S2 — 内容可寻址）：最近一次 added/updated(ok) 事件的 gene_sha
  *   必须等于文件字节的 sha256；最近 retired ⇒ 文件必须缺席；无事件轨的工作树
  *   基因违约（solidify 是唯一入口）；fail 事件只查结构不复算（被拒候选 ≠ 工作树）。
+ *   capsules 同型：capsule.added(ok) 的 capsule_sha 必须等于文件字节 sha256，无事件轨的
+ *   Capsule 违约（capsule add 是唯一入口）；gene_ids 须曾成功入档（工作树在场或事件轨上
+ *   有过 ok 的 gene.added/gene.updated）——退役是历史事实，不追溯失效，且 Capsule append-only。
  *
- * 结构性例外：白名单外独立件——本件消费 genes/ + events/ 复算基因治理自身，进
+ * 结构性例外：白名单外独立件——本件消费 genes/ + capsules/ + events/ 复算治理自身，进
  * gates.json 白名单会让 solidify 入档中途复算自身（语义循环）；hooks/CI 保留
  * 显式调用行。
  *
@@ -48,10 +57,17 @@ const VOL_RE = /^(\d{4}-\d{2})\.jsonl$/;
 const KINDS = ["gene.added", "gene.updated", "gene.retired", "capsule.added"];
 const KINDS_REPR = `(${KINDS.map((k) => `'${k}'`).join(", ")})`;
 // 事件键集按 kind 条件化（批次 1 序 1 ADR C5 重拍 S2）：共通五键 + gene 面两键 / capsule 面两键。
-const GENE_EVENT_KEYS = "actor evidence gene gene_sha kind outcome ts".split(" ").sort().join("|");
-const CAPSULE_EVENT_KEYS = "actor evidence capsule capsule_sha kind outcome ts".split(" ").sort().join("|");
-const EVENT_FIELDS_REPR = "['actor', 'evidence', 'gene', 'gene_sha', 'kind', 'outcome', 'ts']";
-const CAPSULE_EVENT_FIELDS_REPR = "['actor', 'capsule', 'capsule_sha', 'evidence', 'kind', 'outcome', 'ts']";
+// 键集与判据文案同源：repr 由键列表派生，改键集即改文案（防两处漂移）。
+const GENE_EVENT_KEY_LIST = ["actor", "evidence", "gene", "gene_sha", "kind", "outcome", "ts"];
+const CAPSULE_EVENT_KEY_LIST = ["actor", "capsule", "capsule_sha", "evidence", "kind", "outcome", "ts"];
+const GENE_EVENT_KEYS = GENE_EVENT_KEY_LIST.join("|");
+const CAPSULE_EVENT_KEYS = CAPSULE_EVENT_KEY_LIST.join("|");
+/** 判据文案里的键列表形态（py list repr，供违约行比对）。 */
+function fieldsRepr(keys: string[]): string {
+  return `[${keys.map((k) => `'${k}'`).join(", ")}]`;
+}
+const EVENT_FIELDS_REPR = fieldsRepr(GENE_EVENT_KEY_LIST);
+const CAPSULE_EVENT_FIELDS_REPR = fieldsRepr(CAPSULE_EVENT_KEY_LIST);
 const KNOWN_GENE_FIELDS = new Set([
   "id", "domain", "summary", "signals", "strategy", "constraints", "validation", "avoid",
 ]);
@@ -547,7 +563,16 @@ function scan(base: string): { checked: number; errors: string[] } {
     if (!perCapsule.has(cid)) errors.push(`${pyJoin(base, rel)}: capsule has no event trail — record capsules only via capsule add`);
   }
 
-  // 引用可解析（复算规则 2）：gene_ids 必须命中本仓 genes/（缓存副本不算）
+  // 引用可解析（复算规则 2）：gene_ids 须曾成功入档——工作树在场，或事件轨上有过 ok 的
+  // gene.added/updated。retire 只删工作树文件（git 历史仍可溯），Capsule 又是 append-only，
+  // 故退役不使既有引用追溯失效；真正的违约 = 引一个从未入档过的 id。
+  const everPlaced = new Set<string>();
+  for (const [gid, evs] of perGene) {
+    if (typeof gid !== "string") continue;
+    if (evs.some((e) => e.ev.outcome === "ok" && (e.ev.kind === "gene.added" || e.ev.kind === "gene.updated"))) {
+      everPlaced.add(gid);
+    }
+  }
   for (const [, rel] of capsuleFiles) {
     const parsed = pyJSONParse(readTextFatal(pyJoin(base, rel)));
     if (!parsed.ok || !isObj(parsed.value)) continue;
@@ -556,8 +581,9 @@ function scan(base: string): { checked: number; errors: string[] } {
     for (const ref of refs) {
       if (typeof ref !== "string") continue;
       const [rd, ri] = ref.split("/");
-      if (!fs.existsSync(pyJoin(base, ["genes", rd ?? "", `${ri ?? ""}.json`]))) {
-        errors.push(`${pyJoin(base, rel)}: capsule references gene '${ref}' not in genes/`);
+      const live = fs.existsSync(pyJoin(base, ["genes", rd ?? "", `${ri ?? ""}.json`]));
+      if (!live && !everPlaced.has(ri ?? "")) {
+        errors.push(`${pyJoin(base, rel)}: capsule references gene '${ref}' never placed in genes/`);
       }
     }
   }
@@ -837,7 +863,87 @@ function selfTest(): number {
       mk(t, "capsules/process/sample-capsule.json", capsuleDoc("sample-capsule", "process", { gene_ids: ["process/no-such-gene"] }));
       mk(t, "events/2026-09.jsonl", `${capsuleEventLine("sample-capsule")}\n`);
     },
-    ["capsule references gene 'process/no-such-gene' not in genes/"], "capsule dangling gene ref -> fail",
+    ["capsule references gene 'process/no-such-gene' never placed in genes/"], "capsule dangling gene ref -> fail",
+  ]);
+
+  // gene 退役后既有引用仍合法（历史事实，不追溯失效）
+  cases.push([
+    (t) => {
+      capsuleTree(t);
+      const geneSha = shaOf(t, "genes/process/sample-gene.json");
+      fs.unlinkSync(path.join(t, "genes", "process", "sample-gene.json"));
+      mk(t, "events/2026-09.jsonl",
+        `${eventLine("gene.added", "sample-gene", geneSha)}\n`
+        + `${capsuleEventLine("sample-capsule", capsuleSha(t))}\n`
+        + `${eventLine("gene.retired", "sample-gene", geneSha, "ok", "2026-09-05T03:00:00Z")}\n`);
+    },
+    [], "capsule citing a retired gene -> pass",
+  ]);
+
+  cases.push([
+    (t) => {
+      capsuleTree(t);
+      fs.unlinkSync(path.join(t, "capsules", "process", "sample-capsule.json"));
+    },
+    ["accepted event but no worktree file"], "capsule event without file -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      capsuleTree(t);
+      mk(t, "events/2026-09.jsonl",
+        `${eventLine("gene.added", "sample-gene", shaOf(t, "genes/process/sample-gene.json"))}\n`
+        + `${capsuleEventLine("sample-capsule", capsuleSha(t), "fail: gates red")}\n`);
+    },
+    ["no accepted capsule.added event but the file exists"], "capsule file without ok event -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      capsuleTree(t);
+      mk(t, "capsules/doc/sample-capsule.json", capsuleDoc("sample-capsule", "doc"));
+      mk(t, "events/2026-09.jsonl",
+        `${eventLine("gene.added", "sample-gene", shaOf(t, "genes/process/sample-gene.json"))}\n`
+        + `${capsuleEventLine("sample-capsule", capsuleSha(t))}\n`
+        + `${capsuleEventLine("sample-capsule", "f".repeat(64), "ok", "2026-09-05T03:00:00Z")}\n`);
+    },
+    ["present in multiple domains", "duplicate capsule id"], "capsule id in two domains -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      capsuleTree(t);
+      mk(t, "capsules/process/sample-capsule.json", capsuleDoc("sample-capsule", "process", { gene_ids: [] }));
+      mk(t, "events/2026-09.jsonl", `${capsuleEventLine("sample-capsule")}\n`);
+    },
+    ["gene_ids must have at least 1 item(s)"], "capsule empty gene_ids -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      capsuleTree(t);
+      mk(t, "capsules/process/sample-capsule.json", capsuleDoc("sample-capsule", "process", { outcome: { status: "ok", reason: "why" } }));
+      mk(t, "events/2026-09.jsonl", `${capsuleEventLine("sample-capsule")}\n`);
+    },
+    ["outcome.reason is only for status fail"], "capsule ok carrying reason -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      mk(t, "engine/gates.json", WHITELIST);
+      mk(t, "scripts/stub.py", "print('ok')\n");
+      mk(t, "genes/process/sample-gene.json", geneDoc());
+      mk(t, "capsules/loose.json", capsuleDoc());
+    },
+    ["capsules/<domain>/<id>.json layout"], "flat capsule file -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      capsuleTree(t);
+      mk(t, "capsules/process/Bad_ID.json", capsuleDoc("Bad_ID", "process"));
+    },
+    ["id must be kebab-case string"], "capsule id non-kebab -> fail",
   ]);
 
   cases.push([

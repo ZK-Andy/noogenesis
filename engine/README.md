@@ -79,7 +79,7 @@ node dist/engine/bin.js self-test                           # 元评测夹具（
 - **语义**：Capsule = 一次真实执行的审计记录（主设计 §5.1），其 `gene_ids` / `steps` / `evidence` 同时是该次执行的可复现路径（共享层稿 §6.2）。落 `capsules/<domain>/<id>.json`，JSON、封闭七字段（`id` / `domain` / `gene_ids` / `trigger` / `steps` / `outcome` / `evidence`）。
 - **append-only**：同 id 重复记录拒收（无 `capsule.updated` / `capsule.retired` 面）；`outcome` 二值 `ok` | `fail`，`fail` 必带 `reason`。
 - **写读命令**：`capsule add <candidate.json> --actor N` 落 `capsules/` + `capsule.added` 事件（同一 commit，原子性同基因入档）；`capsule show <domain>/<id>` 渲染人读面。两者用法错与 fail-closed 都走 exit 2。
-- **复算边界**：`gene_ids` 必须命中本仓 `genes/`（缓存副本不算——缓存可丢弃，引用会悬空）；引擎不重跑门禁，`evidence` 由调用方在真实执行后给出（自动复跑归批次表序 43）。
+- **复算边界**：`gene_ids` 须曾成功入档——工作树在场，或事件轨上有过 ok 的 `gene.added`/`gene.updated`；写路径的前置更紧（记录时该基因须活在本仓 `genes/`，缓存副本不算）。退役不使既有引用失效。引擎不重跑门禁，`evidence` 由调用方在真实执行后给出（自动复跑归批次表序 43）。
 - **不收的字段**：`diff` / `content`（git 自身即内容面单源）、`score`（骨架 ADR D4 已拍文档域无可信改进分数）、`blast_radius`（度量落地时随批加入）、`confidence` / `cost_*`（无生产者）。
 
 ## 消费方

@@ -40,7 +40,7 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](2026-09-13-feature-co
 
 ### C3（写读命令）：`capsule add` / `capsule show`，写路径与基因共用原子提交面
 
-- `capsule add <candidate.json> --actor N`：结构闸 + 基因引用可解析 → 落 `capsules/` + 追加 `capsule.added` 事件 → 两者同一 commit；commit 失败回滚写面（同 `solidify`）。
+- `capsule add <candidate.json> --actor N`：结构闸 + 基因引用可解析 → 落 `capsules/` + 追加 `capsule.added` 事件 → 两者同一 commit；commit 失败回滚工作树**与索引**（只清工作树会让回滚的记录以暂存态残留，被下一次提交扫入），与 `solidify` 共用同一提交助手。
 - `capsule show <domain>/<id>`：确定性渲染人读面（`[noo-capsule <domain>/<id>]` + trigger / outcome / genes / steps / evidence）。
 - **append-only**：同 id 重复记录拒收——审计记录不修订，故无 `capsule.updated` / `capsule.retired`。
 - **人工在环**：A8 会话事件轨撤除后没有自动 Solidify 位点（[撤除 ADR](../../implemented/architecture/2026-09-08-a8-session-record-projection-removal.md)），Capsule 由真实执行后显式记录。引擎**不重跑门禁**——`evidence` 由调用方给出；执行者 / 评审者分离的自动复跑归批次表序 43。
@@ -48,7 +48,7 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](2026-09-13-feature-co
 ### C4（校验闸与复算）：扩展 `verify-gene-format.mts`，不新增门禁件
 
 - 协议闸落在既有白名单外独立件（它已覆盖 `genes/` + `events/` + 白名单），新增 `capsules/` 一节的布局 / schema / 跨域 id 唯一判据——守住 S2「仍单脚本、gate 数量克制」的纪律。
-- **复算三条**：① 最近一条 `capsule.added`(ok) 的 `capsule_sha` = 文件字节 sha256，工作树 Capsule 必须有事件轨（`capsule add` 是唯一入口）；② `gene_ids` 每项须命中本仓 `genes/`（缓存副本不算——缓存可丢弃，引用会悬空）；③ 布局与锚点同 S1。
+- **复算三条**：① 最近一条 `capsule.added`(ok) 的 `capsule_sha` = 文件字节 sha256，工作树 Capsule 必须有事件轨（`capsule add` 是唯一入口）；② `gene_ids` 每项须**曾成功入档**——工作树在场，或事件轨上有过 ok 的 `gene.added`/`gene.updated`（写路径的前置更紧：记录时该基因须活在本仓 `genes/`）；**退役不使既有引用追溯失效**（retire 只删工作树文件、git 历史仍可溯，Capsule 又是 append-only），缓存副本则从不算数——缓存可丢弃，引用会悬空；③ 布局与锚点同 S1。
 - 违约夹具与合规夹具同批入 self-test（含悬空引用、sha 失配、无事件轨、事件键集错配）。
 
 ### C5（重拍两项，均收窄不松绑）
