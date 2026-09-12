@@ -58,6 +58,12 @@ function tempRepo(label: string): string {
 	return dir;
 }
 
+/** disposal 触发体是 fire-and-forget（listener 不返回 promise；in-flight 闸释放与 notice 都在链尾）：
+ *  等一次宏任务排空该链——拒绝档的链只含微任务（不起引擎子进程），一次宏任务即确定排空。 */
+function settleTriggerBody(): Promise<void> {
+	return new Promise((resolve) => setTimeout(resolve, 0));
+}
+
 /** 随库分发面（胶囊 01）的技能名全集——可达性门夹具按此铺活副本或缓存副本。 */
 const SKILL_NAMES = ["noo-doc-standards", "noo-prose-standard", "noo-archive-agent-notes", "noo-code-review", "noo-pre-push-checks", "noo-find-simplifications", "noo-trim-cot-leakage"];
 
@@ -1291,13 +1297,23 @@ function writeFixtureGene(repoRoot: string): void {
 		const infos: string[] = [];
 		const injectCalls: Array<{ deps: string[]; callback: (scoped: unknown) => void }> = [];
 		let fakeTokenMeter: { measure(session: unknown): unknown } | undefined;
+		let fakeUserQuestions: { ask(question: unknown): Promise<unknown> } | undefined;
 		const fakeMountCtx = {
 			tools: { register: () => {} },
 			systemPrompt: { section: () => {} },
 			provide: () => {},
 			logger: () => ({ info: (m: string) => infos.push(m), warn: (m: string) => warns.push(m) }),
 			// 宿主服务读面：`ctx.get(name)`（无 inject 要求；缺席 undefined）——观察面经此懒取用。
-			get: (name: string) => (name === "tokenMeter" ? fakeTokenMeter : undefined),
+			get: (name: string) => {
+				if (name === "tokenMeter") return fakeTokenMeter;
+				if (name === "userQuestions") return fakeUserQuestions;
+				return undefined;
+			},
+			// cordis runtime fiber 语义：未进 inject 声明的服务直读属性即抛（`ctx.get` 才返回
+			// undefined）——直读提问面会让「缺席 → 只提醒」降级变成整条提醒链的一条 warn。
+			get userQuestions(): never {
+				throw new Error('cannot get property "userQuestions" without inject');
+			},
 			on: (event: string, listener: (...args: any[]) => unknown) => {
 				const list = listeners.get(event) ?? [];
 				list.push(listener);
@@ -1350,6 +1366,33 @@ function writeFixtureGene(repoRoot: string): void {
 		await preStep({ agent: unstable, turn: 1, step: 2 }, async () => ({ kind: "enter", messages: [] }));
 		assert.equal(warns.filter((m) => m.includes("token baseline unavailable")).length, 1);
 		ok("mounts: token baseline reading rides the existing pre-step listener — first step skipped; absent service preserved the budget; one reading per session; host failure degrades with one warn");
+
+		// 提问面懒取用（ADR 2026-09-13-adapter-service-read-lazy-get）：服务经 `ctx.get` 取用，
+		// 直读属性在插件 runtime fiber 上缺席即抛——直读提问面会把「缺席 → 只提醒」降级变成整条
+		// 提醒链的一条 warn（`notice` 不出）。两条腿都钉：服务经 get 在场 → 问得到 + 出提醒；
+		// 服务缺席 → 零 warn 的只提醒（不抛、不再问）。
+		fs.mkdirSync(path.join(repo, "genes-staging"), { recursive: true });
+		fs.writeFileSync(path.join(repo, "genes-staging", "alpha.json"), "{}\n");
+		const askCalls: unknown[] = [];
+		const disposed = listeners.get("agent/disposed")![0]!;
+		fakeUserQuestions = {
+			ask: (question: unknown) => {
+				askCalls.push(question);
+				return Promise.resolve({ answers: [{ id: "noo-solidify", selected: ["Remind only"] }] });
+			},
+		};
+		await disposed({ agent });
+		assert.equal(askCalls.length, 1, "提问面必须经 ctx.get 取用（直读属性在插件 fiber 上缺席即抛）");
+		await settleTriggerBody();
+		assert.equal(infos.filter((m) => m.includes("genes-staging/alpha.json")).length, 1);
+		assert.equal(warns.filter((m) => m.includes("solidify trigger failed")).length, 0);
+		fakeUserQuestions = undefined;
+		await disposed({ agent });
+		await settleTriggerBody();
+		assert.equal(askCalls.length, 1, "服务缺席不得再问");
+		assert.equal(infos.filter((m) => m.includes("genes-staging/alpha.json")).length, 2);
+		assert.equal(warns.filter((m) => m.includes("solidify trigger failed")).length, 0);
+		ok("solidify: ask path reads userQuestions via ctx.get — direct property read would throw on the plugin fiber; absent service degrades to notice-only with zero warn");
 
 		// A3：无策略决策 → next 透传（能力位在场；exec 形状 = 宿主合同冒烟，无观测语义）。
 		const passthroughMarker = { marker: true };

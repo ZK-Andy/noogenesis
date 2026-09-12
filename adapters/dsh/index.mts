@@ -5,13 +5,13 @@
  * source 形态是宿主合同，B4 ADR Decision 2），其余模块零宿主依赖，
  * adapters/dsh/selftest.mts 可脱离 DSH 直测（防火墙规则 2；selftest 机器
  * 扫描本目录 import 面强制）。
- * inject 不含 userQuestions——提问是可选能力，disposal 时对 ctx.userQuestions
- * 懒取用（cordis 对缺席的注入服务会推迟整个插件装载，声明注入反而让
- * 「提问面缺席 → 只提醒」降级不可达）。skills 同理不进 inject 声明：注册走
+ * inject 不含 userQuestions——提问是可选能力（cordis 对缺席的注入服务会推迟整个
+ * 插件装载，声明注入反而让「提问面缺席 → 只提醒」降级不可达）。可选宿主服务一律
+ * 经 `ctx.get` 取用：无 inject 要求，缺席返回 `undefined`；直读属性在插件 runtime
+ * fiber 上缺席即抛，降级路径会把整条提醒链变成一条 warn（ADR
+ * 2026-09-13-adapter-service-read-lazy-get）。skills 不进 inject 声明：注册走
  * ctx.inject(["skills"], …) 可重试路径（ADR 2026-09-12-bank-skill-provider-registration
- * Decision 1）。tokenMeter 同款懒取用——走 `ctx.get`（无 inject 要求，缺席返回
- * `undefined`；直读属性在插件 runtime fiber 上缺席即抛），读数自会话第二步记
- * 一次，见 ./token-baseline.mts。
+ * Decision 1）。tokenMeter 读数自会话第二步记一次，见 ./token-baseline.mts。
  *
  * 配置面（8 字段 + 缺省 + 失败模式）单一事实源：./README.md「配置」表；
  * 校验实现在 ./config.mts（fail-closed，selftest 直测）。
@@ -43,9 +43,13 @@ interface HostContext extends ToolHost {
 	provide(name: string, value: unknown): void;
 	on(event: string, listener: (payload: any, ...rest: any[]) => unknown): void;
 	systemPrompt: { section(section: { name: string; order: number; text: string | (() => string) }): void };
-	userQuestions?: { ask(question: { questions: Array<{ id: string; question: string; options: Array<{ label: string }> }> }): Promise<any> };
 	/** 宿主服务读取面（cordis `ctx.get`：无 inject 要求，缺席返回 `undefined`）。 */
 	get(name: string): unknown;
+}
+
+/** 可选宿主服务 `userQuestions` 的最小结构面（本层消费面 = `ask`；缺席经 `ctx.get` 返回 `undefined`）。 */
+interface UserQuestionsLike {
+	ask(question: { questions: Array<{ id: string; question: string; options: Array<{ label: string }> }> }): Promise<any>;
 }
 
 /** solidify 问答宿主决策（archive = 入档；later/null = 只提醒）。 */
@@ -68,14 +72,14 @@ function adviceMessage(lines: string[]): unknown {
 }
 
 /**
- * userQuestions 封装：disposal 时懒取用（缺席/不可用 → null → 降级只提醒）。
+ * userQuestions 封装：disposal 时经 `ctx.get` 懒取用（缺席/不可用 → null → 降级只提醒）。
  * ask 兜底 ASK_TIMEOUT_MS——应答方半存活时 ask 可能永久挂起（emitDisposed
  * 不 await listener promise，挂起不阻塞关停但闭包驻留），超时按"仅提醒"处理；
  * 迟到的真实回答被丢弃，提醒文案里已带可手跑的精确命令。
  */
 function askFactory(ctx: HostContext): (candidates: string[]) => Promise<AskDecision> {
 	return async (candidates) => {
-		const userQuestions = ctx.userQuestions;
+		const userQuestions = ctx.get("userQuestions") as UserQuestionsLike | undefined;
 		if (!userQuestions) return null;
 		let timer: ReturnType<typeof setTimeout> | undefined;
 		const timeout = new Promise((resolve) => {

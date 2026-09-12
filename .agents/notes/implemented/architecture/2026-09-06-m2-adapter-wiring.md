@@ -68,7 +68,7 @@ Noogenesis/                  ← npm 包根（真包首发时替换占位 0.0.0�
 - **schemastery Config schema**（参照件路径）：落败——多一个宿主运行时依赖；配置面 7 字段手工校验足够且 selftest 可直测。
 - **目录名 `plugin/` 单层**：落败——`adapters/dsh/` 为 P4 多 harness 留位（每宿主一薄目录），避免届时改名 churn。
 - **solidify 触发点挂 `session/flush`**：落败——flush 是压缩边界，可在会话中途发生且不保证对齐会话结束，弹问时机突兀且可能多次打扰；`agent/disposed` 是宿主保证的单次终态边界，与"会话结束盘点待入档候选"语义精确对齐。
-- **userQuestions 声明式注入（进 `inject` 清单，参照件写法）**：落败（R2-S2 实测证）——cordis 对缺席的注入服务把插件置 INACTIVE 推迟装载，声明注入反而使「提问面缺席 → 只提醒」降级不可达；改为 disposal 时对 `ctx.userQuestions` 懒取用，缺席/抛错/超时都走降级。
+- **userQuestions 声明式注入（进 `inject` 清单，参照件写法）**：落败（R2-S2 实测证）——cordis 对缺席的注入服务把插件置 INACTIVE 推迟装载，声明注入反而使「提问面缺席 → 只提醒」降级不可达；改为 disposal 时经 `ctx.get("userQuestions")` 懒取用，缺席/抛错/超时都走降级（无 inject 要求的读法单源 = [2026-09-13-adapter-service-read-lazy-get](../bug-fix/2026-09-13-adapter-service-read-lazy-get.md)）。
 
 ## Consequences
 

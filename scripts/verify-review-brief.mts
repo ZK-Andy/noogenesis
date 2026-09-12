@@ -10,6 +10,7 @@
  *     文档，gitignored）；
  *   - Scope 须带 `base:`/`head:`、非空「需深审面」清单（「无」拒绝）与「陪跑
  *     文件」行；
+ *   - 两个 ref 都须**可解析**（发射前判据）：`head` 还须钉住本仓 HEAD；
  *   - 陪跑文件（声称机器门禁已盖）⇒ 必须有「门禁自证」行且 exit 码全 0——
  *     「已盖」须由主会话实跑背书；exit 非 0 的红门禁不得列陪跑；
  *     「陪跑文件：无」免自证；
@@ -325,6 +326,30 @@ function headPinsHeadViolations(briefs: Record<string, string>, repo: string): s
   return out;
 }
 
+/** 飞行中简报声明的 base 必须可解析（**发射前判据**）：base 是笔误的全 SHA 时
+ *  `git diff base..head` 失败 → 泳道推导保守回退三条全要、闸照过——笔误无人知
+ *  （评审范围与记录随之漂移）。非 git 上下文（HEAD 不可解析）跳过——与同族范围
+ *  判据的保守回退一致。 */
+function basePinsCommitViolations(briefs: Record<string, string>, repo: string): string[] {
+  const probe = spawnSync("git", ["rev-parse", "HEAD"], { cwd: repo, encoding: "utf-8" });
+  if (probe.error !== undefined || probe.status !== 0) return [];
+  const out: string[] = [];
+  for (const lane of LANES) {
+    const p = briefs[lane];
+    if (p === undefined) continue;
+    const text = fs.readFileSync(path.join(repo, p), "utf-8");
+    const mb = BASE_RE.exec(text);
+    if (mb === null) continue;
+    const declared = mb[1]!;
+    const rr = spawnSync("git", ["rev-parse", "--verify", `${declared}^{commit}`],
+      { cwd: repo, encoding: "utf-8" });
+    if (rr.error !== undefined || rr.status !== 0) {
+      out.push(`${lane}: brief base '${declared}' is not a resolvable commit in this repo (launch-time check)`);
+    }
+  }
+  return out;
+}
+
 /** 跨所需泳道汇总全部违规（结构合规时空）。
  *
  * lanes 缺省 ⇒ 由简报自报范围的 tier 推导（FULL 需 R1/R2/R3，LIGHT 需 R2）。
@@ -336,10 +361,15 @@ function checkRepo(repo: string, lanes?: string[] | null): string[] {
   let required: string[];
   if (lanes === null || lanes === undefined) {
     if (LANES.every((l) => paths[l] === undefined)) return duplicates;
-    out = [...duplicates, ...inconsistentRangeViolations(paths, repo), ...headPinsHeadViolations(paths, repo)];
+    out = [
+      ...duplicates,
+      ...inconsistentRangeViolations(paths, repo),
+      ...basePinsCommitViolations(paths, repo),
+      ...headPinsHeadViolations(paths, repo),
+    ];
     required = lanesFromBriefRange(repo, paths);
   } else {
-    out = [...duplicates, ...headPinsHeadViolations(paths, repo)];
+    out = [...duplicates, ...basePinsCommitViolations(paths, repo), ...headPinsHeadViolations(paths, repo)];
     required = lanes;
   }
   for (const lane of required) {
@@ -674,6 +704,13 @@ function selfTest(): number {
     assertOk(anyMatch(checkRepo(repo, ["R2"]), (s) => s.includes("not a resolvable commit")),
       "fixture 14b (brief head unresolvable) should be flagged");
 
+    // fixture 15：发射前判据——base 不可解析（全 SHA 笔误）拦；可解析 base 放行
+    fs.writeFileSync(path.join(root11, "R2-a.md"), briefText("R2", "deadbeefdeadbeef", head), "utf-8");
+    assertOk(anyMatch(checkRepo(repo, ["R2"]), (s) => s.includes("brief base 'deadbeefdeadbeef' is not a resolvable commit")),
+      "fixture 15a (brief base unresolvable) should be flagged");
+    fs.writeFileSync(path.join(root11, "R2-a.md"), briefText("R2", base, head), "utf-8");
+    assertOk(checkRepo(repo, ["R2"]).length === 0, "fixture 15b (resolvable base) should pass");
+
     // 声明范围分歧 → 违约（防降级闸）
     const root12 = path.join(td, "f12");
     fs.mkdirSync(briefsDirOf(root12), { recursive: true });
@@ -692,7 +729,7 @@ function selfTest(): number {
     assertOk(printed.filter((s) => s === OUTSIDE_LANE_LABEL).length === 1,
       `fixture 13 (fallback section label present exactly once), got ${reprList(printed)}`);
 
-    console.log("verify-review-brief --self-test OK (14 fixtures: structure/self-assertion/lane-derivation/head-pin/output-fallback)");
+    console.log("verify-review-brief --self-test OK (15 fixtures: structure/self-assertion/lane-derivation/head-pin/base-pin/output-fallback)");
     return 0;
   } finally {
     fs.rmSync(td, { recursive: true, force: true });
