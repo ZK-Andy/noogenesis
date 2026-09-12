@@ -21,7 +21,7 @@ Review: FULL/2026-09-06/R1=ok R2=ok R3=ok
 2. **挂载面与守卫设计**：框架重建真正的增量设计面。口径 = **能力层全接，策略层逐件增挂、每件带判据**——适配层把 DSH 全部机器触发点接上（agent/pre-step waterfall、tool/call ordered pre、packages/hooks 桥、停止前）；每个挂载物必须回答 HERO 核心判据（「这次运行会检测出什么具体的失败？真出现了下一步会做什么不同的事？」），答不上不挂。首批挂载物只挂调研已实锤三件：技能使用守卫（②该不该用/③用了没有）、规范事前接入落点、评审实质执行记录件；提醒档（repeat-tool-reminder 类）逐件评估再挂。
 3. **工程 TS 化**：协作层重建首件实现，作为蓝图第一个验证宿主。既定约束（§2.2-6）随迁：全栈 TS、tsx 只属开发态、**钩子永远跑预构建 dist（零转译）**、门禁 DAG 并行、bash 三件退役、postinstall 自动装钩子、发布走 tsc dist。本件行使 P1 骨架 ADR D1 的语言后门（「未来可换内核不改接口」，[2026-09-05-p1-engine-skeleton](../../implemented/architecture/2026-09-05-p1-engine-skeleton.md)），并整体改写 M2 适配层「CommonJS 零依赖 / ESM 零构建链」现状口径（[2026-09-06-m2-adapter-wiring](../../implemented/architecture/2026-09-06-m2-adapter-wiring.md)）；两 ADR 现状面随重建收口批同步。
 
-**时序**：先框架（设计轮出蓝图 + 挂载面设计 → 拍板落 ADR）→ 后协作层（实现轮）。规范事前接入展开、记忆库线、技能清单补全三件排在重建后进行；技能清单「等等」项为用户输入件，不占重建道，随时可给。护栏延后三件的触发参照随之漂移：ADR [2026-09-06-guardrail-defer-trigger](../../proposed/architecture/2026-09-06-guardrail-defer-trigger.md) 的「第一个胶囊优化完成」语义 = 重建路线下的首个胶囊优化完成（护栏建设排在协作层重建收口之后），对齐随该 ADR 收口批。
+**时序**：先框架（设计轮出蓝图 + 挂载面设计 → 拍板落 ADR）→ 后协作层（实现轮）。规范事前接入展开、记忆库线、技能清单补全三件排在重建后进行；技能清单「等等」项为用户输入件，不占重建道，随时可给。护栏三件的建设排在协作层重建收口之后，其触发点「重建路线下的首个胶囊优化完成」已由 [护栏建设轮 ADR](2026-09-13-guardrail-construction-round.md) 收口。
 
 **实施载体（用户拍板 2026-09-06）：本仓原地重建**——机器层（engine / scripts / hooks / CI / npm 管线 / adapters）分批重建，资产壳（docs / .agents / journal / genes / gates.json / 事件轨）零搬迁；切换用发版断点标记（rebuild cut），不冻结仓。依据：重建触及面恰是仓内最小部分，而新仓方案要动全部资产接线（npm repository 重指、基因库仓迁移、journal/ADR 跨仓分裂）——第三次搬家无设计收益，只有搬迁成本。并存期权威归属须显式标注，切换走单批（新机器自测对账后一次删除旧机器），不长期双轨。
 

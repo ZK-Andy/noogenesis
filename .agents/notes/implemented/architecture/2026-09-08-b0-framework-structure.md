@@ -3,7 +3,7 @@
 Status: implemented
 Review: FULL/2026-09-08/R1=ok R2=ok R3=ok
 
-Related: [2026-09-06-collab-rebuild-impl](../../proposed/architecture/2026-09-06-collab-rebuild-impl.md)（五批立项，本 ADR 为 B0 批的实现轮立项与拍板拆解）；[2026-09-06-framework-rebuild-charter](2026-09-06-framework-rebuild-charter.md)（charter，先框架后协作层）；蓝图对账单源 [framework-rebuild-blueprint](../../../../docs/research/framework-rebuild-blueprint.md) §1/§2/§3 + C11/C12
+Related: [2026-09-06-collab-rebuild-impl](2026-09-06-collab-rebuild-impl.md)（五批立项，本 ADR 为 B0 批的实现轮立项与拍板拆解）；[2026-09-06-framework-rebuild-charter](2026-09-06-framework-rebuild-charter.md)（charter，先框架后协作层）；蓝图对账单源 [framework-rebuild-blueprint](../../../../docs/research/framework-rebuild-blueprint.md) §1/§2/§3 + C11/C12
 
 ## Problem
 

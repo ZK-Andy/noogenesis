@@ -3,7 +3,7 @@
 Status: implemented
 Review: FULL/2026-09-08/R1=ok R2=ok R3=ok
 
-Related: [2026-09-06-collab-rebuild-impl](../../proposed/architecture/2026-09-06-collab-rebuild-impl.md)（五批立项，本 ADR 为 B3 批实现轮）；[2026-09-08-b2-engine-adapter-ts](2026-09-08-b2-engine-adapter-ts.md)（dist 形态与 C6 归批口径）；蓝图对账单源 [framework-rebuild-blueprint](../../../../docs/research/framework-rebuild-blueprint.md) C2/C4/C6/C13 部分
+Related: [2026-09-06-collab-rebuild-impl](2026-09-06-collab-rebuild-impl.md)（五批立项，本 ADR 为 B3 批实现轮）；[2026-09-08-b2-engine-adapter-ts](2026-09-08-b2-engine-adapter-ts.md)（dist 形态与 C6 归批口径）；蓝图对账单源 [framework-rebuild-blueprint](../../../../docs/research/framework-rebuild-blueprint.md) C2/C4/C6/C13 部分
 
 ## Problem
 

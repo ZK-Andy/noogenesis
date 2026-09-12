@@ -3,7 +3,7 @@
 Status: implemented
 Review: FULL/2026-09-08/R1=ok R2=ok R3=ok
 
-Related: [2026-09-06-collab-rebuild-impl](../../proposed/architecture/2026-09-06-collab-rebuild-impl.md)（五批立项，本 ADR 为 B1 批实现轮）；[2026-09-08-b0-framework-structure](../../implemented/architecture/2026-09-08-b0-framework-structure.md)（TS 钉形与最小切片）；蓝图对账单源 [framework-rebuild-blueprint](../../../../docs/research/framework-rebuild-blueprint.md) §2 DAG 蒸馏约束 + C1 部分/C5/C6 基线
+Related: [2026-09-06-collab-rebuild-impl](2026-09-06-collab-rebuild-impl.md)（五批立项，本 ADR 为 B1 批实现轮）；[2026-09-08-b0-framework-structure](../../implemented/architecture/2026-09-08-b0-framework-structure.md)（TS 钉形与最小切片）；蓝图对账单源 [framework-rebuild-blueprint](../../../../docs/research/framework-rebuild-blueprint.md) §2 DAG 蒸馏约束 + C1 部分/C5/C6 基线
 
 ## Problem
 

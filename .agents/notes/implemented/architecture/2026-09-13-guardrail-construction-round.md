@@ -4,11 +4,11 @@ Status: implemented
 Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 
-批注（分批翻转）：第一条 Review 行 = 阻断面实现批（实现 `fde8bb9` + 评审收口 `958c728`/`9c0ce88`，R1 0B/4S、R2 0B/4S、R3 1B/8S 全采纳）。第二条 = 决定 1 建议行 + 决定 2 两本账落点批（实现 `c671ce5`/`2cd2b65` + 评审收口 `5b96da3`，R1 1B/2S、R2 1B/2S、R3 3B/9S；采纳 17 条、延后 1 条 = 延后 ADR 的终局态治理入 [HANDOFF-todos](../../../../HANDOFF-todos.md)（D）条）。
+批注（分批翻转）：第一条 Review 行 = 阻断面实现批（实现 `fde8bb9` + 评审收口 `958c728`/`9c0ce88`，R1 0B/4S、R2 0B/4S、R3 1B/8S 全采纳）。第二条 = 决定 1 建议行 + 决定 2 两本账落点批（实现 `c671ce5`/`2cd2b65` + 评审收口 `5b96da3`，R1 1B/2S、R2 1B/2S、R3 3B/9S；采纳 17 条、延后 1 条 = ADR 终局态治理入 [HANDOFF-todos](../../../../HANDOFF-todos.md)（D）条）。
 
 ## Problem
 
-护栏三件（`dsh-token-meter` 真测量层 / 严格改进正向度量 / canary 进程隔离）的归口与触发点原以 [2026-09-06-guardrail-defer-trigger](../../proposed/architecture/2026-09-06-guardrail-defer-trigger.md)（下称延后 ADR）单源。触发点「首个胶囊优化完成」的验收口径已由 [2026-09-10-optimization-round-closure](../../implemented/process/2026-09-10-optimization-round-closure.md) 定义为三条件并兑现，本 ADR 即该触发点到达后的立项讨论轮产出：逐件拍板接入形态与验收口径。
+护栏三件（`dsh-token-meter` 真测量层 / 严格改进正向度量 / canary 进程隔离）的归口与触发点 = 本 ADR。触发点「首个胶囊优化完成」的验收口径已由 [2026-09-10-optimization-round-closure](../../implemented/process/2026-09-10-optimization-round-closure.md) 定义为三条件并兑现，本 ADR 即该触发点到达后的立项讨论轮产出：逐件拍板接入形态与验收口径。
 
 立项前复测三件的真实暴露面（本机实测，2026-09-13）：
 
@@ -43,7 +43,7 @@ Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 
 1. 常驻注入面存在机器判据，且该判据由 pre-push 与 CI 实跑（非仅本地手跑）。
 2. 判据对「新增知识抬高常驻基线」的失败形态实测能拦——实现轮须给具异常样例（超预算的注入面文本）与失败输出。
-3. [主设计](../../../../docs/research/dsh-swarm-evolution-framework-design.md) §6/§11 三处 API 名与延后 ADR 的「API 漂移」条同步为实测口径。
+3. [主设计](../../../../docs/research/dsh-swarm-evolution-framework-design.md) §6/§11 三处 API 名同步为实测口径。
 4. 两本账有可回填的落点（评审账与发版账各一处指针），且不需要新工具即能手动回填。
 
 ## Alternatives considered
@@ -52,7 +52,7 @@ Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 - **只冻结 `BASE_SECTION`、不设命中节预算**：落败——可变面恰在命中节的上界（`maxIndexGenes` 与单价常量可调大），基因库增长本身已被行封顶与逐行截断兜住；只冻结常量基线等于对着不动的量立闸。
 - **把 token 判据做进 `engine/` 的 gene evaluate 白名单**：落败——engine 零第三方依赖是骨架拍板；把估算器搬进 engine 既违依赖纪律，也让「本仓改写一下就能过闸」的判据失去独立刻度（评估者与被执行者同源）。
 - **立数值改进评分**：落败——分值在架构域无金标，且会诱导为分值优化（改写作风格刷分），与 §7.1 第 3 条直接冲突。
-- **canary 延后而非判不立**：落败——「延后」语义要求触发点可判定；本件缺失的是观察对象而非时机，留延期标签只会让归口失真（延后 ADR 自身即为「归口失真」这一缺陷的修复件）。
+- **canary 延后而非判不立**：落败——「延后」语义要求触发点可判定；本件缺失的是观察对象而非时机，留延期标签只会让归口失真。
 - **三件全延后到有真实回归样本再建**：落败——token 基线面的缺口已有实证形态（命中节上界无闸），不是想象的投资对象。
 
 ## Consequences
@@ -60,9 +60,9 @@ Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 - **正面**：常驻注入面获得与 doc-budgets 同族的机器判据，且落在 pre-push 与 CI 实跑的既有自测里；`ctx.tokenMeter` 由「延后的测量层」转为在环观察面，主体形状已实测（服务在场、API 名、返回值形状）。
 - **负面（自诺的账）**：token 基线不是真测量——4 字符启发式对 CJK 与 JSON schema 系统性低估（包 README「已知限制」自陈），阈值语义是「注入面字符预算」而非「模型侧 token」。该自诺的落账 = 本件实现落账节的成本模型（字符口径，无 token 换算）。
 - **依赖与环境**：建议行的接线依赖 tokenMeter 在场（本 profile 已实测在场），缺席时静默降级为不写行——不阻断 prompt 组装，也不改工具面。
-- **API 漂移残留风险**：实测版本为 `0.1.5-rc.2`（延后 ADR 记 0.1.2-rc.1）；漂移通道 = 运行期形状闸（`surfaceTokens` 非数值或 `measure` 抛错 → 每会话一条 warn，不静默降级）；类型契约断言待 host peer 集升代后补（理由与触发条见「决定 1 建议行的实现落账」勘误）。
+- **API 漂移残留风险**：实测版本为 `0.1.5-rc.2`；漂移通道 = 运行期形状闸（`surfaceTokens` 非数值或 `measure` 抛错 → 每会话一条 warn，不静默降级）；类型契约断言待 host peer 集升代后补（理由与触发条见「决定 1 建议行的实现落账」勘误）。
 - **未覆盖缺口（显式接受）**：两本账无门槛 → 「评审通过但效用为负」的批次只能事后观察，不能事前拒绝；记录本身不构成护栏。
-- **流程归口**：三处归口已随本 ADR 收口同步——延后 ADR 的「触发点到达」条款指向本件、[2026-09-05-p1-engine-skeleton](../../implemented/architecture/2026-09-05-p1-engine-skeleton.md)「遗留面」三件护栏（含 canary，原写「等 M2 常驻形态」）已改指本件终局、[framework-rebuild-blueprint](../../../../docs/research/framework-rebuild-blueprint.md) 的 token 基线归口行由「非协作层七层事」改为指向本件（阻断面已落适配层）。
+- **流程归口**：三处归口已随本 ADR 收口同步——[2026-09-05-p1-engine-skeleton](../../implemented/architecture/2026-09-05-p1-engine-skeleton.md)「遗留面」三件护栏（含 canary，原写「等 M2 常驻形态」）已改指本件终局、[framework-rebuild-blueprint](../../../../docs/research/framework-rebuild-blueprint.md) 的 token 基线归口行由「非协作层七层事」改为指向本件（阻断面已落适配层）。
 
 ## 决定 1 的实现落账（2026-09-13）
 

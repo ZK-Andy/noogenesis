@@ -3,7 +3,7 @@
 Status: implemented
 Review: FULL/2026-09-08/R1=ok R2=ok R3=ok
 
-Related: [2026-09-06-collab-rebuild-impl](../../proposed/architecture/2026-09-06-collab-rebuild-impl.md)（五批立项，本 ADR 为 B2 批实现轮）；[2026-09-08-b1-gates-ts](2026-09-08-collab-rebuild-b1-gates-ts.md)（B1 双轨先例与对账口径）；[2026-09-06-framework-rebuild-charter](2026-09-06-framework-rebuild-charter.md)（charter：机器层分批重建、单批切换）
+Related: [2026-09-06-collab-rebuild-impl](2026-09-06-collab-rebuild-impl.md)（五批立项，本 ADR 为 B2 批实现轮）；[2026-09-08-b1-gates-ts](2026-09-08-collab-rebuild-b1-gates-ts.md)（B1 双轨先例与对账口径）；[2026-09-06-framework-rebuild-charter](2026-09-06-framework-rebuild-charter.md)（charter：机器层分批重建、单批切换）
 
 ## Problem
 
