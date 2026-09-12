@@ -16,7 +16,7 @@ Review: pending
 - 定向实例（session `030e02dd`，cwd = desktop 仓根）：目录 = 该仓自有的 6 件 `dsh-*`；agent step 1 自载正确技能，step 44/47 因**本插件注入的提醒**去载 `noo-archive-agent-notes` / `noo-doc-standards` → `Error: skill … is unknown or no longer available`，退回它已载的 `dsh-*`。
 - 缓存与 provider 代码都不构成原因：`<desktop 仓>/.noogenesis/genes-cache` 自 2026-09-06 在位、2026-09-11 刷新；用装包 `noogenesis-dsh@0.2.4` 的 `createBankSkillProvider().list({cwd: desktop 仓根})` 实跑返回全部 7 件。
 
-**机制（探针实测）**：装载期 `apply()` 里一次性读 `ctx.skills`——该服务此时点尚未到场时，cordis 代理抛 `cannot get property "skills" without inject`，被注册件的 catch 吞成一条 warn 后**永不重试**（探针 A2）；服务若已在场则同一读取成功（探针 A）。病因是**时序**：注册点早于 skills 服务就位，且注册路径没有重试。
+**机制**：装载期 `apply()` 里一次性读 `ctx.skills`——该服务此时点尚未到场时，cordis 代理抛 `cannot get property "skills" without inject`，被注册件的 catch 吞成一条 warn 后**永不重试**（探针 A2 实测）；服务若已在场则同一读取成功（探针 A 实测）。**宿主侧「apply 早于 skills 服务就位」为【推断 · 未证】**——支撑 = 自举仓之外 199/199 + 11/11 会话目录 `noo-*`=0、缓存与 provider 代码均正常、夹具里服务恒在场；缺的直证 = 宿主装载期的 warn 日志或 scratch profile 证伪判据（sandbox 内 `--dump-config` 被 EROFS 拒绝，未取得）。
 
 **二次缺陷（用户可见错误的直接来源）**：提醒面（A2「任务型技能」行 + `config.skillGuards` 缺省表）只判「仓里有没有技能文件」，不判这些名字是否进了宿主 catalog；外仓里被点名的技能必然载不到。
 
@@ -47,7 +47,7 @@ Review: pending
 
 ## Evidence
 
-**注册时序探针（真 cordis 4.0.2，仓内 devDependency；5 场景各 1 次，确定性机制演示）**：
+**注册时序探针（真 cordis 4.0.2，仓内 devDependency；5 场景各 1 次【探索性 n=1】——机制演示，非统计结论）**：
 
 | 场景 | 结果 |
 |---|---|

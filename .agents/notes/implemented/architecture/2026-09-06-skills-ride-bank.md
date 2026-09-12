@@ -16,7 +16,7 @@ Review: FULL/2026-09-06/R1=ok R2=ok R3=ok
 
 **胶囊保持纯机器面；技能作为内容随基因库（bank）走，经缓存进 DSH 技能面。** 六项拍板：
 
-1. **接线形态**：新增 `adapters/dsh/skill-provider.mjs`（badge 式极简 provider，零宿主依赖），在 `apply()` 内经 `ctx.skills.registerProvider` 注册。`list` **动态**：每次 lookup 以 `options.cwd` 走四级回退链（复用 `resolveRepoRoot`）逐次解析 repoRoot，技能目录 = `<repoRoot>/.noogenesis/genes-cache/.agents/skills/`（引擎 pull 已整仓浅克隆，零引擎改动）；缓存缺席（ENOENT）→ 空数组静默降级，其余读错误 warn 留痕仍空面（与 geneBankUrl 的 warn 降级语义同构）。注册返回 `invalidate` 钩子（留持宿主 SkillProviderControl——宿主按 cwd/scope/revision 缓存 list 结果，revision 仅 invalidate/dispose bump）：pull 成功落地后由 `index.mjs` 调用，pull 前已被 list 过的 cwd 无需重启会话即重发现技能面。
+1. **接线形态**：新增 `adapters/dsh/skill-provider.mjs`（badge 式极简 provider，零宿主依赖），在 `apply()` 内经 `ctx.inject(["skills"], …)` 登记注册回调（服务晚到补注册；见交付更正句与[注册时序 ADR](../bug-fix/2026-09-12-bank-skill-provider-registration.md) Decision 1）。`list` **动态**：每次 lookup 以 `options.cwd` 走四级回退链（复用 `resolveRepoRoot`）逐次解析 repoRoot，技能目录 = `<repoRoot>/.noogenesis/genes-cache/.agents/skills/`（引擎 pull 已整仓浅克隆，零引擎改动）；缓存缺席（ENOENT）→ 空数组静默降级，其余读错误 warn 留痕仍空面（与 geneBankUrl 的 warn 降级语义同构）。注册返回 `invalidate` 钩子（留持宿主 SkillProviderControl——宿主按 cwd/scope/revision 缓存 list 结果，revision 仅 invalidate/dispose bump）：pull 成功落地后由 `index.mjs` 调用，pull 前已被 list 过的 cwd 无需重启会话即重发现技能面。
 2. **rank = 600**（bundled 标准位，常量本地定义不引 `dsh-skill` 依赖）：用户根（400/500）与项目根（100/200）同名技能均可遮蔽胶囊技能——零抢占；self-hosting 时本仓活副本（200）恒赢，现状不变。技能名 `noo-*` 前缀即名字空间。
 3. **技能正文蒸馏改写（单源一次）**：7 技能改写为「通用方法论层 + 显式参照实现层」——本仓路径保留但降格为参照实现指针（缓存全仓镜像保证可解析），**实例专属输入处**（如 doc-budgets 的 manifest 是心源仓实例）注明参照实现口径，通用机器闸引用由每技能头部「宿主口径」行统一兜底。**不维护两份正文**：活副本 = 包外缓存副本 = 同一文件，逐字节搬运上游技能的死链教训与双源漂移教训同时规避。
 4. **不烘焙种子技能**：装包后技能面随 pull 到位——pull 成功即 invalidate 刷新（空窗 = pull 时长）；pull 未成功前技能面为空（正常降级），README 明示（evolver 内置种子基因的静态模式不学——内容随库动态走是本拍板的反面）。
