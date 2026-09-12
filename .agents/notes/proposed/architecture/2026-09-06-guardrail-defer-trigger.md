@@ -21,6 +21,7 @@ P1 骨架 ADR（[2026-09-05-p1-engine-skeleton](../../implemented/architecture/2
 - 遗留面其余项**不在本拍板内**（非护栏）：js-yaml 例外权 + YAML 迁移器（书写卫生）、Detect 信号源（D2 禁区，行为面）——维持各自归口，对账余项见 HANDOFF-todos；流程卡「谁来喂信号」增强已落地（session-open 卡喂信号条，2026-09-06，不再是对账余项）。
 - 设计稿 §6/§11 三处 API 名修正随护栏建设轮执行（以实测导出 `measure` / `estimateMessage` 为准）。
 - 触发点到达时走立项讨论轮：逐件拍板（接入形态、验收口径、与 doc-budgets 两层口径的关系），再进实现轮。
+- **终局处置（2026-09-13）**：本提案已被 [护栏建设轮 ADR](2026-09-13-guardrail-construction-round.md) 完全兑现（三件逐条拍板），本件不再有追随意向；保留为**已消耗的提案记录**，其存在的价值 = 护栏三件的原始清单、暴露面与「归口失真」这一被修缺陷。触发参照与终局结论以该件为准。
 - **触发点已到达（2026-09-13）**：[2026-09-13-guardrail-construction-round](2026-09-13-guardrail-construction-round.md) 即该立项讨论轮的产出（三件逐条拍板；token 基线改两轨、改进度量与 canary 判不立）——本 ADR 的触发条款由该件收口时同步。
 
 ## Alternatives considered

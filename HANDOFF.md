@@ -11,7 +11,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-13｜**护栏建设轮实现批（决定 1 落地）**：常驻注入字面预算判据入 `section.mts` + `config.mts` 装载期拒收；实测**预算 2048 会把已发布缺省 12 行判违约** → 改「由缺省推导 + 装载期自洽断言」；selftest 5 条断言；设计稿三处 API 名同步。README 已同步（配置表 + 双节条）。
+- 2026-09-13｜**护栏建设轮实现批（决定 1 落地）**：常驻注入字面预算判据入 `section.mts` + `config.mts` 装载期拒收；实测**预算 2048 会把已发布缺省 12 行判违约** → 改由缺省推导；selftest 6 条断言；设计稿/blueprint token-meter 归口同步。README 已同步。
 - 2026-09-13｜**护栏建设轮立项讨论轮**：三题拍板 = token 基线两轨 / 改进度量两本账 / canary 判不立；[立项 ADR](.agents/notes/proposed/architecture/2026-09-13-guardrail-construction-round.md)，[延后 ADR](.agents/notes/proposed/architecture/2026-09-06-guardrail-defer-trigger.md) 触发条已标到达（提交锚见日志）。
 - 2026-09-13｜**0.2.6 真机复验（零仓变更）**：外仓 desktop 与 dsh-frecency 新会话目录均含 7 件 `noo-*`（活副本零、缓存 7 件 → 来源 = `noogenesis-bank`）；A2 路标行与 A3 提醒只点名可达集，dsh-frecency 实任务会话提醒→载入成功、零 `unknown`、零诊断 warn。todos (B) 翻 x。
 - 2026-09-13｜**0.2.6 发版（release-flow 第三次实走）**：npm latest 0.2.6（tag `dsh-v0.2.6`，指向版本面 `ad2e549`）+ 双语 Release Latest；bump `a43c63c`；[实发节](.agents/notes/implemented/process/2026-09-09-release-shape-alignment.md)；CI run `34706452446` 绿。README 已同步。

@@ -41,11 +41,19 @@ export const HIT_LINE_COST_CHARS = HIT_LINE_MAX_CHARS + HIT_LINE_OVERHEAD_CHARS;
 export const DEFAULT_MAX_INDEX_GENES = 12;
 
 /**
- * 命中节的常量开销（`hitsSectionText` 的固定前缀 46 字符 + 溢出提示行
- * 27 字符，逐字实测）。解析失败降级为空节等路径只减少字符，故它恒是本项的
- * **上界**；selftest 以实渲染长度对预算复核，漂移即红。
+ * 溢出提示行里命中总数的位数上界（`(+<total-maxGenes> more)`）。提示行随命中
+ * 总数变化，故它必须是**具名上界常量**而非"恒足够大"的假设：目前无仓逼近
+ * 8 位（一亿件基因）。
  */
-const HITS_SECTION_FIXED_CHARS = 73;
+const HITS_OVERFLOW_COUNT_DIGITS = 8;
+
+/**
+ * 命中节的常量开销（`hitsSectionText` 的固定前缀 46 字符 + 溢出提示行
+ * `\n(+… more — refine signals)` 34 字符，逐字实测 + 上表位数上界）。解析失败
+ * 降级为空节等路径只减少字符，故它恒是**本项上界**；selftest 以实渲染长度
+ * （含溢出行）对预算复核，漂移即红。
+ */
+const HITS_SECTION_FIXED_CHARS = 46 + 26 + HITS_OVERFLOW_COUNT_DIGITS;
 
 /**
  * 命中节可配行数的上界（导出即判据与自测的共用阈值，防两处各推一遍）：

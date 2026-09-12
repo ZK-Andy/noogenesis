@@ -208,7 +208,7 @@ DSH 的官方设计哲学（[Everything is a plugin](https://www.deepseek.com/ha
 3. **只修异常、不修低分**：门禁失败才重试；绝不为弱评分者/自报分过拟合。（JIT）
 4. **保守入档 / 前沿单调不降**：只有"严格改进且无回归"才进库。（JIT、EvoMap 本地引擎）
 5. **答案盲选择**：候选比较绝不用金标，用 logprob/judge/独立执行；防泄漏。（JIT）
-6. **多目标 + 奖励门控 + token 基线不变量**：防单维刷分；**任何演化不得抬高常驻 token 基线**（用 `dsh-token-meter` 度量），否则视为回归拒绝。（GEPA、JIT、我们的"别变臃肿"）
+6. **多目标 + 奖励门控 + token 基线不变量**：防单维刷分；**任何演化不得抬高常驻 token 基线**（阻断面 = 适配层常驻注入字面预算判据，装载期 fail-closed；`dsh-token-meter` 提供宿主侧观察读数），否则视为回归拒绝。（GEPA、JIT、我们的"别变臃肿"）
 
 ### 7.2 具体机制
 
@@ -221,7 +221,7 @@ DSH 的官方设计哲学（[Everything is a plugin](https://www.deepseek.com/ha
 
 ### 7.3 为什么这套在 DSH 上成立
 
-- **`dsh-token-meter`** 原生提供 token 度量源 → "token 基线"不是估算而是可测。
+- **`dsh-token-meter`** 原生提供 token 度量源 → 宿主侧基线读数可测；常驻注入的**阻断面**用我们自己渲染节的字面预算（同为该不变量的刻度，且不受宿主 persona 注入稀释）。
 - **`dsh-invariants`** 原生提供机械不变量 → "别变臃肿 / 别违反契约"可机器强制。
 - **`subagent/*`** 原生提供子代理执行/委托 seam → "子代理自动跑"不是自建。
 - **`command/run` + `tool/result`** 提供命令与工具结果钩子 → "合并/演化边界"可注入自校验。
@@ -341,7 +341,7 @@ DSH 的官方设计哲学（[Everything is a plugin](https://www.deepseek.com/ha
 ## 12. 路线图（分阶段）
 
 1. **P0（本设计）**：定 Gene/Capsule/Event Schema + 最小可信护栏清单；把既有方法论资产（AGENTS/ADR/流程卡/verify）协议化成首批基因。
-2. **P1 局部闭环**：演化引擎（Detect→…→Solidify）+ 验证闸 + as-needed 懒加载，完全本地/离线可用；token 基线不变量落地（用 dsh-token-meter）。
+2. **P1 局部闭环**：演化引擎（Detect→…→Solidify）+ 验证闸 + as-needed 懒加载，完全本地/离线可用；token 基线不变量落地（常驻注入字面预算判据；token-meter 作观察面）。
 3. **P2 集体共享**：git 基因库 + CI 验证闸；跑通"贡献→CI→合入→pull 复用"闭环。观测透镜（2026-09-06 拍板后置，见 ADR `2026-09-06-p2-shared-consumer` D3；只读消费起步已落地——本仓即库）。
 4. **P3 元演化**：蒸馏（失败→gene）/ 组合（capsule）/ 策略自身可搜索 / 长程递归演化。
 5. **P4 发布**：一行安装、插件市场分发、多 harness 适配（借 superpowers 分发范式）。
@@ -353,7 +353,7 @@ DSH 的官方设计哲学（[Everything is a plugin](https://www.deepseek.com/ha
 **风险**
 - 演化方向失控 / 单文化（EvoMap 教训）→ 观测 + 保守入档 + 多目标门控 + AVOID 保留失败面；把观测当信号不作积分。
 - 验证被逃逸 / 空洞 → 机器可复现执行验证 + 白名单 + 独立评审者分离 + CI 复验（Behind EvoMap 教训）。
-- token 膨胀 → `dsh-token-meter` 基线不变量 + as-needed 懒加载。
+- token 膨胀 → 常驻注入字面预算判据（阻断面）+ `dsh-token-meter` 基线读数（观察面）+ as-needed 懒加载。
 - 集体层信任 → 不用积分/自报；git+CI 机器闸；维护者仲裁。
 
 **未决问题（需拍板）**

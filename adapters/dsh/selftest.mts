@@ -189,13 +189,19 @@ function writeFixtureGene(repoRoot: string): void {
 	}
 	ok(`resident budget: every repo gene ref (${refs.length}) fits MAX_HIT_REF_CHARS=${MAX_HIT_REF_CHARS}`);
 
-	// 渲染面：上界行数 × 上界行宽 + 固定开销（用模块自己导出的常量构造，
-	// 不另抄公式）仍在预算内；逐行截断保证单行不越上界。
-	const worstLines = Array.from({ length: MAX_HIT_LINES }, (_, i) => `${"r".repeat(MAX_HIT_REF_CHARS)}${i}  ${"字".repeat(400)}`).join("\n");
-	const renderedWorst = hitsSectionText({ stdout: `signals: x\n${worstLines}\n` }, { maxGenes: MAX_HIT_LINES });
-	assert.ok(renderedWorst.length <= HITS_SECTION_CHAR_BUDGET, `worst-case hits section (${renderedWorst.length}) must stay within budget ${HITS_SECTION_CHAR_BUDGET}`);
-	assert.equal(renderedWorst.split("\n").filter((line) => line.endsWith("…")).length, MAX_HIT_LINES, "every capped line carries a truncated summary");
-	ok(`resident budget: worst-case render (${MAX_HIT_LINES} lines × oversized ref + summary) stays within budget ${HITS_SECTION_CHAR_BUDGET}`);
+	// 渲染面：两条最坏路径都要 ≤ 预算——① 恰好上界行数（无溢出行）；
+	// ② 命中远超上界（触发溢出行，含其位数）。声明上界必须两条都盖住证据。
+	const worstLine = (i: number) => `${"r".repeat(MAX_HIT_REF_CHARS)}${i}  ${"字".repeat(400)}`;
+	const atCeiling = Array.from({ length: MAX_HIT_LINES }, (_, i) => worstLine(i)).join("\n");
+	const renderedAtCeiling = hitsSectionText({ stdout: `signals: x\n${atCeiling}\n` }, { maxGenes: MAX_HIT_LINES });
+	assert.ok(renderedAtCeiling.length <= HITS_SECTION_CHAR_BUDGET, `ceiling render (${renderedAtCeiling.length}) must stay within budget ${HITS_SECTION_CHAR_BUDGET}`);
+	assert.equal(renderedAtCeiling.split("\n").filter((line) => line.endsWith("…")).length, MAX_HIT_LINES, "every capped line carries a truncated summary");
+	const overflowExtra = 100;
+	const overflowing = Array.from({ length: MAX_HIT_LINES + overflowExtra }, (_, i) => worstLine(i)).join("\n");
+	const renderedOverflow = hitsSectionText({ stdout: `signals: x\n${overflowing}\n` }, { maxGenes: MAX_HIT_LINES });
+	assert.ok(renderedOverflow.includes("more — refine signals"), "overflow note must be present in the overflow fixture");
+	assert.ok(renderedOverflow.length <= HITS_SECTION_CHAR_BUDGET, `overflow render (${renderedOverflow.length}) must stay within budget ${HITS_SECTION_CHAR_BUDGET}`);
+	ok(`resident budget: worst-case renders (ceiling ${renderedAtCeiling.length} / overflow ${renderedOverflow.length}) stay within budget ${HITS_SECTION_CHAR_BUDGET}`);
 
 	// 真实违约路径：配置侧把行数调过闸即在装载期被拒收。
 	assert.throws(() => validateConfig({ maxIndexGenes: MAX_HIT_LINES + 1 }), /resident section budget/);
