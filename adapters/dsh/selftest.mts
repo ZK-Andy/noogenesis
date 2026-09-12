@@ -34,7 +34,7 @@ import { buildPullArgs, pullBankOnce, createBankPullScheduler } from "./bank-pul
 import { BUNDLED_SKILL_RANK, PROVIDER_NAME, createBankSkillProvider, parseSkillFile, registerBankSkills } from "./skill-provider.mjs";
 import { validateConfig, DEFAULT_GENE_BANK_URL } from "./config.mjs";
 import { createSessionStore, mergePreStep, mergeSessionStart, mergeToolPost, mergeToolPre } from "./mount.mjs";
-import { createMountPolicies, createSubtreeRulesPolicies, SKILL_DIR_CANDIDATES } from "./mount-policies.mjs";
+import { createMountPolicies, createSubtreeRulesPolicies, inspectSkillSurface, SKILL_DIR_CANDIDATES } from "./mount-policies.mjs";
 import { createLintFeedbackPolicies } from "./lint-feedback.mjs";
 import type { LintDiagnostic, LintRunContext } from "./lint-feedback.mjs";
 import { createExportDocsPolicies } from "./export-docs-feedback.mjs";
@@ -56,6 +56,9 @@ function tempRepo(label: string): string {
 	execFileSync("git", ["init", "-q"], { cwd: dir });
 	return dir;
 }
+
+/** 随库分发面（胶囊 01）的技能名全集——可达性门夹具按此铺活副本或缓存副本。 */
+const SKILL_NAMES = ["noo-doc-standards", "noo-prose-standard", "noo-archive-agent-notes", "noo-code-review", "noo-pre-push-checks", "noo-find-simplifications", "noo-trim-cot-leakage"];
 
 const FIXTURE_GENE = {
 	id: "demo-hit",
@@ -691,29 +694,88 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.match(blockWarns.join("\n"), /unreadable/);
 	ok("skills: non-ENOENT read error → warn + empty surface; ENOENT stays silent");
 
-	// 接线：宿主 skills 面缺席 → 降级 {ok:false}；在场 → 注册成功 + invalidate 钩子
-	assert.equal(registerBankSkills({}, { logger: { warn() {} } }).ok, false);
+	// 接线（ADR Decision 1）：注册走 ctx.inject(["skills"], …) 可重试路径——服务
+	// 装载前在场即注册；晚到则到场补注册；ctx.inject / skills / registerProvider
+	// 三态缺席或抛错各自 warn 留痕，且都不抛（不阻塞装载）。
+	assert.equal(registerBankSkills({}, { logger: { warn() {} } }).isRegistered(), false);
+	assert.equal(registerBankSkills({ inject: () => { throw new Error("no injection"); } }, { logger: { warn() {} } }).isRegistered(), false);
+
 	const invalidated: number[] = [];
 	let created: ReturnType<typeof createBankSkillProvider> | undefined;
-	const fakeSkillsCtx = {
-		skills: {
-			registerProvider: (create: (control: { invalidate: () => void }) => ReturnType<typeof createBankSkillProvider>) => {
-				const control = { signal: new AbortController().signal, invalidate: () => invalidated.push(1) };
-				created = create(control);
-			},
+	let providerCalls = 0;
+	const fakeSkills = {
+		registerProvider: (create: (control: { invalidate: () => void }) => ReturnType<typeof createBankSkillProvider>) => {
+			providerCalls += 1;
+			const control = { signal: new AbortController().signal, invalidate: () => invalidated.push(1) };
+			created = create(control);
 		},
 	};
-	const wired = registerBankSkills(fakeSkillsCtx, { config: { repoRoot: repo }, logger: { warn() {} } });
-	assert.equal(wired.ok, true);
+	// 服务晚到：装载时回调只登记，skills 到场后才注册（宿主装载顺序不可依赖）。
+	let lateCallback: ((scoped: { skills?: typeof fakeSkills }) => void) | undefined;
+	const lateDeps: string[][] = [];
+	const lateWired = registerBankSkills(
+		{
+			inject: (deps: string[], callback: (scoped: { skills?: typeof fakeSkills }) => void) => {
+				lateDeps.push(deps);
+				lateCallback = callback;
+			},
+		},
+		{ config: { repoRoot: repo }, logger: { warn() {} } },
+	);
+	assert.deepEqual(lateDeps, [["skills"]], "registration waits on the skills service only");
+	assert.equal(lateWired.isRegistered(), false, "not registered before the service arrives");
+	assert.ok(lateCallback);
+	lateCallback({ skills: fakeSkills });
+	assert.equal(lateWired.isRegistered(), true, "late service arrival registers the provider");
 	assert.ok(created);
 	assert.equal(created.name, PROVIDER_NAME);
 	const createdList = await created.list({});
 	const createdFirst = createdList[0];
 	assert.ok(createdFirst);
 	assert.equal(createdFirst.name, "alpha-skill");
-	wired.invalidate();
+	assert.equal(createdFirst.provider, PROVIDER_NAME);
+	lateWired.invalidate();
 	assert.equal(invalidated.length, 1);
-	ok("skills: registerBankSkills — absent host service degrades; invalidate hook bumps host catalog after pull");
+
+	// 服务已在场：回调同步跑 → 立即注册；重复注册不叠加（每次注入一次注册调用）。
+	let syncCallback: ((scoped: { skills?: typeof fakeSkills }) => void) | undefined;
+	const syncWired = registerBankSkills(
+		{ inject: (_deps: string[], callback: (scoped: { skills?: typeof fakeSkills }) => void) => { syncCallback = callback; callback({ skills: fakeSkills }); } },
+		{ config: { repoRoot: repo }, logger: { warn() {} } },
+	);
+	assert.equal(syncWired.isRegistered(), true, "service already present → registered during apply");
+	assert.ok(syncCallback);
+	assert.equal(providerCalls, 2);
+	// skills 服务在而 registerProvider 缺席 / 注册抛错 → warn 留痕 + isRegistered false。
+	const absentWarns: string[] = [];
+	const absentWired = registerBankSkills({ inject: (_deps: string[], callback: (scoped: { skills?: Record<string, never> }) => void) => callback({ skills: {} }) }, { logger: { warn: (m) => absentWarns.push(m) } });
+	assert.equal(absentWired.isRegistered(), false);
+	assert.match(absentWarns.join("\n"), /host skills service absent/);
+	const throwWarns: string[] = [];
+	const throwWired = registerBankSkills(
+		{ inject: (_deps: string[], callback: (scoped: { skills?: { registerProvider: () => void } }) => void) => callback({ skills: { registerProvider: () => { throw new Error("catalog busy"); } } }) },
+		{ logger: { warn: (m) => throwWarns.push(m) } },
+	);
+	assert.equal(throwWired.isRegistered(), false);
+	assert.match(throwWarns.join("\n"), /registration skipped \(catalog busy\)/);
+	ok("skills: registerBankSkills — retryable ctx.inject path (already-present / late / absent / throwing host); invalidate hook bumps host catalog after pull");
+
+	// 来源可区分：缓存单通道仓里 provider 只服务缓存件（活副本无关），candidate 带
+	// bank provider 名与 rank 600——「7 件在位」这类目录计数判据区分不了来源。
+	{
+		const sourceRepo = tempRepo("bank-skills-source");
+		const liveDir = path.join(sourceRepo, ".agents", "skills", "live-only-skill");
+		fs.mkdirSync(liveDir, { recursive: true });
+		fs.writeFileSync(path.join(liveDir, "SKILL.md"), "---\nname: live-only-skill\ndescription: live workspace copy\n---\nlive\n");
+		const cacheDir = path.join(sourceRepo, ".noogenesis", "genes-cache", ".agents", "skills", "bank-only-skill");
+		fs.mkdirSync(cacheDir, { recursive: true });
+		fs.writeFileSync(path.join(cacheDir, "SKILL.md"), "---\nname: bank-only-skill\ndescription: rides the bank cache\n---\nbank\n");
+		const fromBank = await createBankSkillProvider({}).list({ cwd: sourceRepo });
+		assert.deepEqual(fromBank.map((item) => item.name), ["bank-only-skill"]);
+		assert.equal(fromBank[0]!.provider, PROVIDER_NAME);
+		assert.equal(fromBank[0]!.rank, BUNDLED_SKILL_RANK);
+		ok("skills: source discrimination — bank provider serves cache skills only (live workspace copy is a different provider)");
+	}
 
 	// e2e：真实引擎 pull（bank 仓带 .agents/skills）→ provider 从缓存命中技能
 	const bankWithSkills = tempRepo("bank-skills-e2e");
@@ -831,18 +893,38 @@ function writeFixtureGene(repoRoot: string): void {
 		assert.ok(!noPointerAdvice.lines.some((line) => line.includes("architecture-standards")));
 		ok("mounts: M2 — opening map once per session (subagent skipped; empty map suppressed; pointer line gated on file presence)");
 
-		// 技能路标行（M1 守卫①）：技能面在场（任一候选目录含 noo-*）才发行——缺席仓零噪音。
-		// 两候选目录（活副本 / 随库缓存）同源循环，夹具仅目录路径不同。
-		for (const skillDir of SKILL_DIR_CANDIDATES) {
-			const withSkills = tempRepo(`mount-m2-skills-${skillDir.replace(/[/.]/g, "-")}`);
-			fs.mkdirSync(path.join(withSkills, skillDir, "noo-doc-standards"), { recursive: true });
-			fs.writeFileSync(path.join(withSkills, skillDir, "noo-doc-standards", "SKILL.md"), "# skill\n");
-			const skillsAdvice = createSubtreeRulesPolicies({ repoRoot: withSkills }).preStep({ agent: { session: { header: { cwd: withSkills } } }, turn: 1, step: 1 });
-			assert.ok(skillsAdvice && skillsAdvice.kind === "advice");
-			assert.equal(skillsAdvice.lines.filter((line) => line.startsWith("- Task-matched skills")).length, 1);
-			assert.match(skillsAdvice.lines.at(-1)!, /noo-doc-standards/);
+		// 技能路标行（M1 守卫①）：两条交付通道分别判可达——活副本通道恒计，随库缓存
+		// 通道只在 provider 注册成功后计；行内只点名可达技能，零可达不发行。
+		{
+			const live = tempRepo("mount-m2-skills-live");
+			fs.mkdirSync(path.join(live, SKILL_DIR_CANDIDATES[0], "noo-doc-standards"), { recursive: true });
+			fs.writeFileSync(path.join(live, SKILL_DIR_CANDIDATES[0], "noo-doc-standards", "SKILL.md"), "# skill\n");
+			const liveAdvice = createSubtreeRulesPolicies({ repoRoot: live }).preStep({ agent: { session: { header: { cwd: live } } }, turn: 1, step: 1 });
+			assert.ok(liveAdvice && liveAdvice.kind === "advice");
+			const roster = liveAdvice.lines.filter((line) => line.startsWith("- Task-matched skills"));
+			assert.equal(roster.length, 1);
+			assert.match(roster[0]!, /docs → noo-doc-standards/);
+			assert.doesNotMatch(roster[0]!, /noo-prose-standard|noo-code-review/, "unreachable skills must not be named");
+			ok("mounts: M1 ① — live workspace copy is a delivery channel; roster names only reachable skills");
 		}
-		ok("mounts: M1 ① — skill roster line emitted only when a noo-* skill face exists (live copy or bank cache)");
+		{
+			// 缓存通道未注册 = 交付未发生：路标行不发行 + 每会话一条诊断 warn（原缺陷
+			// 在 6 天 / 199 会话里静默，判据必须看得见它）。
+			const cached = tempRepo("mount-m2-skills-cache");
+			fs.mkdirSync(path.join(cached, SKILL_DIR_CANDIDATES[1], "noo-doc-standards"), { recursive: true });
+			fs.writeFileSync(path.join(cached, SKILL_DIR_CANDIDATES[1], "noo-doc-standards", "SKILL.md"), "# skill\n");
+			const cachedWarns: string[] = [];
+			const unregistered = createSubtreeRulesPolicies({ repoRoot: cached }, { warn: (m) => cachedWarns.push(m) });
+			assert.equal(unregistered.preStep({ agent: { session: { header: { cwd: cached } } }, turn: 1, step: 1 }), undefined);
+			assert.equal(cachedWarns.length, 1);
+			assert.match(cachedWarns[0]!, /provider is not registered/);
+			// 注册成功 → 缓存通道计入，同仓同名技能开始被点名。
+			const registered = createSubtreeRulesPolicies({ repoRoot: cached }, { isBankSkillsRegistered: () => true });
+			const registeredAdvice = registered.preStep({ agent: { session: { header: { cwd: cached } } }, turn: 1, step: 1 });
+			assert.ok(registeredAdvice && registeredAdvice.kind === "advice");
+			assert.match(registeredAdvice.lines.at(-1)!, /docs → noo-doc-standards/);
+			ok("mounts: M1 ① — bank cache counts only after provider registration; unregistered cache degrades with one diagnostic warn");
+		}
 
 		// 发行条件放宽面：零子树布点 + 指针在场 → 指针行地图仍发行（零内容才零注入）。
 		const pointerOnly = tempRepo("mount-m2-pointeronly");
@@ -870,7 +952,12 @@ function writeFixtureGene(repoRoot: string): void {
 	// 匹配面（path / suffix / command）+ 两条写码目标通道（写码工具 + bash 重定向）。
 	{
 		const repo = tempRepo("skill-guard");
-		const { toolPre } = createSkillGuardPolicies({ repoRoot: repo }, validateConfig({}).skillGuards);
+		// 可达性门输入：夹具仓给出七个 noo-* 活副本（提醒只点名本会话目录里实际可载的技能）。
+		for (const skill of SKILL_NAMES) {
+			fs.mkdirSync(path.join(repo, SKILL_DIR_CANDIDATES[0], skill), { recursive: true });
+		}
+		const reachable = (root: string) => inspectSkillSurface(root, false).available;
+		const { toolPre } = createSkillGuardPolicies({ repoRoot: repo }, validateConfig({}).skillGuards, { reachableSkills: reachable });
 		// 新会话探针（状态按会话隔离）。
 		const session = () => ({ session: { header: { cwd: repo } } });
 		// 一次事件命中多条 → 一次列全（表序），且各技能随之进入 reminded。
@@ -963,13 +1050,44 @@ function writeFixtureGene(repoRoot: string): void {
 		ok("skill-guard: path/suffix/command kinds + bash redirect channel; one advice lists all hits; per-session dedupe; off-path/out-of-repo/other-tools silent; keyless advises");
 	}
 
+	// 可达性门逐条（ADR Decision 2）：技能面缺席的仓里命中即静默——不点名载不到的
+	// 技能，且不消耗该技能的提醒预算；同族 = 原缺陷（外仓里 `noo-*` 不存在却被点名）。
+	{
+		const bare = tempRepo("skill-guard-bare");
+		const barePolicies = createSkillGuardPolicies({ repoRoot: bare }, validateConfig({}).skillGuards, { reachableSkills: (root) => inspectSkillSurface(root, false).available });
+		assert.equal(barePolicies.toolPre({ name: "write", arguments: { file_path: "docs/x.md" }, agent: { session: { header: { cwd: bare } } } }), undefined);
+		assert.equal(barePolicies.toolPre({ name: "bash", arguments: { command: "git push origin main" }, agent: { session: { header: { cwd: bare } } } }), undefined);
+
+		// 部分可达：同一次事件里只点名在场的那件，其余条目静默。
+		const partial = tempRepo("skill-guard-partial");
+		fs.mkdirSync(path.join(partial, SKILL_DIR_CANDIDATES[0], "noo-prose-standard"), { recursive: true });
+		const partialPolicies = createSkillGuardPolicies({ repoRoot: partial }, validateConfig({}).skillGuards, { reachableSkills: (root) => inspectSkillSurface(root, false).available });
+		const partialAgent = { session: { header: { cwd: partial } } };
+		const partialAdvice = partialPolicies.toolPre({ name: "write", arguments: { file_path: "docs/x.md" }, agent: partialAgent });
+		assert.ok(partialAdvice && partialAdvice.kind === "advice");
+		assert.equal(partialAdvice.lines.length, 1);
+		assert.match(partialAdvice.lines[0]!, /noo-prose-standard/);
+
+		// 不可达命中不消耗预算：同技能随后可达（活副本落地）仍会提醒。
+		fs.mkdirSync(path.join(partial, SKILL_DIR_CANDIDATES[0], "noo-doc-standards"), { recursive: true });
+		const nowReachable = partialPolicies.toolPre({ name: "write", arguments: { file_path: "docs/y.md" }, agent: partialAgent });
+		assert.ok(nowReachable && nowReachable.kind === "advice");
+		assert.equal(nowReachable.lines.length, 1);
+		assert.match(nowReachable.lines[0]!, /noo-doc-standards/);
+		ok("skill-guard: reachability gate — absent surface silent; partial surface names only reachable skills; unreachable hits keep their budget");
+	}
+
 	// index 接线假 ctx 冒烟：存留四点各恰一个 listener + 行为逐条。
 	{
 		const repo = tempRepo("mount-wiring");
 		fs.mkdirSync(path.join(repo, "engine"), { recursive: true });
 		fs.writeFileSync(path.join(repo, "engine", "AGENTS.md"), "# engine subtree rules\n");
+		// 技能只放随库缓存通道：注册前不可达（提醒面静默 + 诊断 warn），注册后计入。
+		fs.mkdirSync(path.join(repo, SKILL_DIR_CANDIDATES[1], "noo-doc-standards"), { recursive: true });
+		fs.writeFileSync(path.join(repo, SKILL_DIR_CANDIDATES[1], "noo-doc-standards", "SKILL.md"), "# skill\n");
 		const listeners = new Map<string, Array<(...args: any[]) => unknown>>();
 		const warns: string[] = [];
+		const injectCalls: Array<{ deps: string[]; callback: (scoped: unknown) => void }> = [];
 		const fakeMountCtx = {
 			tools: { register: () => {} },
 			systemPrompt: { section: () => {} },
@@ -980,12 +1098,18 @@ function writeFixtureGene(repoRoot: string): void {
 				list.push(listener);
 				listeners.set(event, list);
 			},
+			inject: (deps: string[], callback: (scoped: unknown) => void) => {
+				injectCalls.push({ deps, callback });
+			},
 		};
 		apply(fakeMountCtx as never, { repoRoot: repo, geneBankUrl: false });
 		for (const event of ["agent/session-start", "agent/pre-step", "tools/pre-execute", "tools/post-execute"]) {
 			assert.equal(listeners.get(event)?.length, 1, `${event} must be wired exactly once`);
 		}
-		ok("mounts: index wiring — surviving four mounting points registered one listener each");
+		// 注册 = 可重试注入（index → registerBankSkills 走 ctx.inject(["skills"], …)）。
+		assert.equal(injectCalls.length, 1);
+		assert.deepEqual(injectCalls[0]!.deps, ["skills"]);
+		ok("mounts: index wiring — surviving four mounting points registered one listener each; skills registration defers on ctx.inject");
 
 		const agent = { session: { header: { cwd: repo } } };
 		const preStep = listeners.get("agent/pre-step")![0]!;
@@ -993,25 +1117,33 @@ function writeFixtureGene(repoRoot: string): void {
 		const toolPost = listeners.get("tools/post-execute")![0]!;
 		const sessionStart = listeners.get("agent/session-start")![0]!;
 
-		// A2：首步地图追加一条建议消息；后续步零追加；reject 下游直通。
+		// A2：首步地图追加一条建议消息（技能只在缓存通道且未注册 → 地图无路标行，
+		// 并留一条诊断 warn）；后续步零追加；reject 下游直通。
 		const decided = (await preStep({ agent, turn: 1, step: 1, messages: [] }, async () => ({ kind: "enter", messages: [{ existing: true }] }))) as { messages: Array<{ content: Array<{ text: string }> }> };
 		assert.equal(decided.messages.length, 2);
 		assert.match(decided.messages[1]!.content[0]!.text, /subtree rules map/);
+		assert.doesNotMatch(decided.messages[1]!.content[0]!.text, /Task-matched skills/);
+		assert.equal(warns.filter((m) => m.includes("provider is not registered")).length, 1);
 		const later = (await preStep({ agent, turn: 1, step: 2 }, async () => ({ kind: "enter", messages: [] }))) as PreStepDecision;
 		assert.deepEqual(later.messages, []);
 		const rejected = (await preStep({ agent, turn: 2, step: 1 }, async () => ({ kind: "reject" }))) as PreStepDecision;
 		assert.equal(rejected.kind, "reject");
-		ok("mounts: A2 wiring — opening map appended once; later steps and reject passthrough");
+		ok("mounts: A2 wiring — opening map appended once; unregistered bank cache keeps the roster line out with one warn; later steps and reject passthrough");
 
 		// A3：无策略决策 → next 透传（能力位在场；exec 形状 = 宿主合同冒烟，无观测语义）。
 		const passthroughMarker = { marker: true };
 		assert.equal(await toolPre({ name: "read", arguments: { file_path: "/tmp/x.ts" }, agent }, async () => passthroughMarker), passthroughMarker);
 		ok("mounts: A3 wiring — no-policy passthrough preserved");
 
-		// A3 advice 档（M1 守卫②）：触守卫路径 → agent.inject 投递一条；同会话
-		// 同技能不重复；inject 能力位缺席 → warn 降级（每会话至多一条）且工具调用不阻断。
+		// A3 advice 档（M1 守卫②）：可达性门先在（注册前命中即静默，不投递）；注册后
+		// 触守卫路径 → agent.inject 投递一条；同会话同技能不重复；inject 能力位缺席
+		// → warn 降级（每会话至多一条）且工具调用不阻断。
 		const injected: unknown[] = [];
 		const agentWithInject = { session: { header: { cwd: repo } }, inject: (message: unknown) => injected.push(message) };
+		const beforeRegistration = await toolPre({ name: "write", arguments: { file_path: "docs/x.md" }, agent: agentWithInject }, async () => passthroughMarker);
+		assert.equal(beforeRegistration, passthroughMarker);
+		assert.equal(injected.length, 0, "unreachable skill must stay silent");
+		injectCalls[0]!.callback({ skills: { registerProvider: () => {} } });
 		const passthrough = await toolPre({ name: "write", arguments: { file_path: "docs/x.md" }, agent: agentWithInject }, async () => passthroughMarker);
 		assert.equal(passthrough, passthroughMarker);
 		assert.equal(injected.length, 1);
@@ -1020,7 +1152,10 @@ function writeFixtureGene(repoRoot: string): void {
 		assert.equal(injected.length, 1);
 		assert.equal(await toolPre({ name: "write", arguments: { file_path: "docs/z.md" }, agent }, async () => passthroughMarker), passthroughMarker);
 		assert.equal(warns.filter((m) => m.includes("advice delivery unavailable")).length, 1);
-		ok("mounts: A3 advice — one inject per skill per session; missing capability degrades with one warn, tool call unblocked");
+		// 注册后新会话的地图带上路标行（可达集随注册翻转）。
+		const afterRegistration = (await preStep({ agent: { session: { header: { cwd: repo } } }, turn: 1, step: 1, messages: [] }, async () => ({ kind: "enter", messages: [] }))) as { messages: Array<{ content: Array<{ text: string }> }> };
+		assert.match(afterRegistration.messages[0]!.content.map((part) => part.text).join("\n"), /Task-matched skills.*noo-doc-standards/);
+		ok("mounts: A3 advice — reachability gate precedes delivery; one inject per skill per session; missing capability degrades with one warn, tool call unblocked");
 
 		// A4：非写码 exec → 透传；写码面两判据缺基建 → 各自静默降级 + 每会话一条
 		// warn（warn 经 index.mts 透传的 logger 捕获）。

@@ -14,6 +14,11 @@
  * revision 只由 control.invalidate/dispose bump——工厂留持 control，
  * registerBankSkills 返回 invalidate 钩子，pull 成功后由 index.mjs 调用，
  * pull 前已被 list 过的 cwd 无需重启会话即重发现技能面。
+ *
+ * 注册时序：宿主 skills 服务未必在 apply() 时到场，注册走 `ctx.inject(["skills"], cb)`
+ * 可重试路径（服务在场即跑、晚到补跑）；插件 inject 不声明 skills——全局声明会把
+ * 整个插件推到服务到场之后，服务永不到场则插件不装载（ADR
+ * 2026-09-12-bank-skill-provider-registration Decision 1 探针实测）。
  */
 import { readdir, readFile } from "node:fs/promises";
 import path from "node:path";
@@ -122,6 +127,14 @@ interface SkillsSurface {
 }
 
 /**
+ * 宿主注入面：`inject` = cordis 动态注入——回调在 deps 到场时执行（子 fiber），
+ * 装载时已在场则同步执行、晚到则到场时补执行，且不阻塞本插件其余装载面。
+ */
+interface HostInject {
+	inject?: (deps: string[], callback: (scoped: { skills?: SkillsSurface }) => void) => unknown;
+}
+
+/**
  * 动态 provider（SkillProvider 合同三件套）：list 逐次解析 + get 全文加载。
  * get 对外来 candidate / 技能文件消失 / 名字漂移一律 undefined（宿主合同：
  * "no longer loadable"）。目录扫描无长驻句柄；invalidate 不在 provider 内
@@ -161,36 +174,52 @@ export function createBankSkillProvider({ config = {}, logger }: { config?: { re
 }
 
 /**
- * 宿主接线（index.mts 唯一调用点）：skills 服务缺席 / registerProvider 抛错
- * → warn 降级不阻塞装载（提问面同款「缺席降级」纪律，inject 不声明 skills）。
- * 返回 `{ ok, invalidate }`——invalidate 留持宿主 SkillProviderControl（缓存
- * 刷新机制），pull 成功后由 index.mts 调用；未注册时 invalidate 为 no-op。
+ * 宿主接线（index.mts 唯一调用点）：注册走 `ctx.inject(["skills"], …)`——服务装载前
+ * 已在场即注册，晚到则到场时补注册（一次性读服务在缺席时会抛错并永久缺席，ADR
+ * Decision 1 探针 A2/B）。`ctx.inject` 缺席 / skills 服务缺席 / registerProvider
+ * 抛错 → warn 留痕降级，不阻塞装载。
+ * 返回 `{ isRegistered, invalidate }`：isRegistered = provider 已交给宿主（提醒面
+ * 可达性门消费，见 mount-policies.mts）；invalidate 留持宿主 SkillProviderControl，
+ * pull 成功后由 index.mts 调用，控制未回传时为 no-op。
  */
-export function registerBankSkills(ctx: unknown, { config = {}, logger }: { config?: { repoRoot?: string }; logger?: ProviderLogger } = {}): { ok: boolean; invalidate: () => void } {
-	const state: { control: { invalidate: () => void } | null } = { control: null };
+export function registerBankSkills(ctx: unknown, { config = {}, logger }: { config?: { repoRoot?: string }; logger?: ProviderLogger } = {}): { isRegistered: () => boolean; invalidate: () => void } {
+	// handed = registerProvider 已受理（宿主 catalog 从此含本 provider）；control 由
+	// 宿主在 create 回调里回传，回传时点不影响失效语义（invalidate 调用时懒读）。
+	const state: { handed: boolean; control: { invalidate: () => void } | null } = { handed: false, control: null };
+	const handle = {
+		isRegistered: () => state.handed,
+		invalidate: () => {
+			try {
+				state.control?.invalidate();
+			} catch (cause) {
+				logger?.warn?.(`noogenesis-bank: invalidate failed (${cause instanceof Error ? cause.message : String(cause)}); catalog refresh deferred to next session`);
+			}
+		},
+	};
 	try {
-		// 直接属性访问（非可选链）——ctx 非对象时抛 TypeError，落入 catch 的
-		// 「registration skipped」降级分支（降级面与宿主合同自检共用）。
-		const skills = (ctx as { skills?: SkillsSurface }).skills;
-		if (skills?.registerProvider) {
-			skills.registerProvider((control) => {
-				state.control = control;
-				return createBankSkillProvider({ config, logger });
-			});
-			return {
-				ok: true,
-				invalidate: () => {
-					try {
-						state.control?.invalidate();
-					} catch (cause) {
-						logger?.warn?.(`noogenesis-bank: invalidate failed (${cause instanceof Error ? cause.message : String(cause)}); catalog refresh deferred to next session`);
-					}
-				},
-			};
+		const inject = (ctx as HostInject | null)?.inject;
+		if (typeof inject !== "function") {
+			logger?.warn?.("noogenesis-bank: host context exposes no inject(); bank skills surface skipped");
+			return handle;
 		}
-		logger?.warn?.("noogenesis-bank: host skills service absent; bank skills surface skipped");
+		inject.call(ctx, ["skills"], (scoped) => {
+			try {
+				const skills = scoped?.skills;
+				if (!skills?.registerProvider) {
+					logger?.warn?.("noogenesis-bank: host skills service absent; bank skills surface skipped");
+					return;
+				}
+				skills.registerProvider((control) => {
+					state.control = control;
+					return createBankSkillProvider({ config, logger });
+				});
+				state.handed = true;
+			} catch (cause) {
+				logger?.warn?.(`noogenesis-bank: skill provider registration skipped (${cause instanceof Error ? cause.message : String(cause)})`);
+			}
+		});
 	} catch (cause) {
-		logger?.warn?.(`noogenesis-bank: skill provider registration skipped (${cause instanceof Error ? cause.message : String(cause)})`);
+		logger?.warn?.(`noogenesis-bank: inject(skills) failed (${cause instanceof Error ? cause.message : String(cause)}); bank skills surface skipped`);
 	}
-	return { ok: false, invalidate: () => {} };
+	return handle;
 }

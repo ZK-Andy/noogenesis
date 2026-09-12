@@ -39,7 +39,7 @@ Review: FULL/2026-09-06/R1=ok R2=ok R3=ok
 - **收益**：外部装包 → pull 即得 7 技能 + 全部 method/cookbook 参照面；胶囊可随时装卸（删插件即弃用，缓存惰性残留同 npm 缓存语义）；npm 包零新增依赖、`files` 零改动；引擎零改动。
 - **代价**：成为 DSH 生态第三家自定义 SkillProvider（有意偏离惯例，依据 = 逐次解析正确性，见 Alternatives）；技能首跑空窗；7 技能蒸馏改写的一次性内容成本；缓存目录残留在宿主仓（`.noogenesis/`，无害惰性）。
 - **风险承接**：pull 失败/未拉 → 技能面为空，会话正常（降级纪律同 P2）；同名冲突由 rank 600 兜底（被遮蔽而非抢占）。
-- **交付更正（2026-09-12 实机实证）**：本件的「外部装包 → pull 即得 7 技能」未成立——宿主未注册本 provider，自举仓之外的会话目录里只有该仓自有技能；证据、未证环与修复立项 = [proposed/bug-fix bank provider 注册失效](../../proposed/bug-fix/2026-09-12-bank-skill-provider-registration.md)。
+- **交付更正（2026-09-12 实机实证；同日修复批回填）**：本件的「外部装包 → pull 即得 7 技能」在装载顺序把 skills 服务推到 `apply()` 之后时不成立——注册改为可重试注入 `ctx.inject(["skills"], …)`，提醒面改为只点名本会话目录里实际可载的技能；机制、夹具与真机验收口径 = [2026-09-12-bank-skill-provider-registration](../bug-fix/2026-09-12-bank-skill-provider-registration.md)。
 
 ## Testing
 

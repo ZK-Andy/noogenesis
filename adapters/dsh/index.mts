@@ -7,7 +7,9 @@
  * 扫描本目录 import 面强制）。
  * inject 不含 userQuestions——提问是可选能力，disposal 时对 ctx.userQuestions
  * 懒取用（cordis 对缺席的注入服务会推迟整个插件装载，声明注入反而让
- * 「提问面缺席 → 只提醒」降级不可达）。
+ * 「提问面缺席 → 只提醒」降级不可达）。skills 同理不进 inject 声明：注册走
+ * ctx.inject(["skills"], …) 可重试路径（ADR 2026-09-12-bank-skill-provider-registration
+ * Decision 1）。
  *
  * 配置面（8 字段 + 缺省 + 失败模式）单一事实源：./README.md「配置」表；
  * 校验实现在 ./config.mts（fail-closed，selftest 直测）。
@@ -121,9 +123,12 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 	ctx.provide("noogenesis", { repoRoot, runEngine });
 
 	// 技能随库分发（skills-ride-bank ADR）：provider 读 genes-cache/.agents/skills，
-	// rank 600（用户/项目同名可遮蔽）；宿主 skills 面缺席/注册失败 → 内部 warn
-	// 降级不阻塞装载。invalidate 钩子必须在 pull 块之前取得——pull 成功落地后
-	// bump 宿主 catalog revision，pull 前已被 list 过的 cwd 无需重启即重发现技能面。
+	// rank 600（用户/项目同名可遮蔽）。注册走 ctx.inject(["skills"], …) 可重试路径
+	// ——skills 服务晚到也能补注册（ADR 2026-09-12-bank-skill-provider-registration
+	// Decision 1：一次性读服务在缺席时抛错并永久缺席；全局 inject 声明则会让整插件
+	// 等这个服务）。isRegistered 交给提醒面做可达性门。invalidate 钩子必须在 pull
+	// 块之前取得——pull 成功落地后 bump 宿主 catalog revision，pull 前已被 list 过的
+	// cwd 无需重启即重发现技能面。
 	const bankSkills = registerBankSkills(ctx, { config: cfg, logger });
 
 	// P2 只读消费 + 触发点修正（D7 + bank-pull.mts 头注）：geneBankUrl 缺省官方库
@@ -164,7 +169,7 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 	// listener，策略件增挂只动 mount-policies.mts，不复制宿主接线；logger 透传
 	// 给策略层降级提示（A4 判据缺基建 / A3 提醒投递缺席时每会话至多
 	// 一条 warn）。 ──
-	const mounts = createMountPolicies(cfg, { warn: (message) => logger.warn(message) });
+	const mounts = createMountPolicies(cfg, { warn: (message) => logger.warn(message), isBankSkillsRegistered: bankSkills.isRegistered });
 
 	// A5 会话开始时刻（agent/session-start，hooks 桥四类时刻的会话开始位）：
 	// 非阻塞 inject 能力；异常 catch → warn 降级（hook-protocol 非阻断语义）。

@@ -5,7 +5,6 @@
 
 ## 候选
 
-- **（2026-09-12）bank 技能 provider 注册失效**：desktop 199/199 会话目录 `noo-*`=0、自举仓 262/262 由文件系统 provider 掩盖（provider 代码与缓存均正常）。三件同批 = `inject` 补 `skills` + 可重试注册 / 提醒面目录感知（A2 行 + `skillGuards` 默认值）/ 外仓 marker 实证夹具。立项件 = [proposed ADR](.agents/notes/proposed/bug-fix/2026-09-12-bank-skill-provider-registration.md)。
 - **（2026-09-12）`verify-review-brief` 未判简报 base 可解析**：base 全 SHA 笔误时 `--enforce` 仍 exit 0，三路靠评审 agent 自核出真值（该闸只判 head）。修法 = 加 base `git rev-parse --verify` 存在性判据 + 违约夹具。出处 = [secret-fixture ADR](.agents/notes/implemented/process/2026-09-12-secret-fixture-fragment-encoding.md)（门禁判据类）。
 
 ## 待定（已记录的需求，待后续拍板）

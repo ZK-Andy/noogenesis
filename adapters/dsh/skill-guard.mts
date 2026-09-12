@@ -24,6 +24,11 @@
  * Alternatives）。「用了没有」的会话级对账不在此件——单源在 session-close
  * 流程卡对账步（宿主日志 tool/result 证据面）。
  *
+ * 可达性门：命中条目还须在 `deps.reachableSkills(repoRoot)` 里才发行——提醒
+ * 点名一个本会话目录载不到的技能会把 agent 引向失败（外仓里 `noo-*` 不存在；
+ * ADR 2026-09-12-bank-skill-provider-registration Decision 2），可达集由
+ * mount-policies.mts 的 inspectSkillSurface 供。不可达条目静默且不消耗提醒预算。
+ *
  * subagent 面（与 A2 地图的有意不对称，B4 Decision 4 subagent 跳过口径不外推）：
  * A2 全仓地图对窄任务子代理是纯噪音故跳；本件提醒是单行级、写码路径强相关——
  * 子代理写 docs/ 同样该载对口技能，提醒有效且每（子）会话至多一次，噪音有界。
@@ -39,8 +44,9 @@ import { resolveRepoRoot, sessionWorkspaceOf, isInsideRepo } from "./engine-brid
 import type { RepoRootConfig } from "./engine-bridge.mjs";
 import type { SkillGuardEntry } from "./config.mjs";
 
-/** 策略件注入缝：`warn` = 降级提示落点（默认静默）。 */
+/** 策略件注入缝：`reachableSkills` = 可达性门（本会话目录里实际可载的技能名，按 repoRoot 现算；只对命中条目求值）；`warn` = 降级提示落点（默认静默）。 */
 export interface SkillGuardDeps {
+	reachableSkills: (repoRoot: string) => ReadonlySet<string>;
 	warn?: (message: string) => void;
 }
 
@@ -92,9 +98,9 @@ function triggerPhrase(entry: SkillGuardEntry): string {
 
 /**
  * 组装 A3 技能触点提醒策略。返回的策略挂进 `toolPre`（mount-policies 组装）；
- * `config` 走 M2 的 repoRoot 四级回退链，`deps` 为日志面注入缝。
+ * `config` 走 M2 的 repoRoot 四级回退链，`deps` 为可达性门与日志面注入缝。
  */
-export function createSkillGuardPolicies(config: RepoRootConfig, guards: readonly SkillGuardEntry[], deps: SkillGuardDeps = {}): { toolPre: ToolPrePolicy } {
+export function createSkillGuardPolicies(config: RepoRootConfig, guards: readonly SkillGuardEntry[], deps: SkillGuardDeps): { toolPre: ToolPrePolicy } {
 	const warnOnce = createSessionWarnOnce(deps.warn ?? (() => {}));
 	const store = createSessionStore();
 	const toolPre: ToolPrePolicy = (exec) => {
@@ -125,12 +131,21 @@ export function createSkillGuardPolicies(config: RepoRootConfig, guards: readonl
 				if (rel !== null && !targets.includes(rel)) targets.push(rel);
 			}
 			const lines: string[] = [];
+			const hits: SkillGuardEntry[] = [];
 			for (const entry of guards) {
 				if (state.seen.has(entry.skill) || state.reminded.has(entry.skill)) continue;
 				const hit = entry.kind === "command"
 					? command !== undefined && new RegExp(entry.pattern).test(command)
 					: targets.some((rel) => matchesWriteTarget(rel, entry));
-				if (!hit) continue;
+				if (hit) hits.push(entry);
+			}
+			if (hits.length === 0) return;
+			// 可达性门（命中后才求值）：点名一个本会话载不到的技能只会把 agent 引向
+			// 失败（外仓里 noo-* 不存在——ADR 2026-09-12-bank-skill-provider-registration
+			// Decision 2）；不可达条目静默，且不消耗该技能的提醒预算。
+			const reachable = deps.reachableSkills(repoRoot);
+			for (const entry of hits) {
+				if (!reachable.has(entry.skill)) continue;
 				state.reminded.add(entry.skill);
 				lines.push(`Noogenesis: ${triggerPhrase(entry)} without loading the ${entry.skill} skill this session — load it via the skill tool if this task matches (advisory; skill calls stay self-initiated).`);
 			}
