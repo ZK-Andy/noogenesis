@@ -23,9 +23,11 @@
  *   其余（docs/chore/test/build/style/ci 等）→ 其他变更 / Chores
  *
  * 末节按**提交日归并**（跨大批次时逐条输出会把正文淹成过程清单）：
- *   同日条目并成一条 `- **<日期>（N 笔）**：<说明>；<说明>… @作者`，条目零丢弃（计数即条数），
- *   细节由正文尾行 Full Changelog 承接；分组键 = committer date `%cs`（提交对象内记录的时区
- *   口径），同一提交历史在任何机器/时区上输出一致。其余三节逐条输出（用户可见面）。
+ *   同日条目并成一条 `- **<日期>（N 笔）**：<说明>；<说明>… @作者`，条目零丢弃（计数即条数）；
+ *   分组键 = committer date `%cs`（提交对象自带时区偏移渲染的日历日），同一提交历史在任何机器上
+ *   输出一致；条目详情由正文尾行 Full Changelog 承接（无 base tag 时该行不输出，逐条见提交历史）。
+ *   其余三节逐条输出（用户可见面）。作者标注 = 每个 login 各带 `@`（中文侧尾缀 `@A, @B`，
+ *   英文侧 `by @A, @B`）。
  *
  * 用法（仓库根运行）：
  *   node scripts/release/release-note.mts <base-tag> <new-version>   # 输出正文到 stdout
@@ -97,11 +99,12 @@ function gitLines(...args: string[]): string[] {
 
 /** 日归并项标题前缀（含分隔冒号；计数词随语言，条目说明本身仍逐字镜像 commit 标题）。 */
 function dayPrefix(date: string, count: number, suffix: "zh" | "en"): string {
-  return suffix === "zh" ? `**${date}（${count} 笔）**：` : `**${date} (${count} entries)**: `;
+  if (suffix === "zh") return `**${date}（${count} 笔）**：`;
+  return `**${date} (${count} ${count === 1 ? "entry" : "entries"})**: `;
 }
 
 /**
- * 分节条目 → 输出项：`byDay` 节按提交日归并（日志顺序新→旧，同日必然相邻），其余逐条。
+ * 分节条目 → 输出项：`byDay` 节按提交日归并（键 = `%cs` 日期串，桶序 = 首次出现序），其余逐条。
  * @param entries - 全部条目（日志顺序）。
  * @param section - 目标分节。
  * @param suffix - 语言侧（计数标签与分隔符取该语言形态）。
@@ -113,16 +116,16 @@ function itemsFor(
 ): RenderedItem[] {
   const inSection = entries.filter((e) => e.section === section);
   if (!section.byDay) return inSection.map((e) => ({ body: e.body, authors: [e.author] }));
-  const groups: Array<{ date: string; items: Entry[] }> = [];
+  const groups = new Map<string, Entry[]>();
   for (const entry of inSection) {
-    const last = groups[groups.length - 1];
-    if (last !== undefined && last.date === entry.date) last.items.push(entry);
-    else groups.push({ date: entry.date, items: [entry] });
+    const bucket = groups.get(entry.date);
+    if (bucket === undefined) groups.set(entry.date, [entry]);
+    else bucket.push(entry);
   }
   const join = suffix === "zh" ? "；" : "; ";
-  return groups.map((group) => ({
-    body: `${dayPrefix(group.date, group.items.length, suffix)}${group.items.map((i) => i.body).join(join)}`,
-    authors: [...new Set(group.items.map((i) => i.author))],
+  return [...groups].map(([date, items]) => ({
+    body: `${dayPrefix(date, items.length, suffix)}${items.map((i) => i.body).join(join)}`,
+    authors: [...new Set(items.map((i) => i.author))],
   }));
 }
 
@@ -148,9 +151,9 @@ function emitSection(
       : `<h3 id="${anchorId}">${title}</h3>`,
     "",
   );
-  const marker = suffix === "zh" ? "@" : "by @";
+  const lead = suffix === "zh" ? "" : "by ";
   for (const item of items) {
-    lines.push(`- ${item.body} ${marker}${item.authors.join(", ")}`);
+    lines.push(`- ${item.body} ${lead}${item.authors.map((a) => `@${a}`).join(", ")}`);
   }
   lines.push("");
 }
