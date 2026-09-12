@@ -18,7 +18,7 @@ Related: [2026-09-08-b4-mount-wiring](2026-09-08-b4-mount-wiring.md)（tool-pre 
 **用户拍板（2026-09-10 双方案设计轮，两案均取推荐案）：**
 
 1. **技能守卫 = 三件套 v0**（触发交给机器，服从留给自觉）：
-   - **① 技能路标**：A2 开场地图加一行「任务型 → 技能名」映射（动 `docs/**` → `noo-doc-standards`；评审收口 → `noo-code-review`；push 前 → `noo-pre-push-checks` 等）——常驻零自觉可见，调用仍自觉。〔批 A 落地：`mount-policies.mts` SKILL_ROSTER_LINE，技能面存在性过滤（活副本 / 随库缓存任一含 `noo-*` 才发行）；A2 发行条件随之自「零子树件」放宽为「零内容」——B4 ADR Decision 4 同批同步。〕
+   - **① 技能路标**：A2 开场地图加一行「任务型 → 技能名」映射（动 `docs/**` → `noo-doc-standards`；评审收口 → `noo-code-review`；push 前 → `noo-pre-push-checks` 等）——常驻零自觉可见，调用仍自觉。〔批 A 落地：`mount-policies.mts` `SKILL_ROSTER` 任务→技能映射表；判据后经 [技能可达性门 ADR](../bug-fix/2026-09-12-bank-skill-provider-registration.md) Decision 2 收紧为「按名对齐可达集、零可达不发行」（活副本通道恒计、随库缓存通道仅注册成功后计）；A2 发行条件随之自「零子树件」放宽为「零内容」——B4 ADR Decision 4 同批同步。〕
    - **② 触点提醒**：tool-pre 钩子（B4 已证可用的挂载面）按**匹配面**判「本会话该载而未载」（路径前缀 / 路径后缀 / 命令文本三类；如写 `docs/**` 而未载 `noo-doc-standards`、写 `.md` 而未载 `noo-prose-standard`）→ `agent.inject` advice 建议行，**不阻断**（repeat-tool-reminder 同款哲学）；映射表进 config，条目按需增删。〔批 A 落地：`skill-guard.mts` + A3 advice 档（能力层扩档）+ `config.skillGuards`（条目集与三类匹配面现态单源 = [触发面扩面 ADR](2026-09-11-skill-guard-trigger-faces.md)）；每会话每技能至多提醒一次。subagent 不跳——A2 全图对窄任务子代理是纯噪音故跳，本件单行路径强相关提醒对子代理同样有效且每（子）会话有界（R3 评审要求书面化，已落 skill-guard 头注）。〕
    - **③ 事后对账**：session-close 流程卡加一步——grep 宿主日志 `tool/result` 技能调用痕迹，列出本会话用了什么；「该不该」的裁断留人/评审（A8 撤除后既定证据面）。〔批 A 落地：session-close 步骤 2。〕
    - **阻断档判不立**（见 Alternatives）。
@@ -40,7 +40,7 @@ Related: [2026-09-08-b4-mount-wiring](2026-09-08-b4-mount-wiring.md)（tool-pre 
 
 ## Consequences
 
-- **批 A 验收状态**：开场地图含技能路标行（`mount-policies.mts` SKILL_ROSTER_LINE，存在性过滤；selftest 81 组夹具在案）✅；写码目标或 bash 命令命中守卫条目而未载对口技能时收到 advice（不阻断、可继续；`skill-guard.mts` + A3 接线 + 降级面自测；触发面现态见 [触发面扩面 ADR](2026-09-11-skill-guard-trigger-faces.md)）✅；session-close 步骤 2 在卡，首跑留痕 = 2026-09-10 会话收尾 journal ⏳。
+- **批 A 验收状态**：开场地图含技能路标行（`mount-policies.mts` `SKILL_ROSTER`，按可达集渲染；批 A 落地时 selftest 81 组夹具在案，判据后经 [可达性门 ADR](../bug-fix/2026-09-12-bank-skill-provider-registration.md) 收紧）✅；写码目标或 bash 命令命中守卫条目而未载对口技能时收到 advice（不阻断、可继续；`skill-guard.mts` + A3 接线 + 降级面自测；触发面现态见 [触发面扩面 ADR](2026-09-11-skill-guard-trigger-faces.md)）✅；session-close 步骤 2 在卡，首跑留痕 = 2026-09-10 会话收尾 journal ⏳。
 - **批 B 验收状态**：根 AGENTS.md 契约块在案且 547/800 ✅；`docs/method/anti-overdesign.md` 存在且 512/1500 ✅；cases 索引在 `docs/research/`（146/900）且不进任何加载面（常驻仅指针）✅；评审检查项第 5 条同批挂根 AGENTS（review.md §5 机制）。
 - **触点提醒误报**（匹配面过粗 → 骚扰）：advice 档可忽略无阻断成本；映射表条目按需增删，宁缺勿滥（重复提醒稀释真守卫信号——charter ADR 对价条款）。
 - **契约块被具体流程压过**（HERO 作者点名的最可能失败模式）：流程卡写实何时开始/结束的纪律已在；本风险显式接受并随实现批在流程卡自查。

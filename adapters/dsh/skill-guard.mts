@@ -131,20 +131,19 @@ export function createSkillGuardPolicies(config: RepoRootConfig, guards: readonl
 				if (rel !== null && !targets.includes(rel)) targets.push(rel);
 			}
 			const lines: string[] = [];
-			const hits: SkillGuardEntry[] = [];
+			// 单循环 + 命中后才求值一次可达集（零命中零 fs 访问）：点名一个本会话载不到的
+			// 技能只会把 agent 引向失败（外仓里 noo-* 不存在——ADR
+			// 2026-09-12-bank-skill-provider-registration Decision 2）；不可达条目静默，
+			// 且不消耗该技能的提醒预算。reminded 命中即写，故同一技能挂多条条目时
+			// 一次事件只发行一行（每会话每技能至多一行）。
+			let reachable: ReadonlySet<string> | undefined;
 			for (const entry of guards) {
 				if (state.seen.has(entry.skill) || state.reminded.has(entry.skill)) continue;
 				const hit = entry.kind === "command"
 					? command !== undefined && new RegExp(entry.pattern).test(command)
 					: targets.some((rel) => matchesWriteTarget(rel, entry));
-				if (hit) hits.push(entry);
-			}
-			if (hits.length === 0) return;
-			// 可达性门（命中后才求值）：点名一个本会话载不到的技能只会把 agent 引向
-			// 失败（外仓里 noo-* 不存在——ADR 2026-09-12-bank-skill-provider-registration
-			// Decision 2）；不可达条目静默，且不消耗该技能的提醒预算。
-			const reachable = deps.reachableSkills(repoRoot);
-			for (const entry of hits) {
+				if (!hit) continue;
+				reachable ??= deps.reachableSkills(repoRoot);
 				if (!reachable.has(entry.skill)) continue;
 				state.reminded.add(entry.skill);
 				lines.push(`Noogenesis: ${triggerPhrase(entry)} without loading the ${entry.skill} skill this session — load it via the skill tool if this task matches (advisory; skill calls stay self-initiated).`);

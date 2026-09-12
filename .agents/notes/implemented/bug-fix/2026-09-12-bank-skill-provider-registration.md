@@ -25,8 +25,8 @@ Review: pending
 ## Decision
 
 1. **注册合同 = 可重试注入**：`registerBankSkills` 走 `ctx.inject(["skills"], callback)`（cordis 动态注入子 fiber）——skills 服务装载前已在场则回调同步执行并注册，晚到则到场时补注册（探针 B）。**不**把 `skills` 加进插件 `inject` 声明：全局声明让整个插件等到服务到场才 `apply`，服务永不到场则插件完全不装载（探针 C/C2），与适配层既有的 userQuestions 教训同型。`ctx.inject` / skills 服务 / `registerProvider` 三态缺席或抛错各自 warn 留痕降级，绝不阻塞装载。返回值 `{ isRegistered, invalidate }`：`isRegistered` = provider 已交给宿主（第 2 条的可达性门消费），`invalidate` 语义不变。
-2. **提醒面只点名可达技能**：可达集 = 两条交付通道的目录实况并集——活副本 `<repoRoot>/.agents/skills`（宿主文件系统 provider，与随库注册无关）+ 随库缓存 `<repoRoot>/.noogenesis/genes-cache/.agents/skills`（**仅在 provider 注册成功后计入**）。A2 路标行按可达集渲染（任务→技能映射表结构化，不可达技能剔除，零可达不发行）；A3 触点提醒命中后按可达集过滤（不可达条目静默，且不消耗该技能的提醒预算）；命中后才求值可达集——零命中零 fs 访问。诊断留痕：缓存里有技能而 provider 未注册 = 交付未发生，每会话一条 warn。
-3. **验收判据换血**：夹具改为「来源可区分 + 注册时序可判」——(a) 注册件三态 + 晚到/在场两路（`ctx.inject` 收到的 deps、回调前 `isRegistered()` 为假、回调后为真、`invalidate` 生效）；(b) 可达性门逐条（缓存未注册仓静默 + 诊断 warn；注册后同名技能开始被点名；部分可达只点名在场件；不可达命中不消耗预算）；(c) 来源区分（缓存单通道仓里 provider 只服务缓存件、candidate 带 `noogenesis-bank` 与 rank 600，活副本是另一 provider）；(d) index 接线冒烟走完整路径（假 ctx 捕获 `ctx.inject(["skills"], …)`，注册前提醒静默、注册后投递，证明 `isRegistered` 真的透传进策略件）。
+2. **提醒面只点名可达技能**：可达集 = 两条交付通道的目录实况并集（只认 `<name>/SKILL.md` 在场的目录，与 provider 的实服条件对齐）——活副本 `<repoRoot>/.agents/skills`（宿主文件系统 provider，与随库注册无关）+ 随库缓存 `<repoRoot>/.noogenesis/genes-cache/.agents/skills`（**仅在 provider 注册成功后计入**）。A2 路标行按可达集渲染（任务→技能映射表结构化，不可达技能剔除，零可达不发行）；A3 触点提醒命中后按可达集过滤（不可达条目静默，且不消耗该技能的提醒预算）；命中后才求值可达集——零命中零 fs 访问。诊断留痕：缓存里有技能而 provider 未注册 = 交付未发生，每会话一条 warn。
+3. **验收判据换血**：夹具改为「来源可区分 + 注册时序可判」——(a) 注册件三态 + 晚到/在场两路（`ctx.inject` 收到的 deps、回调前 `isRegistered()` 为假、回调后为真、`invalidate` 生效）；(b) 可达性门逐条（缓存未注册仓静默 + 诊断 warn；注册后同名技能开始被点名；部分可达只点名在场件；不可达命中不消耗预算）；(c) 来源区分（缓存单通道仓里 provider 只服务缓存件、candidate 带 `noogenesis-bank` 与 rank 600，活副本是另一 provider）；(d) index 接线冒烟走完整路径（假 ctx 捕获 `ctx.inject(["skills"], …)`，注册前提醒静默、注册后投递，证明 `isRegistered` 真的透传进策略件）；(e) 门 ↔ provider 对账（缓存里放 1 个合规技能 + 1 个无 `SKILL.md` 的半成品目录：可达集与 `list()` 实服集对账，半成品目录两边都不计）；(f) 同一技能挂多条守卫条目时一次事件只发行一行（每会话每技能至多一行的回归夹具）。
 4. **交付口径回填**：`skills-ride-bank` 的交付更正句与 `adapters/dsh/README.md` 技能面/配置表/挂载面三处按现态改写。
 
 ## Alternatives considered
@@ -41,7 +41,7 @@ Review: pending
 ## Consequences
 
 - 注册不再依赖装载顺序：宿主提供 skills 服务即在位（含晚到补注册）；宿主无 `ctx.inject` 或 skills 服务时留 warn 后降级（技能面缺席，其余面照常）。
-- 提醒面在两条交付通道之外零点名。残余边界：本插件看不到宿主用户级技能目录，显式 `skillGuards` 条目若指向那类技能则不发行（宁可不说，也不指一个载不到的技能）。
+- 提醒面在两条交付通道之外零点名。残余边界：本插件看不到宿主用户级技能目录，显式 `skillGuards` 条目若指向那类技能则不发行（宁可不说，也不指一个载不到的技能）；可达集只对齐到 `<name>/SKILL.md` 在场这一层，frontmatter 坏掉的技能由 provider 读文件时 warn 跳过（门不复算，极小概率下仍可能点名一个载不到的技能——两个校验器不值得）。
 - **真机验收未闭环**：判据 = 外仓（其 `.noogenesis/genes-cache` 有技能）新会话的 `<available_skills>` 出现 `noo-*`，且提醒不再指向载不到的技能（todos (B) 条）。
 - provider 仍依赖 `<repoRoot>/.noogenesis/genes-cache` 存在（pull 未跑 = 空面，设计内降级）；`capsules/` 过滤面仍后置（`skills-ride-bank` Decision 6 不变）。
 
@@ -57,7 +57,7 @@ Review: pending
 | C 全局 `inject` 含 skills、缺席 | `apply` 未运行 |
 | C2 全局 `inject` 含 skills、服务永不提供 | `apply` 永不运行 |
 
-**夹具（`node dist/adapters/dsh/selftest.mjs`）**：94 组全绿；本批组 = 注册件三态 + 晚到补注册、来源区分、可达性门逐条、A2 路标行两通道、index 接线可达性门。防火墙机器检查（值 import 仅 `index.mts`）仍绿——未新增宿主依赖。
+**夹具（`node dist/adapters/dsh/selftest.mjs`）**：95 组全绿；本批组 = 注册件三态 + 晚到补注册、来源区分、可达性门逐条（含同技能多条目只发行一行）、A2 路标行两通道、index 接线可达性门、门 ↔ provider 实服集对账。防火墙机器检查（值 import 仅 `index.mts`）仍绿——未新增宿主依赖。
 
 **门禁**：`gates.mts --run` 全绿——adr-format / doc-budgets / md-links / cookbook / skill-format / archived-notes / postmortem-naming / handoff-structure / manifest / lint / secrets / command-surface / export-docs / package-invariants / ts-typecheck（review-tier / review-brief / change-scope 三件结构性例外按各自契约跑）。
 

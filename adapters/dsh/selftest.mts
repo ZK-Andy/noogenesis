@@ -954,7 +954,9 @@ function writeFixtureGene(repoRoot: string): void {
 		const repo = tempRepo("skill-guard");
 		// 可达性门输入：夹具仓给出七个 noo-* 活副本（提醒只点名本会话目录里实际可载的技能）。
 		for (const skill of SKILL_NAMES) {
-			fs.mkdirSync(path.join(repo, SKILL_DIR_CANDIDATES[0], skill), { recursive: true });
+			const dir = path.join(repo, SKILL_DIR_CANDIDATES[0], skill);
+			fs.mkdirSync(dir, { recursive: true });
+			fs.writeFileSync(path.join(dir, "SKILL.md"), `---\nname: ${skill}\ndescription: fixture\n---\nbody\n`);
 		}
 		const reachable = (root: string) => inspectSkillSurface(root, false).available;
 		const { toolPre } = createSkillGuardPolicies({ repoRoot: repo }, validateConfig({}).skillGuards, { reachableSkills: reachable });
@@ -1060,7 +1062,9 @@ function writeFixtureGene(repoRoot: string): void {
 
 		// 部分可达：同一次事件里只点名在场的那件，其余条目静默。
 		const partial = tempRepo("skill-guard-partial");
-		fs.mkdirSync(path.join(partial, SKILL_DIR_CANDIDATES[0], "noo-prose-standard"), { recursive: true });
+		const partialProse = path.join(partial, SKILL_DIR_CANDIDATES[0], "noo-prose-standard");
+		fs.mkdirSync(partialProse, { recursive: true });
+		fs.writeFileSync(path.join(partialProse, "SKILL.md"), "---\nname: noo-prose-standard\ndescription: fixture\n---\nbody\n");
 		const partialPolicies = createSkillGuardPolicies({ repoRoot: partial }, validateConfig({}).skillGuards, { reachableSkills: (root) => inspectSkillSurface(root, false).available });
 		const partialAgent = { session: { header: { cwd: partial } } };
 		const partialAdvice = partialPolicies.toolPre({ name: "write", arguments: { file_path: "docs/x.md" }, agent: partialAgent });
@@ -1069,12 +1073,49 @@ function writeFixtureGene(repoRoot: string): void {
 		assert.match(partialAdvice.lines[0]!, /noo-prose-standard/);
 
 		// 不可达命中不消耗预算：同技能随后可达（活副本落地）仍会提醒。
-		fs.mkdirSync(path.join(partial, SKILL_DIR_CANDIDATES[0], "noo-doc-standards"), { recursive: true });
+		const partialDocs = path.join(partial, SKILL_DIR_CANDIDATES[0], "noo-doc-standards");
+		fs.mkdirSync(partialDocs, { recursive: true });
+		fs.writeFileSync(path.join(partialDocs, "SKILL.md"), "---\nname: noo-doc-standards\ndescription: fixture\n---\nbody\n");
 		const nowReachable = partialPolicies.toolPre({ name: "write", arguments: { file_path: "docs/y.md" }, agent: partialAgent });
 		assert.ok(nowReachable && nowReachable.kind === "advice");
 		assert.equal(nowReachable.lines.length, 1);
 		assert.match(nowReachable.lines[0]!, /noo-doc-standards/);
-		ok("skill-guard: reachability gate — absent surface silent; partial surface names only reachable skills; unreachable hits keep their budget");
+
+		// 同一技能挂多条守卫条目：一次事件仍只发行一行（每会话每技能至多一行）。
+		const doubled = createSkillGuardPolicies(
+			{ repoRoot: partial },
+			[
+				{ kind: "path", pattern: "docs", skill: "noo-doc-standards" },
+				{ kind: "suffix", pattern: ".md", skill: "noo-doc-standards" },
+			],
+			{ reachableSkills: (root) => inspectSkillSurface(root, false).available },
+		);
+		const doubledAdvice = doubled.toolPre({ name: "write", arguments: { file_path: "docs/x.md" }, agent: { session: { header: { cwd: partial } } } });
+		assert.ok(doubledAdvice && doubledAdvice.kind === "advice");
+		assert.equal(doubledAdvice.lines.length, 1);
+		ok("skill-guard: reachability gate — absent surface silent; partial surface names only reachable skills; unreachable hits keep their budget; one line per skill per session");
+	}
+
+	// 门 ↔ provider 对账（可达集与实服集同源判据）：缓存/活副本里的半成品目录
+	// （有目录名、无 SKILL.md）不进可达集，provider 也不服务它们；frontmatter 坏
+	// 的一层由 provider 判（门不复算，残余边界记 ADR Consequences）。
+	{
+		const repo = tempRepo("skill-surface-reconcile");
+		const skillsDir = path.join(repo, SKILL_DIR_CANDIDATES[1]);
+		const good = path.join(skillsDir, "good-skill");
+		fs.mkdirSync(good, { recursive: true });
+		fs.writeFileSync(path.join(good, "SKILL.md"), "---\nname: good-skill\ndescription: valid fixture\n---\nbody\n");
+		const hollow = path.join(skillsDir, "hollow-skill");
+		fs.mkdirSync(hollow, { recursive: true });
+		fs.writeFileSync(path.join(hollow, "notes.md"), "half-finished skill dir\n");
+		const served = (await createBankSkillProvider({}).list({ cwd: repo })).map((item) => item.name);
+		const available = inspectSkillSurface(repo, true).available;
+		assert.deepEqual(served, ["good-skill"]);
+		assert.ok(available.has("good-skill"));
+		assert.ok(!available.has("hollow-skill"), "directory without SKILL.md must not enter the reachable set");
+		assert.ok(served.every((name) => available.has(name)), "every served skill must be reachable");
+		assert.deepEqual(inspectSkillSurface(repo, false).available.size, 0, "bank cache counts only after registration");
+		ok("skill-surface: reachable set reconciles with the bank provider's served set (hollow dir excluded)");
 	}
 
 	// index 接线假 ctx 冒烟：存留四点各恰一个 listener + 行为逐条。

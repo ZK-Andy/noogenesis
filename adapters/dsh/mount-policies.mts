@@ -66,14 +66,19 @@ export interface SkillSurface {
 	bankCachePending: boolean;
 }
 
-/** 目录内技能名（只认目录：`<name>/SKILL.md` 布局，杂文件不算技能）。 */
+/**
+ * 目录内技能名：只认目录且 `<name>/SKILL.md` 在场——与随库 provider 的实服条件
+ * 对齐（`skill-provider.mts` 读 SKILL.md 失败即跳过该目录），半成品目录不得进
+ * 可达集；frontmatter 合法性更严的一层不在此复算（provider 读文件时判，见 ADR
+ * Consequences 的残余边界）。目录缺席（未 pull / 无活副本）与其它读错误同分型：
+ * 零技能，绝不抛。
+ */
 function skillNamesIn(repoRoot: string, dir: string): string[] {
 	try {
 		return fs.readdirSync(path.join(repoRoot, dir), { withFileTypes: true })
-			.filter((entry) => entry.isDirectory())
+			.filter((entry) => entry.isDirectory() && fs.existsSync(path.join(repoRoot, dir, entry.name, "SKILL.md")))
 			.map((entry) => entry.name);
 	} catch {
-		// 目录缺席（未 pull / 无活副本）与其它读错误同分型：零技能，绝不抛。
 		return [];
 	}
 }
