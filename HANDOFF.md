@@ -11,7 +11,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-13｜**演化轮落账批（同族收口；FULL 三审 R1 0B/3S、R2 1B/3S、R3 0B/5S；采纳 10 部分采纳 2）**：提问面改 `ctx.get("userQuestions")`；新门禁 `host-service-reads`（白名单 = `inject` 声明 ∪ cordis 混入面；实测 1 真阳性 0 假阳性）+ CI 自测登记 + 共享件 `srctree.mts`；简报闸补 base 可解析判据；池候选销账 3 新增 1；三 ADR 落账。
+- 2026-09-13｜**演化轮落账批（同族收口；FULL 三审 R1 0B/3S、R2 1B/3S、R3 0B/5S；采纳 10 部分采纳 2）**：提问面走 `ctx.get`；新门禁 `host-service-reads`（白名单 = `inject` 声明 ∪ cordis 混入面；实测 1 真阳性 0 假阳性）+ CI 自测登记 + 共享件 `srctree`；简报闸补 base 判据；池候选销账 3 新增 1；三 ADR 落账；提交 `031ced7`→`97a38a8`，CI 绿。
 - 2026-09-13｜**护栏建设轮余项收尾批（FULL 三审 R1 1B/2S、R2 1B/2S、R3 3B/9S；采纳 17 延后 1）**：决定 1 建议行 + 决定 2 两本账落点落地，[ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md) 三段落账（含两条勘误）；`c671ce5`→`6f72c8d`。README 已同步。
 - 2026-09-13｜**护栏建设轮实现批（决定 1 落地）**：常驻注入字面预算判据入 `section.mts` + `config.mts` 装载期拒收；实测**预算 2048 会把已发布缺省 12 行判违约** → 改由缺省推导；selftest 6 条断言；设计稿/blueprint token-meter 归口同步。README 已同步。
 - 2026-09-13｜**护栏建设轮立项讨论轮**：三题拍板 = token 基线两轨 / 改进度量两本账 / canary 判不立；[护栏建设轮 ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md)、[延后 ADR](.agents/notes/proposed/architecture/2026-09-06-guardrail-defer-trigger.md) 触发条标到达。
