@@ -27,7 +27,7 @@ import { isBuiltin } from "node:module";
 import { fileURLToPath } from "node:url";
 import type { defineTool, ToolDefinition } from "@deepseek-ai/dsh-tools";
 import { runEngineSync, resolveRepoRoot, sessionWorkspaceOf, explicitRepoRootOf, EXIT } from "./engine-bridge.mjs";
-import { hitsSectionText, createHitsSection, assertResidentSectionBudget, BASE_SECTION, DEFAULT_MAX_INDEX_GENES, HITS_SECTION_CHAR_BUDGET, HIT_LINE_COST_CHARS } from "./section.mjs";
+import { hitsSectionText, createHitsSection, assertResidentSectionBudget, BASE_SECTION, DEFAULT_MAX_INDEX_GENES, MAX_HIT_LINES, MAX_HIT_REF_CHARS, HITS_SECTION_CHAR_BUDGET } from "./section.mjs";
 import { registerNooTools } from "./tools.mjs";
 import { listStagingCandidates, buildSolidifyArgs, solidifyNotice, runSolidifyTrigger, createInFlightGate, ASK_TIMEOUT_MS } from "./solidify-trigger.mjs";
 import { buildPullArgs, pullBankOnce, createBankPullScheduler } from "./bank-pull.mjs";
@@ -158,38 +158,48 @@ function writeFixtureGene(repoRoot: string): void {
 
 // ── 2c) 常驻注入预算判据（护栏立项 ADR 决定 1：字面预算为阻断面）────────
 {
-	// 基线固定面：BASE_SECTION 是常驻注入的常量部分，漂移即改预算依据。
+	// 基线固定面：BASE_SECTION 是预算口径外的常量注入（预算只盖命中节），
+	// 其长度漂移即改基线依据，故钉住实测值。
 	assert.equal(BASE_SECTION.length, 545, "BASE_SECTION is the frozen resident baseline (545 chars) — a change here re-bases the budget");
 	ok("resident budget: base section length pinned (545 chars)");
 
-	// 预算与缺省同源：已发布缺省必须过判据（装载期同款断言的自测面），
-	// 且上界由构造给出——上界值通过、上界加一拒收。
-	const ceiling = Math.floor(HITS_SECTION_CHAR_BUDGET / HIT_LINE_COST_CHARS);
+	// 预算与缺省同源：已发布缺省必须过判据（否则升级后插件拿自己的缺省配置
+	// 装载失败）；上界与判据共用同一导出值，自测不重推公式。
 	assert.doesNotThrow(() => assertResidentSectionBudget(DEFAULT_MAX_INDEX_GENES));
-	assert.ok(ceiling > DEFAULT_MAX_INDEX_GENES, "budget must admit the shipped default with headroom");
-	assert.doesNotThrow(() => assertResidentSectionBudget(ceiling));
-	ok(`resident budget: shipped default (${DEFAULT_MAX_INDEX_GENES}) passes; derived ceiling is ${ceiling}`);
+	assert.ok(MAX_HIT_LINES > DEFAULT_MAX_INDEX_GENES, "budget must admit the shipped default with headroom");
+	assert.doesNotThrow(() => assertResidentSectionBudget(MAX_HIT_LINES));
+	ok(`resident budget: shipped default (${DEFAULT_MAX_INDEX_GENES}) passes; line ceiling is ${MAX_HIT_LINES}`);
 
 	// 负例：上界加一即拒收（fail-closed，绝不半启用超预算的常驻注入配置）。
-	assert.throws(() => assertResidentSectionBudget(ceiling + 1), /exceeds the resident section budget/);
-	assert.throws(() => assertResidentSectionBudget(ceiling + 1), /maxIndexGenes/);
+	assert.throws(() => assertResidentSectionBudget(MAX_HIT_LINES + 1), /exceeds the resident section budget/);
+	assert.throws(() => assertResidentSectionBudget(MAX_HIT_LINES + 1), /maxIndexGenes/);
 	ok("resident budget: ceiling+1 rejected at load (fail-closed, field named)");
 
-	// 渲染面：满行 + 满摘要（含超长摘要被截断）的最坏情形仍在预算内——
-	// 判据与渲染共用同一组常量，上界由构造而非巧合成立。
-	const ceilingGenes = Array.from({ length: ceiling }, (_, i) => `demo/g-${i}  ${"字".repeat(400)}`).join("\n");
-	const renderedWorst = hitsSectionText({ stdout: `signals: x\n${ceilingGenes}\n` }, { maxGenes: ceiling });
-	assert.ok(renderedWorst.length <= HITS_SECTION_CHAR_BUDGET, `worst-case hits section (${renderedWorst.length}) must stay within budget ${HITS_SECTION_CHAR_BUDGET}`);
-	assert.equal(renderedWorst.split("\n").filter((line) => line.startsWith("demo/")).length, ceiling, "every capped line renders");
-	ok("resident budget: worst-case rendered section (full lines, oversized summaries) stays within budget");
+	// 成本模型的可核验假设：ref 上界对着本仓真实基因逐件核（越界即红，
+	// 提示同变更调整 MAX_HIT_REF_CHARS）——手抄估值只有能被证伪时才算上界。
+	const geneDir = path.join(REPO_ROOT, "genes");
+	const refs = fs.readdirSync(geneDir, { withFileTypes: true })
+		.filter((entry) => entry.isDirectory())
+		.flatMap((domain) => fs.readdirSync(path.join(geneDir, domain.name))
+			.filter((file) => file.endsWith(".json"))
+			.map((file) => `${domain.name}/${path.basename(file, ".json")}`));
+	assert.ok(refs.length > 0, "genes/ must hold at least one gene for the ref bound to be meaningful");
+	for (const ref of refs) {
+		assert.ok(ref.length <= MAX_HIT_REF_CHARS, `gene ref ${ref} (${ref.length} chars) exceeds MAX_HIT_REF_CHARS=${MAX_HIT_REF_CHARS} — raise the constant with the change`);
+	}
+	ok(`resident budget: every repo gene ref (${refs.length}) fits MAX_HIT_REF_CHARS=${MAX_HIT_REF_CHARS}`);
 
-	// 真实违约路径：预算不足的最大成因是上游资产（超长 summary 的基因），
-	// 该路径只能经基因库增长 + maxIndexGenes 调高触达——配置闸在此拦下。
-	const overRepo = tempRepo("resident-budget");
-	fs.mkdirSync(path.join(overRepo, "genes", "demo"), { recursive: true });
-	fs.writeFileSync(path.join(overRepo, "genes", "demo", "wide.json"), JSON.stringify({ ...FIXTURE_GENE, id: "wide", summary: "字".repeat(400) }, null, 2) + "\n");
-	assert.throws(() => validateConfig({ repoRoot: overRepo, maxIndexGenes: ceiling + 1 }), /resident section budget/);
-	ok(`resident budget: oversized-gene fixture rejected once maxIndexGenes=${ceiling + 1} (growth path caught at load)`);
+	// 渲染面：上界行数 × 上界行宽 + 固定开销（用模块自己导出的常量构造，
+	// 不另抄公式）仍在预算内；逐行截断保证单行不越上界。
+	const worstLines = Array.from({ length: MAX_HIT_LINES }, (_, i) => `${"r".repeat(MAX_HIT_REF_CHARS)}${i}  ${"字".repeat(400)}`).join("\n");
+	const renderedWorst = hitsSectionText({ stdout: `signals: x\n${worstLines}\n` }, { maxGenes: MAX_HIT_LINES });
+	assert.ok(renderedWorst.length <= HITS_SECTION_CHAR_BUDGET, `worst-case hits section (${renderedWorst.length}) must stay within budget ${HITS_SECTION_CHAR_BUDGET}`);
+	assert.equal(renderedWorst.split("\n").filter((line) => line.endsWith("…")).length, MAX_HIT_LINES, "every capped line carries a truncated summary");
+	ok(`resident budget: worst-case render (${MAX_HIT_LINES} lines × oversized ref + summary) stays within budget ${HITS_SECTION_CHAR_BUDGET}`);
+
+	// 真实违约路径：配置侧把行数调过闸即在装载期被拒收。
+	assert.throws(() => validateConfig({ maxIndexGenes: MAX_HIT_LINES + 1 }), /resident section budget/);
+	ok(`resident budget: validateConfig rejects maxIndexGenes=${MAX_HIT_LINES + 1} at load`);
 }
 
 // ── 3) tools：依赖注入面（假 defineTool + 假引擎，退出码映射全路径） ──────
