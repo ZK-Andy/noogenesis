@@ -2,6 +2,9 @@
 
 Status: implemented
 Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
+Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
+
+批注（分批翻转）：第一条 Review 行 = 阻断面实现批（实现 `fde8bb9` + 评审收口 `958c728`/`9c0ce88`，R1 0B/4S、R2 0B/4S、R3 1B/8S 全采纳）。第二条 = 决定 1 建议行 + 决定 2 两本账落点批（实现 `c671ce5`/`2cd2b65` + 评审收口 `5b96da3`，R1 1B/2S、R2 1B/2S、R3 3B/9S；采纳 17 条、延后 1 条 = 延后 ADR 的终局态治理入 [HANDOFF-todos](../../../../HANDOFF-todos.md)（D）条）。
 
 ## Problem
 
@@ -10,7 +13,7 @@ Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 立项前复测三件的真实暴露面（本机实测，2026-09-13）：
 
 - **token 基线面**：`ctx.tokenMeter` 服务在本 profile 在场——`@deepseek-ai/dsh-base` 的 bundle patch 以 `- id: token-meter` 挂载 `@deepseek-ai/dsh-token-meter`；实测版本 `0.1.5-rc.2`，公开面 = `measure(session, requestHeader?)` → `TokenMeasurement`（`totalTokens` / `surfaceTokens` / `nodes[]`，`estimateMessage(message)` 另路）。**缺口 = 上界无机器判据**（实测）：适配层常驻注入 = `BASE_SECTION`（`adapters/dsh/section.mts`，实测 5 行 545 字符，常量）+ 命中节（实测每行摘要封顶 `MAX_SUMMARY_CHARS` = 160）。命中节**不随基因库增长**——命中行按 `hitLines.slice(0, maxGenes)` 封顶且逐行截断（同件实现），故注入量只随配置行数变化：`maxIndexGenes` = 4/8/12 时上界约 688 / 1376 / 2064 字符。缺口在**该上界今天无机器判据**：`verify-doc-budgets.mts` 只盖 `docs/` 等文件清单，不盖会话常驻注入，配置把行数调大或单价常量上调都无闸拦。
-- **改进度量面**：本仓架构域无可比数值分值——变化量是 prose 与机制件，不是 benchmark 指标；可回溯的真实信号只有评审账（`.agents/notes/implemented/**` 中 `Review: FULL` 行 59 条）与发版后修复批。
+- **改进度量面**：本仓架构域无可比数值分值——变化量是 prose 与机制件，不是 benchmark 指标；可回溯的真实信号只有评审账（`.agents/notes/implemented/**` 中带 `Review: FULL` 行的笔记，口径 = `git grep -l '^Review: FULL' -- .agents/notes/implemented/`，2026-09-13 实测 55 件）与发版后修复批。
 - **canary 面**：本插件无常驻进程——宿主 spawn 每次调用一子进程（[2026-09-06-m2-adapter-wiring](../../implemented/architecture/2026-09-06-m2-adapter-wiring.md) 的接口形态），无「进程内被污染」的可 observe 形态。
 
 两条既有拍板约束了每件的候选形态：引擎**零第三方依赖**（token 估算逻辑不可落 `engine/`，见 [engine/AGENTS.md](../../../../engine/AGENTS.md)）；适配层值 import 允许集封底 = `dsh-tools` + `dsh-llm` 两件、扩集须同变更拍板，且**已有一条反例教训**——`userQuestions` 进 `inject` 声明会让服务缺席时整个插件装载被推迟（[adapters/AGENTS.md](../../../../adapters/AGENTS.md)），故任何宿主服务读数的接线都不得进 `inject` 声明。
@@ -23,13 +26,13 @@ Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 
 - **判据（阻断面）**：常驻注入面的上界写成字面预算——`BASE_SECTION` 冻结为固定值（实测 545 字符），命中节给字符预算（缺省 2048，即 12 行 ×160 摘要 + 前缀 + 溢出提示行的余量）。判据件落适配层纯函数 + `adapters/dsh/selftest.mts` 断言块：该 selftest 由真实门禁实跑（`.github/workflows/validate.yml` 的 `node dist/adapters/dsh/selftest.mjs` + `scripts/pre-push.mts` 的 `adapter-selftest` 组），不是空转夹具。预算值口径单源 = 本件的实现落账节 + `section.mts` 常量；改动预算须走同变更 ADR。
 - **建议行（非阻断面）**：prompt 组装点若 `ctx.tokenMeter` 在场，按会话至多读一次真实注入面 token 数（`measure(session)` 的 surface 读数），写一行 diagnostics 留痕；读数**不进 `inject` 声明**（懒取用 + 缺席静默降级，避 userQuestions 教训）。该行是观察面，不是门槛。
-- **为什么不追真值**：`measure()` 返回的是整条 hosted system 面的读数，含宿主 persona、AGENTS.md 注入等本插件不可控内容；repo 内做不出来源纯净的「本插件注入面」读数。唯一干净的实测面是我们自己渲染的节文本，而它的判据不必用 token 单位——字符预算与 token 预算是同一个不变量的两个刻度。设计稿 §7.2 与 §11.2 两处 API 名（`estimateContent` / `contextBreakdown` / `contextPressure`）按此实测口径修正为 `measure` / `estimateMessage`，随本 ADR 收口执行。
+- **为什么不追真值**：`measure()` 返回的是整条 hosted system 面的读数，含宿主 persona、AGENTS.md 注入等本插件不可控内容；repo 内做不出来源纯净的「本插件注入面」读数。唯一干净的实测面是我们自己渲染的节文本，而它的判据不必用 token 单位——字符预算与 token 预算是同一个不变量的两个刻度。设计稿 §7.2 与 §11.2 两处 API 名（`estimateContent` / `contextBreakdown` / `contextPressure`）按此实测口径修正为 `measure` / `estimateMessage`。
 
 ### 决定 2：严格改进正向度量 = 记两本账，不立数值评分
 
 - 每批变更同时记：**评审 Blocker 账**（各轮 R1/R2/R3 Blocker 数与采纳数，现成面 = ADR 头 `Review:` 行 + HANDOFF 滚动窗条目）+ **发版后修复账**（该版本区间内 bug-fix 类 ADR 批数）。
 - 不引入改进分数、阈值或排序裁决：架构域分值必然落在 prose 质量上，为它建评分表就是 [主设计 §7.1](../../../../docs/research/dsh-swarm-evolution-framework-design.md) 第 3 条「只修异常、不修低分」要防的过拟合对象。守「前沿单调不降」的职责仍由既有机器门禁 + 评审实质执行承担。
-- 两本账**只作记录，无门槛**；出现「连续多批 Blocker 上升或发版后修复批激增」时再立判据（触发写在本 ADR 的 Consequences 通道）。
+- 两本账**只作记录，无门槛**；出现「连续多批 Blocker 上升或发版后修复批激增」时再立判据（触发条 = 本条）。
 
 ### 决定 3：canary 进程隔离 = 判不立
 
@@ -59,7 +62,7 @@ Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 - **依赖与环境**：建议行的接线依赖 tokenMeter 在场（本 profile 已实测在场），缺席时静默降级为不写行——不阻断 prompt 组装，也不改工具面。
 - **API 漂移残留风险**：实测版本为 `0.1.5-rc.2`（延后 ADR 记 0.1.2-rc.1）；漂移通道 = 运行期形状闸（`surfaceTokens` 非数值或 `measure` 抛错 → 每会话一条 warn，不静默降级）；类型契约断言待 host peer 集升代后补（理由与触发条见「决定 1 建议行的实现落账」勘误）。
 - **未覆盖缺口（显式接受）**：两本账无门槛 → 「评审通过但效用为负」的批次只能事后观察，不能事前拒绝；记录本身不构成护栏。
-- **流程归口**：本 ADR 收口转 implemented 时同步三处归口——延后 ADR 的「触发点到达」条款指向本件、[2026-09-05-p1-engine-skeleton](../../implemented/architecture/2026-09-05-p1-engine-skeleton.md)「遗留面」三件护栏（含 canary，原写「等 M2 常驻形态」）改指本件终局、[framework-rebuild-blueprint](../../../../docs/research/framework-rebuild-blueprint.md) 的 token 基线归口行由「非本层事」改为指向本件（阻断面已落适配层）。
+- **流程归口**：三处归口已随本 ADR 收口同步——延后 ADR 的「触发点到达」条款指向本件、[2026-09-05-p1-engine-skeleton](../../implemented/architecture/2026-09-05-p1-engine-skeleton.md)「遗留面」三件护栏（含 canary，原写「等 M2 常驻形态」）已改指本件终局、[framework-rebuild-blueprint](../../../../docs/research/framework-rebuild-blueprint.md) 的 token 基线归口行由「非协作层七层事」改为指向本件（阻断面已落适配层）。
 
 ## 决定 1 的实现落账（2026-09-13）
 
@@ -80,4 +83,4 @@ Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 ## 决定 2 落点（2026-09-13）
 
 - **评审账**（各轮 Blocker 数与采纳数）：两处既有面——ADR 头 `Review:` 行（每批一行）+ [HANDOFF](../../../../HANDOFF.md) 滚动窗条目（每批一句带 R1/R2/R3 计数），零新工具。
-- **发版后修复账**（该版本区间内 bug-fix 类 ADR 批数）：落点 = [release-shape-alignment](../process/2026-09-09-release-shape-alignment.md) 各「实发」节末行；口径 = 相邻 tag 之间新增的 `.agents/notes/implemented/bug-fix/**` 件数（`git log --diff-filter=A --name-only <base>..<tag>` 手填），三次实发节已回填。
+- **发版后修复账**（该版本区间内 bug-fix 类 ADR 批数）：落点 = [release-shape-alignment](../process/2026-09-09-release-shape-alignment.md) 各「实发」节内的修复账行；口径 = 相邻 tag 之间新增的 `.agents/notes/implemented/bug-fix/**` 件数（`git log --diff-filter=A --name-only <base>..<tag> -- .agents/notes/implemented/bug-fix/` 手填），三次实发节已回填。
