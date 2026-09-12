@@ -47,6 +47,7 @@ node dist/engine/bin.js self-test  # engine self-test (consumes prebuilt dist)
 ├── .agents/                # AI collaboration layer: noo-* skills / process cards / ADRs
 ├── docs/
 │   ├── method/             # methodology body (the content domain being evolved)
+│   ├── state/              # topic state pages (dossiers: decision pointers / action area / triggers / status log)
 │   ├── cookbook.md         # pitfalls single source of truth (atomic entries)
 │   └── research/           # design docs (swarm framework / shared layer / JIT-Agent research) + reference engine teardowns
 ├── scripts/                # verify-* machine gates (.mts, node ≥22.18 native type stripping; the lint/export-docs gates use the oxlint/typescript devDependencies) + gates.mts DAG runner (list single-sourced in engine/gates.json) + release/ (bump.mts + release-note.mts, dsh-v tag + bilingual release body)

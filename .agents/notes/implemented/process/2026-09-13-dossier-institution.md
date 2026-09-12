@@ -1,9 +1,9 @@
 # Agent Note: 档案页制度——`docs/state/` tier + 骨架四段机器闸
 
 Status: implemented
-Review: FULL/2026-09-13/pending（三重审核进行中，收口时回填真实结论）
+Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 
-Related: 试点立项与痛点画像 = [journal 2026-09 卷](../../../../journal/2026-09.md)（2026-09-10 会话：状态投影无家 + 记录无 schema）；痕迹提炼面归属 = [2026-09-13-memory-line-phase2-verdict](../architecture/2026-09-13-memory-line-phase2-verdict.md) Decision 3；tier 表家 = [doc-standards](../../../../docs/method/doc-standards.md)；笔记规则 = [notes/README](../../README.md)；新目录准入四问 = [architecture-standards](../../../../docs/method/architecture-standards.md) §2.4。
+Related: 试点立项与痛点画像 = [journal 2026-09 卷](../../../../journal/2026-09.md)（2026-09-10 会话：状态投影无家 + 记录无 schema）；痕迹提炼面归属 = [2026-09-13-memory-line-phase2-verdict](../architecture/2026-09-13-memory-line-phase2-verdict.md) Decision 3；tier 表家 = [doc-standards](../../../../docs/method/doc-standards.md)；笔记规则 = [notes/README](../../README.md)；新目录准入四问 = [architecture-standards](../../../../docs/method/architecture-standards.md) §2.1 R2。
 
 ## Problem
 
@@ -25,11 +25,11 @@ Related: 试点立项与痛点画像 = [journal 2026-09 卷](../../../../journal
 
 **5. 痕迹提炼形态 = 映射到既有四段，不引入第二套状态标签。** 映射内容（待观察面 / 已确认面 / 压缩规则）与摩擦点落点表归 [doc-standards](../../../../docs/method/doc-standards.md) §1，本件不复述（同 Decision 1 口径）；「可寻址」验收由该表承担。
 
-**6. 立页判据立、新页不立。** 判据文本归 [doc-standards](../../../../docs/method/doc-standards.md) §1；本批推广评估结论 = **不立新页**——现无第二个满足判据的主题（演化/发布/宿主适配三条线的状态各已有单一家），只立制度与闸。
+**6. 立页判据立、新页不立。** 判据文本归 [doc-standards](../../../../docs/method/doc-standards.md) §1；本批推广评估结论 = **不立新页**——现无第二个满足判据的主题（仓面实读，2026-09-13）【探索性】（演化/发布/宿主适配三条线的状态各已有单一家），只立制度与闸。
 
 **7. 机器面 = 新闸 `scripts/verify-dossier-format.mts`**：判据 2–4 + 落点命名（`docs/state/<kebab-topic>-dossier.md`）+ 头部说明块（H1 + 首个 `##` 前至少一行 `> `）；目录缺席或空 = 零约束 PASS（同 `verify-postmortem-naming` 姿态）。登记 `engine/gates.json`（pre-push/CI 消费同一清单）+ pre-commit job + CI self-test 清单。
 
-**8. 新目录准入四问**（[architecture-standards](../../../../docs/method/architecture-standards.md) §2.4）：①归属 = docs 状态面（过程资产属人读文档层，非代码/门禁/数据面）；②合同面 = 无代码消费者，消费者 = 人与 agent 阅读 + 本闸；③依赖方向 = 单向——档案页只引用 ADR/cookbook/method/journal/池，不反向被引用，不为它开新合同；④机器面 = `verify-dossier-format`。
+**8. 新目录准入四问**（[architecture-standards](../../../../docs/method/architecture-standards.md) §2.1 R2）：①归属 = docs 状态面（过程资产属人读文档层，非代码/门禁/数据面）；②合同面 = 无代码消费者，消费者 = 人与 agent 阅读 + 本闸；③依赖方向 = 单向——档案页只引用 ADR/cookbook/method/journal/池，不反向被引用，不为它开新合同；④机器面 = `verify-dossier-format`。
 
 **9. 试点件迁层**：`memory-system-dossier.md` 由 `docs/research/` 迁 `docs/state/`，入站链接同批重定向。
 

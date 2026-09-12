@@ -24,7 +24,7 @@ Related: 承接件 [2026-09-10-memory-line-fusion-charter](2026-09-10-memory-lin
 
 **2. 观测 → 行动（排序 / 阈值 / 禁用 / 退役建议）不重开。** 触发条单源维持 [第一期实现 ADR](2026-09-11-memory-line-phase1-observation-face.md) Decision 4（命中数逼近常驻注入上限，或观测样本量足以支撑排序）。取证（本机工作树实读，2026-09-13）【探索性】：`genes/` 6 条对 `maxIndexGenes` 12，`.noogenesis/observations/` 零条记录——两条触发都远未到。
 
-**3. 痕迹提炼面归属 = 判不立，并入既有面。** 摩擦点各有其家：踩坑 → [cookbook](../../../../docs/cookbook.md)、方法论 → [doc-standards](../../../../docs/method/doc-standards.md) 及同目录、决策 → Agent Notes、会话叙事 → `journal/`、未决追踪 → [演化轮池](../../../../HANDOFF-evolution-pool.md) + [行动区](../../../../HANDOFF-todos.md)；[session-close](../../../workflows/session-close.md) §2–§4 已是这些家的对账步。旧引擎 `OBSERVATION.md` 的形态（状态标签 + 归档规则）正身 = 档案页制度批（[行动区](../../../../HANDOFF-todos.md) (C) 条），并入该批，不另立落点面。
+**3. 痕迹提炼面归属 = 判不立，并入既有面。** 摩擦点落点表（五类家的单源）见 [doc-standards §1 主题状态页](../../../../docs/method/doc-standards.md)；[session-close](../../../workflows/session-close.md) §2–§4 已是这些家的对账步。旧引擎 `OBSERVATION.md` 的形态（状态标签 + 归档规则）正身 = 档案页制度（[制度 ADR](../process/2026-09-13-dossier-institution.md)），不另立落点面。
 
 **4. 立宪 ADR 的终局 = implemented。** 三项待拍板全部落定，骨架按 implemented 形态（`## Decision` + 现在时），路径 = `implemented/architecture/2026-09-10-memory-line-fusion-charter.md`，日期不改。治理批「内容不是提案的 proposed」清单随之归零。
 

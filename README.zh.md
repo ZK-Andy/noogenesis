@@ -47,6 +47,7 @@ node dist/engine/bin.js self-test  # 引擎自检（消费预构建 dist）
 ├── .agents/                # AI 协作层：技能 noo-* / 流程卡 / ADR
 ├── docs/
 │   ├── method/             # 方法论正文（被演化的内容域）
+│   ├── state/              # 主题状态页（档案页：决策指针 / 行动区 / 触发条件 / 状态日志）
 │   ├── cookbook.md         # 踩坑单一事实源（原子条目）
 │   └── research/           # 设计文档（蜂群框架设计 / 共享层设计 / JIT-Agent 研究）+ 参考引擎调研解剖
 ├── scripts/                # verify-* 机器门禁（.mts，node ≥22.18 原生直跑；lint/export-docs 两闸用 oxlint/typescript devDependency）+ gates.mts 门禁清单单源发射器（含 needs/after DAG）+ release/（bump.mts + release-note.mts：dsh-v tag + 双语 release 正文）
