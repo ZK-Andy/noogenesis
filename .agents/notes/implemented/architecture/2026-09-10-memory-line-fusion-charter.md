@@ -2,7 +2,7 @@
 
 Status: implemented
 
-Related: 第二期范围与两项待拍板的判裁 = [2026-09-13-memory-line-phase2-verdict](2026-09-13-memory-line-phase2-verdict.md)；第一期实现面 = [2026-09-11-memory-line-phase1-observation-face](2026-09-11-memory-line-phase1-observation-face.md)；线状态唯一家 = [memory-system-dossier](../../../../docs/research/memory-system-dossier.md)。
+Related: 第二期范围与两项待拍板的判裁 = [2026-09-13-memory-line-phase2-verdict](2026-09-13-memory-line-phase2-verdict.md)；第一期实现面 = [2026-09-11-memory-line-phase1-observation-face](2026-09-11-memory-line-phase1-observation-face.md)；线状态唯一家 = [memory-system-dossier](../../../../docs/state/memory-system-dossier.md)。
 
 ## Problem
 

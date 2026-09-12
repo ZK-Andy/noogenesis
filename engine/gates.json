@@ -9,6 +9,7 @@
     { "name": "archived-notes", "cmd": "node", "args": ["scripts/verify-archived-agent-notes.mts"] },
     { "name": "postmortem-naming", "cmd": "node", "args": ["scripts/verify-postmortem-naming.mts"] },
     { "name": "handoff-structure", "cmd": "node", "args": ["scripts/verify-handoff-structure.mts"] },
+    { "name": "dossier-format", "cmd": "node", "args": ["scripts/verify-dossier-format.mts"] },
     { "name": "manifest", "cmd": "node", "args": ["scripts/verify-manifest.mts"] },
     { "name": "review-tier", "cmd": "node", "args": ["scripts/verify-review-tier.mts", "--since", "{{outgoing_base}}", "--enforce"] },
     { "name": "review-brief", "cmd": "node", "args": ["scripts/verify-review-brief.mts", "--lanes", "R1,R2,R3"] },

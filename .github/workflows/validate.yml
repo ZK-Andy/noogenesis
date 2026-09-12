@@ -64,6 +64,7 @@ jobs:
           node scripts/verify-doc-budgets.mts --self-test
           node scripts/verify-skill-format.mts --self-test
           node scripts/verify-handoff-structure.mts --self-test
+          node scripts/verify-dossier-format.mts --self-test
           node scripts/verify-review-tier.mts --self-test
           node scripts/verify-review-brief.mts --self-test
           node scripts/verify-gene-format.mts --self-test

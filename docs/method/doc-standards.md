@@ -10,12 +10,22 @@
 | .agents/AGENTS.md | 协作层专属规则 | 根文件已承载的仓库级规则 |
 | docs/method/ | 方法论正文（被演化的内容域） | 项目当下的状态快照（→README/ADR） |
 | docs/research/ | 设计文档与调研（设计意图与外部解剖，非当下状态） | 当前状态快照（→README/ADR）、方法论正文（→method） |
+| docs/state/ | 主题状态页（档案页）——一个主题一个状态家，骨架四段封闭集 | durable 结论（→ADR）、方法论正文（→method）、调研稿（→research） |
 | docs/cookbook.md | 带域标签的踩坑原子（procedure） | 设计理由（→ 所链接的 ADR） |
 | ADR | 活跃决策：为什么、放弃了什么、需要什么验证 | 迁移计划、验收清单、spec 用语 |
 | README | 项目契约：是什么、怎么用、当前计数 | JSDoc/目录复述、他处事项 |
 | journal/ + HANDOFF | 过程叙事与交接（有界） | durable 结论（只落上表各层） |
 
 放置口诀：**bugs → cookbook；rationale → ADR；procedures → cookbook/method；contracts → README；standing orders → AGENTS.md + 链接。**
+
+### 主题状态页（`docs/state/`）
+
+- **立页判据**：跨会话未决项 ≥3 且状态散落 ≥2 处，或有独立触发条件与状态日志——不满足不立（不预铺空页）。
+- **骨架四段（封闭集，按序）**：`## 决策指针`（只列指针，每条带相对链接）→ `## 行动区`（`- [ ]` / `- [x]` 条目，open ≤12）→ `## 触发条件`（待观察面）→ `## 状态日志`（`- YYYY-MM-DD｜` 条目，≤40 条，超限把最旧条目压缩为一行）。第五个 `##` 节违规——新素材归其 tier 的家。
+- **头部说明块**：H1 + 首个 `##` 之前至少一行 `> `（自述唯一状态家身份与迁入源）。
+- **摩擦点落点**（「可寻址」验收单源）：踩坑 → [cookbook](../cookbook.md)；方法论 → 本目录；决策 → ADR；叙事 → `journal/`；未决 → [演化轮池](../../HANDOFF-evolution-pool.md) + [行动区](../../HANDOFF-todos.md)；主题状态 → 本层档案页。
+- **冻结通道**：主题收口后迁 `docs/research/` 作调研档案（先例 = [优化轮文档](../research/capsule-01-optimization-round.md)）。
+- 机器闸 = `verify-dossier-format`（立项 = [制度 ADR](../../.agents/notes/implemented/process/2026-09-13-dossier-institution.md)）。
 
 ## 2. 写作铁律
 

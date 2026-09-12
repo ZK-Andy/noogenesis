@@ -2,7 +2,7 @@
 
 Status: implemented
 
-Related: 承接件 [2026-09-10-memory-line-fusion-charter](2026-09-10-memory-line-fusion-charter.md)（其 D7-2 与两项待拍板由本件裁定）；第一期实现面 [2026-09-11-memory-line-phase1-observation-face](2026-09-11-memory-line-phase1-observation-face.md)（观测消费面的触发条单源）；行为面既有家 [review.md](../../../../docs/method/review.md)（三路评审契约）与 [护栏建设轮 ADR](2026-09-13-guardrail-construction-round.md)（Decision 2：不立数值评分）；线状态唯一家 [memory-system-dossier](../../../../docs/research/memory-system-dossier.md)。
+Related: 承接件 [2026-09-10-memory-line-fusion-charter](2026-09-10-memory-line-fusion-charter.md)（其 D7-2 与两项待拍板由本件裁定）；第一期实现面 [2026-09-11-memory-line-phase1-observation-face](2026-09-11-memory-line-phase1-observation-face.md)（观测消费面的触发条单源）；行为面既有家 [review.md](../../../../docs/method/review.md)（三路评审契约）与 [护栏建设轮 ADR](2026-09-13-guardrail-construction-round.md)（Decision 2：不立数值评分）；线状态唯一家 [memory-system-dossier](../../../../docs/state/memory-system-dossier.md)。
 
 ## Problem
 
@@ -45,5 +45,5 @@ Related: 承接件 [2026-09-10-memory-line-fusion-charter](2026-09-10-memory-lin
 - 记忆库线在「观测面落地 + 第二期判不立」后进入稳态：零新增机制，唯一跨会话遗留 = 观测消费面的触发条（单源在第一期实现 ADR Decision 4）。
 - 「行为评估的家 = 入档闸 / 三路评审 / 两本账 / 观测面」成为口径单源；后续任何「给行为打分」的提议须先推翻 review.md §6 与护栏 Decision 2，而非重新立项。
 - 档案页制度批的验收面增加「摩擦点落点是否可寻址」一项（由本件 Decision 3 归入）。
-- 记忆库线不再出现在待选轮清单；其状态家仍是 [memory-system-dossier](../../../../docs/research/memory-system-dossier.md)。
+- 记忆库线不再出现在待选轮清单；其状态家仍是 [memory-system-dossier](../../../../docs/state/memory-system-dossier.md)。
 - 证据强度：本件数据（genes 6 / 上限 12 / 观测 0 条）为本机单次实读【探索性】，不作评分依据。

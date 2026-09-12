@@ -4,7 +4,7 @@
 > 演化轮池（候选归集区）= **[HANDOFF-evolution-pool.md](HANDOFF-evolution-pool.md)**：规则、门槛与开轮触发单源在该件；findings 的框架级候选写进池件，不写本件。
 > 分类速览约定见 [session-close](.agents/workflows/session-close.md)：A 待拍板 / B 待复验 / C 随手候选 / D 远期。
 > 胶囊 01 优化轮已收口（2026-09-10）：其问题池冻结为调研档案，终态与去向 = [该文档 §2.3 收口账](docs/research/capsule-01-optimization-round.md)；跨会话遗留（下方 D 条三件）由本行动区承载。
-> 记忆库线（含痕迹提炼面 D 条）已迁出（2026-09-10）：唯一状态家 = [docs/research/memory-system-dossier.md](docs/research/memory-system-dossier.md)（档案页制度试点）。
+> 记忆库线（含痕迹提炼面 D 条）已迁出（2026-09-10）：唯一状态家 = [docs/state/memory-system-dossier.md](docs/state/memory-system-dossier.md)（档案页制度试点）。
 
 - [x] （A）胶囊 v0.2 评审机械闸 2026-09-05 落地（verify-review-tier + verify-review-brief），ADR [2026-09-05-review-mechanical-gate](.agents/notes/implemented/process/2026-09-05-review-mechanical-gate.md)。
 - [x] （A）npm/GitHub 占用核验与注册 2026-09-05：npm 双名占位完成（裸名 `noogenesis@0.0.0` + org `@noogenesis`/`@noogenesis/genesis`，账号 openorbit，真包随首发替换）；GitHub 休眠账号不阻碍 `<宿主>/noogenesis` 仓库名。细节见主设计未决问题 1。
@@ -69,7 +69,7 @@
 - [x] （C）verify-review-brief 明细输出缺口 2026-09-10 修复（随收口批）：明细打印兜底无泳道前缀项，fixtures 12→13；ADR [2026-09-10-review-brief-detail-fallback](.agents/notes/implemented/bug-fix/2026-09-10-review-brief-detail-fallback.md)。
 - [x] （C）release-note 大批次归并档 2026-09-12 兑现（FULL 三审采纳 8 拒绝 3）：末节按提交日归并成每日一条（条目零丢弃、按 `%cs` 日期串建 Map）；[聚合档 ADR](.agents/notes/implemented/process/2026-09-12-release-note-daily-aggregation.md)。
 - [x] （B）bank provider 注册修复真机复验 2026-09-13 通过：两个外仓新会话目录均含 7 件 `noo-*`（来源 = `noogenesis-bank`），提醒→载入成功、零 unknown、零诊断 warn。修复件 = [ADR](.agents/notes/implemented/bug-fix/2026-09-12-bank-skill-provider-registration.md)。
-- [ ] （C）档案页制度批（试点后续）：试点件 = [memory-system-dossier.md](docs/research/memory-system-dossier.md)；内容 = 全仓推广评估 + 骨架四段机器闸（仿 handoff 结构闸）+ tier 归口（research 层「非当下状态」vs 状态页先例）+ 痕迹提炼面形态归属（[判裁 ADR](.agents/notes/implemented/architecture/2026-09-13-memory-line-phase2-verdict.md) D3：观察生命周期协议并入，验收含「摩擦点落点可寻址」）+ ADR 立项。触发 = 试点跑一段评估。
+- [ ] （C）档案页制度批（试点后续）：试点件 = [memory-system-dossier.md](docs/state/memory-system-dossier.md)；内容 = 全仓推广评估 + 骨架四段机器闸（仿 handoff 结构闸）+ tier 归口（research 层「非当下状态」vs 状态页先例）+ 痕迹提炼面形态归属（[判裁 ADR](.agents/notes/implemented/architecture/2026-09-13-memory-line-phase2-verdict.md) D3：观察生命周期协议并入，验收含「摩擦点落点可寻址」）+ ADR 立项。触发 = 试点跑一段评估。
 - [x] （A）M1 批 A 守卫三件套 2026-09-10（FULL 三审全采纳；三件 v0 落地），ADR [2026-09-10-m1-guard-anti-overdesign](.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) implemented（分批批注）。
 - [x] （A）M1 批 B 防过度混合 D 2026-09-10（FULL 三审全采纳；契约块 + 蒸馏篇 + cases 索引 + 检查项第 5 条），ADR [2026-09-10-m1-guard-anti-overdesign](.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) 第二条 Review 行在案。
 - [x] （D）护栏建设轮余项收尾 2026-09-13：建议行落地（`token-baseline.mts` 每会话一行读数，运行期形状闸）+ 两本账落点（发版账 = release ADR 实发节，三次已回填），[ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md) 落账。

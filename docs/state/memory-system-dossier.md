@@ -1,17 +1,18 @@
 # 记忆库线档案页
 
 > 本线状态的**唯一行动区**（档案页制度首个试点，2026-09-10 用户拍板）：一个主题一个状态家，其余提及处（HANDOFF 滚动窗、ADR、journal、设计稿）只放指针、不复述状态。
-> 骨架四段固定：决策指针 / 行动区 / 触发条件 / 状态日志；结构漂移待制度化批加机器闸。
-> 迁入源：[HANDOFF-todos](../../HANDOFF-todos.md) 痕迹提炼面 D 条（2026-09-10 迁出）+ [优化轮文档](capsule-01-optimization-round.md) §2.1 记忆库条与 §2.2-5 开题条（同批迁出，迁出处留一行指针）。
+> 骨架四段固定（决策指针 / 行动区 / 触发条件 / 状态日志）；形态与上限判据单源 = [doc-standards §1 主题状态页](../method/doc-standards.md)，机器闸 = `verify-dossier-format`。
+> 痕迹面归属：**触发条件**节 = 待观察面（未到触发的项），**状态日志**节 = 已确认面（超上限时把最旧条目压缩为一行），不在本页另立状态标签。
+> 迁入源：[HANDOFF-todos](../../HANDOFF-todos.md) 痕迹提炼面 D 条（2026-09-10 迁出）+ [优化轮文档](../research/capsule-01-optimization-round.md) §2.1 记忆库条与 §2.2-5 开题条（同批迁出，迁出处留一行指针）。
 
 ## 决策指针
 
 决策不落本页，本段只列指针：
 
 - **记忆库线排框架重建后**：charter ADR [2026-09-06-framework-rebuild-charter](../../.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md) 时序节。
-- **痕迹提炼面边界**（非自动沉淀复刻、不让引擎扫会话，只议 session-close 摩擦点落点是否可寻址）：设计稿 [§13 未决问题 5](dsh-swarm-evolution-framework-design.md) + 2026-09-06 迁移拍板（journal 2026-09 卷）；实物参照 = 旧项目 OBSERVATION 观察生命周期协议（work 区）。终局 = 判不立、并入既有面（[第二期判裁 ADR](../../.agents/notes/implemented/architecture/2026-09-13-memory-line-phase2-verdict.md) Decision 3）。
-- **2026-09-10 讨论轮拆词定名**：记忆库线 = 引擎记忆原语（memory-graph）+ 痕迹提炼面两件，**不立项「知识库/记忆库」新存储工程**（durable 四家即知识库）；记录类表格化的正身 = Event/memory-graph 追加轨；知识库整体入库（SQLite/RAG）在 92 件自有文档规模下否决（diff 评审/机器门禁/agent 阅读三消费者均被破坏）。
-- **设计基准**：[dsh-swarm-evolution-framework-design.md](dsh-swarm-evolution-framework-design.md) §6（memory-graph 原语表）+ §13 未决问题 5（与 dsh-continual-evolve 融合边界）。
+- **痕迹提炼面边界**（非自动沉淀复刻、不让引擎扫会话，只议 session-close 摩擦点落点是否可寻址）：设计稿 [§13 未决问题 5](../research/dsh-swarm-evolution-framework-design.md) + 2026-09-06 迁移拍板（[journal 2026-09 卷](../../journal/2026-09.md)）；实物参照 = 旧项目 OBSERVATION 观察生命周期协议（work 区）。终局 = 判不立、并入既有面（[第二期判裁 ADR](../../.agents/notes/implemented/architecture/2026-09-13-memory-line-phase2-verdict.md) Decision 3）。
+- **2026-09-10 讨论轮拆词定名**：记忆库线 = 引擎记忆原语（memory-graph）+ 痕迹提炼面两件，**不立项「知识库/记忆库」新存储工程**（durable 四家即知识库）；记录类表格化的正身 = Event/memory-graph 追加轨；知识库整体入库（SQLite/RAG）在 92 件自有文档规模下否决（diff 评审/机器门禁/agent 阅读三消费者均被破坏）——拍板过程见 [journal 2026-09 卷](../../journal/2026-09.md)。
+- **设计基准**：[dsh-swarm-evolution-framework-design.md](../research/dsh-swarm-evolution-framework-design.md) §6（memory-graph 原语表）+ §13 未决问题 5（与 dsh-continual-evolve 融合边界）。
 - **2026-09-10 融合轮开题拍板**：边界形态 = 按机制收、按两半裁（不收自动沉淀全家）；机制吸收补丁清单与三项悬空项的终局 = [2026-09-10-memory-line-fusion-charter](../../.agents/notes/implemented/architecture/2026-09-10-memory-line-fusion-charter.md)；第二期判裁 = [2026-09-13-memory-line-phase2-verdict](../../.agents/notes/implemented/architecture/2026-09-13-memory-line-phase2-verdict.md)。
 
 ## 行动区
@@ -38,3 +39,4 @@
 - 2026-09-10｜**吸收面收窄 + 第一期范围拍板（D9/D10）**：逐件核 B 半后判定两件**判不立**（原子写 / 快照 / 回滚、乐观并发守卫——本仓无条目存储对象，`genes/` + `events/` 的原子性与回滚由 git 提供），五件维持；第一期 IN = D8 观测输入面 + 派生与 Select 建议档 + 凭据筛查，OUT = 行为评估自建（二期）/ 两件判不立 / 挂载面暂不立 / 痕迹提炼面挂起。实现批待启动（启动时另立实现 ADR）。
 - 2026-09-11｜**第一期实现批落地**：三件交付物（观测输入面 / 派生与 Select 建议档 / 凭据绊线）经 FULL 三审（R1 简化 1B+5S、R2 代码 3B+4S、R3 ADR 1B+7S 全裁决）收口；观测面写者集合 = 人 / 经人许可的 agent（适配层属挂载面暂不立）；决策与验收面单源 = [实现 ADR](../../.agents/notes/implemented/architecture/2026-09-11-memory-line-phase1-observation-face.md)。
 - 2026-09-13｜**第二期立项讨论轮**：逐件对照本仓已落地现实后判裁——行为评估自建判不立（可复算白名单命令 / evidence 指针 / 独立判读 / 冻结基线四处已在既有面，本仓无评分对象）、痕迹提炼面判不立并入既有五类家、立宪 ADR 转 implemented。取证（本机实读，2026-09-13）【探索性】：`genes/` 6 条对常驻注入上限 12、`.noogenesis/observations/` 零条记录。落 [判裁 ADR](../../.agents/notes/implemented/architecture/2026-09-13-memory-line-phase2-verdict.md)。
+- 2026-09-13｜**档案页制度落地**：立 `docs/state/` tier 与骨架四段机器闸（`verify-dossier-format`），本页迁入该层——tier 归口与「结构漂移待加机器闸」两悬空项同批结（[制度 ADR](../../.agents/notes/implemented/process/2026-09-13-dossier-institution.md)）。
