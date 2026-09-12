@@ -27,7 +27,7 @@ import { isBuiltin } from "node:module";
 import { fileURLToPath } from "node:url";
 import type { defineTool, ToolDefinition } from "@deepseek-ai/dsh-tools";
 import { runEngineSync, resolveRepoRoot, sessionWorkspaceOf, explicitRepoRootOf, EXIT } from "./engine-bridge.mjs";
-import { hitsSectionText, createHitsSection } from "./section.mjs";
+import { hitsSectionText, createHitsSection, assertResidentSectionBudget, BASE_SECTION, DEFAULT_MAX_INDEX_GENES, HITS_SECTION_CHAR_BUDGET, HIT_LINE_COST_CHARS } from "./section.mjs";
 import { registerNooTools } from "./tools.mjs";
 import { listStagingCandidates, buildSolidifyArgs, solidifyNotice, runSolidifyTrigger, createInFlightGate, ASK_TIMEOUT_MS } from "./solidify-trigger.mjs";
 import { buildPullArgs, pullBankOnce, createBankPullScheduler } from "./bank-pull.mjs";
@@ -154,6 +154,42 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.equal(provider(), "", "next outage degrades again");
 	assert.equal(warnings.length, 2, "success resets latch — next outage warns again");
 	ok("hits provider: select failure warns once per outage, success resets");
+}
+
+// ── 2c) 常驻注入预算判据（护栏立项 ADR 决定 1：字面预算为阻断面）────────
+{
+	// 基线固定面：BASE_SECTION 是常驻注入的常量部分，漂移即改预算依据。
+	assert.equal(BASE_SECTION.length, 545, "BASE_SECTION is the frozen resident baseline (545 chars) — a change here re-bases the budget");
+	ok("resident budget: base section length pinned (545 chars)");
+
+	// 预算与缺省同源：已发布缺省必须过判据（装载期同款断言的自测面），
+	// 且上界由构造给出——上界值通过、上界加一拒收。
+	const ceiling = Math.floor(HITS_SECTION_CHAR_BUDGET / HIT_LINE_COST_CHARS);
+	assert.doesNotThrow(() => assertResidentSectionBudget(DEFAULT_MAX_INDEX_GENES));
+	assert.ok(ceiling > DEFAULT_MAX_INDEX_GENES, "budget must admit the shipped default with headroom");
+	assert.doesNotThrow(() => assertResidentSectionBudget(ceiling));
+	ok(`resident budget: shipped default (${DEFAULT_MAX_INDEX_GENES}) passes; derived ceiling is ${ceiling}`);
+
+	// 负例：上界加一即拒收（fail-closed，绝不半启用超预算的常驻注入配置）。
+	assert.throws(() => assertResidentSectionBudget(ceiling + 1), /exceeds the resident section budget/);
+	assert.throws(() => assertResidentSectionBudget(ceiling + 1), /maxIndexGenes/);
+	ok("resident budget: ceiling+1 rejected at load (fail-closed, field named)");
+
+	// 渲染面：满行 + 满摘要（含超长摘要被截断）的最坏情形仍在预算内——
+	// 判据与渲染共用同一组常量，上界由构造而非巧合成立。
+	const ceilingGenes = Array.from({ length: ceiling }, (_, i) => `demo/g-${i}  ${"字".repeat(400)}`).join("\n");
+	const renderedWorst = hitsSectionText({ stdout: `signals: x\n${ceilingGenes}\n` }, { maxGenes: ceiling });
+	assert.ok(renderedWorst.length <= HITS_SECTION_CHAR_BUDGET, `worst-case hits section (${renderedWorst.length}) must stay within budget ${HITS_SECTION_CHAR_BUDGET}`);
+	assert.equal(renderedWorst.split("\n").filter((line) => line.startsWith("demo/")).length, ceiling, "every capped line renders");
+	ok("resident budget: worst-case rendered section (full lines, oversized summaries) stays within budget");
+
+	// 真实违约路径：预算不足的最大成因是上游资产（超长 summary 的基因），
+	// 该路径只能经基因库增长 + maxIndexGenes 调高触达——配置闸在此拦下。
+	const overRepo = tempRepo("resident-budget");
+	fs.mkdirSync(path.join(overRepo, "genes", "demo"), { recursive: true });
+	fs.writeFileSync(path.join(overRepo, "genes", "demo", "wide.json"), JSON.stringify({ ...FIXTURE_GENE, id: "wide", summary: "字".repeat(400) }, null, 2) + "\n");
+	assert.throws(() => validateConfig({ repoRoot: overRepo, maxIndexGenes: ceiling + 1 }), /resident section budget/);
+	ok(`resident budget: oversized-gene fixture rejected once maxIndexGenes=${ceiling + 1} (growth path caught at load)`);
 }
 
 // ── 3) tools：依赖注入面（假 defineTool + 假引擎，退出码映射全路径） ──────

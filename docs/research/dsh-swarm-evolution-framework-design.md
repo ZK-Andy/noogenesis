@@ -215,7 +215,7 @@ DSH 的官方设计哲学（[Everything is a plugin](https://www.deepseek.com/ha
 | 你要的机制 | 实现方式 |
 |---|---|
 | **测试标准 / 测试用例** | 每一个被演化的资产（规则/流程卡/门禁）有**自带的验证命令**（`validation`），即它的"测试用例"。标准化为：确定性校验（lint/typecheck/test/格式门禁）+ 行为级回归用例 |
-| **检查 token 消耗基线** | 用 `dsh-token-meter` 的 `estimateContent` / `contextBreakdown` / `contextPressure` 度量**常驻注入基线**（system-prompt 节 + 目录注入）。**不变量**：新增知识若抬高常驻基线 → 该演化"无效"（须转为 as-needed 懒加载可检索、不进常驻） |
+| **检查 token 消耗基线** | 常驻注入基线（system-prompt 节 + 目录注入）的**阻断面 = 字面预算判据**（装载期 fail-closed，实现 = 适配层 `section.mts`）；`dsh-token-meter`（实测导出 `measure(session, requestHeader?)` / `estimateMessage(message)`，另有 `contextBreakdown` / `contextPressure` 两个投影单元）提供宿主侧真读数，按观察面接入。**不变量**：新增知识若抬高常驻基线 → 该演化"无效"（须转为 as-needed 懒加载可检索、不进常驻） |
 | **用户启动子代理自动跑** | 演化候选进入验证闸时，由宿主**子代理在新鲜沙箱自动执行**验证命令集（`subagent/*`），真执行非自报；执行者与评审者分离（防自产自审） |
 | **发起合并时带自校验结果** | 合并（PR/consolidate）时**必须携带机器已验证的证据**：验证命令结果、测试通过数、token 基线 diff、benchmark 结果。合并闸由 CI 复跑同一验证（跨机器可复现），绿了才合入 |
 
@@ -331,7 +331,7 @@ DSH 的官方设计哲学（[Everything is a plugin](https://www.deepseek.com/ha
 | 工具 | `defineTool` | 暴露演化/检索/校验工具（`evolve_list`/`evolve_add`... / `gep_recall` 式） |
 | 命令 | `CommandInvocation`/`CommandResult` | `/evolve` 命令面（list/consolidate/wrapup/verify/benchmark...） |
 | 子代理 | `ctx.subagents`、`ctx.get("goals")` | 委派、跨插件服务访问 |
-| Token | **`dsh-token-meter`**（`estimateContent`/`contextBreakdown`/`contextPressure`） | **token 基线度量源** |
+| Token | **`dsh-token-meter`**（`measure(session, requestHeader?)` / `estimateMessage(message)`；`contextBreakdown` / `contextPressure` 为投影单元） | **token 基线度量源**（观察面；阻断面 = 常驻注入字面预算判据，见 §7.2） |
 | 不变量 | **`dsh-invariants`**（check/violation） | 机械不变量（别变臃肿/别违反契约） |
 | 插件 | plugin inventory / capability manifest / marketplace | 分发与权限隔离适配层 |
 | **插件组合/预设** | **"一切皆插件"**：profile = 按序叠加的 plugin-bundle patch 层（`dsh.profile.bundles` + `cordis.patch.yml`，从空根组合）；**Creator mode** 把插件组合成新 preset（Standard/Code/Minimal/Creator 四种现成 preset）。[Cordis 论文](https://arxiv.org/abs/2608.25512) | **胶囊组合成 DSH 预设**（§2.3/§4）：一整套胶囊 = 一个任务特定的 profile/mode |

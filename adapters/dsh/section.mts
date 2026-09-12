@@ -7,12 +7,61 @@
  *   select 无命中（或未声明信号）→ 渲染为 "" → 宿主 prompt 渲染器丢弃 → 零 token。
  * - 信号只来自显式声明（配置 / 模型经 noo_select 工具喂入）；引擎 Detect 禁区
  *   （骨架 ADR D2）不在此解除——本模块不做任何自动信号发现。
+ * - 常驻注入预算判据（`assertResidentSectionBudget`）也落本模块：它与节渲染
+ *   共享同一组常量（摘要宽度 / 行开销 / 预算），是「常驻注入不膨胀」这条
+ *   不变量的单源；配置侧只在装载期调用它。
  */
 
 import type { EngineResult } from "./engine-bridge.mjs";
 
 /** 每行命中条目的摘要截断宽度（一行式目录纪律，防单行失控）。 */
 export const MAX_SUMMARY_CHARS = 160;
+
+/**
+ * 命中节每行的非摘要开销估算（`<domain>/<id>` + 两空格 + 截断省略号，保守
+ * 取 16），与 `MAX_SUMMARY_CHARS` 一同构成「每行常驻成本」——预算判据的单价面。
+ */
+export const HIT_LINE_OVERHEAD_CHARS = 16;
+
+/** 命中节每行常驻成本（摘要宽度 + 行开销），预算判据的单价。 */
+export const HIT_LINE_COST_CHARS = MAX_SUMMARY_CHARS + HIT_LINE_OVERHEAD_CHARS;
+
+/** 已发布缺省命中行数（口径单源 = config.mts；本常量只为预算自洽断言与推导）。 */
+export const DEFAULT_MAX_INDEX_GENES = 12;
+
+/** `(+N more — refine signals)` 溢出提示行的保守上界（多一位数也够用）。 */
+const HITS_OVERFLOW_NOTE_CHARS = 64;
+
+/**
+ * 命中节常驻注入预算（字符），字面判据的阈面（护栏立项 ADR 决定 1：token
+ * 基线不变量改两轨，字面预算即阻断面）。口径 = 「已发布缺省行数的自身最坏
+ * 情形 + 一行余量」——预算与缺省同源，改缺省即自动跟随；`BASE_SECTION`
+ * （545 字符）另计不占本预算（基线本身固定，增长路径只有命中节：基因库只增
+ * 不减 + `maxIndexGenes` 可调大）。
+ */
+export const HITS_SECTION_CHAR_BUDGET =
+	(DEFAULT_MAX_INDEX_GENES + 1) * HIT_LINE_COST_CHARS + HITS_OVERFLOW_NOTE_CHARS;
+
+/**
+ * 常驻注入判据：命中节最坏情形（`maxGenes` 行满摘要）不得超预算。
+ * 判据落配置装载期而非渲染期——超预算的配置在 prompt 组装前 fail-closed
+ * 拒收，渲染路径保持原语义（不自作截断：静默改注入内容比拒载更难发现）。
+ * 抛错文案带字段名、当前值、上界与单价，供配置侧直接定位。
+ */
+export function assertResidentSectionBudget(maxGenes: number): void {
+	const ceiling = Math.floor((HITS_SECTION_CHAR_BUDGET - HITS_OVERFLOW_NOTE_CHARS) / HIT_LINE_COST_CHARS);
+	if (!Number.isInteger(maxGenes) || maxGenes < 1 || maxGenes > ceiling) {
+		throw new Error(
+			`noogenesis: config.maxIndexGenes=${String(maxGenes)} exceeds the resident section budget ` +
+				`(${HITS_SECTION_CHAR_BUDGET} chars / ${HIT_LINE_COST_CHARS} chars per hit line → at most ${ceiling})`,
+		);
+	}
+}
+
+// 自洽不变量（模块装载期即查）：已发布缺省必须过判据——否则升级后插件拿
+// 自己的缺省配置装载失败（预算与缺省不能各说各话）。缺口只在源码面暴露，
+// 不在运行时兜底。
+assertResidentSectionBudget(DEFAULT_MAX_INDEX_GENES);
 
 /** 常驻基座节：措辞即行为——只陈述真实能力与写路径纪律，不许诺未接线的能力。 */
 export const BASE_SECTION = [

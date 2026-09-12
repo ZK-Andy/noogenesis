@@ -4,6 +4,8 @@
  * （防火墙规则 2）。类型违约即抛（fail-closed；诊断指名字段 + 期望类型）。
  */
 
+import { assertResidentSectionBudget, DEFAULT_MAX_INDEX_GENES } from "./section.mjs";
+
 function isNatural(value: unknown): value is number {
 	// typeof 前置是 TS 对 unknown 的收窄要求——Number.isInteger 对非 number
 	// 本就返回 false，前置只是收窄类型。
@@ -148,7 +150,11 @@ export function validateConfig(config: unknown = {}) {
 	const stagingDir = optNonEmptyString(config.stagingDir, "stagingDir");
 	const askOnDispose = optBoolean(config.askOnDispose, "askOnDispose");
 	const actor = optNonEmptyString(config.actor, "actor");
-	const maxIndexGenes = optPositiveInteger(config.maxIndexGenes, "maxIndexGenes");
+	const maxIndexGenes = optPositiveInteger(config.maxIndexGenes, "maxIndexGenes") ?? DEFAULT_MAX_INDEX_GENES;
+	// 常驻注入不变量（护栏立项 ADR 决定 1）：命中节最坏情形（maxGenes 行满
+	// 摘要）超预算即拒收——装载期 fail-closed，绝不半启用一个每次模型步都
+	// 抬高常驻基线的配置；判据与预算单源 = section.mts。
+	assertResidentSectionBudget(maxIndexGenes);
 	// geneBankUrl：undefined → 缺省官方库（装完即部署）；false → 显式禁用
 	// （pull 面短路，零 clone 尝试）；非空 string → 自定义库；空串/其余类型违约。
 	const geneBankUrl = optGeneBankUrl(config.geneBankUrl);
@@ -161,7 +167,7 @@ export function validateConfig(config: unknown = {}) {
 		stagingDir: stagingDir ?? "genes-staging",
 		askOnDispose: askOnDispose ?? true,
 		actor: actor ?? "noogenesis",
-		maxIndexGenes: maxIndexGenes ?? 12,
+		maxIndexGenes,
 		geneBankUrl: geneBankUrl ?? DEFAULT_GENE_BANK_URL,
 		skillGuards: skillGuards ?? DEFAULT_SKILL_GUARDS,
 	};

@@ -11,6 +11,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-13｜**护栏建设轮实现批（决定 1 落地）**：常驻注入字面预算判据入 `section.mts` + `config.mts` 装载期拒收；实测**预算 2048 会把已发布缺省 12 行判违约** → 改「由缺省推导 + 装载期自洽断言」；selftest 5 条断言；设计稿三处 API 名同步。README 已同步（配置表 + 双节条）。
 - 2026-09-13｜**护栏建设轮立项讨论轮**：三题拍板 = token 基线两轨 / 改进度量两本账 / canary 判不立；[立项 ADR](.agents/notes/proposed/architecture/2026-09-13-guardrail-construction-round.md)，[延后 ADR](.agents/notes/proposed/architecture/2026-09-06-guardrail-defer-trigger.md) 触发条已标到达（提交锚见日志）。
 - 2026-09-13｜**0.2.6 真机复验（零仓变更）**：外仓 desktop 新会话目录含 7 件 `noo-*`（活副本无、缓存恰 7 件 → 来源 = `noogenesis-bank`）；A2 路标行只点名可达集；transcript/host.log 零诊断 warn。todos (B) 条翻 x。
 - 2026-09-13｜**0.2.6 发版（release-flow 第三次实走）**：npm latest 0.2.6（tag `dsh-v0.2.6`，指向版本面 `ad2e549`）+ 双语 Release Latest；bump `a43c63c`；[实发节](.agents/notes/implemented/process/2026-09-09-release-shape-alignment.md)；CI run `34706452446` 绿。README 已同步。
@@ -48,8 +49,6 @@
 - 2026-09-10｜**记忆库线融合轮开题讨论轮（立宪 + 接口契约 + 第一期范围；零代码变更）**：ADR [融合立宪](.agents/notes/proposed/architecture/2026-09-10-memory-line-fusion-charter.md)（proposed，D1–D10）+ [档案页](docs/research/memory-system-dossier.md) 对账；`5d0a0da`→`a16fedf`。README 无漂移。
 
 - 2026-09-10｜**优化轮收口批（FULL 三审 R1/R2/R3 全采纳）**：ADR [收口+验收口径](.agents/notes/implemented/process/2026-09-10-optimization-round-closure.md)、[brief 明细兜底](.agents/notes/implemented/bug-fix/2026-09-10-review-brief-detail-fallback.md)；`d1a014a`→`e11dd0e`。README 无漂移。
-
-- 2026-09-10｜**0.2.4 真机复验收口（三条 (B) 全清）**：A2 技能路标行在场；A3 对 `docs/` 写码投递一行 advice（非阻断、重复不重提、载对口技能后消失）；注释面在环判据全命中（域内缺 JSDoc → block、连续 3 次后降级 context、合规写复位、域外/非 `.ts` 零反馈）；release 工具族实发已验。**节点：发版轮闭环。** README 无漂移。
 
 - 2026-09-10｜**0.2.4 发版（release-flow 首走新工具族；ADR `release-shape-alignment` 落地验证在案）**：bump 产 `chore(release)`+lock 同提交（`6fe74ea`）→ tag `dsh-v0.2.4` 过 pre-push → npm latest 0.2.4 → 双语 Release Latest；CI 34480922485 绿。**节点：三条 (B) 真机复验待重装。** README 同步 0.2.4。
 
