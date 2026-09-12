@@ -12,8 +12,9 @@ import { selectGenes, runSelect } from './select.js';
 import { validateObservation, buildObservation, recordObservation, readObservations, EVIDENCE_MAX_CHARS } from './observe.js';
 import { renderGene } from './propose.js';
 import { evaluateGeneObj, checkConstraints } from './evaluate.js';
-import { solidify, retire } from './solidify.js';
+import { solidify, retire, recordCapsule } from './solidify.js';
 import { genePath, scanGenes, defaultCacheDir } from './gene.js';
+import { capsulePath, readCapsule, renderCapsule } from './capsule.js';
 
 let hasFailure = false;
 function ok(cond: unknown, msg: string) {
@@ -422,6 +423,61 @@ function selfTest() {
       ok(eventsAfter === eventsBefore, 'solidify: rollback removes appended event line');
       git(td, ['config', '--unset', 'core.hooksPath']);
     }
+  }
+
+  // --- 5.7) Capsule 原语（批次 1 序 1）：原子提交、复算、append-only、引用可解析 ---
+  {
+    const td = mkTemp();
+    mkRepo(td);
+    writeGene(td, 'process', {
+      id: 'cap-gene', domain: 'process', summary: 'capsule fixture',
+      signals: ['cap'], strategy: ['s'],
+    });
+    const staging = path.join(td, 'candidates');
+    fs.mkdirSync(staging);
+    const cap = {
+      id: 'cap-1', domain: 'process', gene_ids: ['process/cap-gene'],
+      trigger: 'cap', steps: ['s1'], outcome: { status: 'ok' }, evidence: ['gate green'],
+    };
+    const cand = path.join(staging, 'cap-1.json');
+    fs.writeFileSync(cand, JSON.stringify(cap, null, 2) + '\n');
+
+    const r = recordCapsule(td, cand, 'tester');
+    ok(r.ok === true, 'capsule: record accepted');
+    const target = capsulePath(td, 'process', 'cap-1');
+    ok(fs.existsSync(target), 'capsule: placed in capsules/<domain>/');
+    const capEv = readEvents(td).find((e) => e.kind === 'capsule.added');
+    ok(capEv !== undefined && capEv.capsule === 'cap-1' && capEv.outcome === 'ok',
+      'capsule: capsule.added event appended');
+    ok(capEv?.capsule_sha === sha256Hex(fs.readFileSync(target)),
+      'capsule: capsule_sha recomputes from file bytes');
+    const files = git(td, ['show', '--name-only', '--format=', 'HEAD']).trim().split('\n').sort();
+    ok(files.length === 2 && files.some((f) => f.startsWith('capsules/')) && files.some((f) => f.startsWith('events/')),
+      'capsule: capsules/ + events/ in the SAME commit');
+
+    // append-only：同 id 重复记录拒收（无 capsule.updated 面）
+    ok(throwsEngine(() => recordCapsule(td, cand, 'tester')), 'capsule: re-recording same id refused (append-only)');
+    // 引用可解析：悬空基因引用拒收
+    const dPath = path.join(staging, 'cap-2.json');
+    fs.writeFileSync(dPath, JSON.stringify({ ...cap, id: 'cap-2', gene_ids: ['process/no-such-gene'] }, null, 2) + '\n');
+    ok(throwsEngine(() => recordCapsule(td, dPath, 'tester')), 'capsule: dangling gene ref refused');
+    ok(throwsEngine(() => recordCapsule(td, cand, '   ')), 'capsule: blank actor refused');
+
+    // 读命令：确定性渲染
+    const rendered = renderCapsule(readCapsule(target));
+    ok(rendered.startsWith('[noo-capsule process/cap-1]'), 'capsule: render header');
+    ok(rendered === renderCapsule(readCapsule(target)), 'capsule: render deterministic');
+
+    // CLI 面：add / show 与用法错三档
+    const bin = path.join(__dirname, 'bin.js');
+    fs.writeFileSync(path.join(staging, 'cap-3.json'), JSON.stringify({ ...cap, id: 'cap-3' }, null, 2) + '\n');
+    ok(spawnCode([bin, 'capsule', 'add', path.join(staging, 'cap-3.json'), '--actor', 't'], td) === 0,
+      'bin: capsule add -> exit 0');
+    const shown = execFileSync('node', [bin, 'capsule', 'show', 'process/cap-3'], { cwd: td, encoding: 'utf8', stdio: 'pipe' });
+    ok(shown.includes('[noo-capsule process/cap-3]'), 'bin: capsule show renders');
+    ok(spawnCode([bin, 'capsule', 'show', 'process/missing'], td) === 2, 'bin: capsule show missing -> exit 2');
+    ok(spawnCode([bin, 'capsule', 'add', cand], td) === 2, 'bin: capsule add without --actor -> exit 2');
+    ok(spawnCode([bin, 'capsule', 'bogus'], td) === 2, 'bin: unknown capsule subcommand -> exit 2');
   }
 
   // --- 5.5) bin.js 退出码三档端到端（fail-closed = exit 2，非堆栈 exit 1）---

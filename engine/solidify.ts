@@ -6,6 +6,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { EngineError, sha256Hex, git } from './util.js';
 import { readGene, genePath } from './gene.js';
+import { readCapsule, capsulePath, assertGeneRefsResolvable, assertCapsuleIdUnique } from './capsule.js';
 import { evaluateGeneObj, formatReport } from './evaluate.js';
 
 function eventsPath(repoRoot: string, ts: string) {
@@ -144,4 +145,44 @@ function retire(repoRoot: string, ref: string, actor: string) {
   return { ok: true, report: `retire: gene.retired ${ref} (last sha ${sha.slice(0, 12)}…)\n` };
 }
 
-export { solidify, retire, appendEvent, eventsPath };
+// recordCapsule — Capsule 入档（批次 1 序 1 ADR C3）：结构闸 + 基因引用可解析 → 落
+// capsules/ + capsule.added 事件同一 commit（原子证据同基因入档）。Capsule 是 append-only
+// 审计记录：同 id 重复记录拒收（无 capsule.updated/retired 面）。引擎不重跑门禁——
+// 证据由调用方在真实执行后给出，自动复跑归批次表序 43。
+function recordCapsule(repoRoot: string, candidatePath: string, actor: string) {
+  if (!actor || !actor.trim()) throw new EngineError('capsule add requires --actor <name> (audit trail)');
+  actor = actor.trim();
+
+  const cap = readCapsule(candidatePath, { skipDirAnchor: true });
+  assertGeneRefsResolvable(repoRoot, cap.gene_ids);
+  assertCapsuleIdUnique(repoRoot, cap.domain, cap.id);
+  const target = capsulePath(repoRoot, cap.domain, cap.id);
+  if (fs.existsSync(target)) {
+    throw new EngineError(`capsule ${cap.domain}/${cap.id} already recorded — capsules are append-only`);
+  }
+
+  const content = Buffer.from(JSON.stringify(cap, null, 2) + '\n', 'utf8');
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.writeFileSync(target, content);
+  const sha = sha256Hex(content);
+
+  const ts = new Date().toISOString();
+  const line = JSON.stringify({
+    ts, actor, kind: 'capsule.added', capsule: cap.id, capsule_sha: sha, outcome: 'ok',
+    evidence: `recorded ${cap.domain}/${cap.id}: ${cap.gene_ids.length} gene ref(s), outcome ${cap.outcome.status}`,
+  }) + '\n';
+  const evp = appendEvent(repoRoot, JSON.parse(line));
+  try {
+    commitPaths(repoRoot, [target, evp], `capsule(${cap.domain}): add ${cap.id}`);
+  } catch (e) {
+    fs.rmSync(target, { force: true });
+    rollbackAppend(evp, line);
+    throw e;
+  }
+  return {
+    ok: true,
+    report: `capsule: capsule.added ${cap.domain}/${cap.id} (sha ${sha.slice(0, 12)}…, ${cap.gene_ids.length} gene ref(s))\n`,
+  };
+}
+
+export { solidify, retire, recordCapsule, appendEvent, eventsPath };

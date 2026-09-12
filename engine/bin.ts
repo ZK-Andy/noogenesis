@@ -1,4 +1,4 @@
-// bin.ts — CLI 六命令合同面（骨架 ADR D1：select/propose/evaluate/solidify 为唯一合同面；P2 增 pull 只读消费；融合轮第一期增 observe 观测面写入）+ self-test 元评测。
+// bin.ts — CLI 七命令合同面（骨架 ADR D1：select/propose/evaluate/solidify 为唯一合同面；P2 增 pull 只读消费；融合轮第一期增 observe 观测面写入；批次 1 序 1 增 capsule 写读）+ self-test 元评测。
 // 零第三方依赖（Node 标准库 only）；退出码：0 成功 / 1 红（评估不绿、违规） / 2 用法或 fail-closed 错误。
 
 import * as path from 'path';
@@ -17,6 +17,8 @@ function usage(): string {
     '  node dist/engine/bin.js pull <bank-url> [--cache DIR]       # 只读消费：clone/pull 基因库进仓内缓存（P2）',
     '  node dist/engine/bin.js observe --signal S --gene <domain>/<id> --outcome ok|fail --actor N [--evidence TEXT]',
     '      # 观测输入面：append-only 写入 .noogenesis/observations/（写路径 fail-closed）',
+    '  node dist/engine/bin.js capsule add <candidate.json> --actor N      # Capsule 入档：capsules/ + events/ 同一 commit',
+    '  node dist/engine/bin.js capsule show <domain>/<id>                  # 读并渲染单条 Capsule（确定性输出）',
     '  node dist/engine/bin.js self-test                           # 元评测夹具（临时沙箱，不触碰真实仓）',
     '',
   ].join('\n');
@@ -195,6 +197,45 @@ function main(argv: string[]): number {
     }
     process.stdout.write(r.report);
     return 0;
+  }
+
+  if (cmd === 'capsule') {
+    // 子命令面：add（写，须 --actor）/ show（读）。未知子命令 → exit 2 用法错。
+    const sub = rest[0];
+    if (sub === 'add') {
+      const actorIdx = rest.indexOf('--actor');
+      const actor = actorIdx >= 0 ? rest[actorIdx + 1] : null;
+      const candidate = rest.find((a, i) => i > 0 && a !== '--actor' && i !== actorIdx + 1);
+      if (!candidate) fail('capsule add needs <candidate.json>');
+      if (!actor) fail('capsule add needs --actor <name>');
+      const { recordCapsule } = require('./solidify.js');
+      let r;
+      try {
+        r = recordCapsule(repoRoot, path.resolve(candidate), actor);
+      } catch (e) {
+        if ((e as { engine?: unknown }).engine) return fail((e as Error).message, 2);
+        throw e;
+      }
+      process.stdout.write(r.report);
+      return 0;
+    }
+    if (sub === 'show') {
+      const ref = rest[1];
+      if (!ref) fail('capsule show needs <domain>/<id>');
+      const { readCapsule, capsulePath, renderCapsule } = require('./capsule.js');
+      let obj;
+      try {
+        const [domain, id] = ref.split('/');
+        if (!domain || !id) fail('capsule show ref must be <domain>/<id>');
+        obj = readCapsule(capsulePath(repoRoot, domain, id));
+      } catch (e) {
+        if ((e as { engine?: unknown }).engine) return fail((e as Error).message, 2);
+        throw e;
+      }
+      process.stdout.write(renderCapsule(obj));
+      return 0;
+    }
+    fail(sub ? `capsule: unknown subcommand ${sub}` : 'capsule needs a subcommand (add|show)');
   }
 
   if (cmd === 'self-test') {

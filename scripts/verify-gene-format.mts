@@ -45,13 +45,20 @@ import type { JSONVal } from "./pypara.mts";
 
 const SHA_RE = /^[0-9a-f]{64}$/;
 const VOL_RE = /^(\d{4}-\d{2})\.jsonl$/;
-const KINDS = ["gene.added", "gene.updated", "gene.retired"];
+const KINDS = ["gene.added", "gene.updated", "gene.retired", "capsule.added"];
 const KINDS_REPR = `(${KINDS.map((k) => `'${k}'`).join(", ")})`;
-const EVENT_KEYS = "actor evidence gene gene_sha kind outcome ts".split(" ").sort().join("|");
+// 事件键集按 kind 条件化（批次 1 序 1 ADR C5 重拍 S2）：共通五键 + gene 面两键 / capsule 面两键。
+const GENE_EVENT_KEYS = "actor evidence gene gene_sha kind outcome ts".split(" ").sort().join("|");
+const CAPSULE_EVENT_KEYS = "actor evidence capsule capsule_sha kind outcome ts".split(" ").sort().join("|");
 const EVENT_FIELDS_REPR = "['actor', 'evidence', 'gene', 'gene_sha', 'kind', 'outcome', 'ts']";
+const CAPSULE_EVENT_FIELDS_REPR = "['actor', 'capsule', 'capsule_sha', 'evidence', 'kind', 'outcome', 'ts']";
 const KNOWN_GENE_FIELDS = new Set([
   "id", "domain", "summary", "signals", "strategy", "constraints", "validation", "avoid",
 ]);
+const KNOWN_CAPSULE_FIELDS = new Set([
+  "id", "domain", "gene_ids", "trigger", "steps", "outcome", "evidence",
+]);
+const GENE_REF_RE = /^[a-z0-9]+(-[a-z0-9]+)*\/[a-z0-9]+(-[a-z0-9]+)*$/;
 
 
 function sha256Hex(buf: Buffer): string {
@@ -130,6 +137,62 @@ function checkGene(data: JSONVal, rel: string, stem: string, parent: string, whi
           errors.push(`${rel}: unknown constraints key: ${k}`);
         }
       }
+    }
+  }
+  return errors;
+}
+
+// Capsule 协议（批次 1 序 1 ADR C2）：封闭七字段；outcome 二值且 fail 必带 reason；
+// 元素级非空校验与 engine/capsule.ts 的 validateCapsule 镜像。
+function checkCapsule(data: JSONVal, rel: string, stem: string, parent: string): string[] {
+  const errors: string[] = [];
+  if (!isObj(data)) return [`${rel}: capsule must be a JSON object`];
+  for (const k of Object.keys(data)) {
+    if (!KNOWN_CAPSULE_FIELDS.has(k)) errors.push(`${rel}: unknown field: ${k}`);
+  }
+  const id = data.id;
+  if (!isKebab(id)) errors.push(`${rel}: id must be kebab-case string`);
+  else if (id !== stem) errors.push(`${rel}: id '${id}' must equal filename (${stem})`);
+  const domain = data.domain;
+  if (!isKebab(domain)) errors.push(`${rel}: domain must be kebab-case string`);
+  else if (domain !== parent) errors.push(`${rel}: domain '${domain}' must equal its directory (${parent})`);
+
+  const geneIds = data.gene_ids;
+  if (!Array.isArray(geneIds) || !geneIds.every((x) => typeof x === "string" && GENE_REF_RE.test(x))) {
+    errors.push(`${rel}: gene_ids must be an array of <domain>/<id> refs`);
+  } else if (geneIds.length < 1) {
+    errors.push(`${rel}: gene_ids must have at least 1 item(s)`);
+  }
+
+  const trigger = data.trigger;
+  if (!(typeof trigger === "string" && pyStrip(trigger) !== "")) {
+    errors.push(`${rel}: trigger must be a non-empty string`);
+  }
+  for (const field of ["steps", "evidence"] as const) {
+    const v = data[field];
+    if (!Array.isArray(v) || !v.every((x) => typeof x === "string" && pyStrip(x) !== "")) {
+      errors.push(`${rel}: ${field} must be a non-empty-string array`);
+    } else if (v.length < 1) {
+      errors.push(`${rel}: ${field} must have at least 1 item(s)`);
+    }
+  }
+
+  const o = data.outcome;
+  if (!isObj(o)) {
+    errors.push(`${rel}: outcome must be an object`);
+  } else {
+    for (const k of Object.keys(o)) {
+      if (k !== "status" && k !== "reason") errors.push(`${rel}: unknown outcome key: ${k}`);
+    }
+    if (o.status !== "ok" && o.status !== "fail") {
+      errors.push(`${rel}: outcome.status must be 'ok' or 'fail'`);
+    }
+    if (o.status === "fail") {
+      if (!(typeof o.reason === "string" && pyStrip(o.reason) !== "")) {
+        errors.push(`${rel}: outcome.reason must be a non-empty string when status is fail`);
+      }
+    } else if (o.reason !== undefined) {
+      errors.push(`${rel}: outcome.reason is only for status fail`);
     }
   }
   return errors;
@@ -217,8 +280,19 @@ function checkEvents(display: string, fsPath: string, errors: string[]): EventRo
       continue;
     }
     const ev = parsed.value;
-    if (!isObj(ev) || Object.keys(ev).sort().join("|") !== EVENT_KEYS) {
-      errors.push(`${display}:${lineno}: event fields must be exactly ${EVENT_FIELDS_REPR}`);
+    if (!isObj(ev)) {
+      errors.push(`${display}:${lineno}: event must be a JSON object`);
+      continue;
+    }
+    const kind = ev.kind;
+    if (!(typeof kind === "string" && KINDS.includes(kind))) {
+      errors.push(`${display}:${lineno}: kind '${pyStr(kind)}' not in closed set ${KINDS_REPR}`);
+      continue;
+    }
+    // 键集按 kind 条件化：gene 面记 gene/gene_sha，capsule 面记 capsule/capsule_sha。
+    const isCapsule = kind === "capsule.added";
+    if (Object.keys(ev).sort().join("|") !== (isCapsule ? CAPSULE_EVENT_KEYS : GENE_EVENT_KEYS)) {
+      errors.push(`${display}:${lineno}: event fields must be exactly ${isCapsule ? CAPSULE_EVENT_FIELDS_REPR : EVENT_FIELDS_REPR}`);
       continue;
     }
     const dt = pyFromIso(ev.ts);
@@ -233,15 +307,20 @@ function checkEvents(display: string, fsPath: string, errors: string[]): EventRo
     if (tsDateMs < winLo || tsDateMs > winHi) {
       errors.push(`${display}:${lineno}: ts ${dt.dateStr} outside volume month ${ym}`);
     }
-    const kind = ev.kind;
-    if (!(typeof kind === "string" && KINDS.includes(kind))) {
-      errors.push(`${display}:${lineno}: kind '${pyStr(kind)}' not in closed set ${KINDS_REPR}`);
+    // 主体锚点按 kind 条件化：gene 面记基因，capsule 面记 Capsule（镜像 S2 复算面）。
+    if (isCapsule) {
+      if (!isKebab(ev.capsule)) errors.push(`${display}:${lineno}: capsule must be a kebab-case id`);
+      const csv = ev.capsule_sha ? ev.capsule_sha : "";
+      // py 未捕获崩溃路径
+      if (typeof csv !== "string") throw new Error("TypeError parity: re.match on non-string capsule_sha");
+      if (!SHA_RE.test(csv)) errors.push(`${display}:${lineno}: capsule_sha must be 64-hex sha256`);
+    } else {
+      if (!isKebab(ev.gene)) errors.push(`${display}:${lineno}: gene must be a kebab-case id`);
+      const gsv = ev.gene_sha ? ev.gene_sha : "";
+      // py 未捕获崩溃路径
+      if (typeof gsv !== "string") throw new Error("TypeError parity: re.match on non-string gene_sha");
+      if (!SHA_RE.test(gsv)) errors.push(`${display}:${lineno}: gene_sha must be 64-hex sha256`);
     }
-    if (!isKebab(ev.gene)) errors.push(`${display}:${lineno}: gene must be a kebab-case id`);
-    const gsv = ev.gene_sha ? ev.gene_sha : "";
-    // py 未捕获崩溃路径
-    if (typeof gsv !== "string") throw new Error("TypeError parity: re.match on non-string gene_sha");
-    if (!SHA_RE.test(gsv)) errors.push(`${display}:${lineno}: gene_sha must be 64-hex sha256`);
     const outcome = ev.outcome;
     if (outcome !== "ok" && !(typeof outcome === "string" && outcome.startsWith("fail: "))) {
       errors.push(`${display}:${lineno}: outcome must be 'ok' or 'fail: <reason>'`);
@@ -306,8 +385,41 @@ function scan(base: string): { checked: number; errors: string[] } {
     }
   }
 
+  // capsules/：布局封闭 capsules/<domain>/<id>.json + 协议面 + 跨域 id 唯一
+  const capsPath = pyJoin(base, ["capsules"]);
+  const capsIsDir = fs.existsSync(capsPath) && fs.statSync(capsPath).isDirectory();
+  const capsuleFiles = new Map<string, string[]>();
+  if (capsIsDir) {
+    const all: string[][] = [];
+    collectJson(capsPath, ["capsules"], all);
+    all.sort(segCompare);
+    for (const rel of all) {
+      checked += 1;
+      if (rel.length !== 3 || rel[0] !== "capsules") {
+        errors.push(`${rel.join("/")}: capsule files must be at capsules/<domain>/<id>.json layout`);
+        continue;
+      }
+      const fsPath = pyJoin(base, rel);
+      const parsed = pyJSONParse(readTextFatal(fsPath));
+      if (!parsed.ok) {
+        errors.push(`${fsPath}: not valid JSON: ${parsed.message}`);
+        continue;
+      }
+      const data = parsed.value;
+      errors.push(...checkCapsule(data, rel.join("/"), pyStem(rel[2]!), rel[1]!));
+      const cid = isObj(data) ? data.id : null;
+      if (typeof cid === "string") {
+        if (capsuleFiles.has(cid)) {
+          errors.push(`${fsPath}: duplicate capsule id '${cid}' (also ${pyJoin(base, capsuleFiles.get(cid)!)})`);
+        }
+        capsuleFiles.set(cid, rel);
+      }
+    }
+  }
+
   // events/：结构 + 月卷 + 时间序；并按 id 聚出事件流（ts 稳定排序）
   const perGene = new Map<JSONVal, EventRow[]>();
+  const perCapsule = new Map<JSONVal, EventRow[]>();
   const eventsPath = pyJoin(base, ["events"]);
   const eventsIsDir = fs.existsSync(eventsPath) && fs.statSync(eventsPath).isDirectory();
   const volumes: Array<[string, EventRow[]]> = [];
@@ -329,6 +441,14 @@ function scan(base: string): { checked: number; errors: string[] } {
           perGene.set(g, arr);
         }
         arr.push(r);
+        const c = r.ev.capsule ?? null;
+        if (typeof c === "object" && c !== null) throw new Error("TypeError parity: unhashable capsule key");
+        let carr = perCapsule.get(c);
+        if (carr === undefined) {
+          carr = [];
+          perCapsule.set(c, carr);
+        }
+        carr.push(r);
       }
     }
   }
@@ -391,6 +511,57 @@ function scan(base: string): { checked: number; errors: string[] } {
     if (!perGene.has(gid)) errors.push(`${pyJoin(base, rel)}: gene has no event trail — place genes only via solidify`);
   }
 
+  // 复算规则（批次 1 序 1 ADR C4）：capsule.added(ok) 的 capsule_sha 必须等于文件字节 sha256；
+  // 工作树 Capsule 必须有事件轨（recordCapsule 是唯一入口）。Capsule append-only，无 retire/update 段。
+  for (const arr of perCapsule.values()) arr.sort((a, b) => a.ms - b.ms);
+  for (const [cid, evs] of perCapsule) {
+    const candidates: string[][] = [];
+    if (capsIsDir) {
+      for (const ent of fs.readdirSync(capsPath, { withFileTypes: true })) {
+        if (fs.existsSync(pyJoin(capsPath, [ent.name, `${pyStr(cid)}.json`]))) {
+          candidates.push(["capsules", ent.name, `${pyStr(cid)}.json`]);
+        }
+      }
+      candidates.sort(segCompare);
+    }
+    if (candidates.length > 1) {
+      errors.push(`capsule id '${pyStr(cid)}' present in multiple domains: ${candidates.map((c) => c.join("/")).join(", ")}`);
+    }
+    const okAdds = evs.filter((e) => e.ev.outcome === "ok" && e.ev.kind === "capsule.added");
+    if (candidates.length === 0) {
+      if (okAdds.length > 0) errors.push(`capsule '${pyStr(cid)}': accepted event but no worktree file exists`);
+      continue;
+    }
+    const target = candidates[0]!;
+    if (okAdds.length === 0) {
+      errors.push(`${pyJoin(base, target)}: no accepted capsule.added event but the file exists`);
+      continue;
+    }
+    const digest = sha256Hex(fs.readFileSync(pyJoin(base, target)));
+    const latestOk = okAdds[okAdds.length - 1]!;
+    if (digest !== latestOk.ev.capsule_sha) {
+      errors.push(`${pyJoin(base, target)}: capsule_sha mismatch (event ${pyStr(latestOk.ev.capsule_sha).slice(0, 12)}… vs file ${digest.slice(0, 12)}…) — capsules/ changes must go through capsule add`);
+    }
+  }
+  for (const [cid, rel] of capsuleFiles) {
+    if (!perCapsule.has(cid)) errors.push(`${pyJoin(base, rel)}: capsule has no event trail — record capsules only via capsule add`);
+  }
+
+  // 引用可解析（复算规则 2）：gene_ids 必须命中本仓 genes/（缓存副本不算）
+  for (const [, rel] of capsuleFiles) {
+    const parsed = pyJSONParse(readTextFatal(pyJoin(base, rel)));
+    if (!parsed.ok || !isObj(parsed.value)) continue;
+    const refs = parsed.value.gene_ids;
+    if (!Array.isArray(refs)) continue;
+    for (const ref of refs) {
+      if (typeof ref !== "string") continue;
+      const [rd, ri] = ref.split("/");
+      if (!fs.existsSync(pyJoin(base, ["genes", rd ?? "", `${ri ?? ""}.json`]))) {
+        errors.push(`${pyJoin(base, rel)}: capsule references gene '${ref}' not in genes/`);
+      }
+    }
+  }
+
   return { checked, errors };
 }
 
@@ -421,6 +592,32 @@ function eventLine(kind = "gene.added", gid = "sample-gene", sha: string | null 
     kind,
     gene: gid,
     gene_sha: sha || "a".repeat(64),
+    outcome,
+    evidence: "e",
+  }, null);
+}
+
+function capsuleDoc(cid = "sample-capsule", domain = "process", over: { [key: string]: JSONVal } = {}): string {
+  const doc: { [key: string]: JSONVal } = {
+    id: cid,
+    domain,
+    gene_ids: ["process/sample-gene"],
+    trigger: "push force",
+    steps: ["step"],
+    outcome: { status: "ok" },
+    evidence: ["evaluate ok"],
+  };
+  Object.assign(doc, over);
+  return `${pyDumps(doc, 2)}\n`;
+}
+
+function capsuleEventLine(cid = "sample-capsule", sha: string | null = null, outcome = "ok", ts = "2026-09-05T02:00:00Z"): string {
+  return pyDumps({
+    ts,
+    actor: "t",
+    kind: "capsule.added",
+    capsule: cid,
+    capsule_sha: sha || "a".repeat(64),
     outcome,
     evidence: "e",
   }, null);
@@ -600,6 +797,83 @@ function selfTest(): number {
       mk(t, "events/2026-10.jsonl", `${eventLine("gene.added", "sample-gene", sha, "ok", "2026-09-30T00:00:00Z")}\n`);
     },
     ["cross-volume disorder"], "next volume starts before previous ends -> fail",
+  ]);
+
+  // --- Capsule 协议面（批次 1 序 1）：合规树 + 违约夹具 ---
+  const capsuleTree = (t: string): void => {
+    mk(t, "engine/gates.json", WHITELIST);
+    mk(t, "scripts/stub.py", "print('ok')\n");
+    mk(t, "genes/process/sample-gene.json", geneDoc());
+    mk(t, "capsules/process/sample-capsule.json", capsuleDoc());
+    mk(t, "events/2026-09.jsonl",
+      `${eventLine("gene.added", "sample-gene", shaOf(t, "genes/process/sample-gene.json"))}\n`
+      + `${capsuleEventLine("sample-capsule", shaOf(t, "capsules/process/sample-capsule.json"))}\n`);
+  };
+  const capsuleSha = (t: string): string => shaOf(t, "capsules/process/sample-capsule.json");
+
+  cases.push([capsuleTree, [], "capsule conforming tree -> pass"]);
+
+  cases.push([
+    (t) => {
+      capsuleTree(t);
+      mk(t, "capsules/process/sample-capsule.json", capsuleDoc("sample-capsule", "process", { mutation_id: "m1" }));
+      mk(t, "events/2026-09.jsonl", `${capsuleEventLine("sample-capsule")}\n`);
+    },
+    ["unknown field: mutation_id"], "capsule unknown field -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      capsuleTree(t);
+      mk(t, "capsules/process/sample-capsule.json", capsuleDoc("sample-capsule", "process", { outcome: { status: "fail" } }));
+      mk(t, "events/2026-09.jsonl", `${capsuleEventLine("sample-capsule")}\n`);
+    },
+    ["outcome.reason must be a non-empty string"], "capsule fail without reason -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      capsuleTree(t);
+      mk(t, "capsules/process/sample-capsule.json", capsuleDoc("sample-capsule", "process", { gene_ids: ["process/no-such-gene"] }));
+      mk(t, "events/2026-09.jsonl", `${capsuleEventLine("sample-capsule")}\n`);
+    },
+    ["capsule references gene 'process/no-such-gene' not in genes/"], "capsule dangling gene ref -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      capsuleTree(t);
+      mk(t, "capsules/process/sample-capsule.json", capsuleDoc("sample-capsule", "process", { evidence: ["edited by hand"] }));
+    },
+    ["capsule_sha mismatch"], "capsule worktree edit without capsule add -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      mk(t, "engine/gates.json", WHITELIST);
+      mk(t, "scripts/stub.py", "print('ok')\n");
+      mk(t, "genes/process/sample-gene.json", geneDoc());
+      mk(t, "capsules/process/sample-capsule.json", capsuleDoc());
+    },
+    ["capsule has no event trail"], "capsule without events -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      capsuleTree(t);
+      mk(t, "events/2026-09.jsonl",
+        `${eventLine("gene.added", "sample-gene", shaOf(t, "genes/process/sample-gene.json"))}\n`
+        + `${eventLine("capsule.added", "sample-capsule", capsuleSha(t), "ok", "2026-09-05T02:00:00Z")}\n`);
+    },
+    ["event fields must be exactly"], "capsule event carrying gene keys -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      capsuleTree(t);
+      mk(t, "capsules/process/sample-capsule.json", capsuleDoc("sample-capsule", "doc"));
+    },
+    ["must equal its directory"], "capsule domain != dir -> fail",
   ]);
 
   let failed = 0;

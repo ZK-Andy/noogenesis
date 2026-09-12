@@ -32,11 +32,11 @@ Review: FULL/2026-09-05/R1=ok R2=ok R3=ok
 
 ### S2（2026-09-05，已拍板）：Event 最小 schema 与落盘协议
 
-- **kind 封闭集（演化事件 ≠ 运行日志）**：v0 仅 `gene.added` / `gene.updated` / `gene.retired` 三种。select/propose 运行不记（会话噪音，与 #18 单例判定约束的"常开确定性成本"同类——[cookbook 条目](../../../../docs/cookbook.md)）；evaluate 结果只在入档尝试时随 solidify 事件落一条（成功带证据，失败带拒因）。
+- **kind 封闭集（演化事件 ≠ 运行日志）**：v0 为 `gene.added` / `gene.updated` / `gene.retired` 三种，现为四件——`capsule.added` 随 Capsule 原语加入（[批次 1 序 1 ADR](../../proposed/architecture/2026-09-13-capsule-primitive.md) C5；键集按 kind 条件化，本 ADR S2 其余口径不变）。select/propose 运行不记（会话噪音，与 #18 单例判定约束的"常开确定性成本"同类——[cookbook 条目](../../../../docs/cookbook.md)）；evaluate 结果只在入档尝试时随 solidify 事件落一条（成功带证据，失败带拒因）。
 - **落盘语义逐 kind 钉死**：`gene.added`/`gene.updated` = `genes/` 下文件新增/变更（工作树可复算）；`gene.retired` = 从 `genes/` 删除该文件（git 历史仍可溯），事件 `gene_sha` = 退役时最后内容 SHA；入档失败事件 = 候选未落 `genes/`，`gene_sha` = 被拒候选内容 SHA。
-- **字段（P1 最小集）**：`ts`（ISO 时间）、`actor`、`kind`、`gene`（id）、`gene_sha`（内容寻址防篡改锚点）、`outcome`（ok | fail+拒因）、`evidence`（一行证据摘要）。主设计 §5.1 的 `mutation_id`/`capsule_id`/`env_fingerprint`/`validation_report_id` 不进 P1——对应原语已后置，字段先于原语出现即死字段。
+- **字段（P1 最小集）**：`ts`（ISO 时间）、`actor`、`kind`、`gene`（id）、`gene_sha`（内容寻址防篡改锚点）、`outcome`（ok | fail+拒因）、`evidence`（一行证据摘要）——capsule 面把 `gene`/`gene_sha` 换成 `capsule`/`capsule_sha`（[批次 1 序 1 ADR](../../proposed/architecture/2026-09-13-capsule-primitive.md) C5）。主设计 §5.1 的 `mutation_id`/`capsule_id`/`env_fingerprint`/`validation_report_id` 不进 P1——对应原语已后置，字段先于原语出现即死字段。
 - **落盘**：`events/<YYYY-MM>.jsonl`，月卷与 journal 同节奏（diff 可读、量有界）；**入 git**（审计面非缓存面，"过程即资产"直接适用）；**原子证据**：solidify 将 `genes/` 变更与 `events/` 追加行放同一 commit——基因更替与审计记录不可分离，是 content-addressable + append-only 在 git 载体上的落法。
-- **校验**：不新增第十一门禁——`verify-gene-format.py` 扩展覆盖 `events/`：行级 JSON、kind 封闭集、月卷内时间序；**复算规则分型**——工作树存在的 `genes/<id>.json` ↔ 其最新 added/updated 事件的 `gene_sha` 必须一致（复算）；fail/retired 事件只查结构/kind/时间序，**不作工作树复算**（内容经 git 历史复核）。仍单脚本 = 第十门禁，gate 数量的克制性守住。
+- **校验**：不新增门禁——`verify-gene-format.mts` 覆盖 `genes/` + `capsules/` + `events/`：行级 JSON、kind 封闭集、月卷内时间序；**复算规则分型**——工作树存在的 `genes/<id>.json` ↔ 其最新 added/updated 事件的 `gene_sha` 必须一致（复算），`capsules/<domain>/<id>.json` ↔ 其 `capsule.added` 事件的 `capsule_sha` 同理（[Capsule ADR](../../proposed/architecture/2026-09-13-capsule-primitive.md) C4）；fail/retired 事件只查结构/kind/时间序，**不作工作树复算**（内容经 git 历史复核）。仍单脚本 = 白名单外独立件，gate 数量的克制性守住。
 
 ### S3（2026-09-05，已拍板）：验证白名单、安全模型、元评测夹具
 
