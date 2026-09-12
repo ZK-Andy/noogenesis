@@ -14,8 +14,8 @@
  * - 决策判别式：`PreToolDecision` 三态、`PostToolDecision` 的 accept/block 与
  *   `additionalContexts`（`index.mts` 的消费面）；
  * - tokenMeter 读数面：服务键 `tokenMeter`（`index.mts` 的 `ctx.get` 取用点）、
- *   `TokenMeasurement` 的 `surfaceTokens` / `totalTokens` 为 `number`、`measure`
- *   返回 `TokenMeasurement`（`token-baseline.mts` 的运行期形状闸消费面）。
+ *   `TokenMeasurement.surfaceTokens` 为 `number`、`measure` 返回
+ *   `TokenMeasurement`（`token-baseline.mts` 的运行期形状闸消费面）。
  *
  * `defineTool` / `createUserMessage` 不在断言面：两者的真实调用点
  * （`tools.mts` / `index.mts`）由编译器按同一参数类型检查，再断一遍零证伪力。
@@ -64,9 +64,7 @@ type _PostToolContext = Assert<"additionalContexts" extends keyof PostToolDecisi
 
 // ── tokenMeter 读数面：token-baseline.mts 的运行期形状闸消费面 ─────────────
 type _TokenMeterService = Assert<"tokenMeter" extends keyof Context ? true : false>;
-type _TokenSurfaceTokensKey = Assert<"surfaceTokens" extends keyof TokenMeasurement ? true : false>;
 type _TokenSurfaceTokensNumber = Assert<TokenMeasurement["surfaceTokens"] extends number ? true : false>;
-type _TokenTotalTokensNumber = Assert<TokenMeasurement["totalTokens"] extends number ? true : false>;
 type _TokenMeasureReturn = Assert<ReturnType<TokenMeter["measure"]> extends TokenMeasurement ? true : false>;
 
 export {};
