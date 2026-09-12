@@ -3,7 +3,7 @@
 Status: implemented
 Review: FULL/2026-09-11/R1=ok R2=ok R3=ok
 
-Related: 融合立宪 [2026-09-10-memory-line-fusion-charter](../../proposed/architecture/2026-09-10-memory-line-fusion-charter.md)（proposed；本件落其 D8/D10 三件与两个待定设计点，不改其边界）；协议面 [2026-09-05-gene-event-schema](2026-09-05-gene-event-schema.md)（事件 kind 准入「可复算才进轨」——本件观测面不触碰该判据）；只读消费面 [2026-09-06-p2-shared-consumer](2026-09-06-p2-shared-consumer.md)（`.noogenesis/` 缓存落点与「读路径降级 / 本仓 fail-closed」姿态先例）；线状态唯一家 [memory-system-dossier](../../../../docs/research/memory-system-dossier.md)；命令合同面 [engine/README](../../../../engine/README.md)。
+Related: 融合立宪 [2026-09-10-memory-line-fusion-charter](2026-09-10-memory-line-fusion-charter.md)（本件落其 D8/D10 三件与两个待定设计点，不改其边界）；第二期与两项待拍板的判裁 [2026-09-13-memory-line-phase2-verdict](2026-09-13-memory-line-phase2-verdict.md)（本件 Decision 4 的触发条由该件维持）；协议面 [2026-09-05-gene-event-schema](2026-09-05-gene-event-schema.md)（事件 kind 准入「可复算才进轨」——本件观测面不触碰该判据）；只读消费面 [2026-09-06-p2-shared-consumer](2026-09-06-p2-shared-consumer.md)（`.noogenesis/` 缓存落点与「读路径降级 / 本仓 fail-closed」姿态先例）；线状态唯一家 [memory-system-dossier](../../../../docs/research/memory-system-dossier.md)；命令合同面 [engine/README](../../../../engine/README.md)。
 
 ## Problem
 

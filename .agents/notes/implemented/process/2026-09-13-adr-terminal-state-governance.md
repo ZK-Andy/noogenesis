@@ -17,7 +17,7 @@ Status: implemented
 
 - **被完全取代的 proposed → 合并删旧**：`2026-09-06-guardrail-defer-trigger` 删除，入站链重定向到承载件 [护栏建设轮 ADR](../architecture/2026-09-13-guardrail-construction-round.md)。其决定（三件延后 + 触发条件）由承载件就同一三件重新拍板；其时机取舍（「护栏要防的回归形态还没有真实样本，过早建设 = 对想象中的失败模式投资」）的原则家 = [anti-overdesign](../../../../docs/method/anti-overdesign.md)，承载件 Alternatives 末条以反面用法复述同一原则。正文全文留 git 历史。
 - **决定已执行且仍是结构记录的 proposed → 转 implemented**：`2026-09-06-collab-rebuild-impl` 迁 `implemented/architecture/`，骨架按 implemented 形态改写（`## Proposal` → `## Decision`；验收与风险并为 `## Consequences`；现在时）。它是七件实现轮 ADR 的父件，无单件可取代。
-- **内容不是提案的 proposed 不进本批**：`2026-09-05-evomap-evox-engine-anatomy` 是码级解剖（调研档案，非决定），终局归口留 [档案页制度批](../../../../HANDOFF-todos.md) 的 tier 拍板；`2026-09-10-memory-line-fusion-charter` 仍是活提案（记忆库线第二期未开轮）。
+- **内容不是提案的 proposed 不进本批**：`2026-09-05-evomap-evox-engine-anatomy` 是码级解剖（调研档案，非决定），终局归口留 [档案页制度批](../../../../HANDOFF-todos.md) 的 tier 拍板；`2026-09-10-memory-line-fusion-charter` 在该批时是活提案（记忆库线第二期未开轮）。
 - **归档不随本批**：`implemented/` 记录何时走 `archived/`（已落地的决定完成且正文不再指导未来工作时）按常规归档判断另批执行——归档须同步 `scripts/archived-notes.freeze.json`，`scripts/**` 触发 FULL 三审，不夹带。
 
 ## Alternatives considered
