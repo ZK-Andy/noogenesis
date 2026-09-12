@@ -546,7 +546,17 @@ function selfTest() {
     const badCat = path.join(staging, 'mut-3.json');
     fs.writeFileSync(badCat, JSON.stringify({ ...mut, id: 'mut-3', category: '  ' }, null, 2) + '\n');
     ok(throwsEngine(() => recordMutation(td, badCat, 'tester')), 'mutation: blank category refused');
-    ok(throwsEngine(() => recordMutation(td, cand, '   ')), 'mutation: blank actor refused');
+    // actor 守卫须用「尚未声明」的 id：用已入档的 cand 会被 append-only 分支先拒，
+    // 断言恒真（删掉 actor 守卫仍绿）。
+    const blankActor = path.join(staging, 'mut-actor.json');
+    fs.writeFileSync(blankActor, JSON.stringify({ ...mut, id: 'mut-actor' }, null, 2) + '\n');
+    ok(throwsEngine(() => recordMutation(td, blankActor, '   ')), 'mutation: blank actor refused');
+    ok(!fs.existsSync(mutationPath(td, 'process', 'mut-actor')), 'mutation: blank actor wrote nothing');
+    // 跨域 id 唯一：同 id 不得在第二个域再声明（事件只记 id，引用必须无歧义）
+    const crossDomain = path.join(staging, 'mut-1.json');
+    fs.writeFileSync(crossDomain, JSON.stringify({ ...mut, id: 'mut-1', domain: 'doc' }, null, 2) + '\n');
+    ok(throwsEngine(() => recordMutation(td, crossDomain, 'tester')),
+      'mutation: same id in another domain refused');
 
     // 读命令：确定性渲染（逐字金样，抓输出格式漂移而非仅抓非确定性）
     const GOLDEN_MUTATION =
@@ -583,6 +593,8 @@ function selfTest() {
       ok(!fs.existsSync(mutationPath(td, 'process', 'mut-rb')), 'mutation: rollback removes placed mutation');
       ok(git(td, ['diff', '--cached', '--name-only']).trim().split('\n').filter((l) => l.includes('mut-rb')).length === 0,
         'mutation: rollback leaves no staged residue');
+      // rollbackAppend：事件行也必须消失（只删文件会留下无事件轨的幽灵记录）
+      ok(!readEvents(td).some((e) => e.mutation === 'mut-rb'), 'mutation: rollback removes appended event line');
       git(td, ['config', '--unset', 'core.hooksPath']);
     }
   }

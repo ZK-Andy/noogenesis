@@ -1262,6 +1262,26 @@ function selfTest(): number {
     ["event fields must be exactly"], "mutation event carrying gene keys -> fail",
   ]);
 
+  cases.push([
+    (t) => {
+      mutationTree(t);
+      mk(t, "events/2026-09.jsonl",
+        `${mutationEventLine("sample-mutation", mutationSha(t))}\n`
+        + `${mutationEventLine("sample-mutation", "not-a-sha", "ok", "2026-09-05T03:00:00Z")}\n`);
+    },
+    ["mutation_sha must be 64-hex sha256"], "mutation event sha not 64-hex -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      mutationTree(t);
+      mk(t, "events/2026-09.jsonl",
+        `${mutationEventLine("sample-mutation", mutationSha(t))}\n`
+        + `${mutationEventLine("Bad_ID", "f".repeat(64), "ok", "2026-09-05T03:00:00Z")}\n`);
+    },
+    ["mutation must be a kebab-case id"], "mutation event id non-kebab -> fail",
+  ]);
+
   let failed = 0;
   const root = fs.mkdtempSync(path.join(os.tmpdir(), "tmp"));
   try {
