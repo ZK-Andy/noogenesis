@@ -8,4 +8,5 @@
 - **`gates.json` 是白名单单源**：hooks/CI/gene evaluate 消费同一清单；加条目前确认脚本存在且可执行（白名单坏件 → evaluate 全体 fail-closed）。
 - **入档原子性**：`genes/` / `capsules/` 变更与 `events/` 追加必须在同一 commit；事件 kind 封闭集四件（gene.added / gene.updated / gene.retired / capsule.added），运行不记事件。
 - **缓存只读**：`pull` 的缓存基因不可评估、不可入档；同名 ref 本仓优先。
+- **`capsules/` 只属本仓**：Capsule 是 append-only 执行审计记录（无 update/retire 面、同 id 重记即拒），不进 pull 的缓存合并面；`capsule add` 是唯一入口，`gene_ids` 引用须活在本仓 `genes/`（缓存副本不算）；`capsule show` 读渲染，输出格式改动即改 self-test 的逐字金样。
 - 演化产出 = 基因与 Capsule（两者均 closed schema）；schema 改动先改协议 ADR 再动代码。
