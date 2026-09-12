@@ -26,6 +26,8 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 
 每批纪律：按 [feature-flow](../../../workflows/feature-flow.md) 走（立项拍板 → ADR → 实现 → 门禁 → FULL 三审 → 本地提交）；未经用户明示不推送。
 
+**进度游标（跨会话恢复契约）**：新会话按 [session-open](../../../workflows/session-open.md) 读 [HANDOFF.md](../../../../HANDOFF.md) ⏭ = 当前批次 + [HANDOFF-todos](../../../../HANDOFF-todos.md) 当批条 = 本批可办项；每批收口时改本表对应行的备注为 `done（<批 ADR 指针>）`，并把行动区当批条换成下一批。46 项不逐条进行动区——行动区 `[ ]` 开条目 ≤16 为机器强制（`verify-handoff-structure`）。
+
 ### 批次表（有序）
 
 **批次 1 — 演化原语与协议（无封条依赖）**
