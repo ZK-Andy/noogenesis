@@ -14,9 +14,9 @@ Related: 部分取代 [2026-09-12-absorption-async-round](2026-09-12-absorption-
 
 ## Decision
 
-- **归集面 = [HANDOFF-evolution-pool.md](../../../../HANDOFF-evolution-pool.md)**（HANDOFF 家庭行动区新件，仓库根）。待办区不再承载池条目，只在待办件留一行指针以保证行动区可见性。
+- **归集面 = [HANDOFF-evolution-pool.md](../../../../HANDOFF-evolution-pool.md)**（HANDOFF 家庭行动区新件，仓库根）。待办区不再承载池条目；池指针落 `HANDOFF-todos.md` 头部说明块（行动区可见性入口），不占 `[ ]` 清单条目——清单只列可办事项，常设指针入清单会占掉一格永不开销的额度。
 - **攒账义务不变**：每批评审的可机械判的类 / 纪律漏项 / 带症状根因的踩坑，主会话当场各写一行进池件；开轮触发与成批处理口径照旧（步序 = `feature-flow` §4.6，门槛 = 机械化 ADR Decision 1）。
-- **指针改指池件**：`feature-flow` §4.6、`session-close` §3、主设计 §6、`HANDOFF.md` 待办节与状态节、`HANDOFF-todos.md` 头部与池指针条、bank 技能 proposed ADR 的攒账入口。
+- **指针改指池件**：`feature-flow` §4.6、`session-close` §3、主设计 §6、`HANDOFF.md` 待办节与状态节、`HANDOFF-todos.md` 头部说明块、bank 技能 proposed ADR 的攒账入口。
 - **吸收后处置本次只记录需求**：池件的「待定」节记下「候选被吸收后如何销账 / 是否归档」，不在本批设计形态（延后项已由 [销账 ADR](2026-09-12-evolution-pool-candidate-disposal.md) 随触发落地）。
 
 ## Alternatives considered
@@ -28,7 +28,7 @@ Related: 部分取代 [2026-09-12-absorption-async-round](2026-09-12-absorption-
 
 ## Consequences
 
-- 待办件回到「跨会话遗留的唯一落点」单一职责，池的增长不再挤占其条数预算。
+- 待办件回到「跨会话遗留的唯一落点」单一职责：池的增长不再挤占其条数预算，`[ ]` 清单也不被常设指针占位，开放额度全部留给可办事项。
 - **池件无机器闸**（`verify-handoff-structure` 只管 `HANDOFF.md` + `HANDOFF-todos.md`）：攒账仍是主会话的手工义务，如实记，不宣称机器已盖。
 - **吸收后处置规则**：本件延后（Decision 4），[销账 ADR](2026-09-12-evolution-pool-candidate-disposal.md) 随触发（首次演化轮落账，2026-09-12）落地。
 - 部分取代 Decision 4 的指向面，吸收撤除批其余决定（异步准则 / 撤除主链路 / 义务归家）继续有效。

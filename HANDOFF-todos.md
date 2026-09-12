@@ -1,6 +1,7 @@
 # HANDOFF-todos — 行动区
 
-> 全部待办明细、状态与预算的**唯一行动区**（HANDOFF.md 待办节只放指针；findings 候选的归集面 = [HANDOFF-evolution-pool.md](HANDOFF-evolution-pool.md)，不写本件）。`[ ]` 条 ≤16（每条 ≤340 字），`[x]` 压缩为一行指针（≤220 字），总条数 ≤70；由 `scripts/verify-handoff-structure.mts` 机器强制。
+> 全部待办明细、状态与预算的**唯一行动区**（HANDOFF.md 待办节只放指针）。`[ ]` 清单只列可办事项、`[x]` 压缩为一行指针——本件不承载池条目与常设指针（`[ ]` 条 ≤16（每条 ≤340 字）、`[x]` 条 ≤220 字、总条数 ≤70，由 `scripts/verify-handoff-structure.mts` 机器强制）。
+> 演化轮池（候选归集区）= **[HANDOFF-evolution-pool.md](HANDOFF-evolution-pool.md)**：规则、门槛与开轮触发单源在该件；findings 的框架级候选写进池件，不写本件。
 > 分类速览约定见 [session-close](.agents/workflows/session-close.md)：A 待拍板 / B 待复验 / C 随手候选 / D 远期。
 > 胶囊 01 优化轮已收口（2026-09-10）：其问题池冻结为调研档案，终态与去向 = [该文档 §2.3 收口账](docs/research/capsule-01-optimization-round.md)；跨会话遗留（下方 D 条三件）由本行动区承载。
 > 记忆库线（含痕迹提炼面 D 条）已迁出（2026-09-10）：唯一状态家 = [docs/research/memory-system-dossier.md](docs/research/memory-system-dossier.md)（档案页制度试点）。
@@ -71,4 +72,3 @@
 - [x] （A）M1 批 A 守卫三件套 2026-09-10（FULL 三审全采纳；三件 v0 落地），ADR [2026-09-10-m1-guard-anti-overdesign](.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) implemented（分批批注）。
 - [x] （A）M1 批 B 防过度混合 D 2026-09-10（FULL 三审全采纳；契约块 + 蒸馏篇 + cases 索引 + 检查项第 5 条），ADR [2026-09-10-m1-guard-anti-overdesign](.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) 第二条 Review 行在案。
 - [x] （D）护栏建设轮余项收尾 2026-09-13：建议行落地（`token-baseline.mts` 每会话一行读数，运行期形状闸）+ 两本账落点（发版账 = release ADR 实发节，三次已回填），[ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md) 落账。
-- [ ] （C）演化轮池（候选归集区）= [HANDOFF-evolution-pool.md](HANDOFF-evolution-pool.md)（规则、门槛与开轮触发单源在该件）。

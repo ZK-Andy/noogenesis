@@ -11,7 +11,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-13｜**ADR 终局态治理批（LIGHT）**：两条已执行/被取代的 `proposed/` 记录收口——延后件删除（决定与备选由护栏建设轮 ADR 承接）+ 入站链重定向；`collab-rebuild-impl` 转 implemented；[治理 ADR](.agents/notes/implemented/process/2026-09-13-adr-terminal-state-governance.md)；`b978567`→`653e1b2`，CI 绿。
+- 2026-09-13｜**ADR 终局态治理批**：两条已执行/被取代的 `proposed/` 记录收口——延后件删除 + 入站链重定向；`collab-rebuild-impl` 转 implemented；池指针移入 todos 头部说明块（不占 `[ ]`）；[治理 ADR](.agents/notes/implemented/process/2026-09-13-adr-terminal-state-governance.md)；`b978567`→`653e1b2`，CI 绿。
 
 - 2026-09-13｜**演化轮落账批（同族收口；FULL 三审 R1 0B/3S、R2 1B/3S、R3 0B/5S；采纳 10 部分采纳 2）**：提问面走 `ctx.get`；新门禁 `host-service-reads`（白名单 = `inject` ∪ cordis 混入面）+ CI 自测登记 + 共享件 `srctree`；简报闸补 base 判据；池候选销账 3 新增 1；三 ADR 落账；提交 `031ced7`→`97a38a8`，CI 绿，README 无漂移。
 - 2026-09-13｜**护栏建设轮余项收尾批（FULL 三审 R1 1B/2S、R2 1B/2S、R3 3B/9S；采纳 17 延后 1）**：决定 1 建议行 + 决定 2 两本账落点落地，[ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md) 三段落账（含两条勘误）；`c671ce5`→`6f72c8d`。README 已同步。
