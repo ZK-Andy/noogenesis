@@ -9,7 +9,8 @@
  * 懒取用（cordis 对缺席的注入服务会推迟整个插件装载，声明注入反而让
  * 「提问面缺席 → 只提醒」降级不可达）。skills 同理不进 inject 声明：注册走
  * ctx.inject(["skills"], …) 可重试路径（ADR 2026-09-12-bank-skill-provider-registration
- * Decision 1）。
+ * Decision 1）。tokenMeter 同款懒取用（pre-step 读一次，缺席静默）——见
+ * ./token-baseline.mts。
  *
  * 配置面（8 字段 + 缺省 + 失败模式）单一事实源：./README.md「配置」表；
  * 校验实现在 ./config.mts（fail-closed，selftest 直测）。
@@ -24,6 +25,8 @@ import { BASE_SECTION, createHitsSection } from "./section.mjs";
 import { runSolidifyTrigger, listStagingCandidates, createInFlightGate, ASK_TIMEOUT_MS } from "./solidify-trigger.mjs";
 import { createBankPullScheduler } from "./bank-pull.mjs";
 import { registerBankSkills } from "./skill-provider.mjs";
+import { createTokenBaselineReading } from "./token-baseline.mjs";
+import type { TokenMeterLike } from "./token-baseline.mjs";
 import { validateConfig } from "./config.mjs";
 import { mergePreStep, mergeSessionStart, mergeToolPost, mergeToolPre, createSessionWarnOnce } from "./mount.mjs";
 import type { PreStepPayload, SessionStartPayload, ToolExecLike, ToolResultLike } from "./mount.mjs";
@@ -40,6 +43,8 @@ interface HostContext extends ToolHost {
 	on(event: string, listener: (payload: any, ...rest: any[]) => unknown): void;
 	systemPrompt: { section(section: { name: string; order: number; text: string | (() => string) }): void };
 	userQuestions?: { ask(question: { questions: Array<{ id: string; question: string; options: Array<{ label: string }> }> }): Promise<any> };
+	/** 宿主 token 度量服务（观察面懒取用；缺席 = 不发行读数，见 token-baseline.mts）。 */
+	tokenMeter?: TokenMeterLike;
 }
 
 /** solidify 问答宿主决策（archive = 入档；later/null = 只提醒）。 */
@@ -115,6 +120,16 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 	// A3 advice 投递降级提示（每会话至多一条；keyless carve-out 见 createSessionWarnOnce）。
 	const warnOnceAdvisory = createSessionWarnOnce((message) => logger.warn(message));
 
+	// 常驻注入面宿主读数（观察面，非门槛；护栏 ADR 2026-09-13-guardrail-construction-round
+	// 决定 1 建议行）：服务懒取用（缺席静默、晚到可读），按会话至多一次；全部降级面
+	// 在 token-baseline.mts 内部消化，绝不阻塞一步。复用 A2 pre-step 挂载点——每挂载
+	// 点仍恰一个宿主 listener。
+	const readTokenBaseline = createTokenBaselineReading({
+		meter: () => ctx.tokenMeter,
+		report: (line) => logger.info(line),
+		warn: (message) => logger.warn(message),
+	});
+
 	// 逐次解析（部署收口 ADR 2026-09-06-adapter-deploy-hardening）：工具体吃
 	// exec.agent 的会话工作区走四级回退链——多 agent 异仓各归各仓；无会话
 	// 上下文的调用面（如 selftest 静态注入）退化为入口静态锚定。
@@ -186,6 +201,7 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 	// 由合并器单源承载（首批不用）；建议行合一条消息追加到 enter messages。
 	// 合并/消息构造异常 → warn 降级返回 downstream（降级纪律：绝不阻塞一步）。
 	ctx.on("agent/pre-step", async (payload: PreStepPayload, next: () => Promise<{ kind: string; messages?: unknown[] }>) => {
+		readTokenBaseline(payload.agent?.session);
 		const downstream = await next();
 		if (downstream.kind === "reject") return downstream;
 		try {

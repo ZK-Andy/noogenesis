@@ -35,6 +35,7 @@ import { BUNDLED_SKILL_RANK, PROVIDER_NAME, createBankSkillProvider, parseSkillF
 import { validateConfig, DEFAULT_GENE_BANK_URL } from "./config.mjs";
 import { createSessionStore, mergePreStep, mergeSessionStart, mergeToolPost, mergeToolPre } from "./mount.mjs";
 import { createMountPolicies, createSubtreeRulesPolicies, inspectSkillSurface, SKILL_DIR_CANDIDATES } from "./mount-policies.mjs";
+import { createTokenBaselineReading } from "./token-baseline.mjs";
 import { createLintFeedbackPolicies } from "./lint-feedback.mjs";
 import type { LintDiagnostic, LintRunContext } from "./lint-feedback.mjs";
 import { createExportDocsPolicies } from "./export-docs-feedback.mjs";
@@ -206,6 +207,76 @@ function writeFixtureGene(repoRoot: string): void {
 	// 真实违约路径：配置侧把行数调过闸即在装载期被拒收。
 	assert.throws(() => validateConfig({ maxIndexGenes: MAX_HIT_LINES + 1 }), /resident section budget/);
 	ok(`resident budget: validateConfig rejects maxIndexGenes=${MAX_HIT_LINES + 1} at load`);
+}
+
+// ── 2d) 常驻注入面宿主读数（护栏 ADR 决定 1 建议行：观察面，非门槛）───────
+{
+	const reports: string[] = [];
+	const warns: string[] = [];
+	let present = true;
+	let measurement: unknown = { surfaceTokens: 4321 };
+	let mode: "ok" | "throw" = "ok";
+	const read = createTokenBaselineReading({
+		meter: () => (present
+			? { measure: () => {
+				if (mode === "throw") throw new Error("replay tail unreadable");
+				return measurement;
+			} }
+			: undefined),
+		report: (line) => reports.push(line),
+		warn: (message) => warns.push(message),
+	});
+
+	// 在场：每会话恰一行，读数进 report 不进 warn。
+	const session = {};
+	read(session);
+	read(session);
+	read(session);
+	assert.equal(reports.length, 1);
+	assert.match(reports[0]!, /surfaceTokens=4321/);
+	assert.match(reports[0]!, /observation only/);
+	assert.equal(warns.length, 0);
+	ok("token baseline: one reading per session, reported once");
+
+	// 缺席：静默且**不消耗**该会话的读数预算——服务晚挂载后仍读得到。
+	present = false;
+	const late = {};
+	read(late);
+	assert.equal(reports.length, 1);
+	assert.equal(warns.length, 0);
+	present = true;
+	read(late);
+	assert.equal(reports.length, 2);
+	assert.match(reports[1]!, /surfaceTokens=4321/);
+	ok("token baseline: absent service stays silent without consuming the session's reading budget");
+
+	// 形状不符（宿主改字段/改类型）：每会话一条 warn，不发行、不抛。
+	measurement = { totalTokens: 7 };
+	const drifted = {};
+	read(drifted);
+	read(drifted);
+	assert.equal(reports.length, 2);
+	assert.equal(warns.length, 1);
+	assert.match(warns[0]!, /shape mismatch \(surfaceTokens=undefined\)/);
+	measurement = 1234;
+	const primitive = {};
+	read(primitive);
+	assert.equal(reports.length, 2);
+	assert.match(warns[1]!, /shape mismatch \(surfaceTokens=undefined\)/);
+	ok("token baseline: shape mismatch degrades with one warn per session, never reports");
+
+	// measure 抛错：同上降级面；无会话对象（宿主合同必带）静默零动作。
+	mode = "throw";
+	const failed = {};
+	read(failed);
+	assert.equal(reports.length, 2);
+	assert.match(warns[2]!, /token baseline unavailable \(replay tail unreadable\)/);
+	read(undefined);
+	read(null);
+	read("session-id");
+	assert.equal(warns.length, 3);
+	assert.equal(reports.length, 2);
+	ok("token baseline: measure failure degrades with one warn; missing session object is a silent no-op");
 }
 
 // ── 3) tools：依赖注入面（假 defineTool + 假引擎，退出码映射全路径） ──────
@@ -1180,12 +1251,13 @@ function writeFixtureGene(repoRoot: string): void {
 		fs.writeFileSync(path.join(repo, SKILL_DIR_CANDIDATES[1], "noo-doc-standards", "SKILL.md"), "# skill\n");
 		const listeners = new Map<string, Array<(...args: any[]) => unknown>>();
 		const warns: string[] = [];
+		const infos: string[] = [];
 		const injectCalls: Array<{ deps: string[]; callback: (scoped: unknown) => void }> = [];
 		const fakeMountCtx = {
 			tools: { register: () => {} },
 			systemPrompt: { section: () => {} },
 			provide: () => {},
-			logger: () => ({ info: () => {}, warn: (m: string) => warns.push(m) }),
+			logger: () => ({ info: (m: string) => infos.push(m), warn: (m: string) => warns.push(m) }),
 			on: (event: string, listener: (...args: any[]) => unknown) => {
 				const list = listeners.get(event) ?? [];
 				list.push(listener);
@@ -1194,6 +1266,7 @@ function writeFixtureGene(repoRoot: string): void {
 			inject: (deps: string[], callback: (scoped: unknown) => void) => {
 				injectCalls.push({ deps, callback });
 			},
+			tokenMeter: undefined as { measure(session: unknown): unknown } | undefined,
 		};
 		apply(fakeMountCtx as never, { repoRoot: repo, geneBankUrl: false });
 		for (const event of ["agent/session-start", "agent/pre-step", "tools/pre-execute", "tools/post-execute"]) {
@@ -1222,6 +1295,20 @@ function writeFixtureGene(repoRoot: string): void {
 		const rejected = (await preStep({ agent, turn: 2, step: 1 }, async () => ({ kind: "reject" }))) as PreStepDecision;
 		assert.equal(rejected.kind, "reject");
 		ok("mounts: A2 wiring — opening map appended once; unregistered bank cache keeps the roster line out with one warn; later steps and reject passthrough");
+
+		// 观察面读数（护栏 ADR 决定 1 建议行）：走既有 pre-step listener。A2 的三次
+		// preStep 已在 meter 缺席下走过同一会话——挂上 meter 后仍读得到（缺席不消耗
+		// 读数预算）；同会话恰一行；宿主 measure 抛错 → 一条 warn、不阻断一步。
+		fakeMountCtx.tokenMeter = { measure: () => ({ surfaceTokens: 4242 }) };
+		await preStep({ agent, turn: 1, step: 3 }, async () => ({ kind: "enter", messages: [] }));
+		assert.equal(infos.filter((m) => m.includes("surfaceTokens=4242")).length, 1);
+		await preStep({ agent, turn: 1, step: 4 }, async () => ({ kind: "enter", messages: [] }));
+		assert.equal(infos.filter((m) => m.includes("surfaceTokens=4242")).length, 1, "one reading per session");
+		fakeMountCtx.tokenMeter = { measure: () => { throw new Error("replay tail unreadable"); } };
+		const unstable = { session: { header: { cwd: repo } } };
+		await preStep({ agent: unstable, turn: 1, step: 1 }, async () => ({ kind: "enter", messages: [] }));
+		assert.equal(warns.filter((m) => m.includes("token baseline unavailable")).length, 1);
+		ok("mounts: token baseline reading rides the existing pre-step listener — absent service preserved the budget; one reading per session; host failure degrades with one warn");
 
 		// A3：无策略决策 → next 透传（能力位在场；exec 形状 = 宿主合同冒烟，无观测语义）。
 		const passthroughMarker = { marker: true };
