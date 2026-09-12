@@ -17,24 +17,15 @@ Related: 试点立项与痛点画像 = [journal 2026-09 卷](../../../../journal
 
 **1. 新 tier `docs/state/` = 主题状态页（档案页）的家。** 一个主题一个状态家；活页住此层，收口冻结后迁 `docs/research/`（先例 = [优化轮文档](../../../../docs/research/capsule-01-optimization-round.md)：先当活档案页、2026-09-10 收口冻结为调研档案）。规则落 [doc-standards](../../../../docs/method/doc-standards.md) §1（tier 表一行 + 主题状态页一节），本件不复述。
 
-**2. 骨架四段是封闭集**：`## 决策指针` / `## 行动区` / `## 触发条件` / `## 状态日志`，必须齐全、按此序，**不得出现第五个 `##` 节**——新素材归其 tier 的家，不往状态页塞。
+**2. 骨架 = 封闭集。** 四段的名称、顺序与封闭性（第五个 `##` 节违规）作为规则落 [doc-standards](../../../../docs/method/doc-standards.md) §1「主题状态页」；本件只定「封闭、不往状态页塞新素材」这一决定。
 
-**3. 条目形态逐段钉死**：决策指针条目须带相对 Markdown 链接（「决策不落本页，只列指针」的合同面）；行动区条目须 `- [ ]` / `- [x]`；状态日志条目须 `- YYYY-MM-DD｜` 前缀（日期须真实日历日）。
+**3. 条目形态进机器面。** 三段各自的条目形态由本闸判据把关；形态文本归 [doc-standards](../../../../docs/method/doc-standards.md) §1。
 
-**4. 有界**：行动区 open 条 ≤ 12、状态日志条 ≤ 40；超限即把最旧条目压缩为一行（压缩的语义面归评审，闸只判越界与否）。
+**4. 有界 + 压缩通道。** 两处条目设上限、超限即把最旧条目压缩为一行（压缩的语义面归评审，闸只判越界与否）；上限数值与压缩规则归 [doc-standards](../../../../docs/method/doc-standards.md) §1。
 
-**5. 痕迹提炼形态映射到既有四段**：**触发条件** = 待观察面（未到触发的项在案），**状态日志** = 已确认面（含压缩规则）；不引入第二套状态标签。摩擦点落点表（「可寻址」验收单源）：
+**5. 痕迹提炼形态 = 映射到既有四段，不引入第二套状态标签。** 映射内容（待观察面 / 已确认面 / 压缩规则）与摩擦点落点表归 [doc-standards](../../../../docs/method/doc-standards.md) §1，本件不复述（同 Decision 1 口径）；「可寻址」验收由该表承担。
 
-| 摩擦点 | 家 |
-|---|---|
-| 踩坑 | [cookbook](../../../../docs/cookbook.md) |
-| 方法论/规范 | [docs/method/](../../../../docs/method/doc-standards.md) 及同目录 |
-| 决策与理由 | Agent Notes |
-| 会话叙事 | `journal/` |
-| 未决追踪 | [演化轮池](../../../../HANDOFF-evolution-pool.md) + [行动区](../../../../HANDOFF-todos.md) |
-| 主题状态 | 本层档案页 |
-
-**6. 立页判据（推广面）**：跨会话未决项 ≥3 且状态散落 ≥2 处，或有独立触发条件与状态日志——不满足不立（用不上不写，不预铺空页）。**推广评估结论 = 不立新页**：现无第二个满足判据的主题（演化/发布/宿主适配三条线的状态各已有单一家），本批只立制度与闸。
+**6. 立页判据立、新页不立。** 判据文本归 [doc-standards](../../../../docs/method/doc-standards.md) §1；本批推广评估结论 = **不立新页**——现无第二个满足判据的主题（演化/发布/宿主适配三条线的状态各已有单一家），只立制度与闸。
 
 **7. 机器面 = 新闸 `scripts/verify-dossier-format.mts`**：判据 2–4 + 落点命名（`docs/state/<kebab-topic>-dossier.md`）+ 头部说明块（H1 + 首个 `##` 前至少一行 `> `）；目录缺席或空 = 零约束 PASS（同 `verify-postmortem-naming` 姿态）。登记 `engine/gates.json`（pre-push/CI 消费同一清单）+ pre-commit job + CI self-test 清单。
 
@@ -59,5 +50,5 @@ Related: 试点立项与痛点画像 = [journal 2026-09 卷](../../../../journal
 - 新闸进 gates.json + pre-commit + CI self-test 清单；闸为封闭集判据，将来要加第五段或改条目形态即改判据（`scripts/**` 触 FULL 三审）。
 - 冻结通道在案：档案页收口后迁 `docs/research/`，其机器面随之退出（research 层无骨架约束）。
 - 推广面：判据在案、页不立；第二个主题满足判据时按本件立页。
-- 「摩擦点落点可寻址」验收由 Decision 5 的落点表承担（[判裁 ADR](../architecture/2026-09-13-memory-line-phase2-verdict.md) Consequences 的验收项在案）。
+- 「摩擦点落点可寻址」验收由 [doc-standards](../../../../docs/method/doc-standards.md) §1 的落点表承担（[判裁 ADR](../architecture/2026-09-13-memory-line-phase2-verdict.md) Consequences 的验收项在案）。
 - 零约束姿态的代价：`docs/state/` 被删除或清空时闸不报错——制度依赖 tier 表与评审兜底，不靠闸的存在性自证。

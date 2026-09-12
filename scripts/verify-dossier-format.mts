@@ -28,7 +28,7 @@
 import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
-import { cmpPyStr, pyStrip, splitLines } from "./pypara.mts";
+import { cmpPyStr, pyFromIso, pyStrip, splitLines } from "./pypara.mts";
 
 interface Violation { file: string; reason: string }
 
@@ -45,12 +45,6 @@ const LOG_ITEM_RE = /^- (\d{4})-(\d{2})-(\d{2})｜\S/;
 
 /** 骨架四段，顺序即判据。 */
 const SECTIONS = ["决策指针", "行动区", "触发条件", "状态日志"] as const;
-
-/** 日历日校验（与 verify-adr-format 同口径：回折算日期不得漂移）。 */
-function isRealDate(y: number, m: number, d: number): boolean {
-  const probe = new Date(Date.UTC(y, m - 1, d));
-  return probe.getUTCFullYear() === y && probe.getUTCMonth() === m - 1 && probe.getUTCDate() === d;
-}
 
 /** 单件档案页校验：返回违约理由清单，空即合规。 */
 function checkDossierText(text: string, maxOpen: number, maxLog: number): string[] {
@@ -76,12 +70,22 @@ function checkDossierText(text: string, maxOpen: number, maxLog: number): string
   }
   const known = headings.filter((h) => (SECTIONS as readonly string[]).includes(h.name));
   const seenNames = known.map((h) => h.name);
+  // 出现次数独立成判据：只查「名字集合」会放行重复段（重复段既不在 unknown 面，
+  // 又让长度不再等于 4，从而绕过下面的顺序判据，且 body() 只读首次出现）。
+  const counts = new Map<string, number>();
+  for (const h of known) counts.set(h.name, (counts.get(h.name) ?? 0) + 1);
+  const dupes = [...counts.entries()].filter(([, n]) => n > 1);
+  if (dupes.length > 0) {
+    errors.push(`骨架段重复：${dupes.map(([name, n]) => `## ${name}（${n} 次）`).join(" / ")}`);
+  }
   for (const name of SECTIONS) {
     if (!seenNames.includes(name)) errors.push(`缺骨架段：## ${name}`);
   }
-  const ordered = known.every((h, i) => SECTIONS[i] === h.name) && known.length === SECTIONS.length;
-  if (!ordered && seenNames.length === SECTIONS.length) {
-    errors.push(`骨架四段顺序错：实际 [${seenNames.join(" → ")}]，应为 [${SECTIONS.join(" → ")}]`);
+  if (dupes.length === 0 && seenNames.length === SECTIONS.length) {
+    const ordered = known.every((h, i) => SECTIONS[i] === h.name);
+    if (!ordered) {
+      errors.push(`骨架四段顺序错：实际 [${seenNames.join(" → ")}]，应为 [${SECTIONS.join(" → ")}]`);
+    }
   }
 
   const body = (name: string): string[] => {
@@ -125,8 +129,10 @@ function checkDossierText(text: string, maxOpen: number, maxLog: number): string
       errors.push(`## 状态日志 第 ${i + 1} 条须以 \`- YYYY-MM-DD｜\` 开头`);
       continue;
     }
-    if (!isRealDate(Number(m[1]), Number(m[2]), Number(m[3]))) {
-      errors.push(`## 状态日志 第 ${i + 1} 条日期非法：${m[1]}-${m[2]}-${m[3]}`);
+    // 日历日判定走共享原语 pyFromIso（同 verify-gene-format 的 ISO 口径），不手搓。
+    const dateStr = `${m[1]}-${m[2]}-${m[3]}`;
+    if (pyFromIso(dateStr) === null) {
+      errors.push(`## 状态日志 第 ${i + 1} 条日期非法：${dateStr}`);
     }
   }
   if (logs.length > maxLog) {
@@ -228,6 +234,12 @@ function selfTest(): number {
     const out = [...l.slice(0, b), ...l.slice(c, d), ...l.slice(b, c), ...l.slice(d)];
     l.length = 0;
     l.push(...out);
+  }), true);
+  check("骨架段重复", mut((l) => {
+    l.splice(l.indexOf("## 状态日志"), 0, "## 行动区", "", "- 非法条目", "");
+  }), true);
+  check("多出封闭集外的节", mut((l) => {
+    l.splice(l.indexOf("## 状态日志"), 0, "## 术语", "", "- 表外节。", "");
   }), true);
   check("决策指针条目无链接", mut((l) => { l[l.indexOf("- **基线拍板**：[示例 ADR](../../.agents/notes/implemented/process/2026-09-13-dossier-institution.md)。")] = "- **基线拍板**：无指针。"; }), true);
   check("行动区条目形态坏", mut((l) => { l[l.indexOf("- [ ] 待办事项：动作 + 触发 + 指针。")] = "- 待办事项（缺 checkbox）。"; }), true);
