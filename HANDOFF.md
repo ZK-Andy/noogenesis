@@ -11,6 +11,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-13｜**护栏建设轮立项讨论轮**：三题拍板 = token 基线两轨 / 改进度量两本账 / canary 判不立；[立项 ADR](.agents/notes/proposed/architecture/2026-09-13-guardrail-construction-round.md)，[延后 ADR](.agents/notes/proposed/architecture/2026-09-06-guardrail-defer-trigger.md) 触发条已标到达（提交锚见日志）。
 - 2026-09-13｜**0.2.6 真机复验（零仓变更）**：外仓 desktop 新会话目录含 7 件 `noo-*`（活副本无、缓存恰 7 件 → 来源 = `noogenesis-bank`）；A2 路标行只点名可达集；transcript/host.log 零诊断 warn。todos (B) 条翻 x。
 - 2026-09-13｜**0.2.6 发版（release-flow 第三次实走）**：npm latest 0.2.6（tag `dsh-v0.2.6`，指向版本面 `ad2e549`）+ 双语 Release Latest；bump `a43c63c`；[实发节](.agents/notes/implemented/process/2026-09-09-release-shape-alignment.md)；CI run `34706452446` 绿。README 已同步。
 - 2026-09-13｜**bank provider 注册时序修复批（FULL 三审全采纳）**：注册改 `ctx.inject(["skills"], …)` 可重试路径 + 提醒面按可达集点名；[修复件 ADR](.agents/notes/implemented/bug-fix/2026-09-12-bank-skill-provider-registration.md)；`5dcca48`→`aa9be0f`。README 有变更；真机复验 = todos (B) 条。
@@ -47,8 +48,6 @@
 - 2026-09-10｜**记忆库线融合轮开题讨论轮（立宪 + 接口契约 + 第一期范围；零代码变更）**：ADR [融合立宪](.agents/notes/proposed/architecture/2026-09-10-memory-line-fusion-charter.md)（proposed，D1–D10）+ [档案页](docs/research/memory-system-dossier.md) 对账；`5d0a0da`→`a16fedf`。README 无漂移。
 
 - 2026-09-10｜**优化轮收口批（FULL 三审 R1/R2/R3 全采纳）**：ADR [收口+验收口径](.agents/notes/implemented/process/2026-09-10-optimization-round-closure.md)、[brief 明细兜底](.agents/notes/implemented/bug-fix/2026-09-10-review-brief-detail-fallback.md)；`d1a014a`→`e11dd0e`。README 无漂移。
-
-- 2026-09-10｜**0.2.4 真机复验第二轮（新会话独立复现，零仓变更）**：A2 路标行在场；A3 首写一行 advice／重复不重提／载技能后消失；A4 lint 与注释面均 block×3 → 第 4 次 context → 合规写零反馈并复位 → 再违规回 block；域外 `.ts` 只判 lint、注释面静默（判据链在场反证）；非 `.ts` 零反馈。探针件全清。
 
 - 2026-09-10｜**0.2.4 真机复验收口（三条 (B) 全清）**：A2 技能路标行在场；A3 对 `docs/` 写码投递一行 advice（非阻断、重复不重提、载对口技能后消失）；注释面在环判据全命中（域内缺 JSDoc → block、连续 3 次后降级 context、合规写复位、域外/非 `.ts` 零反馈）；release 工具族实发已验。**节点：发版轮闭环。** README 无漂移。
 

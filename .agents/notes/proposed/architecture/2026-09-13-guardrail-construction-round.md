@@ -1,0 +1,61 @@
+# Agent Note: 护栏建设轮立项——token 基线改两轨（字面预算判据 + 宿主读数建议行），改进度量与 canary 判不立
+
+Status: proposed
+
+## Problem
+
+护栏三件（`dsh-token-meter` 真测量层 / 严格改进正向度量 / canary 进程隔离）的归口与触发点原以 [2026-09-06-guardrail-defer-trigger](2026-09-06-guardrail-defer-trigger.md)（下称延后 ADR）单源。触发点「首个胶囊优化完成」的验收口径已由 [2026-09-10-optimization-round-closure](../../implemented/process/2026-09-10-optimization-round-closure.md) 定义为三条件并兑现，本 ADR 即该触发点到达后的立项讨论轮产出：逐件拍板接入形态与验收口径。
+
+立项前复测三件的真实暴露面（本机实测，2026-09-13）：
+
+- **token 基线面**：`ctx.tokenMeter` 服务在本 profile 在场——`@deepseek-ai/dsh-base` 的 bundle patch 以 `- id: token-meter` 挂载 `@deepseek-ai/dsh-token-meter`；实测版本 `0.1.5-rc.2`，公开面 = `measure(session, requestHeader?)` → `TokenMeasurement`（`totalTokens` / `surfaceTokens` / `nodes[]`，`estimateMessage(message)` 另路）。**缺口真实**：适配层常驻注入 = `BASE_SECTION`（`adapters/dsh/section.mts`，5 行 545 字符）+ 命中节（每行摘要封顶 `MAX_SUMMARY_CHARS` = 160），命中节上界 = `maxIndexGenes × 摘要行`，n=4/8/12 分别为约 688 / 1376 / 2064 字符——**该上界今无机器判据**：`verify-doc-budgets.mts` 只盖 `docs/` 等文件清单，不盖「会话常驻注入」；命中节随基因库累积单调增长，无闸。
+- **改进度量面**：本仓架构域无可比数值分值——变化量是 prose 与机制件，不是 benchmark 指标；可回溯的真实信号只有评审账（`.agents/notes/implemented/**` 中 `Review: FULL` 行 59 条）与发版后修复批。
+- **canary 面**：本插件无常驻进程——宿主 spawn 每次调用一子进程（[2026-09-06-m2-adapter-wiring](../../implemented/architecture/2026-09-06-m2-adapter-wiring.md) 的接口形态），无「进程内被污染」的可 observe 形态。
+
+两条既有拍板约束了每件的候选形态：引擎**零第三方依赖**（token 估算逻辑不可落 `engine/`，见 [engine/AGENTS.md](../../../../engine/AGENTS.md)）；适配层值 import 允许集封底 = `dsh-tools` + `dsh-llm` 两件、扩集须同变更拍板，且**已有一条反例教训**——`userQuestions` 进 `inject` 声明会让服务缺席时整个插件装载被推迟（[adapters/AGENTS.md](../../../../adapters/AGENTS.md)），故任何宿主服务读数的接线都不得进 `inject` 声明。
+
+## Proposal
+
+**用户拍板（2026-09-13，三题逐条）：token 基线改两轨——字面预算判据为主、宿主读数建议行降级为辅；严格改进度量不立数值评分表，改记两本账；canary 判不立（非延期）。**
+
+### 决定 1：token 基线不变量 = 字面预算判据（阻断）+ 宿主真读数建议行（非阻断）
+
+- **判据（阻断面）**：常驻注入面的上界写成字面预算——`BASE_SECTION` 冻结为固定值（实测 545 字符），命中节给字符预算（缺省 2048，即 12 行 ×160 摘要 + 前缀 + 溢出提示行的余量）。判据件落适配层纯函数 + `adapters/dsh/selftest.mts` 断言块：该 selftest 由真实门禁实跑（`.github/workflows/validate.yml` 的 `node dist/adapters/dsh/selftest.mjs` + `scripts/pre-push.mts` 的 `adapter-selftest` 组），不是空转夹具。预算值口径单源 = 实现轮 ADR + 该纯函数常量；改动预算须走同变更 ADR。
+- **建议行（非阻断面）**：prompt 组装点若 `ctx.tokenMeter` 在场，按会话至多读一次真实注入面 token 数（`measure(session)` 的 surface 读数），写一行 diagnostics 留痕；读数**不进 `inject` 声明**（懒取用 + 缺席静默降级，避 userQuestions 教训）。该行是观察面，不是门槛。
+- **为什么不追真值**：`measure()` 返回的是整条 hosted system 面的读数，含宿主 persona、AGENTS.md 注入等本插件不可控内容；repo 内做不出来源纯净的「本插件注入面」读数。唯一干净的实测面是我们自己渲染的节文本，而它的判据不必用 token 单位——字符预算与 token 预算是同一个不变量的两个刻度。设计稿 §6/§11 三处 API 名（`estimateContent` / `contextBreakdown` / `contextPressure`）按此实测口径修正为 `measure` / `estimateMessage`，随本 ADR 收口执行。
+
+### 决定 2：严格改进正向度量 = 记两本账，不立数值评分
+
+- 每批变更同时记：**评审 Blocker 账**（各轮 R1/R2/R3 Blocker 数与采纳数，现成面 = ADR 头 `Review:` 行 + HANDOFF 滚动窗条目）+ **发版后修复账**（该版本区间内 bug-fix 类 ADR 批数）。
+- 不引入改进分数、阈值或排序裁决：架构域分值必然落在 prose 质量上，为它建评分表就是 [主设计 §7.1](../../../../docs/research/dsh-swarm-evolution-framework-design.md) 第 3 条「只修异常、不修低分」要防的过拟合对象。守「前沿单调不降」的职责仍由既有机器门禁 + 评审实质执行承担。
+- 两本账**只作记录，无门槛**；出现「连续多批 Blocker 上升或发版后修复批激增」时再立判据（触发写在本 ADR 的 Consequences 通道）。
+
+### 决定 3：canary 进程隔离 = 判不立
+
+- 理由：可 observe 的失败形态不存在——插件无常驻进程，每次调用一子进程；repo 级改动的候选与生效面分离已由 `review-tier`（评审档位触发面）+ `change-scope`（变更范围）覆盖。为不存在的宿主进程状态造脚手架属范围外建设。
+- 重议触发 = 出现跨进程常驻状态（如常驻服务、watch 循环）或依赖环境快照的演化形态时重开。
+
+### 验收口径（进入实现轮的入口条件）
+
+1. 常驻注入面存在机器判据，且该判据由 pre-push 与 CI 实跑（非仅本地手跑）。
+2. 判据对「新增知识抬高常驻基线」的失败形态实测能拦——实现轮须给具异常样例（超预算的注入面文本）与失败输出。
+3. [主设计](../../../../docs/research/dsh-swarm-evolution-framework-design.md) §6/§11 三处 API 名与延后 ADR 的「API 漂移」条同步为实测口径。
+4. 两本账有可回填的落点（评审账与发版账各一处指针），且不需要新工具即能手动回填。
+
+## Alternatives considered
+
+- **真调宿主 `ctx.tokenMeter` 做门槛**：落败——先要扩适配层值允许集（`dsh-token-meter` 入封底集），再要处理缺席降级，最后读数仍被宿主 persona 与 AGENTS.md 注入稀释；为 4 字符启发式精度付三层复杂度。
+- **只冻结 `BASE_SECTION`、不设命中节预算**：落败——增长路径恰在命中节（基因库只增不减、`maxIndexGenes` 可调大）；只冻结基线等于对着不动的量立闸。
+- **把 token 判据做进 `engine/` 的 gene evaluate 白名单**：落败——engine 零第三方依赖是骨架拍板；把估算器搬进 engine 既违依赖纪律，也让「本仓改写一下就能过闸」的判据失去独立刻度（评估者与被执行者同源）。
+- **立数值改进评分**：落败——分值在架构域无金标，且会诱导为分值优化（改写作风格刷分），与 §7.1 第 3 条直接冲突。
+- **canary 延后而非判不立**：落败——「延后」语义要求触发点可判定；本件缺失的是观察对象而非时机，留延期标签只会让归口失真（延后 ADR 自身即为「归口失真」这一缺陷的修复件）。
+- **三件全延后到有真实回归样本再建**：落败——token 基线面的缺口已有实证形态（命中节上界无闸），不是想象的投资对象。
+
+## Consequences
+
+- **正面**：常驻注入面获得与 doc-budgets 同族的机器判据，且落在 pre-push 与 CI 实跑的既有自测里；`ctx.tokenMeter` 由「延后的测量层」转为在环观察面，主体形状已实测（服务在场、API 名、返回值形状）。
+- **负面（自诺的账）**：token 基线不是真测量——4 字符启发式对 CJK 与 JSON schema 系统性低估（包 README「已知限制」自陈），阈值语义是「注入面字符预算」而非「模型侧 token」。该自诺须在实现轮 ADR 的 Consequences 处按实测补一行账。
+- **依赖与环境**：建议行的接线依赖 tokenMeter 在场（本 profile 已实测在场），缺席时静默降级为不写行——不阻断 prompt 组装，也不改工具面。
+- **API 漂移残留风险**：实测版本为 `0.1.5-rc.2`（延后 ADR 记 0.1.2-rc.1）；建议行接线点须对 `measure` 返回值做形状断言（照 [coding-enforcement-track-b](../../implemented/architecture/2026-09-08-coding-enforcement-track-b.md) 的宿主 API 契约断言先例），宿主升级致形状变更时以契约断言暴露而非静默降级。
+- **未覆盖缺口（显式接受）**：两本账无门槛 → 「评审通过但效用为负」的批次只能事后观察，不能事前拒绝；记录本身不构成护栏。
+- **流程归口**：本 ADR 收口转 implemented 时，同步把延后 ADR 的「触发点到达」条款改为指向本件的实发节，并核 [2026-09-05-p1-engine-skeleton](../../implemented/architecture/2026-09-05-p1-engine-skeleton.md)「遗留面」两项（token 基线、严格改进度量）的归口措辞。
