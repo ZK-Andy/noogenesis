@@ -12,9 +12,10 @@ import { selectGenes, runSelect } from './select.js';
 import { validateObservation, buildObservation, recordObservation, readObservations, EVIDENCE_MAX_CHARS } from './observe.js';
 import { renderGene } from './propose.js';
 import { evaluateGeneObj, checkConstraints } from './evaluate.js';
-import { solidify, retire, recordCapsule } from './solidify.js';
+import { solidify, retire, recordCapsule, recordMutation } from './solidify.js';
 import { genePath, scanGenes, defaultCacheDir } from './gene.js';
 import { capsulePath, readCapsule, renderCapsule } from './capsule.js';
+import { mutationPath, readMutation, renderMutation } from './mutation.js';
 
 let hasFailure = false;
 function ok(cond: unknown, msg: string) {
@@ -505,6 +506,83 @@ function selfTest() {
       ok(!fs.existsSync(capsulePath(td, 'process', 'cap-rb')), 'capsule: rollback removes placed capsule');
       ok(git(td, ['diff', '--cached', '--name-only']).trim().split('\n').filter((l) => l.includes('cap-rb')).length === 0,
         'capsule: rollback leaves no staged residue');
+      git(td, ['config', '--unset', 'core.hooksPath']);
+    }
+  }
+
+  // --- 5.8) Mutation 原语（批次 1 序 2）：原子提交、复算、append-only、schema 封闭 ---
+  {
+    const td = mkTemp();
+    mkRepo(td);
+    const staging = path.join(td, 'candidates');
+    fs.mkdirSync(staging);
+    const mut = {
+      id: 'mut-1', domain: 'process', category: 'refactor', target: 'engine/bin.ts',
+      expected_effect: 'command dispatch stays byte-identical', risk_level: 'low',
+    };
+    const cand = path.join(staging, 'mut-1.json');
+    fs.writeFileSync(cand, JSON.stringify(mut, null, 2) + '\n');
+
+    const r = recordMutation(td, cand, 'tester');
+    ok(r.ok === true, 'mutation: declaration accepted');
+    const target = mutationPath(td, 'process', 'mut-1');
+    ok(fs.existsSync(target), 'mutation: placed in mutations/<domain>/');
+    const mutEv = readEvents(td).find((e) => e.kind === 'mutation.added');
+    ok(mutEv !== undefined && mutEv.mutation === 'mut-1' && mutEv.outcome === 'ok',
+      'mutation: mutation.added event appended');
+    ok(mutEv?.mutation_sha === sha256Hex(fs.readFileSync(target)),
+      'mutation: mutation_sha recomputes from file bytes');
+    const files = git(td, ['show', '--name-only', '--format=', 'HEAD']).trim().split('\n').sort();
+    ok(files.length === 2 && files.some((f) => f.startsWith('mutations/')) && files.some((f) => f.startsWith('events/')),
+      'mutation: mutations/ + events/ in the SAME commit');
+
+    // append-only：同 id 重复声明拒收（无 mutation.updated 面）
+    ok(throwsEngine(() => recordMutation(td, cand, 'tester')), 'mutation: re-declaring same id refused (append-only)');
+    // schema 封闭：risk_level 三值封闭（设计 §5.1）
+    const badRisk = path.join(staging, 'mut-2.json');
+    fs.writeFileSync(badRisk, JSON.stringify({ ...mut, id: 'mut-2', risk_level: 'catastrophic' }, null, 2) + '\n');
+    ok(throwsEngine(() => recordMutation(td, badRisk, 'tester')), 'mutation: risk_level outside low|medium|high refused');
+    // category/target/expected_effect 无值域但须非空
+    const badCat = path.join(staging, 'mut-3.json');
+    fs.writeFileSync(badCat, JSON.stringify({ ...mut, id: 'mut-3', category: '  ' }, null, 2) + '\n');
+    ok(throwsEngine(() => recordMutation(td, badCat, 'tester')), 'mutation: blank category refused');
+    ok(throwsEngine(() => recordMutation(td, cand, '   ')), 'mutation: blank actor refused');
+
+    // 读命令：确定性渲染（逐字金样，抓输出格式漂移而非仅抓非确定性）
+    const GOLDEN_MUTATION =
+      '[noo-mutation process/mut-1]\n' +
+      '\n' +
+      'category: refactor\n' +
+      'risk: low\n' +
+      'target: engine/bin.ts\n' +
+      'expected effect: command dispatch stays byte-identical\n';
+    ok(renderMutation(readMutation(target)) === GOLDEN_MUTATION, 'mutation: golden render exact match');
+
+    // CLI 面：add / show 与用法错三档
+    const bin = path.join(__dirname, 'bin.js');
+    fs.writeFileSync(path.join(staging, 'mut-4.json'), JSON.stringify({ ...mut, id: 'mut-4' }, null, 2) + '\n');
+    ok(spawnCode([bin, 'mutation', 'add', path.join(staging, 'mut-4.json'), '--actor', 't'], td) === 0,
+      'bin: mutation add -> exit 0');
+    const shown = execFileSync('node', [bin, 'mutation', 'show', 'process/mut-4'], { cwd: td, encoding: 'utf8', stdio: 'pipe' });
+    ok(shown.includes('[noo-mutation process/mut-4]'), 'bin: mutation show renders');
+    ok(spawnCode([bin, 'mutation', 'show', 'process/missing'], td) === 2, 'bin: mutation show missing -> exit 2');
+    ok(spawnCode([bin, 'mutation', 'add', cand], td) === 2, 'bin: mutation add without --actor -> exit 2');
+    ok(spawnCode([bin, 'mutation', 'bogus'], td) === 2, 'bin: unknown mutation subcommand -> exit 2');
+
+    // commit 失败 → 写面与索引都回滚（只清工作树会让回滚的记录以暂存态残留）
+    {
+      const hooksDir = path.join(td, 'failing-hooks');
+      fs.mkdirSync(hooksDir);
+      fs.writeFileSync(path.join(hooksDir, 'pre-commit'), '#!/bin/sh\nexit 1\n', { mode: 0o755 });
+      git(td, ['config', 'core.hooksPath', 'failing-hooks']);
+      const rb = path.join(staging, 'mut-rb.json');
+      fs.writeFileSync(rb, JSON.stringify({ ...mut, id: 'mut-rb' }, null, 2) + '\n');
+      let threw = false;
+      try { recordMutation(td, rb, 'tester'); } catch (e) { threw = e instanceof EngineError; }
+      ok(threw, 'mutation: commit failure raises EngineError');
+      ok(!fs.existsSync(mutationPath(td, 'process', 'mut-rb')), 'mutation: rollback removes placed mutation');
+      ok(git(td, ['diff', '--cached', '--name-only']).trim().split('\n').filter((l) => l.includes('mut-rb')).length === 0,
+        'mutation: rollback leaves no staged residue');
       git(td, ['config', '--unset', 'core.hooksPath']);
     }
   }

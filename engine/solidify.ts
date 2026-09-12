@@ -7,6 +7,7 @@ import * as path from 'path';
 import { EngineError, sha256Hex, git } from './util.js';
 import { readGene, genePath } from './gene.js';
 import { readCapsule, capsulePath, assertGeneRefsResolvable, assertCapsuleIdUnique } from './capsule.js';
+import { readMutation, mutationPath, assertMutationIdUnique } from './mutation.js';
 import { evaluateGeneObj, formatReport } from './evaluate.js';
 
 function eventsPath(repoRoot: string, ts: string) {
@@ -191,4 +192,43 @@ function recordCapsule(repoRoot: string, candidatePath: string, actor: string) {
   };
 }
 
-export { solidify, retire, recordCapsule, appendEvent, eventsPath };
+// recordMutation — Mutation 入档（批次 1 序 2 ADR C3）：结构闸 → 落 mutations/ +
+// mutation.added 事件同一 commit（原子证据同基因/Capsule 入档）。Mutation 是执行前的
+// 意图声明，append-only：同 id 重复声明拒收（无 mutation.updated/retired 面）。
+// 引擎不构造声明内容、不跑门禁——声明由调用方在动改动面之前显式给出。
+function recordMutation(repoRoot: string, candidatePath: string, actor: string) {
+  if (!actor || !actor.trim()) throw new EngineError('mutation add requires --actor <name> (audit trail)');
+  actor = actor.trim();
+
+  const mut = readMutation(candidatePath, { skipDirAnchor: true });
+  assertMutationIdUnique(repoRoot, mut.domain, mut.id);
+  const target = mutationPath(repoRoot, mut.domain, mut.id);
+  if (fs.existsSync(target)) {
+    throw new EngineError(`mutation ${mut.domain}/${mut.id} already declared — mutations are append-only`);
+  }
+
+  const content = Buffer.from(JSON.stringify(mut, null, 2) + '\n', 'utf8');
+  fs.mkdirSync(path.dirname(target), { recursive: true });
+  fs.writeFileSync(target, content);
+  const sha = sha256Hex(content);
+
+  const ts = new Date().toISOString();
+  const line = JSON.stringify({
+    ts, actor, kind: 'mutation.added', mutation: mut.id, mutation_sha: sha, outcome: 'ok',
+    evidence: `declared ${mut.domain}/${mut.id}: ${mut.category}, risk ${mut.risk_level}`,
+  }) + '\n';
+  const evp = appendEvent(repoRoot, JSON.parse(line));
+  try {
+    commitPaths(repoRoot, [target, evp], `mutation(${mut.domain}): add ${mut.id}`);
+  } catch (e) {
+    fs.rmSync(target, { force: true });
+    rollbackAppend(evp, line);
+    throw e;
+  }
+  return {
+    ok: true,
+    report: `mutation: mutation.added ${mut.domain}/${mut.id} (sha ${sha.slice(0, 12)}…, risk ${mut.risk_level})\n`,
+  };
+}
+
+export { solidify, retire, recordCapsule, recordMutation, appendEvent, eventsPath };

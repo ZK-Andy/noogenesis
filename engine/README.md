@@ -22,6 +22,8 @@ node dist/engine/bin.js observe --signal S --gene <domain>/<id> --outcome ok|fai
                                                             # 观测输入面：append-only 到 .noogenesis/observations/
 node dist/engine/bin.js capsule add <candidate.json> --actor N   # Capsule 入档：capsules/ + events/ 同一 commit
 node dist/engine/bin.js capsule show <domain>/<id>          # 读并渲染单条 Capsule（确定性输出）
+node dist/engine/bin.js mutation add <candidate.json> --actor N  # Mutation 声明：mutations/ + events/ 同一 commit
+node dist/engine/bin.js mutation show <domain>/<id>         # 读并渲染单条 Mutation（确定性输出）
 node dist/engine/bin.js self-test                           # 元评测夹具（临时沙箱，不触碰真实仓）
 ```
 
@@ -36,8 +38,9 @@ node dist/engine/bin.js self-test                           # 元评测夹具（
 | `gates.ts` + `gates.json` | 验证白名单（fail-closed 装载） |
 | `gene.ts` | Gene 八字段封闭 schema / 目录扫描（含缓存合并扫描） |
 | `capsule.ts` | Capsule 七字段封闭 schema / 写入与读取（`capsule add` / `capsule show`） |
+| `mutation.ts` | Mutation 六字段封闭 schema / 写入与读取（`mutation add` / `mutation show`） |
 | `observe.ts` | 观测输入面（schema / 追加写 / 派生边） |
-| `select.ts` / `propose.ts` / `evaluate.ts` / `solidify.ts` / `pull.ts` | 其余命令各一（select 兼消费观测派生面；solidify 兼 Capsule 入档） |
+| `select.ts` / `propose.ts` / `evaluate.ts` / `solidify.ts` / `pull.ts` | 其余命令各一（select 兼消费观测派生面；solidify 兼 Capsule / Mutation 入档） |
 | `selftest.ts` | 元评测夹具 |
 
 ## 共享消费（P2，只读）
@@ -72,7 +75,7 @@ node dist/engine/bin.js self-test                           # 元评测夹具（
 - **原子证据**：`genes/` 变更与 `events/` 追加行放同一 commit；拒绝时只提交事件行（候选不入档），`outcome` 携带拒因。
 - **retire 无需 evaluate**：退役不引入前沿内容，入档闸只守新增/更新；删除文件 + `gene.retired` 事件（`gene_sha` = 最后内容 SHA），git 历史仍可溯。
 - **constraints 对照面**：当前出账变更面（`outgoing_base...HEAD` 已提交 + 未暂存 + 未跟踪，与 `scripts/change-scope.mts` 同口径）。
-- **事件 kind 封闭集**：`gene.added` / `gene.updated` / `gene.retired` / `capsule.added`；select/propose 运行不记（演化事件 ≠ 运行日志）。事件键集按 kind 条件化——gene 面记 `gene`/`gene_sha`，capsule 面记 `capsule`/`capsule_sha`，其余五键共通。
+- **事件 kind 封闭集**：`gene.added` / `gene.updated` / `gene.retired` / `capsule.added` / `mutation.added`；select/propose 运行不记（演化事件 ≠ 运行日志）。事件键集按 kind 条件化——gene 面记 `gene`/`gene_sha`，capsule 面记 `capsule`/`capsule_sha`，mutation 面记 `mutation`/`mutation_sha`，其余五键共通。
 
 ## Capsule 面（执行审计记录）
 
@@ -82,10 +85,19 @@ node dist/engine/bin.js self-test                           # 元评测夹具（
 - **复算边界**：`gene_ids` 须曾成功入档——工作树在场，或事件轨上有过 ok 的 `gene.added`/`gene.updated`；写路径的前置更紧（记录时该基因须活在本仓 `genes/`，缓存副本不算）。退役不使既有引用失效。引擎不重跑门禁，`evidence` 由调用方在真实执行后给出（自动复跑归批次表序 43）。
 - **不收的字段**：`diff` / `content`（git 自身即内容面单源）、`score`（骨架 ADR D4 已拍文档域无可信改进分数）、`blast_radius`（度量落地时随批加入）、`confidence` / `cost_*`（无生产者）。
 
+## Mutation 面（执行前的意图声明）
+
+- **语义**：Mutation = 执行前的意图声明（主设计 §5.1：意图 + 风险），§6 Mutate 阶段的产物；与 Capsule（执行后的审计事实）是同一次演化的两端——声明而未执行是合法状态，故两者不合并。落 `mutations/<domain>/<id>.json`，JSON、封闭六字段（`id` / `domain` / `category` / `target` / `expected_effect` / `risk_level`）。
+- **字段值域**：`risk_level` 是设计 §5.1 明列的封闭三值 `low` / `medium` / `high`；`category` / `target` / `expected_effect` 为非空字符串、无封闭枚举（taxonomy 仍未决，预设即造分类法）。
+- **append-only**：同 id 重复声明拒收（无 `mutation.updated` / `mutation.retired` 面）。
+- **写读命令**：`mutation add <candidate.json> --actor N` 落 `mutations/` + `mutation.added` 事件（同一 commit，原子性同基因/Capsule 入档）；`mutation show <domain>/<id>` 渲染人读面。两者用法错与 fail-closed 都走 exit 2。
+- **复算边界**：`mutation.added`(ok) 的 `mutation_sha` 必须等于文件字节 sha256；工作树 Mutation 必须有事件轨（`mutation add` 是唯一入口）。引擎不构造声明内容、不跑门禁——声明由调用方在动改动面之前显式给出。
+- **不做的事**：`mutation add` 不要求也不检查引用某条 Capsule 或 gene（基因链接在 Event 面，随批次表序 3 的 `mutation_id` 落地）；引擎不判断「该不该声明」（Detect/Select/Mutate 的自动性不在引擎，骨架 ADR D2/D3）。
+
 ## 消费方
 
 - 引擎自身：`evaluate` 跑白名单全集作为入档门槛。
-- `scripts/verify-gene-format.mts`（白名单外独立件）：校验 `genes/` + `capsules/` + `events/`，含白名单条目脚本存在性、`gene_sha` / `capsule_sha` 工作树复算与 Capsule 的基因引用可解析（例外机制单家见 gates.mts 头注）。
+- `scripts/verify-gene-format.mts`（白名单外独立件）：校验 `genes/` + `capsules/` + `mutations/` + `events/`，含白名单条目脚本存在性、`gene_sha` / `capsule_sha` / `mutation_sha` 工作树复算与 Capsule 的基因引用可解析（例外机制单家见 gates.mts 头注）。
 - `scripts/gates.mts`（门禁清单单源发射器）：hooks/CI 的门禁清单单源 = 本白名单（结构性例外四件见该脚本头注）。
 - `scripts/verify-secrets.mts`（白名单条目 `secrets`）：凭据绊线扫 `genes/` + `events/` + `.noogenesis/observations/` 三面；**best-effort 绊线，不是安全属性**（强度上限与已知盲区写在件头）。
 - `adapters/dsh/`（M2 适配层）：spawn CLI 单合同的第一个进程外消费者；引擎与 `gates.json` 对适配层零新增要求。

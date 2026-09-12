@@ -14,24 +14,31 @@
  *   name kebab 且唯一、cmd 非空、args 字符串数组；引用的 scripts/** 路径必须存在。
  * - events/<YYYY-MM>.jsonl（S2 — 追加式事件审计）：每行 JSON 对象键集按 kind 条件化
  *   —— 五键共通 {ts, actor, kind, outcome, evidence}，gene 面加 {gene, gene_sha}，
- *   capsule 面加 {capsule, capsule_sha}；kind ∈ 封闭集
- *   {gene.added, gene.updated, gene.retired, capsule.added}；ts 为 ISO-8601、卷内
- *   升序且落在卷月份内（±1 天时区容差，对齐 verify-adr-format）；outcome 为 "ok" 或
- *   "fail: <reason>"；gene_sha / capsule_sha 为 64 位十六进制。
+ *   capsule 面加 {capsule, capsule_sha}，mutation 面加 {mutation, mutation_sha}；
+ *   kind ∈ 封闭集
+ *   {gene.added, gene.updated, gene.retired, capsule.added, mutation.added}；ts 为
+ *   ISO-8601、卷内升序且落在卷月份内（±1 天时区容差，对齐 verify-adr-format）；
+ *   outcome 为 "ok" 或 "fail: <reason>"；三面的 sha 均为 64 位十六进制。
  * - capsules/<domain>/<id>.json（批次 1 序 1 — 封闭七字段 schema，镜像 engine/capsule.ts）：
  *   id/domain kebab-case 且分别等于文件名 stem 与父目录名；gene_ids 为 ≥1 项
  *   <domain>/<id> 引用；trigger 非空；steps/evidence 为 ≥1 项非空字符串数组；
  *   outcome 键封闭（status ∈ {ok, fail}，fail 必带 reason，ok 不得带）；id 全树唯一；
  *   布局封闭 capsules/<domain>/<id>.json。
+ * - mutations/<domain>/<id>.json（批次 1 序 2 — 封闭六字段 schema，镜像 engine/mutation.ts）：
+ *   id/domain kebab-case 且分别等于文件名 stem 与父目录名；category/target/expected_effect
+ *   为非空字符串（无值域）；risk_level ∈ {low, medium, high}；id 全树唯一；
+ *   布局封闭 mutations/<domain>/<id>.json。
  * - 工作树复算（S2 — 内容可寻址）：最近一次 added/updated(ok) 事件的 gene_sha
  *   必须等于文件字节的 sha256；最近 retired ⇒ 文件必须缺席；无事件轨的工作树
  *   基因违约（solidify 是唯一入口）；fail 事件只查结构不复算（被拒候选 ≠ 工作树）。
  *   capsules 同型：capsule.added(ok) 的 capsule_sha 必须等于文件字节 sha256，无事件轨的
  *   Capsule 违约（capsule add 是唯一入口）；gene_ids 须曾成功入档（工作树在场或事件轨上
  *   有过 ok 的 gene.added/gene.updated）——退役是历史事实，不追溯失效，且 Capsule append-only。
+ *   mutations 同型：mutation.added(ok) 的 mutation_sha 必须等于文件字节 sha256，无事件轨的
+ *   Mutation 违约（mutation add 是唯一入口）；Mutation 无 update/retire 面，故无分段。
  *
- * 结构性例外：白名单外独立件——本件消费 genes/ + capsules/ + events/ 复算治理自身，进
- * gates.json 白名单会让 solidify 入档中途复算自身（语义循环）；hooks/CI 保留
+ * 结构性例外：白名单外独立件——本件消费 genes/ + capsules/ + mutations/ + events/ 复算
+ * 治理自身，进 gates.json 白名单会让 solidify 入档中途复算自身（语义循环）；hooks/CI 保留
  * 显式调用行。
  *
  * 用法（仓库根运行）：node scripts/verify-gene-format.mts [--repo ROOT]
@@ -54,26 +61,34 @@ import type { JSONVal } from "./pypara.mts";
 
 const SHA_RE = /^[0-9a-f]{64}$/;
 const VOL_RE = /^(\d{4}-\d{2})\.jsonl$/;
-const KINDS = ["gene.added", "gene.updated", "gene.retired", "capsule.added"];
+const KINDS = ["gene.added", "gene.updated", "gene.retired", "capsule.added", "mutation.added"];
 const KINDS_REPR = `(${KINDS.map((k) => `'${k}'`).join(", ")})`;
-// 事件键集按 kind 条件化（批次 1 序 1 ADR C5 重拍 S2）：共通五键 + gene 面两键 / capsule 面两键。
-// 键集与判据文案同源：repr 由键列表派生，改键集即改文案（防两处漂移）。
+// 事件键集按 kind 条件化（批次 1 序 1 ADR C5 + 序 2 ADR C4 两次重拍 S2）：共通五键 +
+// gene 面 / capsule 面 / mutation 面各两键。键集与判据文案同源：repr 由键列表派生，
+// 改键集即改文案（防两处漂移）。
 const GENE_EVENT_KEY_LIST = ["actor", "evidence", "gene", "gene_sha", "kind", "outcome", "ts"];
 const CAPSULE_EVENT_KEY_LIST = ["actor", "capsule", "capsule_sha", "evidence", "kind", "outcome", "ts"];
-const GENE_EVENT_KEYS = GENE_EVENT_KEY_LIST.join("|");
-const CAPSULE_EVENT_KEYS = CAPSULE_EVENT_KEY_LIST.join("|");
+const MUTATION_EVENT_KEY_LIST = ["actor", "evidence", "kind", "mutation", "mutation_sha", "outcome", "ts"];
 /** 判据文案里的键列表形态（py list repr，供违约行比对）。 */
 function fieldsRepr(keys: string[]): string {
   return `[${keys.map((k) => `'${k}'`).join(", ")}]`;
 }
-const EVENT_FIELDS_REPR = fieldsRepr(GENE_EVENT_KEY_LIST);
-const CAPSULE_EVENT_FIELDS_REPR = fieldsRepr(CAPSULE_EVENT_KEY_LIST);
+/** kind → 事件键列表（三面条件化的单一事实源；未知 kind 已被封闭集判据拦下）。 */
+function eventKeysFor(kind: string): string[] {
+  if (kind === "capsule.added") return CAPSULE_EVENT_KEY_LIST;
+  if (kind === "mutation.added") return MUTATION_EVENT_KEY_LIST;
+  return GENE_EVENT_KEY_LIST;
+}
 const KNOWN_GENE_FIELDS = new Set([
   "id", "domain", "summary", "signals", "strategy", "constraints", "validation", "avoid",
 ]);
 const KNOWN_CAPSULE_FIELDS = new Set([
   "id", "domain", "gene_ids", "trigger", "steps", "outcome", "evidence",
 ]);
+const KNOWN_MUTATION_FIELDS = new Set([
+  "id", "domain", "category", "target", "expected_effect", "risk_level",
+]);
+const RISK_LEVELS = ["low", "medium", "high"];
 const GENE_REF_RE = /^[a-z0-9]+(-[a-z0-9]+)*\/[a-z0-9]+(-[a-z0-9]+)*$/;
 
 
@@ -214,6 +229,33 @@ function checkCapsule(data: JSONVal, rel: string, stem: string, parent: string):
   return errors;
 }
 
+// Mutation 协议（批次 1 序 2 ADR C2）：封闭六字段；risk_level 三值封闭，
+// category/target/expected_effect 无值域但须非空；与 engine/mutation.ts 的 validateMutation 镜像。
+function checkMutation(data: JSONVal, rel: string, stem: string, parent: string): string[] {
+  const errors: string[] = [];
+  if (!isObj(data)) return [`${rel}: mutation must be a JSON object`];
+  for (const k of Object.keys(data)) {
+    if (!KNOWN_MUTATION_FIELDS.has(k)) errors.push(`${rel}: unknown field: ${k}`);
+  }
+  const id = data.id;
+  if (!isKebab(id)) errors.push(`${rel}: id must be kebab-case string`);
+  else if (id !== stem) errors.push(`${rel}: id '${id}' must equal filename (${stem})`);
+  const domain = data.domain;
+  if (!isKebab(domain)) errors.push(`${rel}: domain must be kebab-case string`);
+  else if (domain !== parent) errors.push(`${rel}: domain '${domain}' must equal its directory (${parent})`);
+
+  for (const field of ["category", "target", "expected_effect"] as const) {
+    const v = data[field];
+    if (!(typeof v === "string" && pyStrip(v) !== "")) {
+      errors.push(`${rel}: ${field} must be a non-empty string`);
+    }
+  }
+  if (!(typeof data.risk_level === "string" && RISK_LEVELS.includes(data.risk_level))) {
+    errors.push(`${rel}: risk_level must be one of ${RISK_LEVELS.join("|")}, got ${pyStr(data.risk_level)}`);
+  }
+  return errors;
+}
+
 function loadWhitelist(base: string): { names: Set<JSONVal>; errors: string[] } {
   const errors: string[] = [];
   const fsPath = pyJoin(base, ["engine", "gates.json"]);
@@ -305,10 +347,10 @@ function checkEvents(display: string, fsPath: string, errors: string[]): EventRo
       errors.push(`${display}:${lineno}: kind '${pyStr(kind)}' not in closed set ${KINDS_REPR}`);
       continue;
     }
-    // 键集按 kind 条件化：gene 面记 gene/gene_sha，capsule 面记 capsule/capsule_sha。
-    const isCapsule = kind === "capsule.added";
-    if (Object.keys(ev).sort().join("|") !== (isCapsule ? CAPSULE_EVENT_KEYS : GENE_EVENT_KEYS)) {
-      errors.push(`${display}:${lineno}: event fields must be exactly ${isCapsule ? CAPSULE_EVENT_FIELDS_REPR : EVENT_FIELDS_REPR}`);
+    // 键集按 kind 条件化：gene / capsule / mutation 三面各记自己的主体键。
+    const keyList = eventKeysFor(kind);
+    if (Object.keys(ev).sort().join("|") !== keyList.join("|")) {
+      errors.push(`${display}:${lineno}: event fields must be exactly ${fieldsRepr(keyList)}`);
       continue;
     }
     const dt = pyFromIso(ev.ts);
@@ -323,13 +365,19 @@ function checkEvents(display: string, fsPath: string, errors: string[]): EventRo
     if (tsDateMs < winLo || tsDateMs > winHi) {
       errors.push(`${display}:${lineno}: ts ${dt.dateStr} outside volume month ${ym}`);
     }
-    // 主体锚点按 kind 条件化：gene 面记基因，capsule 面记 Capsule（镜像 S2 复算面）。
-    if (isCapsule) {
+    // 主体锚点按 kind 条件化：三面各记自己的主体（镜像 S2 复算面）。
+    if (kind === "capsule.added") {
       if (!isKebab(ev.capsule)) errors.push(`${display}:${lineno}: capsule must be a kebab-case id`);
       const csv = ev.capsule_sha ? ev.capsule_sha : "";
       // py 未捕获崩溃路径
       if (typeof csv !== "string") throw new Error("TypeError parity: re.match on non-string capsule_sha");
       if (!SHA_RE.test(csv)) errors.push(`${display}:${lineno}: capsule_sha must be 64-hex sha256`);
+    } else if (kind === "mutation.added") {
+      if (!isKebab(ev.mutation)) errors.push(`${display}:${lineno}: mutation must be a kebab-case id`);
+      const msv = ev.mutation_sha ? ev.mutation_sha : "";
+      // py 未捕获崩溃路径
+      if (typeof msv !== "string") throw new Error("TypeError parity: re.match on non-string mutation_sha");
+      if (!SHA_RE.test(msv)) errors.push(`${display}:${lineno}: mutation_sha must be 64-hex sha256`);
     } else {
       if (!isKebab(ev.gene)) errors.push(`${display}:${lineno}: gene must be a kebab-case id`);
       const gsv = ev.gene_sha ? ev.gene_sha : "";
@@ -433,9 +481,42 @@ function scan(base: string): { checked: number; errors: string[] } {
     }
   }
 
+  // mutations/：布局封闭 mutations/<domain>/<id>.json + 协议面 + 跨域 id 唯一
+  const mutsPath = pyJoin(base, ["mutations"]);
+  const mutsIsDir = fs.existsSync(mutsPath) && fs.statSync(mutsPath).isDirectory();
+  const mutationFiles = new Map<string, string[]>();
+  if (mutsIsDir) {
+    const all: string[][] = [];
+    collectJson(mutsPath, ["mutations"], all);
+    all.sort(segCompare);
+    for (const rel of all) {
+      checked += 1;
+      if (rel.length !== 3 || rel[0] !== "mutations") {
+        errors.push(`${rel.join("/")}: mutation files must be at mutations/<domain>/<id>.json layout`);
+        continue;
+      }
+      const fsPath = pyJoin(base, rel);
+      const parsed = pyJSONParse(readTextFatal(fsPath));
+      if (!parsed.ok) {
+        errors.push(`${fsPath}: not valid JSON: ${parsed.message}`);
+        continue;
+      }
+      const data = parsed.value;
+      errors.push(...checkMutation(data, rel.join("/"), pyStem(rel[2]!), rel[1]!));
+      const mid = isObj(data) ? data.id : null;
+      if (typeof mid === "string") {
+        if (mutationFiles.has(mid)) {
+          errors.push(`${fsPath}: duplicate mutation id '${mid}' (also ${pyJoin(base, mutationFiles.get(mid)!)})`);
+        }
+        mutationFiles.set(mid, rel);
+      }
+    }
+  }
+
   // events/：结构 + 月卷 + 时间序；并按 id 聚出事件流（ts 稳定排序）
   const perGene = new Map<JSONVal, EventRow[]>();
   const perCapsule = new Map<JSONVal, EventRow[]>();
+  const perMutation = new Map<JSONVal, EventRow[]>();
   const eventsPath = pyJoin(base, ["events"]);
   const eventsIsDir = fs.existsSync(eventsPath) && fs.statSync(eventsPath).isDirectory();
   const volumes: Array<[string, EventRow[]]> = [];
@@ -465,6 +546,14 @@ function scan(base: string): { checked: number; errors: string[] } {
           perCapsule.set(c, carr);
         }
         carr.push(r);
+        const mu = r.ev.mutation ?? null;
+        if (typeof mu === "object" && mu !== null) throw new Error("TypeError parity: unhashable mutation key");
+        let marr = perMutation.get(mu);
+        if (marr === undefined) {
+          marr = [];
+          perMutation.set(mu, marr);
+        }
+        marr.push(r);
       }
     }
   }
@@ -563,6 +652,43 @@ function scan(base: string): { checked: number; errors: string[] } {
     if (!perCapsule.has(cid)) errors.push(`${pyJoin(base, rel)}: capsule has no event trail — record capsules only via capsule add`);
   }
 
+  // 复算规则（批次 1 序 2 ADR C4）：mutation.added(ok) 的 mutation_sha 必须等于文件字节
+  // sha256；工作树 Mutation 必须有事件轨（recordMutation 是唯一入口）。声明 append-only，
+  // 无 update/retire 段。
+  for (const arr of perMutation.values()) arr.sort((a, b) => a.ms - b.ms);
+  for (const [mid, evs] of perMutation) {
+    const candidates: string[][] = [];
+    if (mutsIsDir) {
+      for (const ent of fs.readdirSync(mutsPath, { withFileTypes: true })) {
+        if (fs.existsSync(pyJoin(mutsPath, [ent.name, `${pyStr(mid)}.json`]))) {
+          candidates.push(["mutations", ent.name, `${pyStr(mid)}.json`]);
+        }
+      }
+      candidates.sort(segCompare);
+    }
+    if (candidates.length > 1) {
+      errors.push(`mutation id '${pyStr(mid)}' present in multiple domains: ${candidates.map((c) => c.join("/")).join(", ")}`);
+    }
+    const okAdds = evs.filter((e) => e.ev.outcome === "ok" && e.ev.kind === "mutation.added");
+    if (candidates.length === 0) {
+      if (okAdds.length > 0) errors.push(`mutation '${pyStr(mid)}': accepted event but no worktree file exists`);
+      continue;
+    }
+    const target = candidates[0]!;
+    if (okAdds.length === 0) {
+      errors.push(`${pyJoin(base, target)}: no accepted mutation.added event but the file exists`);
+      continue;
+    }
+    const digest = sha256Hex(fs.readFileSync(pyJoin(base, target)));
+    const latestOk = okAdds[okAdds.length - 1]!;
+    if (digest !== latestOk.ev.mutation_sha) {
+      errors.push(`${pyJoin(base, target)}: mutation_sha mismatch (event ${pyStr(latestOk.ev.mutation_sha).slice(0, 12)}… vs file ${digest.slice(0, 12)}…) — mutations/ changes must go through mutation add`);
+    }
+  }
+  for (const [mid, rel] of mutationFiles) {
+    if (!perMutation.has(mid)) errors.push(`${pyJoin(base, rel)}: mutation has no event trail — declare mutations only via mutation add`);
+  }
+
   // 引用可解析（复算规则 2）：gene_ids 须曾成功入档——工作树在场，或事件轨上有过 ok 的
   // gene.added/updated。retire 只删工作树文件（git 历史仍可溯），Capsule 又是 append-only，
   // 故退役不使既有引用追溯失效；真正的违约 = 引一个从未入档过的 id。
@@ -644,6 +770,31 @@ function capsuleEventLine(cid = "sample-capsule", sha: string | null = null, out
     kind: "capsule.added",
     capsule: cid,
     capsule_sha: sha || "a".repeat(64),
+    outcome,
+    evidence: "e",
+  }, null);
+}
+
+function mutationDoc(mid = "sample-mutation", domain = "process", over: { [key: string]: JSONVal } = {}): string {
+  const doc: { [key: string]: JSONVal } = {
+    id: mid,
+    domain,
+    category: "refactor",
+    target: "engine/bin.ts",
+    expected_effect: "dispatch stays byte-identical",
+    risk_level: "low",
+  };
+  Object.assign(doc, over);
+  return `${pyDumps(doc, 2)}\n`;
+}
+
+function mutationEventLine(mid = "sample-mutation", sha: string | null = null, outcome = "ok", ts = "2026-09-05T02:00:00Z"): string {
+  return pyDumps({
+    ts,
+    actor: "t",
+    kind: "mutation.added",
+    mutation: mid,
+    mutation_sha: sha || "a".repeat(64),
     outcome,
     evidence: "e",
   }, null);
@@ -980,6 +1131,135 @@ function selfTest(): number {
       mk(t, "capsules/process/sample-capsule.json", capsuleDoc("sample-capsule", "doc"));
     },
     ["must equal its directory"], "capsule domain != dir -> fail",
+  ]);
+
+  // --- Mutation 协议面（批次 1 序 2）：合规树 + 违约夹具 ---
+  const mutationTree = (t: string): void => {
+    mk(t, "engine/gates.json", WHITELIST);
+    mk(t, "scripts/stub.py", "print('ok')\n");
+    mk(t, "mutations/process/sample-mutation.json", mutationDoc());
+    mk(t, "events/2026-09.jsonl",
+      `${mutationEventLine("sample-mutation", shaOf(t, "mutations/process/sample-mutation.json"))}\n`);
+  };
+  const mutationSha = (t: string): string => shaOf(t, "mutations/process/sample-mutation.json");
+
+  cases.push([mutationTree, [], "mutation conforming tree -> pass"]);
+
+  cases.push([
+    (t) => {
+      mutationTree(t);
+      mk(t, "mutations/process/sample-mutation.json", mutationDoc("sample-mutation", "process", { gene_ids: ["process/sample-gene"] }));
+      mk(t, "events/2026-09.jsonl", `${mutationEventLine("sample-mutation")}\n`);
+    },
+    ["unknown field: gene_ids"], "mutation unknown field -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      mutationTree(t);
+      mk(t, "mutations/process/sample-mutation.json", mutationDoc("sample-mutation", "process", { risk_level: "catastrophic" }));
+      mk(t, "events/2026-09.jsonl", `${mutationEventLine("sample-mutation")}\n`);
+    },
+    ["risk_level must be one of low|medium|high"], "mutation risk_level outside closed set -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      mutationTree(t);
+      mk(t, "mutations/process/sample-mutation.json", mutationDoc("sample-mutation", "process", { category: "  " }));
+      mk(t, "events/2026-09.jsonl", `${mutationEventLine("sample-mutation")}\n`);
+    },
+    ["category must be a non-empty string"], "mutation blank category -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      mutationTree(t);
+      mk(t, "mutations/process/sample-mutation.json",
+        `${pyDumps({ id: "sample-mutation", domain: "process", category: "refactor", target: "engine/bin.ts", risk_level: "low" }, 2)}\n`);
+      mk(t, "events/2026-09.jsonl", `${mutationEventLine("sample-mutation")}\n`);
+    },
+    ["expected_effect must be a non-empty string"], "mutation missing expected_effect -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      mutationTree(t);
+      fs.unlinkSync(path.join(t, "mutations", "process", "sample-mutation.json"));
+    },
+    ["accepted event but no worktree file"], "mutation event without file -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      mutationTree(t);
+      mk(t, "events/2026-09.jsonl", `${mutationEventLine("sample-mutation", mutationSha(t), "fail: superseded")}\n`);
+    },
+    ["no accepted mutation.added event but the file exists"], "mutation file without ok event -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      mutationTree(t);
+      mk(t, "events/2026-09.jsonl",
+        `${mutationEventLine("sample-mutation", mutationSha(t))}\n`
+        + `${mutationEventLine("sample-mutation", "f".repeat(64), "ok", "2026-09-05T03:00:00Z")}\n`);
+    },
+    ["mutation_sha mismatch"], "mutation worktree edit without mutation add -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      mk(t, "engine/gates.json", WHITELIST);
+      mk(t, "scripts/stub.py", "print('ok')\n");
+      mk(t, "mutations/process/sample-mutation.json", mutationDoc());
+    },
+    ["mutation has no event trail"], "mutation without events -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      mutationTree(t);
+      mk(t, "mutations/doc/sample-mutation.json", mutationDoc("sample-mutation", "doc"));
+      mk(t, "events/2026-09.jsonl",
+        `${mutationEventLine("sample-mutation", mutationSha(t))}\n`
+        + `${mutationEventLine("sample-mutation", "f".repeat(64), "ok", "2026-09-05T03:00:00Z")}\n`);
+    },
+    ["present in multiple domains", "duplicate mutation id"], "mutation id in two domains -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      mk(t, "engine/gates.json", WHITELIST);
+      mk(t, "scripts/stub.py", "print('ok')\n");
+      mk(t, "mutations/loose.json", mutationDoc());
+    },
+    ["mutations/<domain>/<id>.json layout"], "flat mutation file -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      mutationTree(t);
+      mk(t, "mutations/process/Bad_ID.json", mutationDoc("Bad_ID", "process"));
+    },
+    ["id must be kebab-case string"], "mutation id non-kebab -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      mutationTree(t);
+      mk(t, "mutations/process/sample-mutation.json", mutationDoc("sample-mutation", "doc"));
+    },
+    ["must equal its directory"], "mutation domain != dir -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      mutationTree(t);
+      mk(t, "events/2026-09.jsonl",
+        `${eventLine("mutation.added", "sample-mutation", mutationSha(t))}\n`);
+    },
+    ["event fields must be exactly"], "mutation event carrying gene keys -> fail",
   ]);
 
   let failed = 0;
