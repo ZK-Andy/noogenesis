@@ -35,7 +35,7 @@ Review: FULL/2026-09-05/R1=ok R2=ok R3=ok
 ### D3（2026-09-05，已拍板）：propose = 确定性编译器；"产生新基因"不归 propose
 
 - **选型**：P1 的 propose = gene → 注入文本的**确定性渲染**（gene `strategy` 有序步骤 + `constraints` + `avoid`，字段名按 [schema ADR](2026-09-05-gene-event-schema.md) S1）压缩成紧凑控制信号块，吐 stdout/文件由宿主会话注入；同输入必同输出，可用金样夹具测试（对齐本仓 self-test 惯例）。零 API、零网络、零生成。
-- **边界写死**：产生新基因**不是** propose 的职责——新基因只能经人工策展翻译进入（首批 = AGENTS/流程卡/门禁 → gene），经 evaluate 闸验证后由 solidify 入档。P1 的"演化" = **基因种群在闸门守护下通过策展更替**——#18 正面结论（收益全在紧凑手工资产，[cookbook 条目](../../../../docs/cookbook.md)）的引擎化表述。产出面现为「基因 + Capsule + Mutation」三件（[Capsule ADR](2026-09-13-capsule-primitive.md) C5、[Mutation ADR](../../proposed/architecture/2026-09-13-mutation-primitive.md) C1）——两者同样由显式声明产生，本决定的实质（不自动变异）不变。
+- **边界写死**：产生新基因**不是** propose 的职责——新基因只能经人工策展翻译进入（首批 = AGENTS/流程卡/门禁 → gene），经 evaluate 闸验证后由 solidify 入档。P1 的"演化" = **基因种群在闸门守护下通过策展更替**——#18 正面结论（收益全在紧凑手工资产，[cookbook 条目](../../../../docs/cookbook.md)）的引擎化表述。产出面现为「基因 + Capsule + Mutation」三件（[Capsule ADR](2026-09-13-capsule-primitive.md) C5、[Mutation ADR](../../proposed/architecture/2026-09-13-mutation-primitive.md) C1）——后两者同样由显式声明产生，本决定的实质（不自动变异）不变。
 - **依据**：①零 DSH 零网络（D1/D2 一脉）下 LLM 自动变异无立锥之地；②P1 最小闭环已拍板只有 Gene + Event 两原语，Mutation 后置——变异骨架方案会把 Mutation 从后门拉回，故一并否决。
 - **被否选项**：B propose 接 LLM API 自动变异（违反"不插电" + #18 单例判定约束；API key/成本/不可复现）；C 引擎产变异骨架人补全（Mutation 原语提前入场，违反最小闭环拍板；其合理内核留待 M2/P3 蒸馏轮）。
 - **P1 闭环全貌**（D2+D3+schema S2 合成）：人策展产出候选 gene → evaluate 闸验证 → solidify 入档（`gene.added` Event）→ 下次 select 命中 → propose 渲染注入 → 真实使用；使用反馈由人消化为下一轮策展（`gene.updated`/`gene.retired` Event）。Event 只在策展更替时产生（schema ADR S2 kind 封闭集）——无环节假装智能，每环节机器可验证。

@@ -55,7 +55,7 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/archit
 ### C5（重拍两项，均收窄不松绑）
 
 - **骨架 D3 重拍**：产出面由「只有基因」扩为「基因 + Capsule」。D3 的实质（propose 是确定性渲染器、变异不自动发生）不变——Capsule 也由显式声明产生，不接 LLM、不自动变异。
-- **schema S2 重拍**：kind 封闭集三件 → 四件（增 `capsule.added`）；事件键集由固定七键改为**按 kind 条件化**——五键共通（`ts` / `actor` / `kind` / `outcome` / `evidence`）+ gene 面 `gene` / `gene_sha` 或 capsule 面 `capsule` / `capsule_sha`。S2 的落盘语义与复算分型不变。
+- **schema S2 重拍**：kind 封闭集三件 → 四件（增 `capsule.added`）；事件键集由固定七键改为**按 kind 条件化**——五键共通（`ts` / `actor` / `kind` / `outcome` / `evidence`）+ gene 面 `gene` / `gene_sha` 或 capsule 面 `capsule` / `capsule_sha`。S2 的落盘语义与复算分型不变。**现值随序 2 第二次重拍**（kind 五件、键集三面）：见 [Mutation ADR](../../proposed/architecture/2026-09-13-mutation-primitive.md) C4。
 
 ## Alternatives considered
 
@@ -70,6 +70,6 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/archit
 - **采用面**：`engine/capsule.ts`（协议 + 渲染）+ `engine/solidify.ts` 的 `recordCapsule`（写路径）+ `bin.ts` 的 `capsule add|show`；`verify-gene-format.mts` 覆盖 `capsules/` 与条件化事件键集；引擎 self-test 与门禁 self-test 各带合规 / 违约夹具。
 - **声明面同步**：`engine/README.md`（命令面 + Capsule 节）、`engine/AGENTS.md`、两 README、`code-standards` 的命令计数——由 `verify-command-surface` 机械校核。
 - **单源指针**：协议细节单源 = 本 ADR + `engine/README.md`「Capsule 面」节；S1–S3 的其余口径仍在 schema ADR，本 ADR 只记与其相异处（S2 的 kind 集与键集）。
-- **遗留面（逐条归口）**：`blast_radius` 随序 4、Event 其余三字段（`mutation_id` / `env_fingerprint` / `validation_report_id`）随序 3；Capsule 的共享 / 贡献面（staging、PR、CI 跨机器复验）随批次表序 21/31；§8.2 知识原子随序 42。
+- **遗留面（逐条归口）**：`blast_radius` 随序 4、Event 扩字段四件（`mutation_id` / `capsule_id` / `env_fingerprint` / `validation_report_id`）随序 3；Capsule 的共享 / 贡献面（staging、PR、CI 跨机器复验）随批次表序 21/31；§8.2 知识原子随序 42。
 - **已命名的覆盖缺口**：本批无实测 Capsule 落盘（`capsules/` 尚无成员）——首次真实 `capsule add` 要等第一次「按基因执行」；同一路径由闸件 16 组夹具与引擎 self-test 5.7 覆盖，缺口是 e2e 证据而非判据。
 - **批次表状态**：序 1 已收口，批次表对应行标 done 并指向本笔记。

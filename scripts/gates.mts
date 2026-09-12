@@ -25,8 +25,8 @@
  * - change-scope：hooks/CI/pre-push 展示面用脚本自身的缺省推导（fork-point）；
  *   gates.json 内的槽位形态供引擎 evaluate 使用。同一脚本、两种推导口径，见
  *   P1 实现 ADR D4。
- * - gene-format：白名单外独立件——它消费引擎产物（genes/ + events/
- *   复算），进白名单会让 solidify 入档中途复算自身（语义循环）；hooks/CI 保留
+ * - gene-format：白名单外独立件——它消费引擎产物（genes/ + capsules/ + mutations/ +
+ *   events/ 复算），进白名单会让 solidify 入档中途复算自身（语义循环）；hooks/CI 保留
  *   显式行，不在 --skip 清单里表达。
  *
  * DAG（蓝图 §2 蒸馏三能力，B1 ADR 2026-09-08-collab-rebuild-b1-gates-ts）：

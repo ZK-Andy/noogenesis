@@ -66,7 +66,7 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](2026-09-13-feature-co
 - **把 Mutation 折进 Capsule（同一文件的 `mutation` 子对象）**：落败——声明先于执行，未执行的声明没有 Capsule 可依附；且会迫使 Capsule 的封闭字段面再开一次。见 C1。
 - **Mutation 只作 Event 行（不落文件）**：落败——事件行键集按 kind 封闭、没有独立内容面，`mutation_id` 将只能指「某行」；Capsule 已确立本仓「有身份的原语 = 目录 + 封闭 schema + sha 锚点」这一族形态，同族原语分道会双轨。
 - **给 `category` 预设封闭集**：落败——设计无值域、taxonomy 未决（序 23），预设即造分类法（C2）。
-- **顺带上 Event 的 `mutation_id`**：落败——一件一交；且序 3 还含 `env_fingerprint` / `validation_report_id`，各自原语不同批。
+- **顺带上 Event 的 `mutation_id`**：落败——一件一交；且序 3 还含 `capsule_id` / `env_fingerprint` / `validation_report_id`，各自原语不同批。
 - **`mutation add` 强制先于 `capsule add`**：落败——没有任何既有事实要求这条链；强制会新增一条只对部分执行成立的顺序约束（改文档的执行未必声明 Mutation），且 Capsule schema 无此字段（C5）。
 - **收 `gene_ids` / `signals` / `outcome` / `evidence` 全字段**：落败——见 C2 逐条理由。
 
@@ -75,5 +75,5 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](2026-09-13-feature-co
 - **采用面**：`engine/mutation.ts`（协议 + 渲染）、`engine/solidify.ts` 的 `recordMutation`（写路径）、`engine/bin.ts` 的 `mutation add|show`；`verify-gene-format.mts` 覆盖 `mutations/` 与三面条件化事件键集；引擎 self-test 与门禁 self-test 各带合规 / 违约夹具。
 - **声明面同步**：`engine/README.md`（命令面 + Mutation 节）、`engine/AGENTS.md`、两 README、`code-standards` 的命令计数（七 → 八）——由 `verify-command-surface` 机械校核。
 - **单源指针**：协议细节单源 = 本 ADR + `engine/README.md`「Mutation 面」节；S2 的其余口径仍在 schema ADR，本 ADR 只记与其相异处（kind 集与键集）。
-- **遗留面（逐条归口）**：Event 的 `mutation_id` / `env_fingerprint` / `validation_report_id` 随批次表序 3；Hypothesize（序 16）与 memory-graph 因果边（序 18）是本原语的下游消费者；`category` 的封闭集随真实种群出现再拍（触发 = 同一 category 值在多条声明中稳定复用）。
+- **遗留面（逐条归口）**：Event 扩字段四件（`mutation_id` / `capsule_id` / `env_fingerprint` / `validation_report_id`）随批次表序 3；Hypothesize（序 16）与 memory-graph 因果边（序 18）是本原语的下游消费者；`category` 的封闭集随真实种群出现再拍（触发 = 同一 category 值在多条声明中稳定复用）。
 - **已命名的覆盖缺口**：本批无实测 Mutation 落盘（`mutations/` 尚无成员）——首个真实声明要等「动改动面前显式声明意图」成为流程动作；同一路径由闸件夹具与引擎 self-test 覆盖，缺口是 e2e 证据而非判据。
