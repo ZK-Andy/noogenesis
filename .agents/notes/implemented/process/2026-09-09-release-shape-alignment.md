@@ -15,7 +15,7 @@ Review: FULL/2026-09-09/R1=ok R2=ok R3=ok
 **对齐上游 DSH 的发布形态（单仓适配），改对外 README 引用与 License 修辞。**
 
 1. **README 引用统一 DSH**：`README.md` / `README.zh.md` 全仓正文对上游的引用统一为 **DSH**：首次出现写 `DeepSeek Harness (DSH)`（保留链接），此后只写 `DSH`；不出现额外「DeepSeek」品牌名。范围界线（2026-09-09 用户拍板，journal 在案）：对外 README 面（README.md/zh.md/package.json description）统一缩写；`AGENTS.md` 与 `.agents/notes`、`docs/` 内对「上游 deepseek-harness 血统」的引用属 provenance 记录，**保持原名不缩写**（血统可查性优先）。`adapters/dsh/README.md` 已是 DSH 命名，核对无遗漏。
-2. **release 脚本族（单仓适配）**：新增 `scripts/release/bump.mts`（bump package.json version + `npm install --package-lock-only` 同步 lock + `chore(release): noogenesis-dsh <ver>——<主题>` commit；零依赖、node 原生）与 `scripts/release/release-note.mts`（从 `git log <前tag>..HEAD` 按 conventional commits 分节，生成双语 release body：`[中文](#cn-<ver>) | [English](#en-<ver>)` 锚点 + 分节 + 每条 `@作者`；作者 = git author 经映射表（`zhangkun → ZK-Andy`，本仓唯一作者）转 GitHub login；末尾 `Full Changelog: https://github.com/ZK-Andy/noogenesis/compare/<前tag>...<新tag>`）。`package.json` 增 `release:bump` / `release:note` 两 script（不引第三方依赖，zero-dep 纪律）。CI 永不写仓、tag 人建（对齐上游哲学）。
+2. **release 脚本族（单仓适配）**：新增 `scripts/release/bump.mts`（bump package.json version + `npm install --package-lock-only` 同步 lock + `chore(release): noogenesis-dsh <ver>——<主题>` commit；零依赖、node 原生）与 `scripts/release/release-note.mts`（从 `git log <前tag>..HEAD` 按 conventional commits 分节，生成双语 release body：`[中文](#cn-<ver>) | [English](#en-<ver>)` 锚点 + 分节 + 每条 `@作者`（作者 = git author 经映射表（`zhangkun → ZK-Andy`，本仓唯一作者）转 GitHub login；末节按提交日归并成每日一条，见[聚合档 ADR](2026-09-12-release-note-daily-aggregation.md)）；末尾 `Full Changelog: https://github.com/ZK-Andy/noogenesis/compare/<前tag>...<新tag>`）。`package.json` 增 `release:bump` / `release:note` 两 script（不引第三方依赖，zero-dep 纪律）。CI 永不写仓、tag 人建（对齐上游哲学）。
 3. **tag 前缀 `dsh-v`**：发版 release-flow 改打 `dsh-vX.Y.Z`；历史 `v0.1.0~v0.2.3` 老 tag 不动（不重写历史）。`pre-push.mts` 的 tag 可达性逻辑是通用 `refs/tags/*`，无 `v` 前缀假设，天然兼容新前缀（代码零改动，只需在 release-flow 文档写明）。
 4. **License 修辞重写**（中英对齐，不改变 AGPL-3.0 判定）：① 义务句——英文 `excluded are distribution and network-service forms (including SaaS) that fail the source-provision obligation` 改为 `distribution or network-service use (including SaaS) must comply with the source-provision obligation of AGPL-3.0`，且 `Commercial use is not excluded` 一并改为 `Commercial use is allowed`（正面肯定）；中文「被排除的是不履行源码提供义务的分发与网络服务形态（含 SaaS）」改为「分发与网络服务形态（含 SaaS）须履行 AGPL-3.0 的源码提供义务」，「商用不被排除」改为「商用允许」。② **免责句实体改写**：英文 `An independent project — not affiliated with DeepSeek` → `An independent project, not affiliated with the DSH maintainers`；中文「独立项目——与 DeepSeek 无关联」→「独立项目——与 DSH 维护方无关联」。免责实体从「公司（DeepSeek）」换成「项目维护方（DSH maintainers）」——理由：本仓对上游的自我指称统一为 DSH（Decision 1），免责句指称同步，且「与 DSH 维护方无关联」语义更精确（独立于上游项目及其维护方，而不只是公司实体）。许可判定不变；license-agpl-3 ADR 同变更同步（implemented 笔记与上线现实同步规则）。
 
@@ -49,7 +49,7 @@ Review: FULL/2026-09-09/R1=ok R2=ok R3=ok
 - annotated tag `dsh-v0.2.4` 推送过 pre-push：tag 目标 commit 已可达 origin 远端 refs → 走「零 outgoing 跳过档位强制」档，脚本输出该判据行。
 - `release-note.mts v0.2.3 0.2.4` 输出双语分节 + `@ZK-Andy`（git author `zhangkun` 映射）+ 跨前缀 `Full Changelog`（`v0.2.3...dsh-v0.2.4`，可解析）。
 - npm `latest` = 0.2.4（35 件 / 97.2 kB，含新件 `skill-guard.mjs`、`export-docs-feedback.mjs`）；GitHub Release 建（Latest、非 draft）。
-- **跨大批次归并缺口**（首验实遇）：`v0.2.3..0.2.4` 跨 59 笔时「其他变更」节输出 47 条过程条目（body 147 行），发布者须手工按批次归并成 3 条——归并档缺失入 [HANDOFF-todos](../../../../HANDOFF-todos.md)（C）条。
+- **跨大批次归并缺口**（首验实遇）：`v0.2.3..0.2.4` 跨 59 笔时「其他变更」节输出 47 条过程条目（body 147 行），发布者须手工按批次归并成 3 条——归并档缺失入 [HANDOFF-todos](../../../../HANDOFF-todos.md)（C）条，已由[聚合档 ADR](2026-09-12-release-note-daily-aggregation.md) 收口（末节按提交日归并，条目零丢弃）。
 
 ## 第二次实发（2026-09-12，`noogenesis-dsh@0.2.5`）
 
@@ -58,7 +58,7 @@ Review: FULL/2026-09-09/R1=ok R2=ok R3=ok
 - **pre-push 两 leg 次序**：分支 leg 先过（tier `--enforce` + 门禁组 + engine/adapter 双 self-test）；tag leg 在分支推送前 fail-closed（`tag 目标 commit 未被 origin 远端 refs 包含`，报「无法定 outgoing base」）。正确次序 = 先推分支、再推 tag（tag 目标可达后走零 outgoing 跳过档位强制）。
 - **npm 发布**：`npm latest` = 0.2.5（36 件 / 110.6 kB）；本机 `~/.npm` 只读，发布须带 `--cache=/tmp/npm-publish-cache`（否则 EROFS）。
 - **GitHub Release**：`dsh-v0.2.5`（Latest、非 draft），正文 = `.cache/release-body-0.2.5.md`。
-- **归并缺口第二次实证（触发再达成）**：`dsh-v0.2.4..0.2.5` 跨 67 笔，「其他变更」节输出 42 条过程条目 → 手工归并为 14 条（中英各 14）。首验记在 [HANDOFF-todos](../../../../HANDOFF-todos.md)（C）条。
+- **归并缺口第二次实证（触发再达成）**：`dsh-v0.2.4..0.2.5` 跨 67 笔，「其他变更」节输出 42 条过程条目 → 手工归并为 14 条（中英各 14）。首验记在 [HANDOFF-todos](../../../../HANDOFF-todos.md)（C）条；末节归并形态已由[聚合档 ADR](2026-09-12-release-note-daily-aggregation.md) 落定。
 
 ## Risks
 

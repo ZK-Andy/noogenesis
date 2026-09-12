@@ -22,6 +22,11 @@
  *   fix → 问题修复 / Bug Fixes
  *   其余（docs/chore/test/build/style/ci 等）→ 其他变更 / Chores
  *
+ * 末节按**提交日归并**（跨大批次时逐条输出会把正文淹成过程清单）：
+ *   同日条目并成一条 `- **<日期>（N 笔）**：<说明>；<说明>… @作者`，条目零丢弃（计数即条数），
+ *   细节由正文尾行 Full Changelog 承接；分组键 = committer date `%cs`（提交对象内记录的时区
+ *   口径），同一提交历史在任何机器/时区上输出一致。其余三节逐条输出（用户可见面）。
+ *
  * 用法（仓库根运行）：
  *   node scripts/release/release-note.mts <base-tag> <new-version>   # 输出正文到 stdout
  * 零运行时依赖（node ≥22.18 原生直跑）；不写仓不建 tag。
@@ -36,13 +41,24 @@ const GITHUB_REPO_FALLBACK = "ZK-Andy/noogenesis";
 /** 英文节润色提示（commit 标题为中文时英文节需人工翻译，非逐字发布）。 */
 const EN_POLISH_HINT = "> Note: English section mirrors commit titles verbatim; polish translation before publishing.";
 
-/** 分节定义（title = 中文标题、en = 英文标题；types 命中该节，末节 catch-all）。 */
+/** 分节定义（title = 中文标题、en = 英文标题；types 命中该节，末节 catch-all；byDay = 按提交日归并）。 */
 const SECTIONS = [
-  { title: "新增功能", en: "New Features", types: new Set(["feat"]) },
-  { title: "体验优化", en: "Improvements", types: new Set(["perf", "refactor"]) },
-  { title: "问题修复", en: "Bug Fixes", types: new Set(["fix"]) },
-  { title: "其他变更", en: "Chores", types: new Set() },
+  { title: "新增功能", en: "New Features", types: new Set(["feat"]), byDay: false },
+  { title: "体验优化", en: "Improvements", types: new Set(["perf", "refactor"]), byDay: false },
+  { title: "问题修复", en: "Bug Fixes", types: new Set(["fix"]), byDay: false },
+  { title: "其他变更", en: "Chores", types: new Set(), byDay: true },
 ] as const;
+
+/** 一条条目：所属分节 + 说明（已剥 conventional 前缀）+ 作者 login + 提交日（`%cs`）。 */
+type Entry = {
+  section: (typeof SECTIONS)[number];
+  body: string;
+  author: string;
+  date: string;
+};
+
+/** 分节输出项：说明 + 作者集合（逐条项 = 单作者；日归并项 = 日桶内去重作者）。 */
+type RenderedItem = { body: string; authors: readonly string[] };
 
 /** conventional commit 前缀（type(scope)!: 或 type:）；剥离与分类共用单一口径。 */
 const CONVENTION_RE = /^([a-z]+)(?:\([^)]*\))?!?:\s*/;
@@ -79,6 +95,37 @@ function gitLines(...args: string[]): string[] {
   return out.stdout.split("\n").filter((line) => line !== "");
 }
 
+/** 日归并项标题前缀（含分隔冒号；计数词随语言，条目说明本身仍逐字镜像 commit 标题）。 */
+function dayPrefix(date: string, count: number, suffix: "zh" | "en"): string {
+  return suffix === "zh" ? `**${date}（${count} 笔）**：` : `**${date} (${count} entries)**: `;
+}
+
+/**
+ * 分节条目 → 输出项：`byDay` 节按提交日归并（日志顺序新→旧，同日必然相邻），其余逐条。
+ * @param entries - 全部条目（日志顺序）。
+ * @param section - 目标分节。
+ * @param suffix - 语言侧（计数标签与分隔符取该语言形态）。
+ */
+function itemsFor(
+  entries: readonly Entry[],
+  section: (typeof SECTIONS)[number],
+  suffix: "zh" | "en",
+): RenderedItem[] {
+  const inSection = entries.filter((e) => e.section === section);
+  if (!section.byDay) return inSection.map((e) => ({ body: e.body, authors: [e.author] }));
+  const groups: Array<{ date: string; items: Entry[] }> = [];
+  for (const entry of inSection) {
+    const last = groups[groups.length - 1];
+    if (last !== undefined && last.date === entry.date) last.items.push(entry);
+    else groups.push({ date: entry.date, items: [entry] });
+  }
+  const join = suffix === "zh" ? "；" : "; ";
+  return groups.map((group) => ({
+    body: `${dayPrefix(group.date, group.items.length, suffix)}${group.items.map((i) => i.body).join(join)}`,
+    authors: [...new Set(group.items.map((i) => i.author))],
+  }));
+}
+
 /** 仓库引用名（owner/repo）——读 remote.origin.url 推导，读不到用兜底。 */
 function repoFromRemote(): string {
   const url = gitLines("config", "--get", "remote.origin.url")[0] ?? "";
@@ -86,13 +133,12 @@ function repoFromRemote(): string {
   return m?.[1] ?? GITHUB_REPO_FALLBACK;
 }
 
-/** 追加一个分节的条目（首节标题带锚点 id，后续节用 `###`；两种语言共用）。 */
+/** 追加一个分节（首节标题带锚点 id，后续节用 `###`；两种语言共用）。 */
 function emitSection(
   lines: string[],
-  section: (typeof SECTIONS)[number],
   title: string,
   anchorId: string | undefined,
-  items: Array<{ body: string; author: string }>,
+  items: readonly RenderedItem[],
   suffix: "zh" | "en",
 ): void {
   if (items.length === 0) return;
@@ -104,7 +150,7 @@ function emitSection(
   );
   const marker = suffix === "zh" ? "@" : "by @";
   for (const item of items) {
-    lines.push(`- ${item.body} ${marker}${item.author}`);
+    lines.push(`- ${item.body} ${marker}${item.authors.join(", ")}`);
   }
   lines.push("");
 }
@@ -116,14 +162,19 @@ function emitSection(
  */
 export function buildReleaseNote(baseTag: string, newVersion: string): string {
   const range = baseTag === "" ? "HEAD" : `${baseTag}..HEAD`;
-  const log = gitLines("log", `--format=%s%x00%an`, range);
-  const entries: Array<{ section: (typeof SECTIONS)[number]; body: string; author: string }> = [];
+  const log = gitLines("log", `--format=%s%x00%an%x00%cs`, range);
+  const entries: Entry[] = [];
   for (const line of log) {
-    const [subject, authorName] = line.split("\u0000");
-    if (subject === undefined || authorName === undefined) continue;
+    const [subject, authorName, commitDate] = line.split("\u0000");
+    if (subject === undefined || authorName === undefined || commitDate === undefined) continue;
     // 跳过 release commit 自身（避免把 bump 提交列进变更）。
     if (/^chore\(release\)/.test(subject)) continue;
-    entries.push({ section: sectionOf(subject), body: bodyOf(subject), author: loginOf(authorName) });
+    entries.push({
+      section: sectionOf(subject),
+      body: bodyOf(subject),
+      author: loginOf(authorName),
+      date: commitDate,
+    });
   }
 
   const lines: string[] = [];
@@ -131,31 +182,17 @@ export function buildReleaseNote(baseTag: string, newVersion: string): string {
 
   // 中文节：首节（SECTIONS[0]）标题带锚点 id，后续节 `###`。
   for (const [index, section] of SECTIONS.entries()) {
-    const items = entries.filter((e) => e.section === section);
+    const items = itemsFor(entries, section, "zh");
     if (items.length === 0) continue;
-    emitSection(
-      lines,
-      section,
-      section.title,
-      index === 0 ? `cn-${newVersion}` : undefined,
-      items,
-      "zh",
-    );
+    emitSection(lines, section.title, index === 0 ? `cn-${newVersion}` : undefined, items, "zh");
   }
 
   // 英文节：结构同中文节，含润色提示（防逐字发布中文 commit 标题）。
   lines.push(EN_POLISH_HINT, "");
   for (const [index, section] of SECTIONS.entries()) {
-    const items = entries.filter((e) => e.section === section);
+    const items = itemsFor(entries, section, "en");
     if (items.length === 0) continue;
-    emitSection(
-      lines,
-      section,
-      section.en,
-      index === 0 ? `en-${newVersion}` : undefined,
-      items,
-      "en",
-    );
+    emitSection(lines, section.en, index === 0 ? `en-${newVersion}` : undefined, items, "en");
   }
 
   if (baseTag !== "") {
