@@ -13,7 +13,7 @@ noogenesis＝心智的发生与持续生长（德日进谱系下集体知识演�
 两个运行层已就位：
 
 - **演化发动机**——`engine/` 六命令（`select` / `propose` / `evaluate` / `solidify` / `pull` / `observe`，Node 零依赖）+ 验证白名单（`engine/gates.json`）+ 基因/事件协议。
-- **DSH 适配层**——本仓即 DSH 插件包 [`noogenesis-dsh`](https://www.npmjs.com/package/noogenesis-dsh)@0.2.5（AGPL-3.0）：经 spawn CLI 单合同把引擎接进会话生命周期；7 个 `noo-*` 技能随基因库缓存分发，provider 经 `ctx.inject(["skills"], …)` 可重试路径注册（skills 服务晚到同样落位），提醒面只点名本会话目录里实际可载的技能（[ADR](.agents/notes/implemented/bug-fix/2026-09-12-bank-skill-provider-registration.md)）。
+- **DSH 适配层**——本仓即 DSH 插件包 [`noogenesis-dsh`](https://www.npmjs.com/package/noogenesis-dsh)@0.2.6（AGPL-3.0）：经 spawn CLI 单合同把引擎接进会话生命周期；7 个 `noo-*` 技能随基因库缓存分发，provider 经 `ctx.inject(["skills"], …)` 可重试路径注册（skills 服务晚到同样落位），提醒面只点名本会话目录里实际可载的技能（[ADR](.agents/notes/implemented/bug-fix/2026-09-12-bank-skill-provider-registration.md)）。
 
 前置条件：**运行仓 = git 仓且 git CLI 在场**——引擎命令依赖 git 子进程，非 git 目录用 `noo_*` 工具会 fail-closed 退出 2；git 未装时引擎诊断指名 git 缺失，不误报非 git 仓。
 
