@@ -1,10 +1,11 @@
 # Agent Note: 护栏建设轮立项——token 基线改两轨（字面预算判据 + 宿主读数建议行），改进度量与 canary 判不立
 
-Status: proposed
+Status: implemented
+Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 
 ## Problem
 
-护栏三件（`dsh-token-meter` 真测量层 / 严格改进正向度量 / canary 进程隔离）的归口与触发点原以 [2026-09-06-guardrail-defer-trigger](2026-09-06-guardrail-defer-trigger.md)（下称延后 ADR）单源。触发点「首个胶囊优化完成」的验收口径已由 [2026-09-10-optimization-round-closure](../../implemented/process/2026-09-10-optimization-round-closure.md) 定义为三条件并兑现，本 ADR 即该触发点到达后的立项讨论轮产出：逐件拍板接入形态与验收口径。
+护栏三件（`dsh-token-meter` 真测量层 / 严格改进正向度量 / canary 进程隔离）的归口与触发点原以 [2026-09-06-guardrail-defer-trigger](../../proposed/architecture/2026-09-06-guardrail-defer-trigger.md)（下称延后 ADR）单源。触发点「首个胶囊优化完成」的验收口径已由 [2026-09-10-optimization-round-closure](../../implemented/process/2026-09-10-optimization-round-closure.md) 定义为三条件并兑现，本 ADR 即该触发点到达后的立项讨论轮产出：逐件拍板接入形态与验收口径。
 
 立项前复测三件的真实暴露面（本机实测，2026-09-13）：
 
@@ -14,9 +15,9 @@ Status: proposed
 
 两条既有拍板约束了每件的候选形态：引擎**零第三方依赖**（token 估算逻辑不可落 `engine/`，见 [engine/AGENTS.md](../../../../engine/AGENTS.md)）；适配层值 import 允许集封底 = `dsh-tools` + `dsh-llm` 两件、扩集须同变更拍板，且**已有一条反例教训**——`userQuestions` 进 `inject` 声明会让服务缺席时整个插件装载被推迟（[adapters/AGENTS.md](../../../../adapters/AGENTS.md)），故任何宿主服务读数的接线都不得进 `inject` 声明。
 
-## Proposal
+## Decision
 
-**用户拍板（2026-09-13，三题逐条）：token 基线改两轨——字面预算判据为主、宿主读数建议行降级为辅；严格改进度量不立数值评分表，改记两本账；canary 判不立（非延期）。**
+**用户拍板（2026-09-13，三题逐条）：token 基线改两轨——字面预算判据为主、宿主读数建议行降级为辅；严格改进度量不立数值评分表，改记两本账；canary 判不立（非延期）。** 三题的决定形态如下，token 基线轨的落地实况与勘误见末节。
 
 ### 决定 1：token 基线不变量 = 字面预算判据（阻断）+ 宿主真读数建议行（非阻断）
 

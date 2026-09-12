@@ -219,7 +219,7 @@
 | 栈式 PR / base retargeting 件 | §5 边界已裁（单人 + 本地评审，无多分支栈） |
 | 用户全局 AGENTS.md / CLAUDE.md 副本 | §1 边界已裁（宿主兼容面，非本仓职责） |
 | plan/todo/goal/jobs/schedule 包层 | 宿主自带能力，胶囊直接消费不自建 |
-| token 基线不变量 | 归口主设计 §7（演化护栏）；阻断面已落适配层常驻注入字面预算（[护栏建设轮 ADR](../../.agents/notes/proposed/architecture/2026-09-13-guardrail-construction-round.md)），非七层事 |
+| token 基线不变量 | 归口主设计 §7（演化护栏）；阻断面已落适配层常驻注入字面预算（[护栏建设轮 ADR](../../.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md)），非七层事 |
 | defensive-patterns 第三家 | §6 已裁（本仓体量不支持第三家，失败后行动 = 写 cookbook 条目） |
 
 ## 10. 横切：协作层需求清单（验收需求）

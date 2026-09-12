@@ -46,7 +46,7 @@ Review: FULL/2026-09-05/R1=ok R2=ok R3=ok
 - **入档条件 = 门禁全绿，仅此一条**：红即拒，无豁免——"前沿单调不降"在文档域的可执行形态。
 - **"严格改进"正向度量 = 显式 open**（本 ADR 为单源）：文档域无可信改进分数（字数下降可作弊；LLM judge 违反 D1 零网络且无金标）。P1 不假装量化改进；M2 重议（候选信号：评审 Blocker 数追踪、dsh-token-meter 常驻注入度量）。
 - **token 基线不变量的 P1 落点 = doc-budgets 字数预算门禁**（已在 CI 真强制）——文档域的"别变臃肿"机器不变量；`dsh-token-meter` 退 M2 适配层（届时量常驻注入 token，与字数预算是同一不变量的两个测量层）。
-- **canary 后置**：evolver canary 是 daemon 重启安全网（[底座 ADR](../../proposed/architecture/2026-09-05-evomap-evox-engine-anatomy.md)），P1 无 daemon；入档闸 = 本地门禁全绿 + CI 跨机器复验（已具备）；终局归口见 [护栏建设轮 ADR](../../proposed/architecture/2026-09-13-guardrail-construction-round.md)（判不立，重议触发 = 出现跨进程常驻形态）。
+- **canary 后置**：evolver canary 是 daemon 重启安全网（[底座 ADR](../../proposed/architecture/2026-09-05-evomap-evox-engine-anatomy.md)），P1 无 daemon；入档闸 = 本地门禁全绿 + CI 跨机器复验（已具备）；终局归口见 [护栏建设轮 ADR](2026-09-13-guardrail-construction-round.md)（判不立，重议触发 = 出现跨进程常驻形态）。
 - **被否选项**：B 量化"严格改进"（字数下降可作弊，无真值）；C LLM judge（违反 D1 零网络 + 无金标自报分）。
 
 **收窄归口**：P1 对主设计 §6 完整生命周期的裁剪与 Mutation 同批显式后置 M2——memory-graph 与观测透镜（Select）、blast-radius（Evaluate）、Mutation 原语；M2 钩子适配层恢复完整形态。
@@ -60,6 +60,6 @@ Review: FULL/2026-09-05/R1=ok R2=ok R3=ok
 ## Consequences
 
 - **采用面**：`engine/` 目录与四命令按 D1–D4 实现；协议细节按 [schema ADR](2026-09-05-gene-event-schema.md) S1–S3；首批基因人工策展翻译（不自动生成）。
-- **遗留面（显式 open，逐条归口）**：严格改进文档域度量（D4 单源）；token 基线不变量与 canary 进程隔离——三件护栏的终局见 [护栏建设轮 ADR](../../proposed/architecture/2026-09-13-guardrail-construction-round.md)；js-yaml 例外权与基因格式 YAML 化迁移器（M2，单源在本条）；流程卡"谁来喂信号"可选增强（实现轮）。hooks/CI 引 `gates.json` 完整合一已收口（2026-09-06，`scripts/gates.py` 单源发射，见 [M2 ADR](2026-09-06-m2-adapter-wiring.md)），不再是 open 项。
+- **遗留面（显式 open，逐条归口）**：严格改进文档域度量（D4 单源）；token 基线不变量与 canary 进程隔离——三件护栏的终局见 [护栏建设轮 ADR](2026-09-13-guardrail-construction-round.md)；js-yaml 例外权与基因格式 YAML 化迁移器（M2，单源在本条）；流程卡"谁来喂信号"可选增强（实现轮）。hooks/CI 引 `gates.json` 完整合一已收口（2026-09-06，`scripts/gates.py` 单源发射，见 [M2 ADR](2026-09-06-m2-adapter-wiring.md)），不再是 open 项。
 - **依赖姿态是门禁级约束**：engine 引入任何第三方依赖须先修订本 ADR D1（或其例外条款）。
 - **运行时假设**：Node 单运行时——若未来引擎要进无 Node 环境（边缘/容器最小镜像），CLI 合同面保证可换 Go/Rust 内核而不动接口。
