@@ -12,7 +12,10 @@
  *   （本层窄类型不得窄于宿主形状；对应 `mount.mts` 的 `ToolExecLike` /
  *   `ToolResultLike`）——两组互补，缺一有盲区；
  * - 决策判别式：`PreToolDecision` 三态、`PostToolDecision` 的 accept/block 与
- *   `additionalContexts`（`index.mts` 的消费面）。
+ *   `additionalContexts`（`index.mts` 的消费面）；
+ * - tokenMeter 读数面：服务键 `tokenMeter`（`index.mts` 的 `ctx.get` 取用点）、
+ *   `TokenMeasurement` 的 `surfaceTokens` / `totalTokens` 为 `number`、`measure`
+ *   返回 `TokenMeasurement`（`token-baseline.mts` 的运行期形状闸消费面）。
  *
  * `defineTool` / `createUserMessage` 不在断言面：两者的真实调用点
  * （`tools.mts` / `index.mts`）由编译器按同一参数类型检查，再断一遍零证伪力。
@@ -21,8 +24,9 @@
  * adapter selftest 机器断言「值 import 仅 `index.mts`、type-only import 闭集
  * = 本件 + `selftest.mts` + `tools.mts`」（静态 / 动态 / re-export 三形态同扫）。
  */
-import type { Events } from "@deepseek-ai/cordis";
+import type { Context, Events } from "@deepseek-ai/cordis";
 import type { PostToolDecision, PreToolDecision, ToolExecution, ToolExecutionResult } from "@deepseek-ai/dsh-tools";
+import type { TokenMeasurement, TokenMeter } from "@deepseek-ai/dsh-token-meter";
 import type { ToolExecLike, ToolResultLike } from "./mount.mjs";
 
 /** 断言助手：条件为假时 `tsc` 报「`false` 不满足 `true` 约束」。 */
@@ -57,5 +61,12 @@ type _PreToolAsk = Assert<"ask" extends PreToolDecision["kind"] ? true : false>;
 type _PostToolAccept = Assert<"accept" extends PostToolDecision["kind"] ? true : false>;
 type _PostToolBlock = Assert<"block" extends PostToolDecision["kind"] ? true : false>;
 type _PostToolContext = Assert<"additionalContexts" extends keyof PostToolDecision ? true : false>;
+
+// ── tokenMeter 读数面：token-baseline.mts 的运行期形状闸消费面 ─────────────
+type _TokenMeterService = Assert<"tokenMeter" extends keyof Context ? true : false>;
+type _TokenSurfaceTokensKey = Assert<"surfaceTokens" extends keyof TokenMeasurement ? true : false>;
+type _TokenSurfaceTokensNumber = Assert<TokenMeasurement["surfaceTokens"] extends number ? true : false>;
+type _TokenTotalTokensNumber = Assert<TokenMeasurement["totalTokens"] extends number ? true : false>;
+type _TokenMeasureReturn = Assert<ReturnType<TokenMeter["measure"]> extends TokenMeasurement ? true : false>;
 
 export {};
