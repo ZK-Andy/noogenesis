@@ -5,6 +5,8 @@
 
 ## 候选
 
+- **（2026-09-13）纪律漏项候选：implemented ADR 里作为「决策时记录」的外部版本串，是否豁免「与上线现实同步」——口径未成文**：症状 = 本批把宿主 peer 从 `^0.1.0-rc.8` 升到 `^0.1.5-rc.2`（[升代 ADR](.agents/notes/implemented/architecture/2026-09-13-host-peer-generation-upgrade.md)），而 `b4-mount-wiring` 与 `m2-adapter-wiring` 仍以当时的 peer 串叙述；`.agents/notes/README.md` 的维护纪律只写「文件移动/改名/改默认值时同变更改写（只改事实，不改决定）」，对「决策时观测到的外部版本值」无判据。本批 R1 评审（Suggestion 5）以「决策时记录」分类放行，且先例自洽（M2 的 `^0.1.0-rc.6` 未随 B4 改写），但该分类此前只存在于本批 ADR 的影响面清账表。同类第二例 = cookbook 条的前提句在本批失效（R2 Suggestion 2，已就地转历史态）。触发 = 第二次遇到同类外部值需要同步时（或 notes/README 维护纪律下一轮修订）。出处 = 演化轮池归集（feature-flow §4.6.2）。
+
 - **（2026-09-13）机械化候选：「CI self-test 抽查清单 ↔ `scripts/verify-*.mts`」可静态判**：形态 = 扫 `.github/workflows/validate.yml` self-test 块的命令集，与 `ls scripts/verify-*.mts` 对照（例外面具名：共享件 `mdref` / `pypara` / `srctree` 与 `change-scope.mts` 无 `--self-test` 入口、`gen-manifest.mts` 非 verify-*）。出处 = 演化轮落账批 R2 Blocker（新闸 `host-service-reads` 是清单里唯一缺席的 verify-* 件，而该块行注释自称「清单与 `scripts/*.mts` 一一对应」）——本批只采纳一行登记修法，判据稳定后开轮落闸。
 
 - **（2026-09-13）护栏轮之经验：`git add -A` 在多会话共用工作树下会卷走他人在飞改动**：本会话与他会话并行时实际发生（他方 `section.mts` 未提交改动被卷，档位闸拦下后 `reset --soft` 退回）——纪律面已落 [cookbook](docs/cookbook.md)「协作」条；未机械化面 = 「提交前工作树里出现非己方路径」是否值得上闸（机械判定的代价：无法区分合法协同与误卷）。出处 = [护栏建设轮 ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md) 收口批。
