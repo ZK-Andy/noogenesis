@@ -24,7 +24,7 @@ Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 3. **判据边界**（闸件头注如实记）：只认标识符 `ctx`（改名或换载体不在判据内）；读法只判三种——属性读取 `ctx.x`、字面量元素访问 `ctx["x"]`、字面量键解构 `const { x } = ctx`（含重命名）；**不判**计算属性键（`ctx[expr]`、计算键解构）、rest 元素与嵌套解构；类型面的服务声明不判；注释 / 字符串 / 模板串文本天然不计，模板串插值内照判；`ctx.get("<name>")` 的服务名字符串不受约束（无 inject 要求即合法读法）。
 4. **覆盖面 fail-closed**：源根 `adapters/` 缺失或零源码件 → exit 2（覆盖面不得静默归零）；`--self-test` = 20 判据夹具 + 1 声明解析夹具 + 4 源树/覆盖面夹具（`judgeTree` 直跑真树，含非源码件过滤与两条 fail-closed 档），违约样例必拒、合规样例必放行；夹具随 CI「self-test 抽查」清单消费（[`validate.yml`](../../../../.github/workflows/validate.yml)）。
 5. **本件只登记这批的第四件机械化**：机械化 ADR 保留其三类清单的历史表述并加本件指针，不重抄条数；后续机械化件的家 = 各自批次 ADR。
-6. **共享扫描原语单源**：源码扩展名过滤与递归列举落 `scripts/srctree.mts`，本闸与 [verify-export-docs](../../../../scripts/verify-export-docs.mts) 同消费（`scripts/AGENTS.md` 共享件纪律；域根与判据语义仍留各闸）。
+6. **共享扫描原语单源**：源码扩展名过滤与递归列举落 `scripts/srctree.mts`，本闸与 [verify-export-docs](../../../../scripts/verify-export-docs.mts) 同消费（`scripts/AGENTS.md` 共享件纪律；域根与判据语义仍留各闸）。**耦合面**：消费方的执行形态须与共享件同址——适配层 in-loop 的真件 e2e 夹具同时复制两件（只带判据件的形态以「judge failed（exit 1 无 FAIL 行）」降级）。
 
 ## Alternatives considered
 

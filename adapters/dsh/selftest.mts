@@ -1686,12 +1686,16 @@ function writeFixtureGene(repoRoot: string): void {
 		ok("export-docs-feedback: missing judge script → void + one warn per session (message pinned)");
 	}
 
-	// 真件 e2e：真判据件 + 默认执行面（node 直跑仓内脚本，文件目标模式）。
+	// 真件 e2e：真判据件 + 其共享件 + 默认执行面（node 直跑仓内脚本，文件目标模式）。
 	{
 		const real = tempRepo("export-docs-feedback-real");
 		fs.mkdirSync(path.join(real, "scripts"), { recursive: true });
 		fs.mkdirSync(path.join(real, "adapters", "dsh"), { recursive: true });
-		fs.copyFileSync(path.join(REPO_ROOT, "scripts", "verify-export-docs.mts"), path.join(real, "scripts", "verify-export-docs.mts"));
+		// 判据件 import 共享扫描原语（srctree.mts）——宿主面两件同址才跑得起来；
+		// 只带判据件的形态以「judge failed（exit 1 无 FAIL 行）」降级（反馈层只 warn）。
+		for (const file of ["verify-export-docs.mts", "srctree.mts"]) {
+			fs.copyFileSync(path.join(REPO_ROOT, "scripts", file), path.join(real, "scripts", file));
+		}
 		fs.symlinkSync(path.join(REPO_ROOT, "node_modules"), path.join(real, "node_modules"), "dir");
 		const realAgent = { session: { header: { cwd: real } } };
 		const target = "adapters/dsh/bad.ts";
