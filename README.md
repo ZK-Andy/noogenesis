@@ -19,10 +19,23 @@ Prerequisite: the working repository must be a git repository with the `git` CLI
 
 ## Install
 
-Install the plugin into a DSH profile:
+Install the plugin into a DSH profile — the first use initializes the profile, and the package's own `dsh.bundle` declaration makes it a profile layer:
 
 ```sh
-dsh plugin --profile <name> -- add noogenesis-dsh
+dsh plugin --profile <name> -- add noogenesis-dsh   # initialize the profile + install
+dsh --profile <name>                                # boot it
+```
+
+A profile named after a shipped template (`web` / `headless` / `acp` / `sdk`) is initialized with that template's app bundle; any other name gets only `@deepseek-ai/dsh-base`, so initialize a custom-named app profile first:
+
+```sh
+dsh --profile <name> --from-default-profile web --dump-config >/dev/null   # init only, no boot
+```
+
+Installing a local checkout (run from the repository root) uses the same command with a path spec — relative specs are anchored to the invoking directory:
+
+```sh
+dsh plugin --profile <dev> -- add .
 ```
 
 The adapter's `geneBankUrl` defaults to the official gene bank (`false` disables pulling explicitly); a fresh install pulls the bank with zero configuration. Releases newer than pnpm's `minimumReleaseAge` window need a one-command exemption — see the environment entries in the [cookbook](docs/cookbook.md). Package naming rules live in [adapters/dsh/README.md](adapters/dsh/README.md).

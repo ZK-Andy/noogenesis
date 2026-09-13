@@ -19,10 +19,23 @@ noogenesis＝心智的发生与持续生长（德日进谱系下集体知识演�
 
 ## 安装
 
-把插件装进 DSH profile：
+把插件装进 DSH profile——**首用即初始化 profile**，包自带的 `dsh.bundle` 声明使其自动成为 profile 层：
 
 ```sh
-dsh plugin --profile <name> -- add noogenesis-dsh
+dsh plugin --profile <name> -- add noogenesis-dsh   # 初始化 profile + 装包
+dsh --profile <name>                                # 启动
+```
+
+以 shipped 模板名（`web` / `headless` / `acp` / `sdk`）命名的 profile 首用带上该模板的 app bundle；其余名字只得 `@deepseek-ai/dsh-base`，故自定义名的 app profile 需先初始化：
+
+```sh
+dsh --profile <name> --from-default-profile web --dump-config >/dev/null   # 只初始化不启动
+```
+
+从本地检出安装（在仓库根运行）用同一条命令带路径规格——相对路径规格锚到调用目录：
+
+```sh
+dsh plugin --profile <dev> -- add .
 ```
 
 适配层 `geneBankUrl` 缺省官方基因库（`false` 显式禁用拉库），默认安装零配置即拉库。新发版本满 pnpm `minimumReleaseAge` 窗口前需单命令豁免，见 [docs/cookbook.md](docs/cookbook.md) [环境] 条目；包名规则见 [adapters/dsh/README.md](adapters/dsh/README.md)。
