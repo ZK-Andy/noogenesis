@@ -11,6 +11,8 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-13｜**批次 2 序 8 M3 记录件重拍（LIGHT；0B+2S 全采纳）**：M3 原形态「记录落事件轨」立宿主约束面（A8 已封）判不可实现；同一失败面由 session-close ③ 对账承接，②/阻断候选维持既有触发、不新立机器件。[ADR](.agents/notes/implemented/architecture/2026-09-13-m3-review-record-verdict.md)；`8d6d829`→`b5b603f`。README 核对：无漂移。
+
 - 2026-09-13｜**批次 2 序 7 A6 停止前能力位（FULL 三审 R1 1B/2S、R2 2B/3S、R3 4B/3S；采纳 13 拒绝 2）**：`agent/turn-stopping` 接线（零策略）；档位结论 = 停止前只有续跑档（`inject` 同为 `next-step` 入队）。[ADR](.agents/notes/implemented/architecture/2026-09-13-a6-turn-stopping-mount.md)；`4b70c8d`→`6b86afa`。
 
 - 2026-09-13｜**批次 1 序 5 候选比较判据（FULL 三审 R1 0B/4S、R2 0B/2S、R3 1B/3S；采纳 8 拒绝 2）**：候选比较只用通道封闭集 {独立执行, 观测} 的读数，金标类与自报分永不入通道，引擎不排序不择优；机器面判不立（两处具名触发），入口 = 根 AGENTS 检查项第 7 条。[判据 ADR](.agents/notes/implemented/architecture/2026-09-13-candidate-comparison-blindness.md)。
@@ -49,8 +51,6 @@
 - 2026-09-12｜**演化轮池独立成件批（FULL 三审全 ok；采纳 8 拒绝 1）**：新增池件 [HANDOFF-evolution-pool.md](HANDOFF-evolution-pool.md)（吸收后处置规则已落地）+ [池件 ADR](.agents/notes/implemented/process/2026-09-12-evolution-pool-file.md)；归集面指针全域改指；`6b95e36`→`6376d92`。README 已同步（结构表加池件）。
 
 - 2026-09-12｜**技能 provider 失效取证轮（零代码变更）**：普查 desktop 199/199 + dsh-frecency 11/11 会话 `noo-*`=0（自举仓由文件系统面掩盖）；修复立项后次会话落地（[ADR](.agents/notes/implemented/bug-fix/2026-09-12-bank-skill-provider-registration.md)：注册走可重试注入）。
-
-- 2026-09-12｜**吸收撤除批（FULL 三审 R1 1B/5S、R2 1B/1S、R3 0B/2S；采纳 9 拒绝 1）**：吸收撤出主链路（演化动作面异步归集）——准则落主设计 §6 第 5 条、findings 去向归 `feature-flow` §4.6 + 待办区、被撤件归档冻结；[ADR](.agents/notes/implemented/process/2026-09-12-absorption-async-round.md)。README 无漂移。
 
 
 ## 背景

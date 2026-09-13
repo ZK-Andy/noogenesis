@@ -1,7 +1,7 @@
 # Agent Note: M3 评审实质执行记录件重拍——原形态立宿主约束面判不可实现，③ 对账即同一失败面的记录件（批次 2 序 8）
 
 Status: implemented
-Review: LIGHT/2026-09-13/待回填
+Review: LIGHT/2026-09-13/语义评审（范围化子代理 R2：0 Blocker + 2 Suggestion 全采纳收口——③ 实跑计数改留痕口径、② 档位括注与停止前续跑档拆开）
 
 Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/architecture/2026-09-13-feature-completion-backlog.md)（行 8）· 前置拍板 [2026-09-10-review-execution-reconciliation](2026-09-10-review-execution-reconciliation.md)（F3 不设防 + ② 缓议 + ③ 落卡，本件维持其档位与触发）· [2026-09-13-a6-turn-stopping-mount](2026-09-13-a6-turn-stopping-mount.md)（停止前候选只有续跑档）· 宿主约束件 [2026-09-08-a8-session-record-projection-removal](2026-09-08-a8-session-record-projection-removal.md) · 蓝图 [§7 M3 / §8](../../../../docs/research/framework-rebuild-blueprint.md) · 问题池 [§2.1](../../../../docs/research/capsule-01-optimization-round.md) · 对账步 [session-close](../../../workflows/session-close.md) §2
 
@@ -12,7 +12,7 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/archit
 重拍先取证：M3 原形态在本仓还剩哪个面可落。
 
 - **「记录落事件轨」不可达**：事件轨的会话事件面即 A8。A8 已封——宿主 `Session.append` 无 `ignorable` 写入口，读路径对未标 `ignorable` 的下游插件事件 fail-closed，记录投影路线随 [A8 撤除批](2026-09-08-a8-session-record-projection-removal.md)整体退役。该条件在宿主侧，不随本仓决策改变。
-- **同一失败面已有零代码记录面**：③（[评审实质执行 ADR](2026-09-10-review-execution-reconciliation.md) Decision 1）由 [session-close](../../../workflows/session-close.md) §2 兑现——对账步 grep 宿主日志 `tool/result` 文本里的闭集标记（`verify-review-brief` / `verify-review-tier` / `gates --run`），对照本会话 ADR `Review:` 行；跨会话评审有显式出口（标记活在评审会话日志，凭 Review 行日期与本批收口条目在案视同有证据）。2026-09-10 落卡以来 6 次会话收尾实跑（journal 2026-09 卷），命中「有痕」、捕获过「该载未载」的技能面缺口，但零次「声称 FULL 收口而评审无机器面痕迹」。
+- **同一失败面已有零代码记录面**：③（[评审实质执行 ADR](2026-09-10-review-execution-reconciliation.md) Decision 1）由 [session-close](../../../workflows/session-close.md) §2 兑现——对账步 grep 宿主日志 `tool/result` 文本里的闭集标记（`verify-review-brief` / `verify-review-tier` / `gates --run`），对照本会话 ADR `Review:` 行；跨会话评审有显式出口（标记活在评审会话日志，凭 Review 行日期与本批收口条目在案视同有证据）。2026-09-10 首跑以来的会话收尾对账均留痕（journal 2026-09 卷）：有评审面的批次全数「有痕」，无评审面的批次明示「本轮无 FULL 评审面」，捕获过「该载未载」的技能面缺口，零次「声称 FULL 收口而评审无机器面痕迹」。
 - **升格候选的触发未满足**：② 收口触点提醒（advice 档）与停止前候选（续跑档）的触发同为「③ 对账抓到真实漏网」——上述实跑中该信号未出现。
 
 ## Decision
@@ -23,7 +23,7 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/archit
    - 宿主日志 `tool/result` 闭集标记 = 事实证据（③ 对账读取）；
    - `journal/` 收尾留痕 = 跨会话证据出口。
    标记面已存在且已入对账步；再立一份记录件即双源，且与 Review 行同写者、零独立证伪力（序 5 判据同型：通道封闭集外的自报读数不入通道）。
-3. **② 与阻断候选维持各自既有档位、触发与接线候选指针**：② = advice 档缓议（接线候选 = engine 代理命令 / 停止前挂载点）；停止前候选按 [A6 能力位 ADR](2026-09-13-a6-turn-stopping-mount.md) 订正为续跑档（该点无 advice 面）。本件不改其触发，也不因序 8 收口而启用。
+3. **② 与阻断候选维持各自既有档位、触发与接线候选指针**：② = advice 档缓议（接线候选 = engine 代理命令；经停止前挂载点投递的「钩子桥」一案在该点是续跑档，不属 advice 面）；停止前候选按 [A6 能力位 ADR](2026-09-13-a6-turn-stopping-mount.md) 订正为续跑档（该点无 advice 面）。本件不改其触发，也不因序 8 收口而启用。
 4. **F3 维持不设防**：三路是否真审/真读属语义面，机器盖不住；兜底 = 根 [AGENTS.md](../../../../AGENTS.md)「评审检查项」+ 评审代理职责（用户 2026-09-10 拍板确认，本件维持）。
 5. **序 8 收口**：批次表行 8 标 done，指针 = 本件。HERO 两问答案：检测的具体失败 = FULL 档「声称收口而三路无记录」；真出现后下一步不同的事 = 收尾补跑该路评审或显式降档（已由 ③ 兑现）。
 
