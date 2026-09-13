@@ -57,7 +57,7 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 | 11 | Detect 逐源裁决：`session/event` | 主设计 §6；P1 D2 禁区 | done（[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-session-event.md)）：D2 禁区重拍为「默认关 + 逐源门槛」，本源 HERO 两问判不立 |
 | 12 | Detect 逐源裁决：`agent/error` | 同上 | done（[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-agent-error.md)）：实例面全为 provider/API 失败、动作面缺席，判不立 |
 | 13 | Detect 逐源裁决：`agent/turn-stopping` | 同上 | done（[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-turn-stopping.md)）：事件 = 93.4% 正常回合的关闭边界、载荷无失败位（唯二非 completed 可达子面 `max-tokens` 实测 n=0），判不立 |
-| 14 | Detect 逐源裁决：`tool/result` | 同上 | done（[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-tool-result.md)）：结果对象已由 A4 在 `tools/post-execute` 消费（实测失败面 42.3% 即 A4 自身产出、37.2% 为宿主 fs 策略），判不立；四源裁决组收口 |
+| 14 | Detect 逐源裁决：`tool/result` | 同上 | done（[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-tool-result.md)）：结果对象已由 A4 在 `tools/post-execute` 消费（实测失败面 A4 判据 41.8% + 宿主 fs 面 38.6% = 80.5%），判不立；四源裁决组收口 |
 | 15 | 情境按需注入（命中节动态信号，替代静态 `injectSignals`） | 主设计 §8.3 | 受 D2 禁区约束 |
 | 16 | Hypothesize 阶段（记录「信号 + gene + mutation → 预期结果」） | 主设计 §6 | 落 memory-graph，依赖序 18 |
 | 17 | 观测面自动接线（写者集合扩至挂载面） | 记忆线 D7-3 | 现判「挂载面暂不立」，重议触发 = 出现需无人写入的真实场景 |
