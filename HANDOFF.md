@@ -11,7 +11,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-14｜**序 30 蒸馏实现轮（评审收口中）**：新增 `distill` 三子命令（collect/add/show）+ `candidates/` 候选面（基因形、零事件）+ verify-gene-format 扩节；九命令计数同步，机制面 = engine/distill.ts + bin.ts + selftest 夹具。[ADR](.agents/notes/implemented/architecture/2026-09-14-distill-command.md)。
+- 2026-09-14｜**序 30 蒸馏实现轮（FULL 三审 1B+5S 全采纳）**：`distill` 三子命令（collect/add/show）+ `candidates/` 候选面 + 闸扩节；九命令计数同步；collect 分诊漏接已修。[ADR](.agents/notes/implemented/architecture/2026-09-14-distill-command.md)；`93fa103`→`3bc2712`。
 
 - 2026-09-14｜**批次 6 开门重拍（LIGHT）**：P1 骨架 D3 重议实质维持；序 30 蒸馏以「显式触发 + 压缩在宿主侧 + 产物是候选」放行（被否选项 C 预留内核兑现），S2/D4 零变化，机制零变化；游标 = 序 30 实现轮。[ADR](.agents/notes/implemented/architecture/2026-09-14-p1-d3-distillation-reshoot.md)；`bd1a3a6`→本批。
 
