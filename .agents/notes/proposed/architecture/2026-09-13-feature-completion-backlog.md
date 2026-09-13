@@ -13,7 +13,7 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 现状事实（2026-09-13 实读，只列差集判定相关者）：
 
 - **已交付**：Gene 协议 + 引擎八命令（select/propose/evaluate/solidify/pull/observe/capsule/mutation）+ `gates.json` 白名单 + Capsule / Mutation 两原语与事件 kind 五件 + Event 扩字段（跨链 `mutation_id`/`capsule_id` + 环境指纹 `env_fingerprint`）+ Evaluate 的 blast-radius 改动面度量（文件 / 行 / 范围）+ 候选比较 / 答案盲选择判据（通道封闭集 + 不排序；机器面判不立）；适配层 A1–A7 接线（A5 会话开始位与 A6 停止前续跑能力位均零策略；prompt 提交 / 工具前后折进 A2/A3/A4）；M1 技能守卫 + M2 规范面接入；token 基线两轨（预算判据 + 宿主读数）；技能随库分发；P2 只读消费（pull + manifest + 缓存合并）；记忆线第一期观测面与 `advice:` 建议档；胶囊 01 内容主体（7 技能 + method/cookbook/流程卡/门禁）。
-- **未交付**：下方批次表余 34 项（序 1–12 已 done，批次 3 进行中）。
+- **未交付**：下方批次表余 33 项（序 1–13 已 done，批次 3 进行中）。
 - **受宿主约束未交付**：A8 会话事件轨 / 状态投影——撤除理由 = 宿主读路径对未标 `ignorable` 的下游插件事件 fail-closed，且 `Session.append` 无 `ignorable` 写入口。连带 M3 原形态记录件（同节重议触发；同一失败面已由 session-close 对账步承接，[序 8 重拍 ADR](../../implemented/architecture/2026-09-13-m3-review-record-verdict.md)）。
 
 ## Proposal
@@ -56,7 +56,7 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 |---|---|---|---|
 | 11 | Detect 逐源裁决：`session/event` | 主设计 §6；P1 D2 禁区 | done（[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-session-event.md)）：D2 禁区重拍为「默认关 + 逐源门槛」，本源 HERO 两问判不立 |
 | 12 | Detect 逐源裁决：`agent/error` | 同上 | done（[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-agent-error.md)）：实例面全为 provider/API 失败、动作面缺席，判不立 |
-| 13 | Detect 逐源裁决：`agent/turn-stopping` | 同上 | 逐源答 HERO 两问 |
+| 13 | Detect 逐源裁决：`agent/turn-stopping` | 同上 | done（[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-turn-stopping.md)）：事件 = 93.4% 正常回合的关闭边界、载荷无失败位（唯二非 completed 可达子面 `max-tokens` 实测 n=0），判不立 |
 | 14 | Detect 逐源裁决：`tool/result` | 同上 | 逐源答 HERO 两问 |
 | 15 | 情境按需注入（命中节动态信号，替代静态 `injectSignals`） | 主设计 §8.3 | 受 D2 禁区约束 |
 | 16 | Hypothesize 阶段（记录「信号 + gene + mutation → 预期结果」） | 主设计 §6 | 落 memory-graph，依赖序 18 |
@@ -123,7 +123,7 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 
 ### 需显式重拍的决策面
 
-- **P1 骨架 D2 禁区 + M2「Detect 显式不做」**：站立规则已重拍为「自动 Detect 默认关 + 逐源过 HERO 两问」——重拍件 = [Detect 逐源裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-session-event.md)（行 11 `session/event` 判不立；行 12 `agent/error` 判不立，[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-agent-error.md)）；余两源（行 13–14）在其站立规则下逐条裁决后成文。
+- **P1 骨架 D2 禁区 + M2「Detect 显式不做」**：站立规则已重拍为「自动 Detect 默认关 + 逐源过 HERO 两问」——重拍件 = [Detect 逐源裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-session-event.md)（行 11 `session/event` 判不立；行 12 `agent/error` 判不立，[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-agent-error.md)；行 13 `agent/turn-stopping` 判不立，[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-turn-stopping.md)）；余一源（行 14）在其站立规则下逐条裁决后成文。
 - **记忆线第二期判裁**（排序 / 禁用 / 阈值 / 半衰期判不立；行为评估自建判不立）：批次 4 开工前重议。
 - **P1 骨架 D3（propose 不产新基因）**：批次 6 的序 30 需重拍（批次 1 序 1 已就产出面重拍一次）。**schema ADR S2（事件 kind 集与键集）**：批次 1 的序 1–3 已三轮重拍收敛（五 kind、必需键 + 按 kind 允许可选键），序 30 若再触该面须重拍。
 - **「已判不做」清单**内任何一项被选中，逐条重拍（见下节）。
