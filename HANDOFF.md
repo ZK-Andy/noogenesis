@@ -11,6 +11,8 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-13｜**批次 3 序 11 Detect 逐源裁决 `session/event`（LIGHT；R2 2B+5S 全采纳）**：D2 禁区重拍为「默认关 + 逐源门槛」，本源判不立（写面封、读面开；四候选面无可命名具体失败）。[ADR](.agents/notes/implemented/architecture/2026-09-13-detect-source-verdict-session-event.md)；`75b38fe`→`c7639ea`。README 核对：无漂移。
+
 - 2026-09-13｜**批次 2 序 10 `dsh-invariants` 接入裁决（LIGHT；0B+0S）**：本包零自有运行时不变量（设计意图已由字面预算/契约闸兑现）、落蓝图 §9 封条 → 判不接；重议触发 T1–T3，批次 2 收口。[ADR](.agents/notes/implemented/architecture/2026-09-13-invariants-integration-verdict.md)；`23b6a21`→`18379cc`。README 核对：无漂移。
 
 - 2026-09-13｜**批次 2 序 9 M1 升格档评估（LIGHT；0B+5S 全采纳）**：服从面实测 47/51（92%）照办、未照办 4 例零代价归因 → 维持单次 advice、不升阻断；升格触发 T1–T3 具名。[ADR](.agents/notes/implemented/architecture/2026-09-13-m1-escalation-verdict.md)；`ec010dd`→`a6a96cd`。README 核对：无漂移。

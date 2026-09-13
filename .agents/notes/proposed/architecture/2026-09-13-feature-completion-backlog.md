@@ -21,7 +21,7 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 ### 排序原则
 
 1. **协议/原语先行**：后续批次的量测面与数据面都建立在原语上（Capsule / Mutation / Event 扩字段 / blast-radius）。
-2. **不触决策封条者先开工**：落在既有禁区（P1 骨架 D2；M2「Detect 显式不做」）或既判不立（记忆线第二期）之上的功能，排序保留其位置，但**必须先有独立的重拍 ADR 才开工**（见「需显式重拍的决策面」）。
+2. **不触决策封条者先开工**：落在既判不立（记忆线第二期）或既有禁区之上的功能，排序保留其位置，但**必须先有独立的重拍 ADR 才开工**（见「需显式重拍的决策面」）；Detect 面按站立规则办理——自动 Detect 默认关 + 逐源过 HERO 两问，重拍件 = [裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-session-event.md)。
 3. **一件一交**：每项独立可验（ADR + 实现 + 门禁 + FULL 三审），不合并成大批；序号即开工建议顺序，允许按依赖跳批。
 
 每批纪律：按 [feature-flow](../../../workflows/feature-flow.md) 走（立项拍板 → ADR → 实现 → 门禁 → FULL 三审 → 本地提交）；未经用户明示不推送。
@@ -50,14 +50,14 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 | 9 | M1 升格档（重复违约 → 阻断）评估 | 蓝图 §7 M1 | done（[评估 ADR](../../implemented/architecture/2026-09-13-m1-escalation-verdict.md)）：服从面实测 47/51（92%）照办、未照办 4 例零代价归因（带代价两例在 advice 发行面之前）→ 维持单次 advice 档，判不立升格；升格触发 T1–T3 具名 |
 | 10 | `dsh-invariants` 接入（机械不变量） | 主设计 §7.3/§11.2 | done（[裁决 ADR](../../implemented/architecture/2026-09-13-invariants-integration-verdict.md)）：本包零自有运行时不变量（A8 后不写会话事件，会话级态全在进程内存）、两条设计意图已由字面预算 + 契约闸兑现 → 判不接；落蓝图 §9「invariant 伴生件族」不做清单（要做须重拍），重议触发 T1–T3 具名 |
 
-**批次 3 — 生命周期自动面（须先重拍禁区）**
+**批次 3 — 生命周期自动面**
 
 | 序 | 功能 | 设计出处 | 备注 |
 |---|---|---|---|
 | 11 | Detect 逐源裁决：`session/event` | 主设计 §6；P1 D2 禁区 | done（[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-session-event.md)）：D2 禁区重拍为「默认关 + 逐源门槛」，本源 HERO 两问判不立 |
-| 12 | Detect 逐源裁决：`agent/error` | 同上 | 同上 |
-| 13 | Detect 逐源裁决：`agent/turn-stopping` | 同上 | 同上 |
-| 14 | Detect 逐源裁决：`tool/result` | 同上 | 同上 |
+| 12 | Detect 逐源裁决：`agent/error` | 同上 | 逐源答 HERO 两问 |
+| 13 | Detect 逐源裁决：`agent/turn-stopping` | 同上 | 逐源答 HERO 两问 |
+| 14 | Detect 逐源裁决：`tool/result` | 同上 | 逐源答 HERO 两问 |
 | 15 | 情境按需注入（命中节动态信号，替代静态 `injectSignals`） | 主设计 §8.3 | 受 D2 禁区约束 |
 | 16 | Hypothesize 阶段（记录「信号 + gene + mutation → 预期结果」） | 主设计 §6 | 落 memory-graph，依赖序 18 |
 | 17 | 观测面自动接线（写者集合扩至挂载面） | 记忆线 D7-3 | 现判「挂载面暂不立」，重议触发 = 出现需无人写入的真实场景 |
