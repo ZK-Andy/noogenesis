@@ -75,4 +75,4 @@
 - [x] （A）M1 批 A 守卫三件套 2026-09-10（FULL 三审全采纳；三件 v0 落地），ADR [2026-09-10-m1-guard-anti-overdesign](.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) implemented（分批批注）。
 - [x] （A）M1 批 B 防过度混合 D 2026-09-10（FULL 三审全采纳；契约块 + 蒸馏篇 + cases 索引 + 检查项第 5 条），ADR [2026-09-10-m1-guard-anti-overdesign](.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) 第二条 Review 行在案。
 - [x] （D）护栏建设轮余项收尾 2026-09-13：建议行落地（`token-baseline.mts` 每会话一行读数，运行期形状闸）+ 两本账落点（发版账 = release ADR 实发节，三次已回填），[ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md) 落账。
-- [ ] （A）批次表（46 项）开工中：**序 30 蒸馏已落**（`distill` 三子命令 + `candidates/` 候选面，[distill 命令 ADR](.agents/notes/implemented/architecture/2026-09-14-distill-command.md)）；游标 = **批次 6 余序 31–33**。单源 = [批次表 ADR](.agents/notes/proposed/architecture/2026-09-13-feature-completion-backlog.md)。
+- [ ] （A）批次表（46 项）开工中：**批次 6 已收口**（序 30 蒸馏已落；序 31–33 判不立 / 顺延，[裁决 ADR](.agents/notes/implemented/architecture/2026-09-14-batch6-composition-meta-verdict.md)）；游标 = **批次 7 序 34**。单源 = [批次表 ADR](.agents/notes/proposed/architecture/2026-09-13-feature-completion-backlog.md)。

@@ -13,7 +13,7 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 现状事实（2026-09-13 实读，只列差集判定相关者）：
 
 - **已交付**：Gene 协议 + 引擎八命令（select/propose/evaluate/solidify/pull/observe/capsule/mutation）+ `gates.json` 白名单 + Capsule / Mutation 两原语与事件 kind 五件 + Event 扩字段（跨链 `mutation_id`/`capsule_id` + 环境指纹 `env_fingerprint`）+ Evaluate 的 blast-radius 改动面度量（文件 / 行 / 范围）+ 候选比较 / 答案盲选择判据（通道封闭集 + 不排序；机器面判不立）；适配层 A1–A7 接线（A5 会话开始位与 A6 停止前续跑能力位均零策略；prompt 提交 / 工具前后折进 A2/A3/A4）；M1 技能守卫 + M2 规范面接入；token 基线两轨（预算判据 + 宿主读数）；技能随库分发；P2 只读消费（pull + manifest + 缓存合并）；记忆线第一期观测面与 `advice:` 建议档；胶囊 01 内容主体（7 技能 + method/cookbook/流程卡/门禁）。
-- **未交付**：下方批次表余 19 项（序 1–20 与序 23/24/25/27/28/29/30 已落终态，游标 = 批次 6 余序 31–33；序 21/22/26 为前提/策展保留位）。
+- **未交付**：下方批次表余 16 项（序 1–20 与序 23–25、27–33 已落终态，游标 = 批次 7 序 34；序 21/22/26 为前提/策展保留位）。
 - **受宿主约束未交付**：A8 会话事件轨 / 状态投影——撤除理由 = 宿主读路径对未标 `ignorable` 的下游插件事件 fail-closed，且 `Session.append` 无 `ignorable` 写入口。连带 M3 原形态记录件（同节重议触发；同一失败面已由 session-close 对账步承接，[序 8 重拍 ADR](../../implemented/architecture/2026-09-13-m3-review-record-verdict.md)）。
 
 ## Proposal
@@ -89,9 +89,9 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 | 序 | 功能 | 设计出处 | 备注 |
 |---|---|---|---|
 | 30 | 蒸馏（失败 → 基因候选，人工在环） | 主设计 §12-P3 | done（[distill 命令 ADR](../../implemented/architecture/2026-09-14-distill-command.md)；边界单源 = [P1 D3 重拍 ADR](../../implemented/architecture/2026-09-14-p1-d3-distillation-reshoot.md)） |
-| 31 | 组合（Capsule → 预设 / 流程） | 主设计 §12-P3 | 依赖序 1 |
-| 32 | 策略自身可搜索（元演化） | 主设计 §12-P3 | — |
-| 33 | 长程递归演化 | 主设计 §12-P3 | 依赖序 30–32 |
+| 31 | 组合（Capsule → 预设 / 流程） | 主设计 §12-P3 | done（[批次 6 裁决 ADR](../../implemented/architecture/2026-09-14-batch6-composition-meta-verdict.md)）：判不立——能力面归口行 36 + 序 25 渲染语义门（触发 T1–T3 具名）；补取证 = `capsules/` 零实例、宿主组合面 = CLI + `$DSH_HOME/profiles/` |
+| 32 | 策略自身可搜索（元演化） | 主设计 §12-P3 | done（[批次 6 裁决 ADR](../../implemented/architecture/2026-09-14-batch6-composition-meta-verdict.md)）：判不立——与序 5 C3-1 同面，触发条不新立 |
+| 33 | 长程递归演化 | 主设计 §12-P3 | done（[批次 6 裁决 ADR](../../implemented/architecture/2026-09-14-batch6-composition-meta-verdict.md)）：顺延（判不立）——依赖行 32 判立 + D2 逐源任一解锁 |
 
 **批次 7 — P4 分发**
 
@@ -99,7 +99,7 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 |---|---|---|---|
 | 34 | 一行安装收口（npm 已具备，补 profile 一键） | 主设计 §12-P4 | — |
 | 35 | 多 harness 适配 | 主设计 §12-P4 | 现单宿主（DSH） |
-| 36 | 胶囊组合成 preset / profile | 主设计 §2.3/§11.2 | 依赖序 1/25 |
+| 36 | 胶囊组合成 preset / profile | 主设计 §2.3/§11.2 | 依赖序 1/25；组合能力面归口本行（行 31 判不立，[指针](../../implemented/architecture/2026-09-14-batch6-composition-meta-verdict.md)） |
 | 37 | 插件市场 / capability manifest 适配 | 主设计 §11.2/§12-P4 | — |
 
 **批次 8 — 内容域（主设计 §10）**
@@ -147,5 +147,5 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 
 - **单源与指针**：本表是设计稿差集的唯一单源；[HANDOFF-todos](../../../../HANDOFF-todos.md) 承载当批可办项，[HANDOFF.md](../../../../HANDOFF.md) ⏭ 指向本表。
 - **状态推进**：每批收口时更新本表对应行（pending → done）；全部完成或用户改向时，本笔记转 implemented 或由新笔记取代。
-- **封条纪律**：批次 3 的 D2 重拍件已立（[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-session-event.md)：默认关 + 逐源门槛），行 11–15 已全部裁决（全判不立）；批次 4 的记忆线重拍件已立（[重拍 ADR](../../implemented/architecture/2026-09-14-memory-line-phase2-reshoot.md)），行 16–20 落终态；批次 5 的开题轮拍板件已落（[开题轮 ADR](../../implemented/architecture/2026-09-14-batch5-opening-round.md)），行 23–29 落终态（21/22/26 保留位），游标 = 批次 6（序 30 已落 [distill 命令 ADR](../../implemented/architecture/2026-09-14-distill-command.md)；序 31–33 待办）。
+- **封条纪律**：批次 3 的 D2 重拍件已立（[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-session-event.md)：默认关 + 逐源门槛），行 11–15 已全部裁决（全判不立）；批次 4 的记忆线重拍件已立（[重拍 ADR](../../implemented/architecture/2026-09-14-memory-line-phase2-reshoot.md)），行 16–20 落终态；批次 5 的开题轮拍板件已落（[开题轮 ADR](../../implemented/architecture/2026-09-14-batch5-opening-round.md)），行 23–29 落终态（21/22/26 保留位）；批次 6 收口件已落（[裁决 ADR](../../implemented/architecture/2026-09-14-batch6-composition-meta-verdict.md)）——行 30 已交付、行 31–33 判不立 / 顺延，游标 = 批次 7（序 34）。
 - **不承诺工期**：本表承诺的是「差集不再重新对账」，不是排期。
