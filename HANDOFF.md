@@ -11,6 +11,8 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-13｜**批次 2 序 9 M1 升格档评估（LIGHT；0B+5S 全采纳）**：服从面实测 47/51（92%）照办、未照办 4 例零代价归因 → 维持单次 advice、不升阻断；升格触发 T1–T3 具名。[ADR](.agents/notes/implemented/architecture/2026-09-13-m1-escalation-verdict.md)；`ec010dd`→`a6a96cd`。README 核对：无漂移。
+
 - 2026-09-13｜**批次 2 序 8 M3 记录件重拍（LIGHT；0B+2S 全采纳）**：M3 原形态「记录落事件轨」立宿主约束面（A8 已封）判不可实现；同一失败面由 session-close ③ 对账承接，②/阻断候选维持既有触发、不新立机器件。[ADR](.agents/notes/implemented/architecture/2026-09-13-m3-review-record-verdict.md)；`8d6d829`→`b5b603f`。README 核对：无漂移。
 
 - 2026-09-13｜**批次 2 序 7 A6 停止前能力位（FULL 三审 R1 1B/2S、R2 2B/3S、R3 4B/3S；采纳 13 拒绝 2）**：`agent/turn-stopping` 接线（零策略）；档位结论 = 停止前只有续跑档（`inject` 同为 `next-step` 入队）。[ADR](.agents/notes/implemented/architecture/2026-09-13-a6-turn-stopping-mount.md)；`4b70c8d`→`6b86afa`。
@@ -49,8 +51,6 @@
 - 2026-09-12｜**演化轮首次落账批（FULL 三审 R1 1B/5S、R2 2B/5S〔B2 误报驳回〕、R3 2B/2S；采纳 11 拒绝 1）**：push 面正则前缀容错 + 池件销账口径（[修复件](.agents/notes/implemented/bug-fix/2026-09-12-skill-guard-push-pattern-reachability.md) + 销账 ADR）；`cf26475`→`bb0d3a0`。README 无漂移。
 
 - 2026-09-12｜**演化轮池独立成件批（FULL 三审全 ok；采纳 8 拒绝 1）**：新增池件 [HANDOFF-evolution-pool.md](HANDOFF-evolution-pool.md)（吸收后处置规则已落地）+ [池件 ADR](.agents/notes/implemented/process/2026-09-12-evolution-pool-file.md)；归集面指针全域改指；`6b95e36`→`6376d92`。README 已同步（结构表加池件）。
-
-- 2026-09-12｜**技能 provider 失效取证轮（零代码变更）**：普查 desktop 199/199 + dsh-frecency 11/11 会话 `noo-*`=0（自举仓由文件系统面掩盖）；修复立项后次会话落地（[ADR](.agents/notes/implemented/bug-fix/2026-09-12-bank-skill-provider-registration.md)：注册走可重试注入）。
 
 
 ## 背景
@@ -91,7 +91,7 @@ Noogenesis（心源）：DeepSeek Harness 之上的"蜂群进化框架"；终极
 - **护栏三件均已终局**（拍板与判据单源 = [护栏建设轮 ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md)）：token 基线两轨 = 常驻注入字面预算判据（装载期 fail-closed）+ 宿主读数建议行（每会话一行 info，`adapters/dsh/token-baseline.mts`；形状断言改运行期闸，理由与触发条见该 ADR 勘误）；改进度量 = 两本账（评审账 = ADR `Review:` 行 + 滚动窗条目；发版后修复账 = release ADR 实发节，三次已回填）；canary 判不立。
 - **A6 停止前能力位已接线**（批次表序 7；[ADR](.agents/notes/implemented/architecture/2026-09-13-a6-turn-stopping-mount.md) implemented，FULL 三审 R1 1B/2S、R2 2B/3S、R3 4B/3S，采纳 13 拒绝 2）：`agent/turn-stopping` 单 listener——`mount.mts` 窄面 + `mergeTurnStopping`（首个 `steer` 胜出）、`mount-policies.mts` 零策略通道、`host-api-contract.mts` 键存在性 + payload 形状相容两组断言、selftest 合并语义 + 零策略冒烟。**档位结论 = 停止前只有续跑档**：宿主回合循环按 `inbox.nextStep.length === 0` 收口，`agent.inject` 在该边界同为 `next-step` 入队（同样再跑一步），故本点无 advice 面。策略面：记录投影判不立（A8 已封）、评审收口触点提醒维持缓议、停止前扫描维持不做——触发条见该 ADR Decision 2。
 - **M3 评审实质执行记录件已判终态**（批次表序 8；[重拍 ADR](.agents/notes/implemented/architecture/2026-09-13-m3-review-record-verdict.md) implemented）：原形态「记录落事件轨」立宿主约束面判不可实现（A8 已封：`Session.append` 无 `ignorable` 写入口 + 读路径对下游插件事件 fail-closed）；同一失败面（声称 FULL 收口而三路无记录）由 session-close 步骤 2 的 ③ 对账步零代码承接（2026-09-10 落卡）；② 收口触点提醒（advice）与停止前候选（续跑档）维持既有触发（= ③ 对账抓到真实漏网，首跑以来的收尾对账均留痕、零假完成），不新立机器件。
-- **M1 升格档已判终态**（批次表序 9；[评估 ADR](.agents/notes/implemented/architecture/2026-09-13-m1-escalation-verdict.md) implemented）：服从面实测（宿主卷 328 份，单机单仓）advice 注入 51 次、其中 47 次（92%）随后照办，未照办的 4 例全在一卷且含「插件态复位后重发行」噪声，零件归因到返工或缺陷 → **维持单次 advice 档，不升阻断**（命中面是语义代理，非 lint 式客观违规判据）；升格触发 T1（代价实例）/T2（客观判据出现）/T3（误报构成骚扰 → 反向收窄）具名。
+- **M1 升格档已判终态**（批次表序 9；[评估 ADR](.agents/notes/implemented/architecture/2026-09-13-m1-escalation-verdict.md) implemented）：服从面实测（宿主卷实扫 183 份 v3 卷，单机单仓）advice 注入 51 次、其中 47 次（92%）随后照办；未照办的 4 例全在一卷且含「插件态复位后重发行」噪声、零代价归因，带评审代价的两例发生在 advice 发行面存在之前 → **维持单次 advice 档，不升阻断**（命中面是语义代理，非 lint 式客观违规判据）；升格触发 T1（代价实例，须 advice 已发行）/T2（客观判据出现）/T3（服从率跌破基线 → 反向收窄）具名。
 - **适配层宿主服务读取面已统一懒取用**（ADR [2026-09-13-adapter-service-read-lazy-get](.agents/notes/implemented/bug-fix/2026-09-13-adapter-service-read-lazy-get.md) + [2026-09-13-host-service-reads-gate](.agents/notes/implemented/process/2026-09-13-host-service-reads-gate.md) implemented）：可缺席宿主服务一律 `ctx.get(<name>)` 取用、不进 `inject` 声明、不直读属性（cordis runtime fiber 对未 inject 的服务直读即抛，降级路径会退化成一条 warn）；提问面改 `ctx.get("userQuestions")`，门禁新增 `host-service-reads`（白名单 = `inject` 声明 ∪ cordis mixin，判据边界与覆盖面 fail-closed 见闸件头注）；`verify-review-brief` 补简报 `base` 可解析发射前判据（[ADR](.agents/notes/implemented/bug-fix/2026-09-13-review-brief-base-resolvability.md)）。
 - **编码规范机器强制已落地**（ADR [2026-09-08-c2-lint-enforcement](.agents/notes/implemented/architecture/2026-09-08-c2-lint-enforcement.md) implemented，FULL 三审全采纳）：oxlint 1.82.0 显式白名单（根 `.oxlintrc.json`，逐条理由）+ 导出面契约注释闸（`verify-export-docs.mts`，`adapters/dsh` + `scripts`）入 `engine/gates.json`（pre-commit/pre-push/CI 同判据）；首轮清 19 处真实缺陷 + 4 处注释缺口 + 1 死导出；[code-standards](docs/method/code-standards.md) 档位同步（2.1 存在性 / 2.3 词面 / §3 机械子集升 `[M]`，2.4 留 `[R]`）。
 - **档位触发面已扩精度**（ADR [2026-09-11-review-tier-classification-precision](.agents/notes/implemented/process/2026-09-11-review-tier-classification-precision.md) implemented，FULL 三审 14 项全采纳）：`FULL_TRIGGERS` 增三条 —— 产品源码 `engine/**`、`adapters/**`（顶层目录）与装载补丁面 `cordis.patch.yml`（文件名判据）；「proposed ADR 自诺」判定与证据判定共用 `adrHeadStatus`（头部 15 行窗口、围栏内不算）；`review.md` §1 行为契约面口径按本仓改写（源仓遗留的 `src/**`/`tests/**` 措辞删除）；2026-09-05 闸件 ADR 的手抄副本改指针 + 三处 `.py` 死指针同步。噪声实测 n=296：仅产品源码提交 26（8.8%），过度触发面 6 笔（纯文档/夹具）。

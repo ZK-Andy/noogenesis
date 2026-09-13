@@ -47,7 +47,7 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 | 6 | A5 其余三时刻（prompt 提交 / 工具前后 / 停止前） | 主设计 §11.1；蓝图 §7 A5 | done（判已交付、无新增面：会话开始位自接，prompt 提交折进 A2、工具前后折进 A3/A4，停止前 = 序 7 的 A6——四时刻映射实证见 [B4 ADR](../../implemented/architecture/2026-09-08-b4-mount-wiring.md) Decision 1「A5 归口」） |
 | 7 | A6 停止前守卫（`agent/turn-stopping`） | 蓝图 §7 A6 | done（[A6 能力位 ADR](../../implemented/architecture/2026-09-13-a6-turn-stopping-mount.md)）：交付 = 能力位接线（零策略）+ 档位结论 = 本点只有续跑档（`steer`），停止前无 advice 面；记录投影 / 评审触点 / 停止前扫描三条策略候选的裁决与触发条见该 ADR Decision 2 |
 | 8 | M3 评审实质执行记录件 | 蓝图 §7 M3 | done（[重拍 ADR](../../implemented/architecture/2026-09-13-m3-review-record-verdict.md)）：原形态「记录落事件轨」立宿主约束面判不可实现；同一失败面已由 session-close ③ 对账承接（零代码，2026-09-10 落卡）；② 与阻断候选维持既有触发，不新立机器件 |
-| 9 | M1 升格档（重复违约 → 阻断）评估 | 蓝图 §7 M1 | done（[评估 ADR](../../implemented/architecture/2026-09-13-m1-escalation-verdict.md)）：服从面实测 47/51（92%）照办、零代价归因 → 维持单次 advice 档，判不立升格；升格触发 T1–T3 具名 |
+| 9 | M1 升格档（重复违约 → 阻断）评估 | 蓝图 §7 M1 | done（[评估 ADR](../../implemented/architecture/2026-09-13-m1-escalation-verdict.md)）：服从面实测 47/51（92%）照办、未照办 4 例零代价归因（带代价两例在 advice 发行面之前）→ 维持单次 advice 档，判不立升格；升格触发 T1–T3 具名 |
 | 10 | `dsh-invariants` 接入（机械不变量） | 主设计 §7.3/§11.2 | 未接 |
 
 **批次 3 — 生命周期自动面（须先重拍禁区）**
