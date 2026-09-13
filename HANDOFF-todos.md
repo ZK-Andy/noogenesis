@@ -75,4 +75,4 @@
 - [x] （A）M1 批 A 守卫三件套 2026-09-10（FULL 三审全采纳；三件 v0 落地），ADR [2026-09-10-m1-guard-anti-overdesign](.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) implemented（分批批注）。
 - [x] （A）M1 批 B 防过度混合 D 2026-09-10（FULL 三审全采纳；契约块 + 蒸馏篇 + cases 索引 + 检查项第 5 条），ADR [2026-09-10-m1-guard-anti-overdesign](.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) 第二条 Review 行在案。
 - [x] （D）护栏建设轮余项收尾 2026-09-13：建议行落地（`token-baseline.mts` 每会话一行读数，运行期形状闸）+ 两本账落点（发版账 = release ADR 实发节，三次已回填），[ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md) 落账。
-- [ ] （A）设计稿功能补全批次表（46 项有序）逐批开工中：批次 1 序 1–5 已收口、**序 6 判已交付（无新增面）、序 7 A6 停止前能力位已接线**，下一件 = 批次 2 序 8 M3 评审实质执行记录件（须先立重拍 ADR）；批次 3/4 同须先立重拍 ADR。进度、覆盖来源与各批 ADR 指针单源 = [批次表 ADR](.agents/notes/proposed/architecture/2026-09-13-feature-completion-backlog.md)。
+- [ ] （A）设计稿功能补全批次表（46 项有序）逐批开工中：批次 1 序 1–5 已收口、**序 6 判已交付（无新增面）、序 7 A6 停止前能力位已接线、序 8 M3 记录件重拍判不可实现**，下一件 = 批次 2 序 9 M1 升格档（重复违约 → 阻断）评估；批次 3/4 同须先立重拍 ADR。进度、覆盖来源与各批 ADR 指针单源 = [批次表 ADR](.agents/notes/proposed/architecture/2026-09-13-feature-completion-backlog.md)。
