@@ -6,12 +6,12 @@ import * as os from 'os';
 import * as path from 'path';
 import { execFileSync } from 'child_process';
 
-import { normalizeSignal, sha256Hex, EngineError, envFingerprint } from './util.js';
+import { normalizeSignal, sha256Hex, EngineError, envFingerprint, deriveSlots, blastRadius } from './util.js';
 import { loadGates } from './gates.js';
 import { selectGenes, runSelect } from './select.js';
 import { validateObservation, buildObservation, recordObservation, readObservations, EVIDENCE_MAX_CHARS } from './observe.js';
 import { renderGene } from './propose.js';
-import { evaluateGeneObj, checkConstraints } from './evaluate.js';
+import { evaluateGeneObj, checkConstraints, formatReport } from './evaluate.js';
 import { solidify, retire, recordCapsule, recordMutation } from './solidify.js';
 import { genePath, scanGenes, defaultCacheDir } from './gene.js';
 import { capsulePath, readCapsule, renderCapsule } from './capsule.js';
@@ -298,7 +298,26 @@ function selfTest() {
     ev2 = evaluateGeneObj(td, gatesDir, forb, 'x');
     ok(ev2.ok === false && ev2.violations.some((v) => v.includes('forbidden_paths')),
       'evaluate: forbidden_paths violation -> FAIL');
-    ok(checkConstraints({ constraints: {} }, ['a.txt']).length === 0, 'constraints: none set -> no violation');
+    // 改动面度量（批次 1 序 4 ADR B1/B4）：index 面 / 未跟踪整文件行数 / scope 排序 / 二进制跳过
+    {
+      const bd = mkRepo(mkTemp());
+      fs.mkdirSync(path.join(bd, 'engine'), { recursive: true });
+      fs.writeFileSync(path.join(bd, 'engine', 'new.txt'), 'one\ntwo\nthree\n');
+      fs.writeFileSync(path.join(bd, 'base.txt'), 'base\nline2\n');
+      git(bd, ['add', 'base.txt']);
+      const bl = blastRadius(bd, deriveSlots(bd));
+      ok(bl.files === 2, 'blast: index-only + untracked both counted in files');
+      ok(bl.added === 4 && bl.deleted === 0, 'blast: index churn + untracked whole-file lines');
+      ok(JSON.stringify(bl.scope) === JSON.stringify([{ dir: 'base.txt', files: 1 }, { dir: 'engine', files: 1 }]),
+        'blast: scope = top-level segment counts in deterministic order');
+      ok(checkConstraints({ constraints: {} }, bl).length === 0, 'constraints: none set -> no violation');
+      ok(formatReport({ ok: true, gene: {}, ref: 'x', violations: [], results: [], blast: bl })
+        .includes('blast radius: files 2, lines +4/-0, scope base.txt(1), engine(1)'),
+        'evaluate: blast radius line is the churn report face');
+      fs.writeFileSync(path.join(bd, 'engine', 'bin.dat'), Buffer.from([0, 1, 2, 0]));
+      const bl2 = blastRadius(bd, deriveSlots(bd));
+      ok(bl2.files === 3 && bl2.added === 4, 'blast: binary untracked file counts as file, 0 lines');
+    }
 
     // spawn 失败根因并入 tail（code=-1 时 stderr 常空——二进制缺失只在此可见）
     writeGates(gatesDir, [{ name: 'ghost-bin', cmd: 'no-such-binary-xyz', args: ['--version'] }]);

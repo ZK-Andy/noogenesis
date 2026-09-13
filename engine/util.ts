@@ -1,7 +1,9 @@
-// util.ts — 引擎共享件：信号归一化 / SHA-256 / 结构化 spawn（不走 shell、最小 env、cwd 锁仓根）/ git 封装。
+// util.ts — 引擎共享件：信号归一化 / SHA-256 / 结构化 spawn（不走 shell、最小 env、cwd 锁仓根）/ git 封装 / 改动面度量。
 // 安全模型五条的实现载体（schema ADR S3；单源 .agents/notes/implemented/architecture/2026-09-05-gene-event-schema.md）。
 
 import * as crypto from 'crypto';
+import * as fs from 'fs';
+import * as path from 'path';
 import { spawnSync } from 'child_process';
 
 const KEBAB_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
@@ -77,12 +79,15 @@ function deriveSlots(repoRoot: string) {
   return { outgoing_base: base, head: head.stdout.trim() };
 }
 
-// 出账变更面（与 scripts/change-scope.mts 同口径）：已提交 diff + 未暂存 diff + 未跟踪，dedupe 排序。
+// 出账变更面（与 scripts/change-scope.mts 同口径）：已提交 diff + index 未提交 diff + 未暂存 diff + 未跟踪，dedupe 排序。
 // -c core.quotePath=off：非 ASCII 文件名保持原样（默认八进制转义会让 forbidden_paths 前缀匹配失配）。
+// index 面无则「暂存后未提交」读成空集（批次 1 序 4 ADR B4）：`diff --name-only` 是 worktree→index，
+// 覆盖不到 index→HEAD。
 function changedPaths(repoRoot: string, slots: { outgoing_base: string; head: string }) {
   const out = new Set<string>();
   const cmds = [
     ['diff', '--name-only', `${slots.outgoing_base}...HEAD`],
+    ['diff', '--cached', '--name-only'],
     ['diff', '--name-only'],
     ['ls-files', '--others', '--exclude-standard'],
   ];
@@ -92,6 +97,77 @@ function changedPaths(repoRoot: string, slots: { outgoing_base: string; head: st
     for (const line of r.stdout.split('\n')) if (line.trim()) out.add(line.trim());
   }
   return [...out].sort();
+}
+
+// 改动面度量（批次 1 序 4 ADR B1）：文件数 / 行 churn / 顶层段分布同源返回，
+// 计量面 = base→工作区（已提交区间 + index + 未暂存 + 未跟踪）。单源 .agents/notes/implemented/architecture/2026-09-13-evaluate-blast-radius.md。
+interface BlastRadius {
+  files: number;
+  added: number;
+  deleted: number;
+  scope: { dir: string; files: number }[];
+  paths: string[];
+}
+export type { BlastRadius };
+
+// 顶层路径段分布：文件数降序、同数按段名码点序（确定性输出面）。
+function scopeOf(paths: string[]): { dir: string; files: number }[] {
+  const counts = new Map<string, number>();
+  for (const p of paths) {
+    const seg = p.split('/')[0] ?? p;
+    counts.set(seg, (counts.get(seg) ?? 0) + 1);
+  }
+  return [...counts.entries()]
+    .map(([dir, files]) => ({ dir, files }))
+    .sort((a, b) => (b.files - a.files) || (a.dir < b.dir ? -1 : a.dir > b.dir ? 1 : 0));
+}
+
+// numstat 行的增删合计：三列制表分隔；二进制位为 `-`（Number → NaN），非数即跳过不计行。
+function numstatTotals(repoRoot: string, args: string[]): { added: number; deleted: number } {
+  const r = git(repoRoot, ['-c', 'core.quotePath=off', ...args]);
+  if (r.code !== 0) throw new EngineError(`git ${args.join(' ')} failed: ${r.stderr.trim()}`);
+  let added = 0;
+  let deleted = 0;
+  for (const line of r.stdout.split('\n')) {
+    const [a, d] = line.split('\t');
+    if (a === undefined || d === undefined) continue;
+    const an = Number(a);
+    const dn = Number(d);
+    if (Number.isFinite(an)) added += an;
+    if (Number.isFinite(dn)) deleted += dn;
+  }
+  return { added, deleted };
+}
+
+// 未跟踪文件行数：无基线可 diff，唯一可复算读数即整文件行数；二进制（含 NUL）与不可读文件计 0 行。
+function untrackedLines(repoRoot: string, rels: string[]): number {
+  let total = 0;
+  for (const rel of rels) {
+    let buf: Buffer;
+    try { buf = fs.readFileSync(path.join(repoRoot, rel)); } catch { continue; }
+    if (buf.includes(0)) continue;
+    const text = buf.toString('utf8');
+    if (!text) continue;
+    total += text.split('\n').length - (text.endsWith('\n') ? 1 : 0);
+  }
+  return total;
+}
+
+function blastRadius(repoRoot: string, slots: { outgoing_base: string; head: string }): BlastRadius {
+  const paths = changedPaths(repoRoot, slots);
+  const committed = numstatTotals(repoRoot, ['diff', '--numstat', `${slots.outgoing_base}...HEAD`]);
+  const index = numstatTotals(repoRoot, ['diff', '--cached', '--numstat']);
+  const unstaged = numstatTotals(repoRoot, ['diff', '--numstat']);
+  const untracked = git(repoRoot, ['-c', 'core.quotePath=off', 'ls-files', '--others', '--exclude-standard']);
+  if (untracked.code !== 0) throw new EngineError(`git ls-files --others failed: ${untracked.stderr.trim()}`);
+  const untrackedAdded = untrackedLines(repoRoot, untracked.stdout.split('\n').map((s) => s.trim()).filter(Boolean));
+  return {
+    files: paths.length,
+    added: committed.added + index.added + unstaged.added + untrackedAdded,
+    deleted: committed.deleted + index.deleted + unstaged.deleted,
+    scope: scopeOf(paths),
+    paths,
+  };
 }
 
 function pathUnder(relPath: string, prefix: string): boolean {
@@ -105,4 +181,5 @@ function pathUnder(relPath: string, prefix: string): boolean {
 export {
   EngineError, KEBAB_RE, KEBAB_REF_RE,
   normalizeSignal, sha256Hex, envFingerprint, run, git, deriveSlots, changedPaths, pathUnder,
+  blastRadius,
 };

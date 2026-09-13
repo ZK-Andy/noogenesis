@@ -5,7 +5,7 @@
  * 输出三部分：
  *   base  /  head  —— 本次范围的两个锚点
  *   commits      —— base..head 的提交列表
- *   changed      —— 涉及的路径：已提交 diff + 工作区未暂存 diff + 未跟踪文件（dedupe）
+ *   changed      —— 涉及的路径：已提交 diff + index 未提交 diff + 工作区未暂存 diff + 未跟踪文件（dedupe）
  *
  * 用法（仓库根运行）：
  *   node scripts/change-scope.mts [<base-ref> [<head-ref>]]   # 显式指定；缺省自动取最近 fork-point
@@ -20,7 +20,7 @@
  *
  * stderr 口径（R1 评审对齐）：与 bash 原版一致——bash 以 `2>/dev/null` 显式
  * 压制的调用（rev-parse --short / merge-base / 三点 diff）此处同样丢弃，
- * 其余（rev-list 回退 / log / 未暂存 diff / ls-files）透传；stdout 是对账面，
+ * 其余（rev-list 回退 / log / index 与未暂存 diff / ls-files）透传；stdout 是对账面，
  * 诊断面不静默。
  * 排序口径：changed paths 用码点序（等价 `LC_ALL=C sort`，确定性）；bash 原版
  * 裸 `sort -u` 随环境 locale 漂移（含 `_` 的文件名两种排序不同）——TS 面钉死
@@ -29,8 +29,10 @@
  * Provenance：蒸馏自 dotnet-deepseek-harness-desktop/scripts/change-scope.sh（MIT，
  * 2026-09-05），经本仓 bash 件（quotePath=off 修复，ADR
  * .agents/notes/implemented/bug-fix/2026-09-05-change-scope-quotepath.md）行为恒等
- * 端口为 TS（B5 切换批，bash 退役收尾）：输出格式与三条 path 命令
- * （`-c core.quotePath=off`，非 ASCII 文件名原样）逐一保持。
+ * 端口为 TS（B5 切换批，bash 退役收尾）：输出格式与 path 命令
+ * （`-c core.quotePath=off`，非 ASCII 文件名原样）逐一保持；index 面（`diff --cached`）
+ * 随批次 1 序 4 补齐（ADR .agents/notes/implemented/architecture/2026-09-13-evaluate-blast-radius.md
+ * B4：「暂存后未提交」只在该面可见，与 engine changedPaths 同口径）。
  */
 
 import { spawnSync } from "node:child_process";
@@ -82,6 +84,7 @@ function main(): number {
   const paths = new Set<string>();
   for (const [quiet, args] of [
     [true, ["-c", "core.quotePath=off", "diff", "--name-only", `${base}...${head}`]],
+    [false, ["-c", "core.quotePath=off", "diff", "--cached", "--name-only"]],
     [false, ["-c", "core.quotePath=off", "diff", "--name-only"]],
     [false, ["-c", "core.quotePath=off", "ls-files", "--others", "--exclude-standard"]],
   ] as const) {

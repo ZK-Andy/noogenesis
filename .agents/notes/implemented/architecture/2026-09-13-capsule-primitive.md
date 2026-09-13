@@ -37,7 +37,7 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/archit
 | `outcome` | object | `{status: ok \| fail, reason?}`；`fail` 必带 `reason`，`ok` 不得带 |
 | `evidence` | string[]，≥1 | 一行证据摘要（门禁 / 评审 / CI 输出） |
 
-**不收的字段**（逐条理由）：`diff` / `content`——git 自身即内容面单源，复写一份是双记账；`score`——骨架 D4 已拍文档域无可信改进分数，二值 `status` 是其可执行形态；`blast_radius`——度量随批次表序 4 落地时同批扩字段（S2 的「字段先于原语 = 死字段」同则）；`confidence` / `cost_tokens` / `cost_usd`——无生产者。
+**不收的字段**（逐条理由）：`diff` / `content`——git 自身即内容面单源，复写一份是双记账；`score`——骨架 D4 已拍文档域无可信改进分数，二值 `status` 是其可执行形态；`blast_radius`——git 派生量的复写且 Capsule 无区间锚点（数字不可复算），序 4 判不进 schema（[裁决](2026-09-13-evaluate-blast-radius.md) B3）；`confidence` / `cost_tokens` / `cost_usd`——无生产者。
 
 ### C3（写读命令）：`capsule add` / `capsule show`，写路径与基因共用原子提交面
 
@@ -70,6 +70,6 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/archit
 - **采用面**：`engine/capsule.ts`（协议 + 渲染）+ `engine/solidify.ts` 的 `recordCapsule`（写路径）+ `bin.ts` 的 `capsule add|show`；`verify-gene-format.mts` 覆盖 `capsules/` 与条件化事件键集；引擎 self-test 与门禁 self-test 各带合规 / 违约夹具。
 - **声明面同步**：`engine/README.md`（命令面 + Capsule 节）、`engine/AGENTS.md`、两 README、`code-standards` 的命令计数——由 `verify-command-surface` 机械校核。
 - **单源指针**：协议细节单源 = 本 ADR + `engine/README.md`「Capsule 面」节；S1–S3 的其余口径仍在 schema ADR，本 ADR 只记与其相异处（S2 的 kind 集与键集）。
-- **遗留面（逐条归口）**：`blast_radius` 随序 4；Event 扩字段三件（`mutation_id` / `capsule_id` / `env_fingerprint`）已随[批次 1 序 3](2026-09-13-event-field-extension.md)落地，`validation_report_id` 按该 ADR E4 具名延期；Capsule 的共享 / 贡献面（staging、PR、CI 跨机器复验）随批次表序 21/31；§8.2 知识原子随序 42。
+- **遗留面（逐条归口）**：`blast_radius` 已由[批次 1 序 4](2026-09-13-evaluate-blast-radius.md) B3 裁决不进 schema（度量落在 Evaluate 的报告面）；Event 扩字段三件（`mutation_id` / `capsule_id` / `env_fingerprint`）已随[批次 1 序 3](2026-09-13-event-field-extension.md)落地，`validation_report_id` 按该 ADR E4 具名延期；Capsule 的共享 / 贡献面（staging、PR、CI 跨机器复验）随批次表序 21/31；§8.2 知识原子随序 42。
 - **已命名的覆盖缺口**：本批无实测 Capsule 落盘（`capsules/` 尚无成员）——首次真实 `capsule add` 要等第一次「按基因执行」；同一路径由闸件 16 组夹具与引擎 self-test 5.7 覆盖，缺口是 e2e 证据而非判据。
 - **批次表状态**：序 1 已收口，批次表对应行标 done 并指向本笔记。

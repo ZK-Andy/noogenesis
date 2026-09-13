@@ -34,7 +34,7 @@ node dist/engine/bin.js self-test                           # 元评测夹具（
 | 文件 | 职责 |
 |---|---|
 | `bin.ts` | CLI 分发 + 用法 |
-| `util.ts` | 归一化 / SHA-256 / 环境指纹 / 结构化 spawn / git 封装 / 槽值推导 |
+| `util.ts` | 归一化 / SHA-256 / 环境指纹 / 结构化 spawn / git 封装 / 槽值推导 / 改动面度量（blast-radius） |
 | `gates.ts` + `gates.json` | 验证白名单（fail-closed 装载） |
 | `gene.ts` | Gene 八字段封闭 schema / 目录扫描（含缓存合并扫描） |
 | `capsule.ts` | Capsule 七字段封闭 schema / 写入与读取（`capsule add` / `capsule show`） |
@@ -74,7 +74,8 @@ node dist/engine/bin.js self-test                           # 元评测夹具（
 - **入档语义**：候选文件须以 `<id>.json` 命名（ID=文件名锚点对候选同样生效）；目录锚点（`domain` == 父目录）只约束 `genes/` 内的落盘位置。`gene_sha` = 基因文件字节内容的 SHA-256。
 - **原子证据**：`genes/` 变更与 `events/` 追加行放同一 commit；拒绝时只提交事件行（候选不入档），`outcome` 携带拒因。
 - **retire 无需 evaluate**：退役不引入前沿内容，入档闸只守新增/更新；删除文件 + `gene.retired` 事件（`gene_sha` = 最后内容 SHA），git 历史仍可溯。
-- **constraints 对照面**：当前出账变更面（`outgoing_base...HEAD` 已提交 + 未暂存 + 未跟踪，与 `scripts/change-scope.mts` 同口径）。
+- **改动面度量（blast-radius，[批次 1 序 4 ADR](../.agents/notes/implemented/architecture/2026-09-13-evaluate-blast-radius.md)）**：`evaluate` 对出账变更面一次度量出文件数 / 行 churn / 顶层段分布，报告首行即 `blast radius: files N, lines +A/-D, scope dir(n), …`（零变更时 scope 记 `-`）；`constraints.max_files` 取同一度量的文件数，不再各数一遍。行数记增删之和，未跟踪文件按整文件行数计，二进制计 0 行；上述三个标量是改动面读数，不是依赖/扇出的影响分析。
+- **constraints 对照面**：本次改动面度量所属的出账变更面（`outgoing_base...HEAD` 已提交 + index 未提交 + 未暂存 + 未跟踪，与 `scripts/change-scope.mts` 同口径）。
 - **事件 kind 封闭集**：`gene.added` / `gene.updated` / `gene.retired` / `capsule.added` / `mutation.added`；select/propose 运行不记（演化事件 ≠ 运行日志）。事件键集 = 按 kind 条件化的**必需键** + 按 kind 的**允许可选键**（单源见下节「Event 面」）。
 
 ## Capsule 面（执行审计记录）
@@ -83,7 +84,7 @@ node dist/engine/bin.js self-test                           # 元评测夹具（
 - **append-only**：同 id 重复记录拒收（无 `capsule.updated` / `capsule.retired` 面）；`outcome` 二值 `ok` | `fail`，`fail` 必带 `reason`。
 - **写读命令**：`capsule add <candidate.json> --actor N` 落 `capsules/` + `capsule.added` 事件（同一 commit，原子性同基因入档）；`capsule show <domain>/<id>` 渲染人读面。两者用法错与 fail-closed 都走 exit 2。
 - **复算边界**：`gene_ids` 须曾成功入档——工作树在场，或事件轨上有过 ok 的 `gene.added`/`gene.updated`；写路径的前置更紧（记录时该基因须活在本仓 `genes/`，缓存副本不算）。退役不使既有引用失效。引擎不重跑门禁，`evidence` 由调用方在真实执行后给出（自动复跑归批次表序 43）。
-- **不收的字段**：`diff` / `content`（git 自身即内容面单源）、`score`（骨架 ADR D4 已拍文档域无可信改进分数）、`blast_radius`（度量落地时随批加入）、`confidence` / `cost_*`（无生产者）。
+- **不收的字段**：`diff` / `content`（git 自身即内容面单源）、`score`（骨架 ADR D4 已拍文档域无可信改进分数）、`blast_radius`（git 派生量的复写，且 Capsule 无区间锚点 → 数字不可复算；触发见[序 4 ADR](../.agents/notes/implemented/architecture/2026-09-13-evaluate-blast-radius.md) B3）、`confidence` / `cost_*`（无生产者）。
 
 ## Mutation 面（执行前的意图声明）
 
