@@ -9,8 +9,7 @@
 - [x] （A）胶囊 v0.2 评审机械闸 2026-09-05 落地（verify-review-tier + verify-review-brief），ADR [2026-09-05-review-mechanical-gate](.agents/notes/implemented/process/2026-09-05-review-mechanical-gate.md)。
 - [x] （A）npm/GitHub 占用核验与注册 2026-09-05：npm 双名占位完成（裸名 `noogenesis@0.0.0` + org `@noogenesis`/`@noogenesis/genesis`，账号 openorbit，真包随首发替换）；GitHub 休眠账号不阻碍 `<宿主>/noogenesis` 仓库名。细节见主设计未决问题 1。
 - [x] （B）胶囊 01 v0 首次真实评审：FULL 三审 2026-09-05 完成（Blocker 4→全修），对照样本在 journal 2026-09 卷。
-- [x] （C）简化候选三件拍板+实施 2026-09-05（FULL 三审全过），ADR [2026-09-05-consolidate-r1-simplification-candidates](.agents/notes/implemented/simplification/2026-09-05-consolidate-r1-simplification-candidates.md)。
-- [x] （C）verify-adr-format.mts 虚引用清理 2026-09-05：头注改指单一事实源 notes/README.md（按 consolidate-r1 ADR Decision 4 口径），门禁+self-test 全绿。
+- [x] （C）简化候选三件拍板+实施 2026-09-05（含 verify-adr-format 虚引用清理），ADR [2026-09-05-consolidate-r1-simplification-candidates](.agents/notes/implemented/simplification/2026-09-05-consolidate-r1-simplification-candidates.md)。
 - [x] （C）cookbook 第二批原子蒸馏 2026-09-05：desktop 通用 4 条（跨平台 shell 五连坑/YAML≠CI 接受/CI 缓存 ref 隔离/沙箱只验降级分支）+ dsh-continual-evolve FAQ 2 条（推理模型空正文/遍历键当数据键），共 21 条全绿。
 - [x] （A）整仓许可切换 AGPL-3.0 2026-09-05：LICENSE/README/共享层设计稿/.agents AGENTS 出处声明同步，上游 MIT 版权与许可文本集中于 THIRD-PARTY-NOTICES.md，ADR [2026-09-05-license-agpl-3](.agents/notes/implemented/process/2026-09-05-license-agpl-3.md)。
 - [x] （B）许可切换批 FULL 三审 2026-09-05（R1 0B/2S、R2 1B/2S、R3 0B/4S，全采纳收口）：证据行落 license ADR 头部，tier `--since 2b45531 --enforce` 转绿。
@@ -75,4 +74,5 @@
 - [x] （A）M1 批 A 守卫三件套 2026-09-10（FULL 三审全采纳；三件 v0 落地），ADR [2026-09-10-m1-guard-anti-overdesign](.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) implemented（分批批注）。
 - [x] （A）M1 批 B 防过度混合 D 2026-09-10（FULL 三审全采纳；契约块 + 蒸馏篇 + cases 索引 + 检查项第 5 条），ADR [2026-09-10-m1-guard-anti-overdesign](.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) 第二条 Review 行在案。
 - [x] （D）护栏建设轮余项收尾 2026-09-13：建议行落地（`token-baseline.mts` 每会话一行读数，运行期形状闸）+ 两本账落点（发版账 = release ADR 实发节，三次已回填），[ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md) 落账。
-- [ ] （A）批次表（46 项）开工中：**批次 7 开工**（序 34 一行安装收口已落，[ADR](.agents/notes/implemented/architecture/2026-09-14-one-line-install.md)）；游标 = **批次 7 序 35**（多 harness 适配）。单源 = [批次表 ADR](.agents/notes/proposed/architecture/2026-09-13-feature-completion-backlog.md)。
+- [ ] （A）批次表（46 项）开工中：**批次 7 开工**（序 34 一行安装收口、序 35 多 harness 第一刀〔Hermes〕已落，[ADR](.agents/notes/implemented/architecture/2026-09-14-hermes-hook-bridge.md)）；游标 = **批次 7 序 36**（胶囊组合成 preset / profile）。单源 = [批次表 ADR](.agents/notes/proposed/architecture/2026-09-13-feature-completion-backlog.md)。
+- [ ] （B）Hermes 写码在环 hook 真机复验（本地环境，不入仓）：`~/.hermes/config.yaml` 合并 `adapters/hermes/hooks.example.yml` 后，真会话让 agent 写违约 `.ts`（含 `var`）→ 期望 `pre_tool_call` 拦回（block 消息带规则与行号）；干净写放行；非 `.ts` / 出仓写不触发；判据件故障面（临时改名 oxlint）期望零阻断。

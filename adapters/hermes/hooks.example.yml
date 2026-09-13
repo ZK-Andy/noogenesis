@@ -1,0 +1,10 @@
+# adapters/hermes — Hermes shell hook 配置样例（批次 7 序 35）
+#
+# 用法：把下面 hooks 块合并进 ~/.hermes/config.yaml，把 <repo> 换成本仓绝对路径，
+# 然后按宿主流程授予首次同意（first-use consent；hermes hooks list 查看状态）。
+# 免同意面（CI / 无人值守）可加 hooks_auto_accept: true——本 hook 只读判据、零写面。
+hooks:
+  pre_tool_call:
+    - matcher: "write_file"
+      command: "node <repo>/dist/adapters/hermes/hook.mjs"
+      timeout: 10

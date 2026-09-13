@@ -12,5 +12,5 @@
     "rootDir": ".",
     "outDir": "dist"
   },
-  "include": ["engine/**/*.ts", "adapters/dsh/**/*.mts"]
+  "include": ["engine/**/*.ts", "adapters/dsh/**/*.mts", "adapters/hermes/**/*.mts"]
 }
