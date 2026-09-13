@@ -11,6 +11,8 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-13｜**批次 3 序 15 情境按需注入裁决（LIGHT；R2 2B+5S 全采纳）**：四派生面全落已裁/不可判面、现网 `injectSignals` 零声明无消费面 → 判不立，机制零变化。[ADR](.agents/notes/implemented/architecture/2026-09-13-situational-injection-verdict.md)；`3fed70f`→`0726e03`。README 无漂移。
+
 - 2026-09-13｜**批次 3 序 14 Detect 逐源裁决 `tool/result`（LIGHT；R2 1B+5S 全采纳）**：结果面已由 A4 消费（失败面 80.5% = A4 判据 + 宿主 fs 面）→ 判不立，四源裁决组收口。[ADR](.agents/notes/implemented/architecture/2026-09-13-detect-source-verdict-tool-result.md)；`ef2d93a`→`6e60560`。README 无漂移。
 
 - 2026-09-13｜**批次 3 序 13 Detect 逐源裁决 `agent/turn-stopping`（LIGHT；R2 2B+3S 全采纳）**：事件 = 93.4% 正常回合的关闭边界、载荷无失败位 → 判不立，A6 维持零策略。[ADR](.agents/notes/implemented/architecture/2026-09-13-detect-source-verdict-turn-stopping.md)；`5e5f1ba`→`5958d14`。README 无漂移。
@@ -51,7 +53,7 @@
 - 2026-09-13｜**护栏建设轮立项讨论轮**：三题拍板 = token 基线两轨 / 改进度量两本账 / canary 判不立；[护栏建设轮 ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md) 触发条到达并收口。
 - 2026-09-13｜**0.2.6 真机复验（零仓变更）**：外仓 desktop 与 dsh-frecency 新会话目录均含 7 件 `noo-*`（活副本零、缓存 7 件 → 来源 = `noogenesis-bank`）；A2 路标行与 A3 提醒只点名可达集，dsh-frecency 实任务会话提醒→载入成功、零 `unknown`、零诊断 warn。todos (B) 翻 x。
 - 2026-09-13｜**0.2.6 发版（release-flow 第三次实走）**：npm latest 0.2.6（tag `dsh-v0.2.6`，指向版本面 `ad2e549`）+ 双语 Release Latest；bump `a43c63c`；[实发节](.agents/notes/implemented/process/2026-09-09-release-shape-alignment.md)；CI run `34706452446` 绿。README 已同步。
-- 2026-09-13｜**bank provider 注册时序修复批（FULL 三审全采纳）**：注册改 `ctx.inject(["skills"], …)` 可重试路径 + 提醒面按可达集点名；[修复件 ADR](.agents/notes/implemented/bug-fix/2026-09-12-bank-skill-provider-registration.md)；`5dcca48`→`aa9be0f`。README 有变更；真机复验 = todos (B) 条。
+
 
 
 ## 背景

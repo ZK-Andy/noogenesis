@@ -37,7 +37,7 @@ HERO 两问逐候选动作面过（检测到什么具体失败 → 真出现后�
 
 1. **`tool/result` 判不立**：不订阅该 kind、不派生工具结果信号、不增挂结果面策略；A4 现有 block / context 判据维持不变。依据 = 结果对象已被 A4 在更早、更窄的 live hook 上消费（实测失败面 182 / 435 = 41.8% 即该判据产出，另 168 / 435 = 38.6% 为宿主 fs 面，合计 80.5%），HERO 第一问无 A3 / A4 接不住的具名失败，第二问随之无行动面。
 2. **行 14 的 HERO 两问答案**：检测的具体失败 = 未命名（四候选分别落「工具错误码开集无 gene 映射 + 失败已模型可见」「A4 已在消费同一结果对象」「蓝图 §9 不做清单」「A8 已封 + 写者面契约」；另指明更早的落点 = A3 前置面）；真出现后下一步不同的事 = 无（判不立即无行动面）。
-3. **四源裁决收口**：行 11–14（`session/event` / `agent/error` / `agent/turn-stopping` / `tool/result`）**全部判不立**，站立规则不变——引擎信号入口维持显式喂入为唯一合同面，自动 Detect 默认关；后续任一源解除须重走本组独立裁决件。批次 3 下一件 = 行 15 情境按需注入，仍受「自动 Detect 默认关」约束、须自身过 HERO 另案。
+3. **四源裁决收口**：行 11–14（`session/event` / `agent/error` / `agent/turn-stopping` / `tool/result`）**全部判不立**，站立规则不变——引擎信号入口维持显式喂入为唯一合同面，自动 Detect 默认关；后续任一源解除须重走本组独立裁决件。批次 3 序 15（情境按需注入）其后在同一规则下判不立（[裁决 ADR](2026-09-13-situational-injection-verdict.md)）。
 4. **重议触发**（满足任一即重开本源并重写本件指针）：
    - **T1**：出现具名实例——某卷实证「工具结果面存在 A3 / A4 接不住的方法论失败信号（非 lint / 注释契约 / 门禁红），代价 ≥ 一次返工」（附会话卷与结果文本）。
    - **T2**：宿主把 `tool/result` 的 `error` 收窄为封闭分类（`name`/`code` 成有限集）**且** `select` 信号词汇表出现对应该分类的信号键与基因——派生器有判据可用。
@@ -54,6 +54,6 @@ HERO 两问逐候选动作面过（检测到什么具体失败 → 真出现后�
 
 ## Consequences
 
-- 批次表行 14 标 done（指针 = 本件）；「未交付」计数 33 → 32；行 11–14 四源裁决组收口，批次 3 下一件 = 行 15。
+- 批次表行 14 标 done（指针 = 本件）；「未交付」计数 33 → 32；行 11–14 四源裁决组收口；序 15 情境按需注入其后在同一规则下判不立（[裁决 ADR](2026-09-13-situational-injection-verdict.md)）。
 - 机制零变化：`adapters/**`、`engine/**`、`cordis.patch.yml`、`package.json` 均不动；A4 判据与档位不变。本件 LIGHT 档（纯文档收口，路径触发集未命中）。宿主依赖面零新增。
 - 复算口径 = 宿主 `tool/result` 事件声明（`dsh-session/lib/types/types.d.ts:351–361`）+ `tools/post-execute` waterfall 合同（`dsh-tools/lib/types/index.d.ts:61`，签名为 `(this, exec, result: Readonly<ToolExecutionResult>, next)`）+ 本仓 A4 订阅点与 `isError` 消费键（`adapters/dsh/index.mts:262`、`mount.mts:60–62`、`host-api-contract.mts:54`）+ 本仓会话卷 `tool/result` 扫描（190 卷 / 13,875 结果 / 435 失败；分类规则 = 先 `data.error.code`、无 `error` 者按结果文本，逐桶值见 Problem）。

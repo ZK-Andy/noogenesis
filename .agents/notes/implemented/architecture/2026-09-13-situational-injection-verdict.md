@@ -1,7 +1,7 @@
 # Agent Note: 情境按需注入（命中节动态信号）裁决——同一失败面已由 A2/A3 显式信号承接，判不立（批次 3 序 15）
 
 Status: implemented
-Review: LIGHT/2026-09-13/pending
+Review: LIGHT/2026-09-13/语义评审（范围化子代理 R2：2 Blocker + 5 Suggestion 全采纳——批次表封条行残留 + profile 数口径矛盾；grep 漏 `*.yml`、A2/A5 归属、`noo_select` 口径、与四源关系措辞、两件先前 ADR 的前向现值句）
 
 Related: 站立规则 [Detect 逐源裁决（一）](2026-09-13-detect-source-verdict-session-event.md)（自动 Detect 默认关 + 逐源门槛）· 四源收口 [(四) `tool/result`](2026-09-13-detect-source-verdict-tool-result.md) · 批次表 [行 15](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · [M2 适配层 ADR](2026-09-06-m2-adapter-wiring.md)（system-prompt 双节 = 命中节与 `injectSignals` 的家）· [B4 挂载面 ADR](2026-09-08-b4-mount-wiring.md)（A2 子树规则地图 + HERO 答案 + A1 注入时序实证）· [M1 立项 ADR](2026-09-10-m1-guard-anti-overdesign.md)（A3 技能触点提醒）· [护栏建设轮 ADR](2026-09-13-guardrail-construction-round.md)（常驻注入字面预算）· [P1 骨架 D2](2026-09-05-p1-engine-skeleton.md) · 主设计 [§8.3 DSH 注入点 / §6 生命周期](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 蓝图 [§7 挂载面表](../../../../docs/research/framework-rebuild-blueprint.md)
 
@@ -12,10 +12,10 @@ Related: 站立规则 [Detect 逐源裁决（一）](2026-09-13-detect-source-ve
 现态取证（2026-09-13，本仓源码 + 本机 profile 面）：
 
 - **常驻命中节**（现形态）：`index.mts:174–184` 注册 system-prompt `text` provider `tool:noogenesis:hits` → `section.mts` 的 `createHitsSection`；信号 = `config.injectSignals`（`config.mts:149/166`，缺省 `[]`），命中内容 = 引擎 `select` 的命中行。provider **每模型步运行**；空信号**短路零 spawn**（`section.mts:150–151`，注释在案：select 空键必 exit 2，纯浪费一子进程/每次 prompt 组装）。
-- **消费面 = 零**：本机三 profile（`web` / `dotnet-desktop`）与 `~/.dsh/settings.yaml` 均未声明 `injectSignals`（`grep -rn injectSignals ~/.dsh --include=*.json --include=*.yaml` 零命中，除 `storages/session_projcache/` 会话转录）→ 现网命中节恒渲染 `""`、零 token、零引擎调用。
+- **消费面 = 零**：本机 `$DSH_HOME/profiles` 两个 profile 中仅 `dotnet-desktop` 装载本插件（`web` 的 `dsh.profile.bundles` 不含 `noogenesis-dsh`），且它、`web` 与 `~/.dsh/settings.yaml` 均未声明 `injectSignals`（`grep -rn injectSignals ~/.dsh --include=*.json --include=*.yml --include=*.yaml` 零命中，除 `storages/session_projcache/` 会话转录）→ 现网命中节恒渲染 `""`、零 token、零引擎调用。
 - **信号合同 = 字面短语精确匹配**（`engine/select.ts:9–14` 归一化后集合比较）；本仓 6 基因的 `signals` 全为自然语言短语（`文档放哪` / `字数超限` / `git 对账` / `新增基因` …）。
-- **设计 §8.3 点名的三个注入时刻已在场**：`agent/session-start` / `agent/pre-step` = A2 子树规则地图 + 技能路标（[B4 ADR](2026-09-08-b4-mount-wiring.md) Decision 4，含 HERO 答案）；工具边界 = A3 技能触点提醒（[M1 立项 ADR](2026-09-10-m1-guard-anti-overdesign.md)）与 A4 block / context。三者的信号面 = **显式机器可判字面面**（写码工具 `file_path` / bash 重定向与 `tee` 目标 / `command` 正则，`config.skillGuards`）。
-- **模型显式入口**：`noo_select` 可用且在用（本仓 189 卷实扫 `noo_select` 结果 11 条）【探索性：单机单仓、截至 2026-09-13】。
+- **设计 §8.3 点名的三个注入时刻已在场**：会话开始 / 一步前 = A2 子树规则地图 + 技能路标（走每会话首个 `agent/pre-step`；[B4 ADR](2026-09-08-b4-mount-wiring.md) Decision 4，含 HERO 答案。`agent/session-start` 是 A5 零策略能力位，该时刻零注入）；工具边界 = A3 技能触点提醒（[M1 立项 ADR](2026-09-10-m1-guard-anti-overdesign.md)）与 A4 block / context。A3 的信号面 = **显式机器可判字面面**（写码工具 `file_path` / bash 重定向与 `tee` 目标 / `command` 正则，`config.skillGuards`）；A2 的面 = 子树 `AGENTS.md` 存在性 + `SKILL_ROSTER` 可达集（`mount-policies.mts`）。
+- **模型显式入口**：`noo_select` 可用且在用（本仓会话卷实扫，路径 `~/.dsh/sessions/--mnt-work-Noogenesis--/<session>/session.v3.jsonl.zstd`，口径 = `tool/call` 的 `name`）：`noo_select` 调用 11 次（11 卷各 1 次）【探索性：单机单仓、截至 2026-09-13】。
 
 HERO 两问逐派生面过（检测到什么具体失败 → 真出现后下一步做什么不同）：
 
@@ -29,7 +29,7 @@ HERO 两问逐派生面过（检测到什么具体失败 → 真出现后下一�
 
 1. **判不立**：不把动态信号接入常驻命中节；`injectSignals` 的显式声明合同不变（缺省 `[]`）。常驻命中节维持「显式信号 → 命中行」单一路径。
 2. **行 15 的 HERO 两问答案**：检测的具体失败 = 未命名（四派生面分别落 prose 不可判 / A3 同刻同面双通道 + 硬造映射 / 序 11 已裁 / 静态等价且零实例）；真出现后下一步不同的事 = 无（同一失败面已由 A2/A3 建议档与 `noo_select` 显式入口承接）。
-3. **与行 11–14 的关系在案**：本项不是 Detect 源而是注入面机制，但其全部候选派生面落在已裁四源的近邻（`session/event`、`tool/result` 的 exec 面）上，站立规则同样适用；四源收口不因本项改变。
+3. **与行 11–14 的关系在案**：本项不是 Detect 源而是注入面机制；其派生面或落在已裁四源上（`session/event`；工具 exec 面 = `tool/result` 近邻且由 A3 消费），或落在 B4 M1 已判不可判的 prose 面与静态等价面（cwd 派生）上——站立规则同样适用，四源收口不因本项改变。
 4. **重议触发**（满足任一即重开本项并重写本件指针）：
    - **T1**：出现具名实例——某卷实证「会话任务面需要某 gene，A2/A3 建议档与 `noo_select` 显式入口都接不住，且代价 ≥ 一次返工」（附会话卷）。
    - **T2**：出现**按字面面注入 gene** 的实际配置需求实例（要表达「某路径 / 某命令 → 某 gene 信号」，而现有 A3 技能提醒接不住）——届时按**配置声明形态**（非自动 Detect）在 A3 建议档重估，并复用 `skillGuards` 的条目形状。
