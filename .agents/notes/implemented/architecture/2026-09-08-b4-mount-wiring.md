@@ -34,7 +34,7 @@ Related: [2026-09-06-collab-rebuild-impl](2026-09-06-collab-rebuild-impl.md)（�
    | A3 工具前 | `tools/pre-execute` | 首个 `deny(reason)` 胜出；次 `ask`；无策略 = `next()` 透传 |
    | A4 工具后 | `tools/post-execute` | 首个 `block(feedback)` 胜出；`additionalContexts` 按注册序累积（下游前置） |
    | A5 hooks 桥 | `agent/session-start`（会话开始时刻） | 非阻塞：inject 上下文能力 + 异常 catch → warn 降级，绝不阻塞会话 |
-   | A6 停止前 | `agent/turn-stopping` | 非阻塞：策略收集记录载荷，异常 catch → warn 降级 |
+   | A6 停止前 | `agent/turn-stopping` | 非阻塞：策略收集记录载荷，异常 catch → warn 降级（记录位随 A8 撤除批退役；停止前能力位后由 [A6 能力位 ADR](2026-09-13-a6-turn-stopping-mount.md) 以 `steer` 单通道重接） |
    | A8 会话事件轨 | 记录落点 = `session.append`（产出侧，自定义 kind）；drain = `session/disposed`（独立 cordis 事件——R2 实证：disposal 不走 `session/event` firehose，firehose 只投 `Session.append` 提交的封闭键集日志事件） | 每会话状态投影存储（WeakMap 按会话键隔离，GC 自清）；策略读写同一存储 |
 
    - **A5 归口**：四类时刻中 prompt 提交 / 工具前后 / 停止前已由 A2/A3/A4/A6 覆盖（上表映射实证），A5 自有新面 = 会话开始时刻（`agent/session-start`，非阻塞 inject）；`exit 2 阻断并回消息 / 上下文附加 / 非阻断降级 / 日志回合内`四判定语义分别落在 A3 deny、A4 block+additionalContexts、A5 catch 降级、记录落 session 面——语义单源在 mount.mts 合并器。

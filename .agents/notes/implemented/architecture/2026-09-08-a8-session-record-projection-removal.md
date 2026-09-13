@@ -3,7 +3,7 @@
 Status: implemented
 Review: FULL/2026-09-08/R1=ok R2=ok R3=ok
 
-Related: [2026-09-08-b4-mount-wiring](2026-09-08-b4-mount-wiring.md)（撤其 Decision 3/4 后半/5 与 A6 投影位、A8 落点；A2 地图与 A3/A4/A5 能力层保留）；[2026-09-08-mount-exec-arguments-field](../bug-fix/2026-09-08-mount-exec-arguments-field.md)（字段名修复仍有效，其验证所依赖的投影面退役）；[2026-09-06-collab-rebuild-impl](2026-09-06-collab-rebuild-impl.md)（其「A8/A6 接线先在才有落点」批序禁令的前提机制随本批退役——该约束仅对挂载建议面存续）；[2026-09-08-b5-switch](2026-09-08-b5-switch.md)（其 B4 重验待核面「session.append 自定义 kind 宿主容忍度 + 六点真机」已随本批撤除，该核对面失效）；上游读面契约单源：dsh-session `known-event-types` 头注 + `.agents/notes/implemented/architecture/2026-08-30-retain-ignorable-external-session-events.md`（DSH 仓）
+Related: [2026-09-08-b4-mount-wiring](2026-09-08-b4-mount-wiring.md)（撤其 Decision 3/4 后半/5 与 A6 投影位、A8 落点；A2 地图与 A3/A4/A5 能力层保留）；[2026-09-13-a6-turn-stopping-mount](2026-09-13-a6-turn-stopping-mount.md)（本件撤的是 A6 的**记录投影**面；停止前**能力位**后由该件以 `steer` 单通道重接，不恢复 `session.append` 写面）；[2026-09-08-mount-exec-arguments-field](../bug-fix/2026-09-08-mount-exec-arguments-field.md)（字段名修复仍有效，其验证所依赖的投影面退役）；[2026-09-06-collab-rebuild-impl](2026-09-06-collab-rebuild-impl.md)（其「A8/A6 接线先在才有落点」批序禁令的前提机制随本批退役——该约束仅对挂载建议面存续）；[2026-09-08-b5-switch](2026-09-08-b5-switch.md)（其 B4 重验待核面「session.append 自定义 kind 宿主容忍度 + 六点真机」已随本批撤除，该核对面失效）；上游读面契约单源：dsh-session `known-event-types` 头注 + `.agents/notes/implemented/architecture/2026-08-30-retain-ignorable-external-session-events.md`（DSH 仓）
 
 ## Problem
 
@@ -20,10 +20,10 @@ Related: [2026-09-08-b4-mount-wiring](2026-09-08-b4-mount-wiring.md)（撤其 De
 
 **撤除 A8 记录投影面（A6 停止前记录位 + A8 `session.append` 落点）；随投影失去消费者的观测状态同批退役；A2 开场地图与 A2–A5 能力层保留。**
 
-1. **mount-policies.mts**：`createSkillUsagePolicy`（M1）与 `createReviewSurfacePolicy`（M3）整件删除；M2 撤 toolPre 触摸归因与 turnStopping 投影（触摸窗口、投影游标、cap 逻辑随件退役），**A2 开场地图保留**（`mapShown` 单门语义不变）；`MountPolicySet` 撤 `turnStopping` 与 `dropSessionState`（残留状态仅余 WeakMap 键控的 mapShown 布尔，GC 自清兜底，`session/disposed` drain 面随之撤除）。
-2. **mount.mts**：`MountRecord` / `TurnStoppingPayload` / `TurnStoppingPolicy` / `runTurnStopping` 删除；`AgentRef` 撤 `session.append` 面（preStep 的 `session.header.origin` 窄面保留）。能力层合并器（A2–A5 的 reject/deny/ask/block/context/inject 语义单源）**原样保留**——升格候选落地的接线与判定语义不因本批收窄。
-3. **index.mts**：`appendRecord` 胶水、`agent/turn-stopping` 与 `session/disposed` 两个 listener 删除；A2/A3/A4/A5 四点接线保留（A3/A5 零策略能力位，策略件出现时增挂不触宿主接线面——B4 已拍板原则；A4 已挂写码在环 lint 反馈，ADR [2026-09-08-lint-in-loop-feedback](2026-09-08-lint-in-loop-feedback.md)）。
-4. **selftest.mts**：M1/M2 触摸/滚窗游标/M3 断言与 A6+A8 接线冒烟随件删除；A2 地图语义（每会话一次/subagent 跳过/零布点仓零注入）、能力层合并语义、防火墙机器检查保留；六点接线条目改四点。
+1. **mount-policies.mts**：`createSkillUsagePolicy`（M1）与 `createReviewSurfacePolicy`（M3）整件删除；M2 撤 toolPre 触摸归因与 turnStopping 投影（触摸窗口、投影游标、cap 逻辑随件退役），**A2 开场地图保留**（`mapShown` 单门语义不变）；`MountPolicySet` 撤 `dropSessionState`（turnStopping 的**记录投影**字段随件退役——该字段后由 [A6 能力位 ADR](2026-09-13-a6-turn-stopping-mount.md) 作为停止前续跑能力位重新引入，不含记录投影；残留状态仅余 WeakMap 键控的 mapShown 布尔，GC 自清兜底，`session/disposed` drain 面随之撤除）。
+2. **mount.mts**：`MountRecord` / `runTurnStopping` 与记录投影版 `TurnStoppingPayload` / `TurnStoppingPolicy` 删除（停止前窄面后由 [A6 能力位 ADR](2026-09-13-a6-turn-stopping-mount.md) 以 `steer` 单通道重新引入）；`AgentRef` 撤 `session.append` 面（preStep 的 `session.header.origin` 窄面保留）。能力层合并器（A2–A5 的 reject/deny/ask/block/context/inject 语义单源）**原样保留**——升格候选落地的接线与判定语义不因本批收窄。
+3. **index.mts**：`appendRecord` 胶水、`session/disposed` listener 与 `agent/turn-stopping` 记录投影 listener 删除（停止前 listener 后由 [A6 能力位 ADR](2026-09-13-a6-turn-stopping-mount.md) 作为零策略续跑能力位重接）；A2/A3/A4/A5 四点接线保留（A3/A5 零策略能力位，策略件出现时增挂不触宿主接线面——B4 已拍板原则；A4 已挂写码在环 lint 反馈，ADR [2026-09-08-lint-in-loop-feedback](2026-09-08-lint-in-loop-feedback.md)）。
+4. **selftest.mts**：M1/M2 触摸/滚窗游标/M3 断言与 A6+A8 接线冒烟随件删除；A2 地图语义（每会话一次/subagent 跳过/零布点仓零注入）、能力层合并语义、防火墙机器检查保留；六点接线条目改四点（后由 A6 能力位接线补为五点）。
 5. **证据存活面**：M3 检测基座不依赖投影件——评审机器面标记（`verify-review-brief` / `verify-review-tier` / `gates --run`）在 `tool/result` 事件文本中持久在案，session-close 对账 grep 该面即得。投影件本只是预聚合便利层；证据语义回归「读宿主日志」。
 6. **上游补能力后可复投影**：宿主给 `Session.append` 提供 ignorable 透传，或建立下游插件事件合入/注册机制时，另案恢复投影（本 ADR Problem 节记录了完整机制链，投影件形状见 B4 ADR Decision 3–5 原文）。
 

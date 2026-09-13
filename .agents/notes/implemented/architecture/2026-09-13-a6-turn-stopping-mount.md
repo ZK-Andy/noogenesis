@@ -1,8 +1,11 @@
 # Agent Note: A6 停止前能力位接线——`agent/turn-stopping` 挂载点与停止前策略面裁决（批次 2 序 7）
 
-Status: proposed
+Status: implemented
+Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 
-Related: 批次表 [2026-09-13-feature-completion-backlog](2026-09-13-feature-completion-backlog.md) · 前批 [2026-09-08-b4-mount-wiring](../../implemented/architecture/2026-09-08-b4-mount-wiring.md)（A2–A5 能力层与「A5 归口」；本件补 A6 腿） · [2026-09-08-a8-session-record-projection-removal](../../implemented/architecture/2026-09-08-a8-session-record-projection-removal.md)（记录投影面不可复用） · [2026-09-10-review-execution-reconciliation](../../implemented/architecture/2026-09-10-review-execution-reconciliation.md)（停止前触点提醒的预拍板与触发） · 蓝图 [§7/§10](../../../../docs/research/framework-rebuild-blueprint.md) · 主设计 [§11.1](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 适配层防火墙 [adapters/AGENTS.md](../../../../adapters/AGENTS.md)
+批注：R1 1B/2S、R2 2B/3S、R3 4B/3S——采纳 13 拒绝 2。R2 B1（宿主源码自证 `agent.inject` 在停止前同为 `next-step` 入队）把 A6 从「advice + steer 双通道」收为 `steer` 单通道；R1 S2 / R2 B2（本层全可选字段使形状断言零证伪力）补 `agent` / `agent.steer` 键存在性断言；R1 B1 / R2 S1 拆开合并与投递的 try/catch，R2 S2 给 A6 独立告警预算；R3 四条现值同步（批次表行 7 / A8 ADR / 评审实质执行 ADR / 根双语 README 计数）随本批落地。拒绝：R1 S1（三合并器折叠——A6 收为单决策种后与 A2/A4 不再同型，折叠需逐点映射器）、R2 S3（账面按收口提交惯例更新，非缺陷）。
+
+Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 前批 [2026-09-08-b4-mount-wiring](2026-09-08-b4-mount-wiring.md)（A2–A5 能力层与「A5 归口」；本件补 A6 腿） · [2026-09-08-a8-session-record-projection-removal](2026-09-08-a8-session-record-projection-removal.md)（记录投影面不可复用；本件接线时同步其现值） · [2026-09-10-review-execution-reconciliation](2026-09-10-review-execution-reconciliation.md)（停止前触点提醒的预拍板与触发；本件订正其停止前候选的档位口径） · 蓝图 [§7/§10](../../../../docs/research/framework-rebuild-blueprint.md) · 主设计 [§11.1](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 适配层防火墙 [adapters/AGENTS.md](../../../../adapters/AGENTS.md)
 
 ## Problem
 
@@ -15,9 +18,9 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](2026-09-13-feature-co
 - 上游同款桥（hooks-claude-code）在 Stop 时刻只用 `agent.steer` 表达阻断、不投上下文——与本条实证同向。
 - 契约守约面：payload 键与 `agent.steer` 合同由 `tsc` 类型断言件（`host-api-contract.mts`）守约——键存在性与 payload 形状相容两组互补；该面字段全可选，单靠形状相容对宿主改名/删键零证伪力。
 
-停止前策略面三条候选各有既定裁决或未到触发条（Proposal 2），故本项交付能力位、不挂策略。
+停止前策略面三条候选各有既定裁决或未到触发条（Decision 2），故本项交付能力位、不挂策略。
 
-## Proposal
+## Decision
 
 1. **A6 能力位接线（零策略，单通道）**：
    - `mount.mts` 增 `TurnStoppingPayload`（窄面：`agent`〔含可选 `steer` 能力位〕/ `turn` / `signal`）、`TurnStoppingPolicyDecision`（单决策种 `steer` = 强制续跑一步的模型可见消息）、`mergeTurnStopping`（首个 `steer` 胜出并停止扫描；单决策种，无建议行累积；零策略 = 空决策）。
@@ -35,7 +38,7 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](2026-09-13-feature-co
 - **零策略不接线（判不立收口）**：落败——C7 明写「A2–A6 + A8 全部接线且各带最小 smoke；接线 ≠ 策略」，能力位缺口是验收判据缺口，不是策略缺口。
 - **保留 `agent.inject` 作「非阻断建议」通道**：落败——停止前 inject 同为 `next-step` 入队（Problem 节），与 steer 一样再跑一步；按非阻断档记账 = 口径与机器语义相反，首个策略增挂即产生文档未预期的额外模型步与成本。
 - **只留 inject（去掉 steer）**：落败——两者在本点同为续跑，inject 少一层唤醒能力（idle driver 不醒、消息滞留到下一次唤醒），单通道取语义更直白且能唤醒 driver 的 `steer`。
-- **本批挂首个策略（停止前扫门禁 / 提示未修正违规）**：落败——三条候选各有既定裁决或未到触发条（Proposal 2），无新证据即挂 = 造不可判信号（防过度设计）；本点只有续跑档，代价更需实证。
+- **本批挂首个策略（停止前扫门禁 / 提示未修正违规）**：落败——三条候选各有既定裁决或未到触发条（Decision 2），无新证据即挂 = 造不可判信号（防过度设计）；本点只有续跑档，代价更需实证。
 - **复用 A5 会话开始位投递代替停止前位**：落败——会话开始与回合边界是两个时刻，A5 只覆盖前者，开始位无法表达「回合已到关闭边界」。
 - **记录写进 `events/*.jsonl` 基因事件轨**：落败——事件轨 kind 封闭集只收基因事件（B4 同款裁决），混写 = 双语义污染单文件。
 

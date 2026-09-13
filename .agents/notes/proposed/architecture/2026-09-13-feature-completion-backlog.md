@@ -12,8 +12,8 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 
 现状事实（2026-09-13 实读，只列差集判定相关者）：
 
-- **已交付**：Gene 协议 + 引擎八命令（select/propose/evaluate/solidify/pull/observe/capsule/mutation）+ `gates.json` 白名单 + Capsule / Mutation 两原语与事件 kind 五件 + Event 扩字段（跨链 `mutation_id`/`capsule_id` + 环境指纹 `env_fingerprint`）+ Evaluate 的 blast-radius 改动面度量（文件 / 行 / 范围）+ 候选比较 / 答案盲选择判据（通道封闭集 + 不排序；机器面判不立）；适配层 A1–A4 / A5（仅会话开始位）/ A7 接线；M1 技能守卫 + M2 规范面接入；token 基线两轨（预算判据 + 宿主读数）；技能随库分发；P2 只读消费（pull + manifest + 缓存合并）；记忆线第一期观测面与 `advice:` 建议档；胶囊 01 内容主体（7 技能 + method/cookbook/流程卡/门禁）。
-- **未交付**：下方批次表余 41 项（序 1–5 已 done）。
+- **已交付**：Gene 协议 + 引擎八命令（select/propose/evaluate/solidify/pull/observe/capsule/mutation）+ `gates.json` 白名单 + Capsule / Mutation 两原语与事件 kind 五件 + Event 扩字段（跨链 `mutation_id`/`capsule_id` + 环境指纹 `env_fingerprint`）+ Evaluate 的 blast-radius 改动面度量（文件 / 行 / 范围）+ 候选比较 / 答案盲选择判据（通道封闭集 + 不排序；机器面判不立）；适配层 A1–A7 接线（A5 会话开始位与 A6 停止前续跑能力位均零策略；prompt 提交 / 工具前后折进 A2/A3/A4）；M1 技能守卫 + M2 规范面接入；token 基线两轨（预算判据 + 宿主读数）；技能随库分发；P2 只读消费（pull + manifest + 缓存合并）；记忆线第一期观测面与 `advice:` 建议档；胶囊 01 内容主体（7 技能 + method/cookbook/流程卡/门禁）。
+- **未交付**：下方批次表余 39 项（序 1–7 已 done）。
 - **受宿主约束未交付**：A8 会话事件轨 / 状态投影——撤除理由 = 宿主读路径对未标 `ignorable` 的下游插件事件 fail-closed，且 `Session.append` 无 `ignorable` 写入口。
 
 ## Proposal
@@ -45,7 +45,7 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 | 序 | 功能 | 设计出处 | 备注 |
 |---|---|---|---|
 | 6 | A5 其余三时刻（prompt 提交 / 工具前后 / 停止前） | 主设计 §11.1；蓝图 §7 A5 | done（判已交付、无新增面：会话开始位自接，prompt 提交折进 A2、工具前后折进 A3/A4，停止前 = 序 7 的 A6——四时刻映射实证见 [B4 ADR](../../implemented/architecture/2026-09-08-b4-mount-wiring.md) Decision 1「A5 归口」） |
-| 7 | A6 停止前守卫（`agent/turn-stopping`） | 蓝图 §7 A6 | 未接；档位（记录 / 建议 / 阻断）逐件过 HERO；接线依据 = 蓝图 C7「A2–A6 + A8 全部接线且各带最小 smoke；接线 ≠ 策略」 |
+| 7 | A6 停止前守卫（`agent/turn-stopping`） | 蓝图 §7 A6 | done（[A6 能力位 ADR](../../implemented/architecture/2026-09-13-a6-turn-stopping-mount.md)）：交付 = 能力位接线（零策略）+ 档位结论 = 本点只有续跑档（`steer`），停止前无 advice 面；记录投影 / 评审触点 / 停止前扫描三条策略候选的裁决与触发条见该 ADR Decision 2 |
 | 8 | M3 评审实质执行记录件 | 蓝图 §7 M3 | 现「语义面不设防 + 缓议」，须重拍 |
 | 9 | M1 升格档（重复违约 → 阻断）评估 | 蓝图 §7 M1 | 现 advice 档 |
 | 10 | `dsh-invariants` 接入（机械不变量） | 主设计 §7.3/§11.2 | 未接 |

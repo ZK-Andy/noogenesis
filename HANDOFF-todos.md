@@ -43,6 +43,7 @@
 - [x] （C）`verify-review-brief` 增判据「简报 head 须钉住 HEAD」2026-09-11 随阶段卡结构批兑现（夹具 13→14 块；review.md §3 登记为发射前判据）。
 - [x] （B）技能触点提醒触发面真机复验 2026-09-12（0.2.5 装机重启后复跑）：`git -c … push` 命中一行 advice、重复不重提；bash 重定向写 `.md` 走后缀面命中、跨通道抑制成立；装机件正则矩阵三形态全中/五负例全不中。异仓腿随 bank 批（journal 在案）。
 - [ ] （B）护栏读数建议行真机复验（触发 = 下次发版装机后）：宿主日志里每会话自第二步起恰一行 `noogenesis token baseline reading: surfaceTokens=<n>`（非零、随会话增长 = 含系统提示面），无 token-meter 的 profile 里零 warn（缺席静默）、`measure` 抛错时该会话恰一条 warn。判据与口径单源 = [护栏建设轮 ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md) 决定 1 落账节。
+- [ ] （B）A6 停止前能力位真机复验（触发 = 下次发版装机后）：装机会话正常关回合、宿主日志零 `turn-stopping mount failed` / `turn-stop steering` warn（零策略面应为零投递零 warn）；listener 注册无诊断。判据与降级口径单源 = [A6 能力位 ADR](.agents/notes/implemented/architecture/2026-09-13-a6-turn-stopping-mount.md) Consequences。
 - [ ] （D）Capsule `blast_radius` 字段复议（序 4 判不立，显式挂起）：触发 = 出现按执行记录横向比较影响面的消费者（跨机贡献复验 / 合并自校验证据）且同时定义区间锚点；复议先答三问（谁生产 / 锚点 / 谁消费），判据单源 = [序 4 ADR](.agents/notes/implemented/architecture/2026-09-13-evaluate-blast-radius.md) B3（评分与候选比较已判不再构成触发，见该处）。
 - [ ] （D）技能清单「等等」候选收集（优化轮收口遗留，显式挂起）：用户拍板暂不新增技能（用不上不写），既有技能 references/ 已补；触发 = 用户再给候选时重开（先例参照 = HERO-Anti-OverDefense）。决定单源 = [skill-references-fill](.agents/notes/implemented/process/2026-09-10-skill-references-fill.md)；池文档收口账 = [§2.3](docs/research/capsule-01-optimization-round.md)。
 - [ ] （D）优化轮收口遗留缓议两件：技能 A3 写入前阻断档 + 评审收口触点提醒。触发 = 会话内出现需要写入前阻断的真实场景 / step-2 对账抓到真实漏网。判据与预拍板单源 = [lint-in-loop](.agents/notes/implemented/architecture/2026-09-08-lint-in-loop-feedback.md) + [review-exec](.agents/notes/implemented/architecture/2026-09-10-review-execution-reconciliation.md)。
@@ -74,4 +75,4 @@
 - [x] （A）M1 批 A 守卫三件套 2026-09-10（FULL 三审全采纳；三件 v0 落地），ADR [2026-09-10-m1-guard-anti-overdesign](.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) implemented（分批批注）。
 - [x] （A）M1 批 B 防过度混合 D 2026-09-10（FULL 三审全采纳；契约块 + 蒸馏篇 + cases 索引 + 检查项第 5 条），ADR [2026-09-10-m1-guard-anti-overdesign](.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) 第二条 Review 行在案。
 - [x] （D）护栏建设轮余项收尾 2026-09-13：建议行落地（`token-baseline.mts` 每会话一行读数，运行期形状闸）+ 两本账落点（发版账 = release ADR 实发节，三次已回填），[ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md) 落账。
-- [ ] （A）设计稿功能补全批次表（46 项有序）逐批开工中：批次 1 序 1–5 已收口、**序 6 判已交付**（无新增面），下一件 = 批次 2 序 7 A6 停止前守卫能力位；批次 3/4 须先立重拍 ADR。进度与覆盖来源单源 = [批次表 ADR](.agents/notes/proposed/architecture/2026-09-13-feature-completion-backlog.md)。
+- [ ] （A）设计稿功能补全批次表（46 项有序）逐批开工中：批次 1 序 1–5 已收口、**序 6 判已交付（无新增面）、序 7 A6 停止前能力位已接线**，下一件 = 批次 2 序 8 M3 评审实质执行记录件（须先立重拍 ADR）；批次 3/4 同须先立重拍 ADR。进度、覆盖来源与各批 ADR 指针单源 = [批次表 ADR](.agents/notes/proposed/architecture/2026-09-13-feature-completion-backlog.md)。

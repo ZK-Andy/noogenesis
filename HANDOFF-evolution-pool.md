@@ -27,6 +27,8 @@
 
 - **（2026-09-13）护栏轮之经验：`git add -A` 在多会话共用工作树下会卷走他人在飞改动**：本会话与他会话并行时实际发生（他方 `section.mts` 未提交改动被卷，档位闸拦下后 `reset --soft` 退回）——纪律面已落 [cookbook](docs/cookbook.md)「协作」条；未机械化面 = 「提交前工作树里出现非己方路径」是否值得上闸（机械判定的代价：无法区分合法协同与误卷）。出处 = [护栏建设轮 ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md) 收口批。
 - **（2026-09-13）`verify-review-tier` 在「proposed → implemented 迁移提交」上会把本批证据判为缺**：迁移提交只含 ADR 的改名与新 Review 行时，工作树态（未提交改名）下 `<since>..HEAD` 的 per-path diff 为空 → 证据判负；提交后即刻转绿（本会话实遇，收口提交后 `--enforce` 通过）。判据是否需要把「工作树rename + 同路径新增行」计入 = 待判；当前处置 = 先提交再核（顺序纪律，无需改闸）。出处 = [机械化 ADR](.agents/notes/implemented/process/2026-09-11-review-finding-mechanization.md) 门禁判据类。
+- **（2026-09-13）纪律漏项候选：批次表「行标 done 的时点」口径未成文**：症状 = 批次 2 序 7 的 R3 依前例（序 4 `d1d57f7`、序 5 `05e64d1` 均在实现提交标 done）判「实现提交即标 done」，而本批按「评审收口提交」处置；两种做法各自可自洽，但判据不在任何卡上，每次靠回溯 git 举证。待判 = 口径成文（实现提交标 done 还是收口标 done，及与 Review 行的先后）。出处 = 批次 2 序 7 R3 Blocker 1。
+- **（2026-09-13）纪律漏项候选：部分取代 implemented 笔记时「被取代件现值同步」靠人工/评审抓**：症状 = 批次 2 序 7 的 R3 一次抓到两件（A8 ADR 三处现值失真：`MountPolicySet` 撤 `turnStopping` / `agent/turn-stopping` listener 删除 / 六点接线条目改四点；评审实质执行 ADR 的停止前候选档位口径与本批 A6 结论相反），均靠评审逐条对读而非机器。可机械化面待判 = 新 ADR 的 Related 指向的 implemented 件里，被新决定证伪的句子能否静态判（如与新增面同名的关键词共现）。出处 = 批次 2 序 7 R3 Blocker 2/3。
 
 ## 待定（已记录的需求，待后续拍板）
 

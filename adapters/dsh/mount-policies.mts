@@ -191,7 +191,7 @@ export function createMountPolicies(config: RepoRootConfig = {}, deps: MountPoli
 		toolPost: [lintFeedback.toolPost, exportDocs.toolPost],
 		sessionStart: [],
 		// A6 停止前能力位（序 7）：零策略——停止前策略面三条候选各有既定裁决或未到
-		// 触发条（a6-turn-stopping-mount ADR Proposal 2）。
+		// 触发条（a6-turn-stopping-mount ADR Decision 2）。
 		turnStopping: [],
 	};
 }

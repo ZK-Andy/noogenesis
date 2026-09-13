@@ -5,7 +5,7 @@ Review: FULL/2026-09-10/R1=ok R2=ok R3=ok
 
 批注：③（session-close 步骤 2 扩评审机器面对账）随本批落卡，实现与评审同批收口——R1 0B/2S（池条目指针级化、候选编号去字母）、R2 0B/2S（同编号条 + 跨会话证据出口补卡）、R3 1B/1S（B4「另案」悬空引用补结案指针、本件补 Related 行 + 裸别名链接）全采纳，修复随本批落。
 
-Related: [2026-09-08-b4-mount-wiring](2026-09-08-b4-mount-wiring.md)（M3 记录件 Decision 5 与「阻断档另案」预留——本件 Decision 3 正式结案，B4 侧已补结案指针）；[2026-09-10-m1-guard-anti-overdesign](2026-09-10-m1-guard-anti-overdesign.md)（三件套先例：session-close 步骤 2 载体、advice 档位与阻断判不立论证同型）；[2026-09-08-a8-session-record-projection-removal](2026-09-08-a8-session-record-projection-removal.md)（证据面 = 宿主日志 `tool/result` 既定口径）；优化轮 §2.1「评审实质执行在自觉区」条（问题池行动区，[capsule-01-optimization-round](../../../../docs/research/capsule-01-optimization-round.md)）。
+Related: [2026-09-08-b4-mount-wiring](2026-09-08-b4-mount-wiring.md)（M3 记录件 Decision 5 与「阻断档另案」预留——本件 Decision 3 正式结案，B4 侧已补结案指针）；[2026-09-10-m1-guard-anti-overdesign](2026-09-10-m1-guard-anti-overdesign.md)（三件套先例：session-close 步骤 2 载体、advice 档位与阻断判不立论证同型）；[2026-09-08-a8-session-record-projection-removal](2026-09-08-a8-session-record-projection-removal.md)（证据面 = 宿主日志 `tool/result` 既定口径）；优化轮 §2.1「评审实质执行在自觉区」条（问题池行动区，[capsule-01-optimization-round](../../../../docs/research/capsule-01-optimization-round.md)）；[2026-09-13-a6-turn-stopping-mount](2026-09-13-a6-turn-stopping-mount.md)（订正本件停止前候选的档位口径：该点只有续跑档）。
 
 ## Problem
 
@@ -21,7 +21,7 @@ Related: [2026-09-08-b4-mount-wiring](2026-09-08-b4-mount-wiring.md)（M3 记录
 **用户拍板（2026-09-10 讨论轮，按推荐案采纳）：**
 
 1. **③ 对账扩展立即落（零代码）**：[session-close](../../../workflows/session-close.md) 步骤 2 由「仅 grep 技能调用痕迹」扩展为同面增 grep 评审机器面闭集标记，对照本会话 ADR Review 行与收口条目——「声称 FULL 收口但评审无机器面痕迹」的假完成在收尾暴露，须补跑或显式降档（判据与跨会话出口的操作面单源在流程卡）。把假完成从「不可见」提到「收尾必暴露」。
-2. **② 收口触点提醒缓议（观察触发）**：tool-pre/钩子桥在 `git commit`/`git push` 时刻判「FULL 档 × 本会话评审机器面零标记 → 一行 advice（不阻断）」的方案**先不建**；触发 = ③对账步抓到真实漏网信号（对账暴露假完成）再立项。接线候选两案在案备用：engine 代理命令（分类复用 verify-review-tier 保持单源，adapter spawn 引擎过防火墙规则 1）；钩子桥停止前触发。不分类宽触发（adapter 重实现 FULL_TRIGGERS，双源违约）判死，不列候选。
+2. **② 收口触点提醒缓议（观察触发）**：tool-pre/钩子桥在 `git commit`/`git push` 时刻判「FULL 档 × 本会话评审机器面零标记 → 一行 advice（不阻断）」的方案**先不建**；触发 = ③对账步抓到真实漏网信号（对账暴露假完成）再立项。接线候选两案在案备用：engine 代理命令（分类复用 verify-review-tier 保持单源，adapter spawn 引擎过防火墙规则 1）；钩子桥停止前触发。不分类宽触发（adapter 重实现 FULL_TRIGGERS，双源违约）判死，不列候选。**停止前候选的档位口径订正**：该时刻没有「不阻断」投递面（投 inject 与 steer 同为 `next-step` 入队、同样再跑一步），启用须按续跑档过 HERO——[A6 能力位 ADR](2026-09-13-a6-turn-stopping-mount.md) Problem / Decision 2。
 3. **②档位预拍板 = advice**：阻断判不立——评审跨会话发生，标记活在评审会话宿主日志里，push 会话不可见，阻断对合法 push 系统性误报；advice 档误报成本近零。此为 [B4](2026-09-08-b4-mount-wiring.md) 预留「阻断档另案」的结案记录。
 4. **F3（三路实质质量）不设机器防**：语义面兜底维持（根 AGENTS 评审检查项 + 评审代理职责），不做 prose 检测类假强制。
 
@@ -36,6 +36,6 @@ Related: [2026-09-08-b4-mount-wiring](2026-09-08-b4-mount-wiring.md)（M3 记录
 ## Consequences
 
 - session-close 步骤 2 扩展在卡（本批实现）；对账步首跑留痕随本批会话收尾兑现。
-- ②观察期无时限、信号驱动：③对账步一旦暴露真实漏网，凭本 ADR 接线候选直接立项，无需重新讨论。
+- ②观察期无时限、信号驱动：③对账步一旦暴露真实漏网，凭本 ADR 接线候选直接立项，无需重新讨论——**停止前候选例外**：其档位与代价按 [A6 能力位 ADR](2026-09-13-a6-turn-stopping-mount.md) 订正后另审（该点无 advice 面，只有续跑档）。
 - 防火墙规则 1 边界维持：适配层不 spawn 门禁脚本；②若立走 engine 代理候选。
 - 同根问题「规范事前接入」余项（lint 配置泛化、A3 阻断档升格触发）不受本拍板影响，形态可复用②若立的接线面。
