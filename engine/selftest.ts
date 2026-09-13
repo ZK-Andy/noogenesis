@@ -317,6 +317,16 @@ function selfTest() {
       fs.writeFileSync(path.join(bd, 'engine', 'bin.dat'), Buffer.from([0, 1, 2, 0]));
       const bl2 = blastRadius(bd, deriveSlots(bd));
       ok(bl2.files === 3 && bl2.added === 4, 'blast: binary untracked file counts as file, 0 lines');
+      fs.writeFileSync(path.join(bd, 'base.txt'), 'base\n');
+      const bl3 = blastRadius(bd, deriveSlots(bd));
+      ok(bl3.added === 4 && bl3.deleted === 1, 'blast: deletions counted (churn, not net change)');
+    }
+    // 路径面不 trim：带前导空格的未跟踪文件名须按原样读取（trim 后读不到文件、行数静默为 0）
+    {
+      const sd = mkRepo(mkTemp());
+      fs.writeFileSync(path.join(sd, ' lead.txt'), 'a\nb\n');
+      const bl4 = blastRadius(sd, deriveSlots(sd));
+      ok(bl4.files === 1 && bl4.added === 2, 'blast: whitespace-edge filename read verbatim');
     }
 
     // spawn 失败根因并入 tail（code=-1 时 stderr 常空——二进制缺失只在此可见）

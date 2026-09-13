@@ -27,6 +27,8 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/archit
 - **行数记 churn（`added + deleted`）不记净变化**：删 100 行加 100 行的改动面是 200，净变化会读成 0。
 - **二进制与不可读文件记 0 行**：`--numstat` 对二进制给 `-`（解析为非数即跳过），未跟踪面按「含 NUL 字节」判二进制跳过——行数不是字节数，二进制面没有行语义。
 - **`scope` = 顶层路径段的分布**：`{dir, files}[]`，按文件数降序、同数按段名码点序（确定性）；空集合渲染为 `-`。顶层段答「影响面跨了几棵树」，更细的完整路径表是 `scripts/change-scope.mts` 的职责，不在此复写。
+- **路径面不做 trim**：带空白边界的文件名是合法路径，按行原样取用；trim 过的路径读不到实际文件，行数会静默少算。
+- **改名按 git 的 rename 检测计一个新路径**（旧路径不出现在变更面）：这是 diff 面的既有语义，`files` 与 `forbidden_paths` 都按它判，本序不改写也不加脚手架——把文件移出 `forbidden_paths` 的改名不会列出旧路径。
 
 ### B2（判据对接）：只接 `max_files`，不新增约束键
 
@@ -55,7 +57,7 @@ blast radius: files 3, lines +120/-8, scope engine(2), docs(1)
 ```
 
 - 零变更时 = `blast radius: files 0, lines +0/-0, scope -`；行数与范围只出现在这一处（不落盘、不进 Event），消费面是人与 `noo_evaluate` 的调用方。
-- 合同面同步：`engine/README.md`（合同面注释 + 对照面说明）、`engine/bin.ts` 的 `usage()` 注释、引擎 self-test 的逐字断言。命令计数与退出码三档不变。
+- 合同面同步：`engine/README.md`（合同面注释 + 对照面说明）+ 引擎 self-test 的逐字断言。命令计数与退出码三档不变；`engine/bin.ts` 的 `usage()` 注释不含报告行，无需同步。
 
 ## Alternatives considered
 
@@ -70,11 +72,11 @@ blast radius: files 3, lines +120/-8, scope engine(2), docs(1)
 
 ## Consequences
 
-- **采用面**：`engine/util.ts`（`changedPaths` 第四面 + `blastRadius` + `scopeOf`）+ `engine/evaluate.ts`（`checkConstraints` 收 blast、报告行）+ `engine/selftest.ts`（度量四节夹具）；`scripts/change-scope.mts`（index 面）。
-- **声明面同步**：`engine/README.md`（合同面注释、util 行、constraints 对照面）、`engine/bin.ts` usage 注释；`verify-command-surface` 机械校核命令面与 README 一致性，命令计数不变。
+- **采用面**：`engine/util.ts`（`changedPaths` 四面 + 未跟踪面单列返回 + `blastRadius` + `scopeOf` / `numstatTotals` / `untrackedLines`）+ `engine/evaluate.ts`（`checkConstraints` 收 blast、报告行）+ `engine/selftest.ts`（度量七条断言：四面计数 / 未跟踪行数 / 删除侧 / scope 序 / 报告行 / 二进制跳过 / 空白边界文件名）；`scripts/change-scope.mts`（index 面）。
+- **声明面同步**：`engine/README.md`（合同面「改动面度量」条、util 行、constraints 对照面）；`verify-command-surface` 机械校核命令面与 README 一致性，命令计数不变。
 - **相邻 ADR 事实行同步**：[P1 骨架](2026-09-05-p1-engine-skeleton.md)「收窄归口」（blast-radius 不再后置）、[P1 实现](2026-09-05-p1-engine-implementation.md) D4（三条 → 四条 changed-path 命令）、[Capsule 原语](2026-09-13-capsule-primitive.md)（`blast_radius` 的预告改为指向本 ADR 的判不立）。
 - **单源指针**：度量口径单源 = 本 ADR + `engine/README.md`；blast-radius 作为**影响面识别方法论**的口径仍在 [architecture-standards](../../../../docs/method/architecture-standards.md) §2.4 R9（本序只落其机器面），互链不重抄。
 - **强度上限（写明）**：度量是**行数、文件数、顶层段分布**三个标量，不是依赖图/编译面/扇出的影响分析——「改动可能影响谁」的语义判断仍归 R9 的人读清单；本序只把可机械计算的改动面读数落地。
 - **遗留面（逐条归口）**：Capsule 字段随 B3 的触发；`validation_report_id` 按[序 3 ADR](2026-09-13-event-field-extension.md) E4 具名延期；评分/候选比较随批次表序 5+。
-- **已命名的覆盖缺口**：真实仓的一次 `evaluate` 尚无 blast 读数落档（报告即散，无历史样本）——首次真实评估才有；同一路径由引擎 self-test 的临时仓夹具覆盖（四面计数、未跟踪行数、scope 排序、二进制跳过），缺口是 e2e 样本而非判据。
+- **实测样本（n=1【探索性】）**：本批收口时对真实仓跑 `evaluate doc/doc-single-home` → `blast radius: files 23, lines +741/-90, scope engine(9), .agents(8), scripts(2), …`，exit 0（门禁全绿）。bl 读数不落盘，故只有当下读数、无趋势面——与 B3 判不立同一个理由（无区间锚点）。
 - **批次表状态**：序 4 已收口，批次表对应行标 done 并指向本笔记。

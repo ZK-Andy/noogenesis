@@ -79,24 +79,22 @@ function deriveSlots(repoRoot: string) {
   return { outgoing_base: base, head: head.stdout.trim() };
 }
 
-// 出账变更面（与 scripts/change-scope.mts 同口径）：已提交 diff + index 未提交 diff + 未暂存 diff + 未跟踪，dedupe 排序。
+// 出账变更面（与 scripts/change-scope.mts 同口径）：已提交 diff + index 未提交 diff + 未暂存 diff + 未跟踪。
 // -c core.quotePath=off：非 ASCII 文件名保持原样（默认八进制转义会让 forbidden_paths 前缀匹配失配）。
 // index 面无则「暂存后未提交」读成空集（批次 1 序 4 ADR B4）：`diff --name-only` 是 worktree→index，
-// 覆盖不到 index→HEAD。
+// 覆盖不到 index→HEAD。未跟踪面单列返回——其行数无基线可 diff，须按整文件计。
+// 路径不 trim：带空白边界的文件名是合法路径，trim 会让路径与实际文件分叉。
 function changedPaths(repoRoot: string, slots: { outgoing_base: string; head: string }) {
-  const out = new Set<string>();
-  const cmds = [
-    ['diff', '--name-only', `${slots.outgoing_base}...HEAD`],
-    ['diff', '--cached', '--name-only'],
-    ['diff', '--name-only'],
-    ['ls-files', '--others', '--exclude-standard'],
-  ];
-  for (const c of cmds) {
-    const r = git(repoRoot, ['-c', 'core.quotePath=off', ...c]);
-    if (r.code !== 0) throw new EngineError(`git ${c[0]} failed: ${r.stderr.trim()}`);
-    for (const line of r.stdout.split('\n')) if (line.trim()) out.add(line.trim());
-  }
-  return [...out].sort();
+  const face = (args: string[]): string[] => {
+    const r = git(repoRoot, ['-c', 'core.quotePath=off', ...args]);
+    if (r.code !== 0) throw new EngineError(`git ${args[0]} failed: ${r.stderr.trim()}`);
+    return r.stdout.split('\n').filter((line) => line.length > 0);
+  };
+  const committed = face(['diff', '--name-only', `${slots.outgoing_base}...HEAD`]);
+  const index = face(['diff', '--cached', '--name-only']);
+  const unstaged = face(['diff', '--name-only']);
+  const untracked = face(['ls-files', '--others', '--exclude-standard']);
+  return { paths: [...new Set([...committed, ...index, ...unstaged, ...untracked])].sort(), untracked };
 }
 
 // 改动面度量（批次 1 序 4 ADR B1）：文件数 / 行 churn / 顶层段分布同源返回，
@@ -154,13 +152,11 @@ function untrackedLines(repoRoot: string, rels: string[]): number {
 }
 
 function blastRadius(repoRoot: string, slots: { outgoing_base: string; head: string }): BlastRadius {
-  const paths = changedPaths(repoRoot, slots);
+  const { paths, untracked } = changedPaths(repoRoot, slots);
   const committed = numstatTotals(repoRoot, ['diff', '--numstat', `${slots.outgoing_base}...HEAD`]);
   const index = numstatTotals(repoRoot, ['diff', '--cached', '--numstat']);
   const unstaged = numstatTotals(repoRoot, ['diff', '--numstat']);
-  const untracked = git(repoRoot, ['-c', 'core.quotePath=off', 'ls-files', '--others', '--exclude-standard']);
-  if (untracked.code !== 0) throw new EngineError(`git ls-files --others failed: ${untracked.stderr.trim()}`);
-  const untrackedAdded = untrackedLines(repoRoot, untracked.stdout.split('\n').map((s) => s.trim()).filter(Boolean));
+  const untrackedAdded = untrackedLines(repoRoot, untracked);
   return {
     files: paths.length,
     added: committed.added + index.added + unstaged.added + untrackedAdded,
@@ -180,6 +176,6 @@ function pathUnder(relPath: string, prefix: string): boolean {
 
 export {
   EngineError, KEBAB_RE, KEBAB_REF_RE,
-  normalizeSignal, sha256Hex, envFingerprint, run, git, deriveSlots, changedPaths, pathUnder,
+  normalizeSignal, sha256Hex, envFingerprint, run, git, deriveSlots, pathUnder,
   blastRadius,
 };
