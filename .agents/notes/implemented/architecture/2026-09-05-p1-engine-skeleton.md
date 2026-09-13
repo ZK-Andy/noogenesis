@@ -49,7 +49,7 @@ Review: FULL/2026-09-05/R1=ok R2=ok R3=ok
 - **canary 后置**：evolver canary 是 daemon 重启安全网（[底座 ADR](../../proposed/architecture/2026-09-05-evomap-evox-engine-anatomy.md)），P1 无 daemon；入档闸 = 本地门禁全绿 + CI 跨机器复验（已具备）；终局归口见 [护栏建设轮 ADR](2026-09-13-guardrail-construction-round.md)（判不立，重议触发 = 出现跨进程常驻形态）。
 - **被否选项**：B 量化"严格改进"（字数下降可作弊，无真值）；C LLM judge（违反 D1 零网络 + 无金标自报分）。
 
-**收窄归口**：P1 对主设计 §6 完整生命周期的裁剪与 Mutation 同批显式后置 M2——memory-graph 与观测透镜（Select）、blast-radius（Evaluate）、Mutation 原语；M2 钩子适配层恢复完整形态。Mutation 原语已随[批次 1 序 2](2026-09-13-mutation-primitive.md)、blast-radius（Evaluate 的改动面度量）随[批次 1 序 4](2026-09-13-evaluate-blast-radius.md)落地；memory-graph / 观测透镜仍后置。
+**收窄归口**：P1 对主设计 §6 完整生命周期的裁剪与 Mutation 同批显式后置 M2——memory-graph 与观测透镜（Select）、blast-radius（Evaluate）、Mutation 原语；M2 钩子适配层恢复完整形态。Mutation 原语已随[批次 1 序 2](2026-09-13-mutation-primitive.md)、blast-radius（Evaluate 的改动面度量）随[批次 1 序 4](2026-09-13-evaluate-blast-radius.md)落地；memory-graph 的边现算面已交付、消费面判不立带触发条（[批次 4 重拍 ADR](2026-09-14-memory-line-phase2-reshoot.md)），观测透镜维持 P2 D3 后置。
 
 ## Alternatives considered
 
