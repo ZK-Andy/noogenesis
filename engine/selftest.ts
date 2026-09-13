@@ -6,7 +6,7 @@ import * as os from 'os';
 import * as path from 'path';
 import { execFileSync } from 'child_process';
 
-import { normalizeSignal, sha256Hex, EngineError } from './util.js';
+import { normalizeSignal, sha256Hex, EngineError, envFingerprint } from './util.js';
 import { loadGates } from './gates.js';
 import { selectGenes, runSelect } from './select.js';
 import { validateObservation, buildObservation, recordObservation, readObservations, EVIDENCE_MAX_CHARS } from './observe.js';
@@ -597,6 +597,96 @@ function selfTest() {
       ok(!readEvents(td).some((e) => e.mutation === 'mut-rb'), 'mutation: rollback removes appended event line');
       git(td, ['config', '--unset', 'core.hooksPath']);
     }
+  }
+
+  // --- 5.9) Event 扩字段（批次 1 序 3）：五 kind 恒带 env_fingerprint，跨链键可选且可解析 ---
+  {
+    const td = mkTemp();
+    mkRepo(td);
+    const gatesDir = path.join(td, 'gates');
+    writeGates(gatesDir, [{ name: 'stub-pass', cmd: 'python3', args: ['scripts/stub-pass.py'] }]);
+    stubScript(td);
+    writeGene(td, 'process', {
+      id: 'link-gene', domain: 'process', summary: 'event field fixture',
+      signals: ['link'], strategy: ['s'],
+    });
+    const staging = path.join(td, 'candidates');
+    fs.mkdirSync(staging);
+
+    // 先造被引两端：mutation 声明（执行前）+ capsule 记录（执行后）
+    const mutCand = path.join(staging, 'link-mut.json');
+    fs.writeFileSync(mutCand, JSON.stringify({
+      id: 'link-mut', domain: 'process', category: 'refactor', target: 'engine/util.ts',
+      expected_effect: 'fingerprint helper lands', risk_level: 'low',
+    }, null, 2) + '\n');
+    recordMutation(td, mutCand, 'tester');
+    const capCand = path.join(staging, 'link-cap.json');
+    fs.writeFileSync(capCand, JSON.stringify({
+      id: 'link-cap', domain: 'process', gene_ids: ['process/link-gene'],
+      trigger: 'link', steps: ['s1'], outcome: { status: 'ok' }, evidence: ['gate green'],
+    }, null, 2) + '\n');
+    recordCapsule(td, capCand, 'tester');
+
+    // 写入面：无跨链键的两 kind 也必须带指纹
+    const seeded = readEvents(td);
+    ok(seeded.length === 2 && seeded.every((e) => e.env_fingerprint === envFingerprint()),
+      'event: mutation.added / capsule.added carry env_fingerprint');
+
+    const geneCand = path.join(staging, 'link-gene.json');
+    fs.writeFileSync(geneCand, JSON.stringify({
+      id: 'link-gene', domain: 'process', summary: 'event field fixture',
+      signals: ['link'], strategy: ['s'],
+    }, null, 2) + '\n');
+    const r = solidify(td, gatesDir, geneCand, 'tester', { mutation: 'process/link-mut', capsule: 'process/link-cap' });
+    ok(r.ok === true, 'event: solidify with cross-links accepted');
+    const geneEv = readEvents(td).find((e) => e.gene === 'link-gene');
+    ok(geneEv?.mutation_id === 'link-mut' && geneEv?.capsule_id === 'link-cap',
+      'event: cross-links recorded as bare ids');
+    ok(geneEv?.env_fingerprint === envFingerprint(), 'event: gene.* carries env_fingerprint');
+
+    // 悬空 / 形错引用拒写：不留文件、不留事件
+    const dangling = path.join(staging, 'dangling-gene.json');
+    fs.writeFileSync(dangling, JSON.stringify({
+      id: 'dangling-gene', domain: 'process', summary: 'x', signals: ['x'], strategy: ['s'],
+    }, null, 2) + '\n');
+    ok(throwsEngine(() => solidify(td, gatesDir, dangling, 'tester', { mutation: 'process/no-such-mut' })),
+      'event: dangling mutation ref refused');
+    ok(throwsEngine(() => solidify(td, gatesDir, dangling, 'tester', { capsule: 'not-a-ref' })),
+      'event: malformed capsule ref refused');
+    ok(!fs.existsSync(genePath(td, 'process', 'dangling-gene')) && !readEvents(td).some((e) => e.gene === 'dangling-gene'),
+      'event: refused cross-link wrote no file and no event');
+
+    // capsule.added 只链声明，不链自身（自身即 `capsule` 键）
+    const cap2 = path.join(staging, 'link-cap-2.json');
+    fs.writeFileSync(cap2, JSON.stringify({
+      id: 'link-cap-2', domain: 'process', gene_ids: ['process/link-gene'],
+      trigger: 'link', steps: ['s1'], outcome: { status: 'ok' }, evidence: ['gate green'],
+    }, null, 2) + '\n');
+    recordCapsule(td, cap2, 'tester', { mutation: 'process/link-mut' });
+    const capEv = readEvents(td).find((e) => e.capsule === 'link-cap-2');
+    ok(capEv?.mutation_id === 'link-mut' && capEv?.capsule_id === undefined,
+      'event: capsule.added links the declaration, never itself');
+    ok(throwsEngine(() => recordCapsule(td, cap2, 'tester', { mutation: 'process/no-such-mut' })),
+      'event: capsule add refuses dangling mutation ref');
+
+    // CLI 端到端：旗标落事件；缺值 fail-loud（exit 2）。引擎目录复制进沙箱以换 stub 白名单
+    const engineCopy = path.join(td, 'engine-copy');
+    fs.cpSync(__dirname, engineCopy, { recursive: true });
+    writeGates(engineCopy, [{ name: 'stub-pass', cmd: 'python3', args: ['scripts/stub-pass.py'] }]);
+    const bin = path.join(engineCopy, 'bin.js');
+    const cliGene = path.join(staging, 'cli-gene.json');
+    fs.writeFileSync(cliGene, JSON.stringify({
+      id: 'cli-gene', domain: 'process', summary: 'x', signals: ['x'], strategy: ['s'],
+    }, null, 2) + '\n');
+    ok(spawnCode([bin, 'solidify', cliGene, '--actor', 't', '--mutation', 'process/link-mut', '--capsule', 'process/link-cap'], td) === 0,
+      'bin: solidify with cross-link flags -> exit 0');
+    const cliEv = readEvents(td).find((e) => e.gene === 'cli-gene');
+    ok(cliEv?.mutation_id === 'link-mut' && cliEv?.capsule_id === 'link-cap',
+      'bin: cross-link flags reach the event line');
+    ok(spawnCode([bin, 'solidify', cliGene, '--actor', 't', '--mutation'], td) === 2,
+      'bin: valueless --mutation -> exit 2');
+    ok(spawnCode([bin, 'capsule', 'add', cap2, '--actor', 't', '--mutation'], td) === 2,
+      'bin: capsule add valueless --mutation -> exit 2');
   }
 
   // --- 5.5) bin.js 退出码三档端到端（fail-closed = exit 2，非堆栈 exit 1）---

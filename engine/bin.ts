@@ -12,12 +12,14 @@ function usage(): string {
     '  node dist/engine/bin.js select <signal>... [--stdin]        # 信号 → 基因匹配（归一化字面匹配，多键并集）',
     '  node dist/engine/bin.js propose <domain>/<id> [--out FILE]  # 确定性渲染注入文本（stdout 或文件）',
     '  node dist/engine/bin.js evaluate <domain>/<id>              # gates.json 全集 + 约束；红即拒',
-    '  node dist/engine/bin.js solidify <candidate.json> --actor N # 入档：evaluate 全绿 → genes/ + events/ 同一 commit',
-    '  node dist/engine/bin.js solidify --retire <domain>/<id> --actor N',
+    '  node dist/engine/bin.js solidify <candidate.json> --actor N [--mutation <ref>] [--capsule <ref>]',
+    '      # 入档：evaluate 全绿 → genes/ + events/ 同一 commit；跨链旗标可选，指向本轮演化的声明与执行记录',
+    '  node dist/engine/bin.js solidify --retire <domain>/<id> --actor N [--mutation <ref>] [--capsule <ref>]',
     '  node dist/engine/bin.js pull <bank-url> [--cache DIR]       # 只读消费：clone/pull 基因库进仓内缓存（P2）',
     '  node dist/engine/bin.js observe --signal S --gene <domain>/<id> --outcome ok|fail --actor N [--evidence TEXT]',
     '      # 观测输入面：append-only 写入 .noogenesis/observations/（写路径 fail-closed）',
-    '  node dist/engine/bin.js capsule add <candidate.json> --actor N      # Capsule 入档：capsules/ + events/ 同一 commit',
+    '  node dist/engine/bin.js capsule add <candidate.json> --actor N [--mutation <ref>]',
+    '      # Capsule 入档：capsules/ + events/ 同一 commit；--mutation 指向兑现的声明（可选）',
     '  node dist/engine/bin.js capsule show <domain>/<id>                  # 读并渲染单条 Capsule（确定性输出）',
     '  node dist/engine/bin.js mutation add <candidate.json> --actor N     # Mutation 声明：mutations/ + events/ 同一 commit',
     '  node dist/engine/bin.js mutation show <domain>/<id>                 # 读并渲染单条 Mutation（确定性输出）',
@@ -29,6 +31,22 @@ function usage(): string {
 function fail(msg: string, code = 2): never {
   process.stderr.write(`engine: ${msg}\n`);
   process.exit(code);
+}
+
+// 旗标取值（首个出现处）：缺值（含空串）由调用方 fail-loud，不静默当作缺席。
+function flagValue(rest: string[], flag: string): { present: boolean; value: string | null } {
+  const i = rest.indexOf(flag);
+  return i < 0 ? { present: false, value: null } : { present: true, value: rest[i + 1] || null };
+}
+
+// 已被旗标消费的 token 下标（旗标自身 + 其后值）：位置参数筛选式用。
+function consumedIndexes(rest: string[], flags: string[]): Set<number> {
+  const out = new Set<number>();
+  for (const flag of flags) {
+    const i = rest.indexOf(flag);
+    if (i >= 0) { out.add(i); out.add(i + 1); }
+  }
+  return out;
 }
 
 function gitRoot(start: string): string | null {
@@ -117,18 +135,25 @@ function main(argv: string[]): number {
     const actorIdx = rest.indexOf('--actor');
     const actor = actorIdx >= 0 ? rest[actorIdx + 1] : null;
     const retireIdx = rest.indexOf('--retire');
+    // 跨链旗标（批次 1 序 3 ADR E5）：值形与被引对象在场性由 engine 侧 fail-closed 判。
+    const mutation = flagValue(rest, '--mutation');
+    const capsule = flagValue(rest, '--capsule');
+    if (mutation.present && !mutation.value) fail('solidify: --mutation needs a <domain>/<id> value');
+    if (capsule.present && !capsule.value) fail('solidify: --capsule needs a <domain>/<id> value');
     const { solidify, retire } = require('./solidify.js');
-    const candidate = rest.find((a, i) => a !== '--actor' && i !== actorIdx + 1
-      && (retireIdx < 0 || i !== retireIdx + 1));
-    if (!candidate) fail('solidify needs <candidate.json> or --retire <domain>/<id>');
+    const skip = consumedIndexes(rest, ['--actor', '--retire', '--mutation', '--capsule']);
+    const flags = ['--actor', '--retire', '--mutation', '--capsule'];
+    const candidate = retireIdx >= 0 ? undefined : rest.find((a, i) => !skip.has(i) && !flags.includes(a));
+    if (retireIdx < 0 && !candidate) fail('solidify needs <candidate.json> or --retire <domain>/<id>');
     if (!actor) fail('solidify needs --actor <name>');
+    const links = { mutation: mutation.value, capsule: capsule.value };
     let r;
     try {
       // `--retire` 收尾（旗标后无 ref token）按未捕获 TypeError 落 exit 1——不收窄为
       // EngineError（那会把该 token 序列从 exit 1 改写为 exit 2）。
       r = retireIdx >= 0
-        ? retire(repoRoot, rest[retireIdx + 1] as string, actor)
-        : solidify(repoRoot, engineRoot, path.resolve(candidate), actor);
+        ? retire(repoRoot, rest[retireIdx + 1] as string, actor, links)
+        : solidify(repoRoot, engineRoot, path.resolve(candidate as string), actor, links);
     } catch (e) {
       if ((e as { engine?: unknown }).engine) return fail((e as Error).message, 2);
       throw e;
@@ -207,13 +232,16 @@ function main(argv: string[]): number {
     if (sub === 'add') {
       const actorIdx = rest.indexOf('--actor');
       const actor = actorIdx >= 0 ? rest[actorIdx + 1] : null;
-      const candidate = rest.find((a, i) => i > 0 && a !== '--actor' && i !== actorIdx + 1);
+      const mutation = flagValue(rest, '--mutation');
+      if (mutation.present && !mutation.value) fail('capsule add: --mutation needs a <domain>/<id> value');
+      const skip = consumedIndexes(rest, ['--actor', '--mutation']);
+      const candidate = rest.find((a, i) => i > 0 && !skip.has(i) && a !== '--actor');
       if (!candidate) fail('capsule add needs <candidate.json>');
       if (!actor) fail('capsule add needs --actor <name>');
       const { recordCapsule } = require('./solidify.js');
       let r;
       try {
-        r = recordCapsule(repoRoot, path.resolve(candidate), actor);
+        r = recordCapsule(repoRoot, path.resolve(candidate), actor, { mutation: mutation.value });
       } catch (e) {
         if ((e as { engine?: unknown }).engine) return fail((e as Error).message, 2);
         throw e;

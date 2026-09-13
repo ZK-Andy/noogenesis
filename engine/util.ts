@@ -21,6 +21,13 @@ function sha256Hex(buf: Buffer | string): string {
   return crypto.createHash('sha256').update(buf).digest('hex');
 }
 
+// 事件记录环境指纹（批次 1 序 3 ADR E3）：引擎进程运行时三元的可读规范串
+// `node<major.minor.patch>/<platform>/<arch>`。强度上限 = 标识写事件的运行时，
+// 不是完整工具链冻结；闸件的形状正则与本函数同批（scripts/verify-gene-format.mts）。
+function envFingerprint(): string {
+  return `node${process.version.replace(/^v/, '')}/${process.platform}/${process.arch}`;
+}
+
 // 子进程最小 env：只透传 PATH/HOME（git 身份与 python 解释器定位所需）+ LANG。
 function gateEnv(): NodeJS.ProcessEnv {
   const env: NodeJS.ProcessEnv = { PATH: process.env.PATH || '/usr/local/bin:/usr/bin:/bin', LANG: 'C.UTF-8' };
@@ -95,5 +102,5 @@ function pathUnder(relPath: string, prefix: string): boolean {
 
 export {
   EngineError, KEBAB_RE,
-  normalizeSignal, sha256Hex, run, git, deriveSlots, changedPaths, pathUnder,
+  normalizeSignal, sha256Hex, envFingerprint, run, git, deriveSlots, changedPaths, pathUnder,
 };

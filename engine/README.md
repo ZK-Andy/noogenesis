@@ -15,12 +15,12 @@ node dist/engine/bin.js select <signal>... [--stdin]        # 信号 → 基因�
                                                             # + 观测建议档行（advice: …，零观测时不发射）
 node dist/engine/bin.js propose <domain>/<id> [--out FILE]  # gene → 注入文本（确定性，同输入必同输出）
 node dist/engine/bin.js evaluate <domain>/<id>              # gates.json 全集 + 约束；红即拒，无豁免
-node dist/engine/bin.js solidify <candidate.json> --actor N # 入档：全绿 → genes/ + events/ 同一 commit
-node dist/engine/bin.js solidify --retire <domain>/<id> --actor N
+node dist/engine/bin.js solidify <candidate.json> --actor N [--mutation <ref>] [--capsule <ref>]  # 入档：全绿 → genes/ + events/ 同一 commit
+node dist/engine/bin.js solidify --retire <domain>/<id> --actor N [--mutation <ref>] [--capsule <ref>]
 node dist/engine/bin.js pull <bank-url> [--cache DIR]       # P2 只读消费：clone/pull 基因库进仓内缓存
 node dist/engine/bin.js observe --signal S --gene <domain>/<id> --outcome ok|fail --actor N [--evidence TEXT]
                                                             # 观测输入面：append-only 到 .noogenesis/observations/
-node dist/engine/bin.js capsule add <candidate.json> --actor N   # Capsule 入档：capsules/ + events/ 同一 commit
+node dist/engine/bin.js capsule add <candidate.json> --actor N [--mutation <ref>]  # Capsule 入档：capsules/ + events/ 同一 commit
 node dist/engine/bin.js capsule show <domain>/<id>          # 读并渲染单条 Capsule（确定性输出）
 node dist/engine/bin.js mutation add <candidate.json> --actor N  # Mutation 声明：mutations/ + events/ 同一 commit
 node dist/engine/bin.js mutation show <domain>/<id>         # 读并渲染单条 Mutation（确定性输出）
@@ -34,7 +34,7 @@ node dist/engine/bin.js self-test                           # 元评测夹具（
 | 文件 | 职责 |
 |---|---|
 | `bin.ts` | CLI 分发 + 用法 |
-| `util.ts` | 归一化 / SHA-256 / 结构化 spawn / git 封装 / 槽值推导 |
+| `util.ts` | 归一化 / SHA-256 / 环境指纹 / 结构化 spawn / git 封装 / 槽值推导 |
 | `gates.ts` + `gates.json` | 验证白名单（fail-closed 装载） |
 | `gene.ts` | Gene 八字段封闭 schema / 目录扫描（含缓存合并扫描） |
 | `capsule.ts` | Capsule 七字段封闭 schema / 写入与读取（`capsule add` / `capsule show`） |
@@ -75,7 +75,7 @@ node dist/engine/bin.js self-test                           # 元评测夹具（
 - **原子证据**：`genes/` 变更与 `events/` 追加行放同一 commit；拒绝时只提交事件行（候选不入档），`outcome` 携带拒因。
 - **retire 无需 evaluate**：退役不引入前沿内容，入档闸只守新增/更新；删除文件 + `gene.retired` 事件（`gene_sha` = 最后内容 SHA），git 历史仍可溯。
 - **constraints 对照面**：当前出账变更面（`outgoing_base...HEAD` 已提交 + 未暂存 + 未跟踪，与 `scripts/change-scope.mts` 同口径）。
-- **事件 kind 封闭集**：`gene.added` / `gene.updated` / `gene.retired` / `capsule.added` / `mutation.added`；select/propose 运行不记（演化事件 ≠ 运行日志）。事件键集按 kind 条件化——gene 面记 `gene`/`gene_sha`，capsule 面记 `capsule`/`capsule_sha`，mutation 面记 `mutation`/`mutation_sha`，其余五键共通。
+- **事件 kind 封闭集**：`gene.added` / `gene.updated` / `gene.retired` / `capsule.added` / `mutation.added`；select/propose 运行不记（演化事件 ≠ 运行日志）。事件键集 = 按 kind 条件化的**必需键** + 按 kind 的**允许可选键**（单源见下节「Event 面」）。
 
 ## Capsule 面（执行审计记录）
 
@@ -92,12 +92,20 @@ node dist/engine/bin.js self-test                           # 元评测夹具（
 - **append-only**：同 id 重复声明拒收（无 `mutation.updated` / `mutation.retired` 面）。
 - **写读命令**：`mutation add <candidate.json> --actor N` 落 `mutations/` + `mutation.added` 事件（同一 commit，原子性同基因/Capsule 入档）；`mutation show <domain>/<id>` 渲染人读面。两者用法错与 fail-closed 都走 exit 2。
 - **复算边界**：`mutation.added`(ok) 的 `mutation_sha` 必须等于文件字节 sha256；工作树 Mutation 必须有事件轨（`mutation add` 是唯一入口）。引擎不构造声明内容、不跑门禁——声明由调用方在动改动面之前显式给出。
-- **不做的事**：`mutation add` 不要求也不检查引用某条 Capsule 或 gene（基因链接在 Event 面，随批次表序 3 的 `mutation_id` 落地）；引擎不判断「该不该声明」（Detect/Select/Mutate 的自动性不在引擎，骨架 ADR D2/D3）。
+- **不做的事**：`mutation add` 不要求也不检查引用某条 Capsule 或 gene——关联写在 Event 面（`mutation_id` / `capsule_id` 跨链键，由 `solidify` / `capsule add` 的旗标给出，见下节）；引擎不判断「该不该声明」（Detect/Select/Mutate 的自动性不在引擎，骨架 ADR D2/D3）。
+
+## Event 面（演化事件键集与扩字段）
+
+- **键集两段**（[批次 1 序 3 ADR](../.agents/notes/proposed/architecture/2026-09-13-event-field-extension.md) E5）：**必需键**按 kind 条件化——五键共通 `ts` / `actor` / `kind` / `outcome` / `evidence`，gene 面加 `gene` / `gene_sha`，capsule 面加 `capsule` / `capsule_sha`，mutation 面加 `mutation` / `mutation_sha`；**可选键**是按 kind 的封闭集——gene 面 `mutation_id` / `capsule_id` / `env_fingerprint`，capsule 面 `mutation_id` / `env_fingerprint`，mutation 面 `env_fingerprint`。封闭集外的键仍是违约。
+- **跨链键的方向**（E2）：`mutation_id` 指执行前的意图声明（§6 Mutate），`capsule_id` 指执行后的审计记录（§6 Solidify）。声明先于执行，故 `mutation.added` 不带跨链键；`capsule.added` 只带 `mutation_id`（自身即 `capsule` 键）。两者记**裸 id**（与三主体键同口径），旗标取 `<domain>/<id>`——写路径按该路径当下在场判，缺席 exit 2 拒写；闸件按裸 id 命中 `mutations/` / `capsules/` 的 id 集判。
+- **`env_fingerprint`**（E3）：引擎在事件写入时计算的运行时规范串 `node<major.minor.patch>/<platform>/<arch>`（如 `node26.8.1/linux/x64`），五 kind 全带。它标识**写事件的那个引擎进程的运行时**，不是完整工具链冻结；闸件按允许可选键 + 形状校验（`events/` 中先于本字段的历史行不可改写，故不追溯强制）。
+- **命令面**：`solidify … [--mutation <ref>] [--capsule <ref>]`（add/update 与 `--retire` 同治）、`capsule add … [--mutation <ref>]`；旗标可同时给、可缺省，缺值 fail-loud（exit 2）。
+- **未落地的一项**：`validation_report_id` 不进 schema——它指向的「验证报告」对象本仓尚无家（同 ADR E4，触发 = 批次表序 43 / 序 45）。
 
 ## 消费方
 
 - 引擎自身：`evaluate` 跑白名单全集作为入档门槛。
-- `scripts/verify-gene-format.mts`（白名单外独立件）：校验 `genes/` + `capsules/` + `mutations/` + `events/`，含白名单条目脚本存在性、`gene_sha` / `capsule_sha` / `mutation_sha` 工作树复算与 Capsule 的基因引用可解析（例外机制单家见 gates.mts 头注）。
+- `scripts/verify-gene-format.mts`（白名单外独立件）：校验 `genes/` + `capsules/` + `mutations/` + `events/`，含白名单条目脚本存在性、`gene_sha` / `capsule_sha` / `mutation_sha` 工作树复算、Capsule 的基因引用可解析与事件跨链键可解析（例外机制单家见 gates.mts 头注）。
 - `scripts/gates.mts`（门禁清单单源发射器）：hooks/CI 的门禁清单单源 = 本白名单（结构性例外四件见该脚本头注）。
 - `scripts/verify-secrets.mts`（白名单条目 `secrets`）：凭据绊线扫 `genes/` + `events/` + `.noogenesis/observations/` 三面；**best-effort 绊线，不是安全属性**（强度上限与已知盲区写在件头）。
 - `adapters/dsh/`（M2 适配层）：spawn CLI 单合同的第一个进程外消费者；引擎与 `gates.json` 对适配层零新增要求。

@@ -4,7 +4,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { EngineError, sha256Hex, git } from './util.js';
+import { EngineError, sha256Hex, git, envFingerprint } from './util.js';
 import { readGene, genePath } from './gene.js';
 import { readCapsule, capsulePath, assertGeneRefsResolvable, assertCapsuleIdUnique } from './capsule.js';
 import { readMutation, mutationPath, assertMutationIdUnique } from './mutation.js';
@@ -14,6 +14,33 @@ function eventsPath(repoRoot: string, ts: string) {
   // YYYY-MM，月卷与 journal 同节奏
   const vol = ts.slice(0, 7);
   return path.join(repoRoot, 'events', `${vol}.jsonl`);
+}
+
+// 可选跨链引用（批次 1 序 3 ADR E2/E5）：旗标取 `<domain>/<id>`，落进事件取裸 id。
+interface LinkRefs { mutation?: string | null; capsule?: string | null }
+
+const LINK_REF_RE = /^[a-z0-9]+(-[a-z0-9]+)*\/[a-z0-9]+(-[a-z0-9]+)*$/;
+
+// 被引对象须当下在场——mutations/ 与 capsules/ 都 append-only、无退役面，
+// 故无 Capsule `gene_ids` 那种「历史成立 vs 当下在场」差集；缺席即拒写（exit 2）。
+function resolveLinkRef(repoRoot: string, kind: 'mutation' | 'capsule', ref: string): string {
+  if (!LINK_REF_RE.test(ref)) {
+    throw new EngineError(`${kind} ref must be <domain>/<id>, got '${ref}'`);
+  }
+  const [domain, id] = ref.split('/') as [string, string];
+  const p = kind === 'mutation' ? mutationPath(repoRoot, domain, id) : capsulePath(repoRoot, domain, id);
+  if (!fs.existsSync(p)) {
+    throw new EngineError(`${kind} ref '${ref}' not found — ${kind === 'mutation' ? 'declare' : 'record'} it first`);
+  }
+  return id;
+}
+
+// 缺席即不写键（可选键是封闭集，不是空值位）。
+function linkKeys(repoRoot: string, refs: LinkRefs) {
+  const out: { mutation_id?: string; capsule_id?: string } = {};
+  if (refs.mutation) out.mutation_id = resolveLinkRef(repoRoot, 'mutation', refs.mutation);
+  if (refs.capsule) out.capsule_id = resolveLinkRef(repoRoot, 'capsule', refs.capsule);
+  return out;
 }
 
 function appendEvent(repoRoot: string, ev: any) {
@@ -67,9 +94,11 @@ function assertIdUnique(repoRoot: string, domain: string, id: string) {
 }
 
 // add/update：候选文件须以 <id>.json 命名（ID=文件名锚点对候选同样生效）。
-function solidify(repoRoot: string, engineRoot: string, candidatePath: string, actor: string) {
+function solidify(repoRoot: string, engineRoot: string, candidatePath: string, actor: string, links: LinkRefs = {}) {
   if (!actor || !actor.trim()) throw new EngineError('solidify requires --actor <name> (audit trail)');
   actor = actor.trim();
+  // 跨链引用先于任何写面/评估解析：旗标坏或指向不存在的对象 = 用法错，不留半个事件。
+  const link = linkKeys(repoRoot, links);
 
   const gene = readGene(candidatePath, { skipDirAnchor: true });
   assertIdUnique(repoRoot, gene.domain, gene.id);
@@ -87,6 +116,8 @@ function solidify(repoRoot: string, engineRoot: string, candidatePath: string, a
       gene_sha: sha256Hex(fs.readFileSync(candidatePath)),
       outcome: `fail: ${redReason(ev)}`,
       evidence: `rejected candidate ${candidatePath}; not placed into genes/`,
+      env_fingerprint: envFingerprint(),
+      ...link,
     }) + '\n';
     const p = appendEvent(repoRoot, JSON.parse(line));
     try {
@@ -111,6 +142,8 @@ function solidify(repoRoot: string, engineRoot: string, candidatePath: string, a
   const line = JSON.stringify({
     ts, actor, kind, gene: gene.id, gene_sha: sha, outcome: 'ok',
     evidence: `evaluate ok: all ${ev.results.length} gates green`,
+    env_fingerprint: envFingerprint(),
+    ...link,
   }) + '\n';
   const evp = appendEvent(repoRoot, JSON.parse(line));
   try {
@@ -127,8 +160,9 @@ function solidify(repoRoot: string, engineRoot: string, candidatePath: string, a
 
 // retire：从 genes/ 删除 + gene.retired 事件（gene_sha = 退役时最后内容 SHA）；git 历史仍可溯。
 // 退役不引入前沿内容，无需 evaluate（入档闸只守新增/更新）。
-function retire(repoRoot: string, ref: string, actor: string) {
+function retire(repoRoot: string, ref: string, actor: string, links: LinkRefs = {}) {
   if (!actor || !actor.trim()) throw new EngineError('retire requires --actor <name> (audit trail)');
+  const link = linkKeys(repoRoot, links);
   const [domain, id] = ref.split('/');
   if (!domain || !id) throw new EngineError('retire ref must be <domain>/<id>');
   const target = genePath(repoRoot, domain, id);
@@ -140,6 +174,8 @@ function retire(repoRoot: string, ref: string, actor: string) {
   const line = JSON.stringify({
     ts, actor: actor.trim(), kind: 'gene.retired', gene: id, gene_sha: sha, outcome: 'ok',
     evidence: 'retired from genes/; content recoverable from git history',
+    env_fingerprint: envFingerprint(),
+    ...link,
   }) + '\n';
   const evp = appendEvent(repoRoot, JSON.parse(line));
   try {
@@ -156,9 +192,10 @@ function retire(repoRoot: string, ref: string, actor: string) {
 // capsules/ + capsule.added 事件同一 commit（原子证据同基因入档）。Capsule 是 append-only
 // 审计记录：同 id 重复记录拒收（无 capsule.updated/retired 面）。引擎不重跑门禁——
 // 证据由调用方在真实执行后给出，自动复跑归批次表序 43。
-function recordCapsule(repoRoot: string, candidatePath: string, actor: string) {
+function recordCapsule(repoRoot: string, candidatePath: string, actor: string, links: LinkRefs = {}) {
   if (!actor || !actor.trim()) throw new EngineError('capsule add requires --actor <name> (audit trail)');
   actor = actor.trim();
+  const link = linkKeys(repoRoot, links);
 
   const cap = readCapsule(candidatePath, { skipDirAnchor: true });
   assertGeneRefsResolvable(repoRoot, cap.gene_ids);
@@ -177,6 +214,8 @@ function recordCapsule(repoRoot: string, candidatePath: string, actor: string) {
   const line = JSON.stringify({
     ts, actor, kind: 'capsule.added', capsule: cap.id, capsule_sha: sha, outcome: 'ok',
     evidence: `recorded ${cap.domain}/${cap.id}: ${cap.gene_ids.length} gene ref(s), outcome ${cap.outcome.status}`,
+    env_fingerprint: envFingerprint(),
+    ...link,
   }) + '\n';
   const evp = appendEvent(repoRoot, JSON.parse(line));
   try {
@@ -216,6 +255,7 @@ function recordMutation(repoRoot: string, candidatePath: string, actor: string) 
   const line = JSON.stringify({
     ts, actor, kind: 'mutation.added', mutation: mut.id, mutation_sha: sha, outcome: 'ok',
     evidence: `declared ${mut.domain}/${mut.id}: ${mut.category}, risk ${mut.risk_level}`,
+    env_fingerprint: envFingerprint(),
   }) + '\n';
   const evp = appendEvent(repoRoot, JSON.parse(line));
   try {

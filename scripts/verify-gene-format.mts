@@ -12,10 +12,14 @@
  *   应省略字段）；id 全树唯一（引用不歧义）；布局封闭 genes/<domain>/<id>.json。
  * - engine/gates.json（S3 — 白名单载体，fail-closed）：version 为数字；gates 非空、
  *   name kebab 且唯一、cmd 非空、args 字符串数组；引用的 scripts/** 路径必须存在。
- * - events/<YYYY-MM>.jsonl（S2 — 追加式事件审计）：每行 JSON 对象键集按 kind 条件化
- *   —— 五键共通 {ts, actor, kind, outcome, evidence}，gene 面加 {gene, gene_sha}，
- *   capsule 面加 {capsule, capsule_sha}，mutation 面加 {mutation, mutation_sha}；
- *   kind ∈ 封闭集
+ * - events/<YYYY-MM>.jsonl（S2 + 批次 1 序 3 ADR E2/E3/E5 — 追加式事件审计）：每行
+ *   JSON 对象 = 必需键（五键共通 {ts, actor, kind, outcome, evidence}，gene 面加
+ *   {gene, gene_sha}，capsule 面加 {capsule, capsule_sha}，mutation 面加
+ *   {mutation, mutation_sha}）+ 按 kind 的允许可选键（gene 面 {capsule_id,
+ *   env_fingerprint, mutation_id}；capsule 面 {env_fingerprint, mutation_id}；
+ *   mutation 面 {env_fingerprint}）——封闭集外的键仍违约。mutation_id / capsule_id
+ *   为裸 kebab id 且须命中 mutations/ 或 capsules/ 的 id 集；env_fingerprint 形状 =
+ *   node<major.minor.patch>/<platform>/<arch>；kind ∈ 封闭集
  *   {gene.added, gene.updated, gene.retired, capsule.added, mutation.added}；ts 为
  *   ISO-8601、卷内升序且落在卷月份内（±1 天时区容差，对齐 verify-adr-format）；
  *   outcome 为 "ok" 或 "fail: <reason>"；三面的 sha 均为 64 位十六进制。
@@ -63,21 +67,32 @@ const SHA_RE = /^[0-9a-f]{64}$/;
 const VOL_RE = /^(\d{4}-\d{2})\.jsonl$/;
 const KINDS = ["gene.added", "gene.updated", "gene.retired", "capsule.added", "mutation.added"];
 const KINDS_REPR = `(${KINDS.map((k) => `'${k}'`).join(", ")})`;
-// 事件键集按 kind 条件化（批次 1 序 1 ADR C5 + 序 2 ADR C4 两次重拍 S2）：共通五键 +
-// gene 面 / capsule 面 / mutation 面各两键。键集与判据文案同源：repr 由键列表派生，
-// 改键集即改文案（防两处漂移）。
+// 事件键集（批次 1 序 1/2/3 ADR 三次重拍 S2）：必需键按 kind 条件化（五键共通 +
+// 三面各两键），可选键是按 kind 的封闭集（批次 1 序 3 ADR E2/E5）。键集与判据文案
+// 同源：repr 由键列表派生，改键集即改文案（防两处漂移）。
 const GENE_EVENT_KEY_LIST = ["actor", "evidence", "gene", "gene_sha", "kind", "outcome", "ts"];
 const CAPSULE_EVENT_KEY_LIST = ["actor", "capsule", "capsule_sha", "evidence", "kind", "outcome", "ts"];
 const MUTATION_EVENT_KEY_LIST = ["actor", "evidence", "kind", "mutation", "mutation_sha", "outcome", "ts"];
+const GENE_EVENT_OPTIONAL_LIST = ["capsule_id", "env_fingerprint", "mutation_id"];
+const CAPSULE_EVENT_OPTIONAL_LIST = ["env_fingerprint", "mutation_id"];
+const MUTATION_EVENT_OPTIONAL_LIST = ["env_fingerprint"];
+// 环境指纹形状（批次 1 序 3 ADR E3）：与 engine/util.js 的 envFingerprint 同口径。
+const ENV_FINGERPRINT_RE = /^node\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?\/[a-z0-9]+\/[a-z0-9]+$/;
 /** 判据文案里的键列表形态（py list repr，供违约行比对）。 */
 function fieldsRepr(keys: string[]): string {
   return `[${keys.map((k) => `'${k}'`).join(", ")}]`;
 }
-/** kind → 事件键列表（三面条件化的单一事实源；未知 kind 已被封闭集判据拦下）。 */
+/** kind → 事件必需键列表（三面条件化的单一事实源；未知 kind 已被封闭集判据拦下）。 */
 function eventKeysFor(kind: string): string[] {
   if (kind === "capsule.added") return CAPSULE_EVENT_KEY_LIST;
   if (kind === "mutation.added") return MUTATION_EVENT_KEY_LIST;
   return GENE_EVENT_KEY_LIST;
+}
+/** kind → 该 kind 下允许的额外可选键（封闭集，排序）。 */
+function optionalEventKeysFor(kind: string): string[] {
+  if (kind === "capsule.added") return CAPSULE_EVENT_OPTIONAL_LIST;
+  if (kind === "mutation.added") return MUTATION_EVENT_OPTIONAL_LIST;
+  return GENE_EVENT_OPTIONAL_LIST;
 }
 const KNOWN_GENE_FIELDS = new Set([
   "id", "domain", "summary", "signals", "strategy", "constraints", "validation", "avoid",
@@ -304,7 +319,7 @@ function loadWhitelist(base: string): { names: Set<JSONVal>; errors: string[] } 
   return { names, errors };
 }
 
-interface EventRow { ms: number; ev: { [key: string]: JSONVal } }
+interface EventRow { ms: number; lineno: number; ev: { [key: string]: JSONVal } }
 
 function checkEvents(display: string, fsPath: string, errors: string[]): EventRow[] {
   const m = VOL_RE.exec(display.replace(/.*\//, ""));
@@ -347,10 +362,14 @@ function checkEvents(display: string, fsPath: string, errors: string[]): EventRo
       errors.push(`${display}:${lineno}: kind '${pyStr(kind)}' not in closed set ${KINDS_REPR}`);
       continue;
     }
-    // 键集按 kind 条件化：gene / capsule / mutation 三面各记自己的主体键。
+    // 键集 = 必需键（kind 条件化）+ 允许可选键；两者之外的键仍违约（封闭性不松绑）。
     const keyList = eventKeysFor(kind);
-    if (Object.keys(ev).sort().join("|") !== keyList.join("|")) {
-      errors.push(`${display}:${lineno}: event fields must be exactly ${fieldsRepr(keyList)}`);
+    const optionalList = optionalEventKeysFor(kind);
+    const actualKeys = Object.keys(ev);
+    const missingKeys = keyList.filter((k) => !actualKeys.includes(k));
+    const unknownKeys = actualKeys.filter((k) => !keyList.includes(k) && !optionalList.includes(k));
+    if (missingKeys.length || unknownKeys.length) {
+      errors.push(`${display}:${lineno}: event fields must be exactly ${fieldsRepr(keyList)} (+ optional ${fieldsRepr(optionalList)})`);
       continue;
     }
     const dt = pyFromIso(ev.ts);
@@ -397,7 +416,19 @@ function checkEvents(display: string, fsPath: string, errors: string[]): EventRo
     if (!(typeof evidence === "string" && pyStrip(evidence) !== "")) {
       errors.push(`${display}:${lineno}: evidence must be a non-empty string`);
     }
-    rows.push({ ms: dt.ms, ev });
+    // 扩字段形状（批次 1 序 3 ADR E2/E3）：可解析面在文件 id 集齐后判（scan 末尾）。
+    if ("env_fingerprint" in ev) {
+      const fp = ev.env_fingerprint;
+      if (!(typeof fp === "string" && ENV_FINGERPRINT_RE.test(fp))) {
+        errors.push(`${display}:${lineno}: env_fingerprint must be node<major.minor.patch>/<platform>/<arch>`);
+      }
+    }
+    for (const linkKey of ["mutation_id", "capsule_id"]) {
+      if (linkKey in ev && !isKebab(ev[linkKey])) {
+        errors.push(`${display}:${lineno}: ${linkKey} must be a bare kebab-case id`);
+      }
+    }
+    rows.push({ ms: dt.ms, lineno, ev });
   }
   return rows;
 }
@@ -689,6 +720,21 @@ function scan(base: string): { checked: number; errors: string[] } {
     if (!perMutation.has(mid)) errors.push(`${pyJoin(base, rel)}: mutation has no event trail — declare mutations only via mutation add`);
   }
 
+  // 跨链可解析（批次 1 序 3 ADR E2）：mutation_id / capsule_id 记裸 id，须命中同名原语文件。
+  // 两者都是 append-only、无退役面，故按 id 集判在场（域不参与判定）。
+  for (const [vol, rows] of volumes) {
+    for (const r of rows) {
+      const linkedMutation = r.ev.mutation_id;
+      if (typeof linkedMutation === "string" && !mutationFiles.has(linkedMutation)) {
+        errors.push(`${vol}:${r.lineno}: mutation_id '${linkedMutation}' not in mutations/ — declare it first`);
+      }
+      const linkedCapsule = r.ev.capsule_id;
+      if (typeof linkedCapsule === "string" && !capsuleFiles.has(linkedCapsule)) {
+        errors.push(`${vol}:${r.lineno}: capsule_id '${linkedCapsule}' not in capsules/ — record it first`);
+      }
+    }
+  }
+
   // 引用可解析（复算规则 2）：gene_ids 须曾成功入档——工作树在场，或事件轨上有过 ok 的
   // gene.added/updated。retire 只删工作树文件（git 历史仍可溯），Capsule 又是 append-only，
   // 故退役不使既有引用追溯失效；真正的违约 = 引一个从未入档过的 id。
@@ -802,6 +848,16 @@ function mutationEventLine(mid = "sample-mutation", sha: string | null = null, o
 
 function shaOf(t: string, rel: string): string {
   return sha256Hex(fs.readFileSync(path.join(t, rel)));
+}
+
+/** 扩字段夹具用：gene.added 行 + 调用方给的可选键（形状 / 未知键 / 悬空三态共用）。 */
+function linkedEventLine(t: string, over: { [key: string]: JSONVal }, ts = "2026-09-05T02:00:00Z"): string {
+  const fields: { [key: string]: JSONVal } = {
+    ts, actor: "t", kind: "gene.added", gene: "sample-gene",
+    gene_sha: shaOf(t, "genes/process/sample-gene.json"), outcome: "ok", evidence: "e",
+  };
+  Object.assign(fields, over);
+  return pyDumps(fields, null);
 }
 
 function selfTest(): number {
@@ -1280,6 +1336,94 @@ function selfTest(): number {
         + `${mutationEventLine("Bad_ID", "f".repeat(64), "ok", "2026-09-05T03:00:00Z")}\n`);
     },
     ["mutation must be a kebab-case id"], "mutation event id non-kebab -> fail",
+  ]);
+
+  // --- Event 扩字段面（批次 1 序 3）：必需键 + 允许可选键、形状、跨链可解析 ---
+  const linkTree = (t: string): void => {
+    mk(t, "engine/gates.json", WHITELIST);
+    mk(t, "scripts/stub.py", "print('ok')\n");
+    mk(t, "genes/process/sample-gene.json", geneDoc());
+    mk(t, "capsules/process/sample-capsule.json", capsuleDoc());
+    mk(t, "mutations/process/sample-mutation.json", mutationDoc());
+    mk(t, "events/2026-09.jsonl",
+      `${eventLine("gene.added", "sample-gene", shaOf(t, "genes/process/sample-gene.json"))}\n`
+      + `${capsuleEventLine("sample-capsule", shaOf(t, "capsules/process/sample-capsule.json"))}\n`
+      + `${mutationEventLine("sample-mutation", shaOf(t, "mutations/process/sample-mutation.json"))}\n`);
+  };
+
+  // 合规：跨链键 + 环境指纹（gene 面三键、capsule 面 mutation_id）都必须放行
+  cases.push([
+    (t) => {
+      linkTree(t);
+      mk(t, "events/2026-09.jsonl",
+        `${eventLine("gene.added", "sample-gene", shaOf(t, "genes/process/sample-gene.json"))}\n`
+        + `${linkedEventLine(t, { mutation_id: "sample-mutation", capsule_id: "sample-capsule", env_fingerprint: "node26.8.1/linux/x64" }, "2026-09-05T02:00:00Z")}\n`
+        + `${pyDumps({ ts: "2026-09-05T03:00:00Z", actor: "t", kind: "capsule.added", capsule: "sample-capsule", capsule_sha: shaOf(t, "capsules/process/sample-capsule.json"), outcome: "ok", evidence: "e", mutation_id: "sample-mutation", env_fingerprint: "node26.8.1/linux/x64" }, null)}\n`
+        + `${mutationEventLine("sample-mutation", shaOf(t, "mutations/process/sample-mutation.json"), "ok", "2026-09-05T04:00:00Z")}\n`);
+    },
+    [], "event optional keys (links + fingerprint) -> pass",
+  ]);
+
+  // 未知键（含尚未落地的 §5.1 字段）：仍违约，封闭性不松绑
+  cases.push([
+    (t) => {
+      linkTree(t);
+      mk(t, "events/2026-09.jsonl",
+        `${eventLine("gene.added", "sample-gene", shaOf(t, "genes/process/sample-gene.json"))}\n`
+        + `${linkedEventLine(t, { intent: "x" })}\n`);
+    },
+    ["event fields must be exactly"], "event unknown field -> fail",
+  ]);
+
+  // 可选键写在无该面的 kind 上（mutation.added 不得带 mutation_id）
+  cases.push([
+    (t) => {
+      mutationTree(t);
+      mk(t, "events/2026-09.jsonl",
+        `${mutationEventLine("sample-mutation", mutationSha(t))}\n`
+        + `${pyDumps({ ts: "2026-09-05T03:00:00Z", actor: "t", kind: "mutation.added", mutation: "sample-mutation", mutation_sha: mutationSha(t), mutation_id: "sample-mutation", outcome: "ok", evidence: "e" }, null)}\n`);
+    },
+    ["event fields must be exactly"], "mutation event carrying mutation_id -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      linkTree(t);
+      mk(t, "events/2026-09.jsonl",
+        `${eventLine("gene.added", "sample-gene", shaOf(t, "genes/process/sample-gene.json"))}\n`
+        + `${linkedEventLine(t, { env_fingerprint: "linux" })}\n`);
+    },
+    ["env_fingerprint must be node"], "env_fingerprint bad shape -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      linkTree(t);
+      mk(t, "events/2026-09.jsonl",
+        `${eventLine("gene.added", "sample-gene", shaOf(t, "genes/process/sample-gene.json"))}\n`
+        + `${linkedEventLine(t, { mutation_id: "no-such-mutation" })}\n`);
+    },
+    ["mutation_id 'no-such-mutation' not in mutations/"], "dangling mutation_id -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      linkTree(t);
+      mk(t, "events/2026-09.jsonl",
+        `${eventLine("gene.added", "sample-gene", shaOf(t, "genes/process/sample-gene.json"))}\n`
+        + `${linkedEventLine(t, { capsule_id: "no-such-capsule" })}\n`);
+    },
+    ["capsule_id 'no-such-capsule' not in capsules/"], "dangling capsule_id -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      linkTree(t);
+      mk(t, "events/2026-09.jsonl",
+        `${eventLine("gene.added", "sample-gene", shaOf(t, "genes/process/sample-gene.json"))}\n`
+        + `${linkedEventLine(t, { mutation_id: "process/sample-mutation" })}\n`);
+    },
+    ["mutation_id must be a bare kebab-case id"], "cross-link with domain ref form -> fail",
   ]);
 
   let failed = 0;
