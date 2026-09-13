@@ -632,17 +632,27 @@ function selfTest() {
     ok(seeded.length === 2 && seeded.every((e) => e.env_fingerprint === envFingerprint()),
       'event: mutation.added / capsule.added carry env_fingerprint');
 
+    // gene 三 kind 逐一落：新增（工作树无此 id）与更新（工作树已有）都带跨链键与指纹
+    const freshCand = path.join(staging, 'fresh-gene.json');
+    fs.writeFileSync(freshCand, JSON.stringify({
+      id: 'fresh-gene', domain: 'process', summary: 'event field fixture',
+      signals: ['link'], strategy: ['s'],
+    }, null, 2) + '\n');
+    ok(solidify(td, gatesDir, freshCand, 'tester', { mutation: 'process/link-mut', capsule: 'process/link-cap' }).ok === true,
+      'event: solidify add with cross-links accepted');
     const geneCand = path.join(staging, 'link-gene.json');
     fs.writeFileSync(geneCand, JSON.stringify({
       id: 'link-gene', domain: 'process', summary: 'event field fixture',
       signals: ['link'], strategy: ['s'],
     }, null, 2) + '\n');
     const r = solidify(td, gatesDir, geneCand, 'tester', { mutation: 'process/link-mut', capsule: 'process/link-cap' });
-    ok(r.ok === true, 'event: solidify with cross-links accepted');
-    const geneEv = readEvents(td).find((e) => e.gene === 'link-gene');
-    ok(geneEv?.mutation_id === 'link-mut' && geneEv?.capsule_id === 'link-cap',
+    ok(r.ok === true, 'event: solidify update with cross-links accepted');
+    const freshEv = readEvents(td).find((e) => e.gene === 'fresh-gene');
+    const updatedEv = readEvents(td).find((e) => e.gene === 'link-gene' && e.kind === 'gene.updated');
+    ok(freshEv?.kind === 'gene.added' && updatedEv?.kind === 'gene.updated',
+      'event: both gene.added and gene.updated produced');
+    ok([freshEv, updatedEv].every((e) => e?.mutation_id === 'link-mut' && e?.capsule_id === 'link-cap'),
       'event: cross-links recorded as bare ids');
-    ok(geneEv?.env_fingerprint === envFingerprint(), 'event: gene.* carries env_fingerprint');
 
     // 悬空 / 形错引用拒写：不留文件、不留事件
     const dangling = path.join(staging, 'dangling-gene.json');
@@ -668,6 +678,16 @@ function selfTest() {
       'event: capsule.added links the declaration, never itself');
     ok(throwsEngine(() => recordCapsule(td, cap2, 'tester', { mutation: 'process/no-such-mut' })),
       'event: capsule add refuses dangling mutation ref');
+
+    // gene.retired 同样带跨链键（五 kind 收齐后统一断言指纹全覆盖）
+    ok(retire(td, 'process/link-gene', 'tester', { mutation: 'process/link-mut', capsule: 'process/link-cap' }).ok === true,
+      'event: retire with cross-links accepted');
+    const retiredEv = readEvents(td).find((e) => e.kind === 'gene.retired');
+    ok(retiredEv?.gene === 'link-gene' && retiredEv?.mutation_id === 'link-mut' && retiredEv?.capsule_id === 'link-cap',
+      'event: gene.retired carries cross-links');
+    const finalEvs = readEvents(td);
+    ok(new Set(finalEvs.map((e) => e.kind)).size === 5 && finalEvs.every((e) => e.env_fingerprint === envFingerprint()),
+      'event: all 5 kinds carry env_fingerprint');
 
     // CLI 端到端：旗标落事件；缺值 fail-loud（exit 2）。引擎目录复制进沙箱以换 stub 白名单
     const engineCopy = path.join(td, 'engine-copy');

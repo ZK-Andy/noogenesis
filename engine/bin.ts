@@ -141,8 +141,8 @@ function main(argv: string[]): number {
     if (mutation.present && !mutation.value) fail('solidify: --mutation needs a <domain>/<id> value');
     if (capsule.present && !capsule.value) fail('solidify: --capsule needs a <domain>/<id> value');
     const { solidify, retire } = require('./solidify.js');
-    const skip = consumedIndexes(rest, ['--actor', '--retire', '--mutation', '--capsule']);
     const flags = ['--actor', '--retire', '--mutation', '--capsule'];
+    const skip = consumedIndexes(rest, flags);
     const candidate = retireIdx >= 0 ? undefined : rest.find((a, i) => !skip.has(i) && !flags.includes(a));
     if (retireIdx < 0 && !candidate) fail('solidify needs <candidate.json> or --retire <domain>/<id>');
     if (!actor) fail('solidify needs --actor <name>');
@@ -234,8 +234,9 @@ function main(argv: string[]): number {
       const actor = actorIdx >= 0 ? rest[actorIdx + 1] : null;
       const mutation = flagValue(rest, '--mutation');
       if (mutation.present && !mutation.value) fail('capsule add: --mutation needs a <domain>/<id> value');
-      const skip = consumedIndexes(rest, ['--actor', '--mutation']);
-      const candidate = rest.find((a, i) => i > 0 && !skip.has(i) && a !== '--actor');
+      const flags = ['--actor', '--mutation'];
+      const skip = consumedIndexes(rest, flags);
+      const candidate = rest.find((a, i) => i > 0 && !skip.has(i) && !flags.includes(a));
       if (!candidate) fail('capsule add needs <candidate.json>');
       if (!actor) fail('capsule add needs --actor <name>');
       const { recordCapsule } = require('./solidify.js');

@@ -9,14 +9,13 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { EngineError, normalizeSignal } from './util.js';
+import { EngineError, normalizeSignal, KEBAB_REF_RE } from './util.js';
 
 // 落点与 P2 缓存同属 .noogenesis/（.gitignore 整目录忽略）；月卷节奏与 events/ 同。
 const OBS_SUBDIR = '.noogenesis/observations';
 // evidence 是单行说明而非落盘正文：上限防单条记录失控（观测面必须保持可丢可扫）。
 const EVIDENCE_MAX_CHARS = 200;
 const OUTCOMES = new Set(['ok', 'fail']);
-const GENE_REF_RE = /^[a-z0-9]+(-[a-z0-9]+)*\/[a-z0-9]+(-[a-z0-9]+)*$/;
 const KNOWN_FIELDS = new Set(['ts', 'actor', 'signal', 'gene', 'outcome', 'evidence']);
 // ts 严格限定 ISO 8601 UTC（写入端恒 `new Date().toISOString()`）：ts 会被原样
 // 拼进 select 的 advice 行（stdout 契约面），宽松形状（如含空白/换行的可解析串）
@@ -47,7 +46,7 @@ function validateObservation(rec: any): string[] {
   if (typeof rec.actor !== 'string' || !rec.actor.trim()) errors.push('actor must be a non-empty string (audit trail)');
   if (typeof rec.signal !== 'string' || !rec.signal.trim()) errors.push('signal must be a non-empty string');
   else if (rec.signal !== normalizeSignal(rec.signal)) errors.push('signal must be normalized (trimmed, lowercase, single spaces)');
-  if (typeof rec.gene !== 'string' || !GENE_REF_RE.test(rec.gene)) errors.push(`gene must be a <domain>/<id> ref, got ${JSON.stringify(rec.gene)}`);
+  if (typeof rec.gene !== 'string' || !KEBAB_REF_RE.test(rec.gene)) errors.push(`gene must be a <domain>/<id> ref, got ${JSON.stringify(rec.gene)}`);
   if (typeof rec.outcome !== 'string' || !OUTCOMES.has(rec.outcome)) errors.push(`outcome must be one of ${[...OUTCOMES].join(' | ')}, got ${JSON.stringify(rec.outcome)}`);
   if (rec.evidence !== undefined) {
     if (typeof rec.evidence !== 'string' || !rec.evidence.trim()) errors.push('evidence must be a non-empty string (omit the field instead)');

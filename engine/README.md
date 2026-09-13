@@ -98,7 +98,7 @@ node dist/engine/bin.js self-test                           # 元评测夹具（
 
 - **键集两段**（[批次 1 序 3 ADR](../.agents/notes/proposed/architecture/2026-09-13-event-field-extension.md) E5）：**必需键**按 kind 条件化——五键共通 `ts` / `actor` / `kind` / `outcome` / `evidence`，gene 面加 `gene` / `gene_sha`，capsule 面加 `capsule` / `capsule_sha`，mutation 面加 `mutation` / `mutation_sha`；**可选键**是按 kind 的封闭集——gene 面 `mutation_id` / `capsule_id` / `env_fingerprint`，capsule 面 `mutation_id` / `env_fingerprint`，mutation 面 `env_fingerprint`。封闭集外的键仍是违约。
 - **跨链键的方向**（E2）：`mutation_id` 指执行前的意图声明（§6 Mutate），`capsule_id` 指执行后的审计记录（§6 Solidify）。声明先于执行，故 `mutation.added` 不带跨链键；`capsule.added` 只带 `mutation_id`（自身即 `capsule` 键）。两者记**裸 id**（与三主体键同口径），旗标取 `<domain>/<id>`——写路径按该路径当下在场判，缺席 exit 2 拒写；闸件按裸 id 命中 `mutations/` / `capsules/` 的 id 集判。
-- **`env_fingerprint`**（E3）：引擎在事件写入时计算的运行时规范串 `node<major.minor.patch>/<platform>/<arch>`（如 `node26.8.1/linux/x64`），五 kind 全带。它标识**写事件的那个引擎进程的运行时**，不是完整工具链冻结；闸件按允许可选键 + 形状校验（`events/` 中先于本字段的历史行不可改写，故不追溯强制）。
+- **`env_fingerprint`**（E3）：引擎在事件写入时计算的运行时规范串 `node<major.minor.patch>/<platform>/<arch>`（如 `node26.8.1/linux/x64`），五 kind 全带。它标识**写事件的那个引擎进程的运行时**，不是完整工具链冻结；`events/` 是 append-only 审计面，无本字段的行保持原样（不回填），故闸件按允许可选键 + 在场即形状校验判。
 - **命令面**：`solidify … [--mutation <ref>] [--capsule <ref>]`（add/update 与 `--retire` 同治）、`capsule add … [--mutation <ref>]`；旗标可同时给、可缺省，缺值 fail-loud（exit 2）。
 - **未落地的一项**：`validation_report_id` 不进 schema——它指向的「验证报告」对象本仓尚无家（同 ADR E4，触发 = 批次表序 43 / 序 45）。
 

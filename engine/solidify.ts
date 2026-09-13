@@ -4,7 +4,7 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { EngineError, sha256Hex, git, envFingerprint } from './util.js';
+import { EngineError, sha256Hex, git, envFingerprint, KEBAB_REF_RE } from './util.js';
 import { readGene, genePath } from './gene.js';
 import { readCapsule, capsulePath, assertGeneRefsResolvable, assertCapsuleIdUnique } from './capsule.js';
 import { readMutation, mutationPath, assertMutationIdUnique } from './mutation.js';
@@ -18,13 +18,13 @@ function eventsPath(repoRoot: string, ts: string) {
 
 // 可选跨链引用（批次 1 序 3 ADR E2/E5）：旗标取 `<domain>/<id>`，落进事件取裸 id。
 interface LinkRefs { mutation?: string | null; capsule?: string | null }
-
-const LINK_REF_RE = /^[a-z0-9]+(-[a-z0-9]+)*\/[a-z0-9]+(-[a-z0-9]+)*$/;
+// Capsule 入档只接受声明链接——`capsule.added` 不写 `capsule_id`（自身即 `capsule` 键）。
+interface MutationLink { mutation?: string | null }
 
 // 被引对象须当下在场——mutations/ 与 capsules/ 都 append-only、无退役面，
 // 故无 Capsule `gene_ids` 那种「历史成立 vs 当下在场」差集；缺席即拒写（exit 2）。
 function resolveLinkRef(repoRoot: string, kind: 'mutation' | 'capsule', ref: string): string {
-  if (!LINK_REF_RE.test(ref)) {
+  if (!KEBAB_REF_RE.test(ref)) {
     throw new EngineError(`${kind} ref must be <domain>/<id>, got '${ref}'`);
   }
   const [domain, id] = ref.split('/') as [string, string];
@@ -192,7 +192,7 @@ function retire(repoRoot: string, ref: string, actor: string, links: LinkRefs = 
 // capsules/ + capsule.added 事件同一 commit（原子证据同基因入档）。Capsule 是 append-only
 // 审计记录：同 id 重复记录拒收（无 capsule.updated/retired 面）。引擎不重跑门禁——
 // 证据由调用方在真实执行后给出，自动复跑归批次表序 43。
-function recordCapsule(repoRoot: string, candidatePath: string, actor: string, links: LinkRefs = {}) {
+function recordCapsule(repoRoot: string, candidatePath: string, actor: string, links: MutationLink = {}) {
   if (!actor || !actor.trim()) throw new EngineError('capsule add requires --actor <name> (audit trail)');
   actor = actor.trim();
   const link = linkKeys(repoRoot, links);

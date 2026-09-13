@@ -5,6 +5,8 @@ import * as crypto from 'crypto';
 import { spawnSync } from 'child_process';
 
 const KEBAB_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+// `<domain>/<id>` 引用形（两个 kebab 段）：Capsule 的 gene_ids、观测记录与事件跨链键共用一份。
+const KEBAB_REF_RE = /^[a-z0-9]+(-[a-z0-9]+)*\/[a-z0-9]+(-[a-z0-9]+)*$/;
 
 class EngineError extends Error {
   // engine 真值 = CLI 层 exit 2 分流判据（bin.ts 捕获后 fail(msg, 2)）；面向调用方的失败一律抛此类型。
@@ -101,6 +103,6 @@ function pathUnder(relPath: string, prefix: string): boolean {
 }
 
 export {
-  EngineError, KEBAB_RE,
+  EngineError, KEBAB_RE, KEBAB_REF_RE,
   normalizeSignal, sha256Hex, envFingerprint, run, git, deriveSlots, changedPaths, pathUnder,
 };

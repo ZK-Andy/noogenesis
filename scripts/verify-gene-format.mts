@@ -1375,6 +1375,17 @@ function selfTest(): number {
     ["event fields must be exactly"], "event unknown field -> fail",
   ]);
 
+  // 必需键缺席：两段判定里 missingKeys 支路的唯一锁点（unknownKeys 支路由上一例与 mutation 例锁）
+  cases.push([
+    (t) => {
+      linkTree(t);
+      mk(t, "events/2026-09.jsonl",
+        `${eventLine("gene.added", "sample-gene", shaOf(t, "genes/process/sample-gene.json"))}\n`
+        + `${pyDumps({ ts: "2026-09-05T02:00:00Z", actor: "t", kind: "gene.added", gene: "sample-gene", gene_sha: shaOf(t, "genes/process/sample-gene.json"), outcome: "ok" }, null)}\n`);
+    },
+    ["event fields must be exactly"], "event missing required key -> fail",
+  ]);
+
   // 可选键写在无该面的 kind 上（mutation.added 不得带 mutation_id）
   cases.push([
     (t) => {

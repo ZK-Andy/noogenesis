@@ -5,9 +5,8 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { EngineError, KEBAB_RE } from './util.js';
+import { EngineError, KEBAB_RE, KEBAB_REF_RE } from './util.js';
 
-const GENE_REF_RE = /^[a-z0-9]+(-[a-z0-9]+)*\/[a-z0-9]+(-[a-z0-9]+)*$/;
 const KNOWN_CAPSULE_FIELDS = new Set(['id', 'domain', 'gene_ids', 'trigger', 'steps', 'outcome', 'evidence']);
 
 // 非空字符串数组：元素须为字符串且 strip 后非空（空数组违约，应省略字段）。
@@ -41,7 +40,7 @@ function validateCapsule(obj: any, opts: { fileName: string; parentDir: string |
   }
 
   // gene_ids：至少一条 <domain>/<id> 引用（内容寻址面在事件 capsule_sha，不在引用串）。
-  if (!Array.isArray(obj.gene_ids) || !obj.gene_ids.every((s: unknown) => typeof s === 'string' && GENE_REF_RE.test(s))) {
+  if (!Array.isArray(obj.gene_ids) || !obj.gene_ids.every((s: unknown) => typeof s === 'string' && KEBAB_REF_RE.test(s))) {
     errors.push('gene_ids must be an array of <domain>/<id> refs');
   } else if (!obj.gene_ids.length) {
     errors.push('gene_ids must have at least 1 item(s)');
