@@ -40,6 +40,8 @@
 
 - **（2026-09-14）机械化候选：新增宿主目录 ↔ 发布面清单可静态判**：症状 = 批次 7 序 35 新增 `adapters/hermes/` 后，`package.json` 的 `files` 与 `verify-package-invariants.mts` 的 `REQUIRED_FILES_ENTRIES` 都没跟上（而同仓已发布 README 正指向 `adapters/hermes/hooks.example.yml` 与 `README.md`），门禁不报警（R2-B2）。形态 = 扫 `adapters/<host>/README.md` 的存在集，与 `files` 白名单 + 必需件表对照；成本低、判据稳定。出处 = 批次 7 序 35 R2 Blocker 2。
 
+- **（2026-09-14）纪律漏项候选：转述他件的触发条 / 条件句时被逐字改写，与本件「单源不变」自述分叉**：症状 = 批次 7 序 36 ADR 把 [批次 6 裁决 ADR](.agents/notes/implemented/architecture/2026-09-14-batch6-composition-meta-verdict.md) 的 T3「宿主给出插件侧 profile 组合 / 挂载服务面」改写成「插件侧 preset / profile 注册面」并新增 `preset` 主体，同时自述「沿用行 31 T1–T3（单源不变）/ 本行不新立」——两件文本分叉（R2 Blocker，本批已就地回退为原文 + 当前事实读数括注）。根因 = 想在同一行同时承载「原触发条件」与「当前事实读数」，改写了条件本体。规避 = 沿用触发条时逐字引原文，事实读数另起括注 / 句；可机械化面待判 = 自称「沿用 X 的触发条」时，其文本须与 X 逐字相同或显式标注差异。出处 = 批次 7 序 36 R2 Blocker 1。
+
 ## 待定（已记录的需求，待后续拍板）
 
 - **池件自身的机器面**：条数 / 字数预算是否上闸（形态参照 [verify-handoff-structure](scripts/verify-handoff-structure.mts)），待池规模有实测再判。
