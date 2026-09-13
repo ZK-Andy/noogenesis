@@ -79,4 +79,4 @@
 ## 5. 其他 agent 规则文件
 
 - `CLAUDE.md` → symlink 到 `AGENTS.md`（Claude Code 兼容，单一事实源）
-- 技能放置：按各宿主原生机制放项目级技能目录（DSH / opencode / Codex 通用约定 = `.agents/skills/`），技能随 agent 自动发现，无需注册。
+- 技能放置：按各宿主原生机制放项目级技能目录（如 DSH 的 `.agents/skills/`）。

@@ -14,7 +14,7 @@ Related: 批次表 [行 38](../../proposed/architecture/2026-09-13-feature-compl
 - **依赖 / 插件接线 / 一键安装已交付**：npm `noogenesis-dsh@0.2.6`；`dsh.bundle.patch` 自动入层；宿主 `dsh plugin` 首用初始化 profile——消费者四条路径 = 根 README 安装节（[序 34 ADR](2026-09-14-one-line-install.md)）。
 - **`verify-*` 门禁族已交付**：20 门单源 `engine/gates.json` + `scripts/gates.mts` DAG runner；CI = `.github/workflows/validate.yml` 穷尽矩阵。
 - **目录结构**：根 README §Structure 即参照实现。
-- **无「初始化脚本」产物**：包 `files` 白名单（`package.json`）只含 `dist/` + `engine/gates.json` + 两份 README + `cordis.patch.yml` + `LICENSE` + `THIRD-PARTY-NOTICES.md`——`scripts/`、`templates/`、`docs/`、`.agents/` 均不随包分发。
+- **无「初始化脚本」产物**：包 `files` 白名单（单源 = `package.json`）不含 `scripts/`、`templates/`、`docs/`、`.agents/` 任一项——这四类均不随包分发。
 - **消费者面**：无外部消费者（[序 37 裁决](2026-09-14-plugin-marketplace-verdict.md) 在案；序 21/22 贡献开放轮为零）。
 - **模板具名缺陷**：`templates/agents-hierarchy.md` 两处指针指向源仓未随迁文档——§3 代码块注「引用模板 `docs/方法论提炼.md` §2.2」、§5「`.claude/skills/`、`.agents/skills/` 等技能放置见 `docs/ADAPTATION.md` §1」；本仓 `docs/` 无此两件，按模板操作会撞空。
 
@@ -30,7 +30,7 @@ Related: 批次表 [行 38](../../proposed/architecture/2026-09-13-feature-compl
 
 ### 3. 「初始化脚本」判不立
 
-宿主 `dsh plugin` 首用已闭合「初始化 profile + 装包 + 层对账」，插件分发取代了「把模板文件拷进目标仓」的适配形态（[技能随库分发 ADR](2026-09-06-skills-ride-bank.md)）。再造 scaffold 子命令 / bin = 重复宿主命令，却新增对外命令合同面、spawn 失败面、工作区外写面与配套夹具——与序 34 对 `noogenesis-setup` 包装器的判据同面。触发见 T1。
+宿主 `dsh plugin` 首用已闭合「初始化 profile + 装包 + 层对账」，插件分发取代了「把模板文件拷进目标仓」的适配形态（[技能随库分发 ADR](2026-09-06-skills-ride-bank.md)）。再造 scaffold 子命令 / bin = 重复宿主命令，落败判据与代价面单源 = [序 34 ADR](2026-09-14-one-line-install.md) 对 `noogenesis-setup` 包装器的裁决。触发见 T1。
 
 ### 4. 「CI 骨架复刻」判不立
 
@@ -39,8 +39,8 @@ Related: 批次表 [行 38](../../proposed/architecture/2026-09-13-feature-compl
 ### 5. 本域首刀 = `templates/agents-hierarchy.md` 两处悬空指针就地同步
 
 - §3 代码块注 `docs/方法论提炼.md` §2.2 → 真实家 = `.agents/notes/README.md`（笔记规则单源）。
-- §5 的 `docs/ADAPTATION.md` §1 → 本仓无对应件：逐 agent 文件拷贝式适配已被插件分发取代；改写为自述口径（技能按各宿主原生机制自动发现，无需注册）。
-- provenance 行补本仓差异（原为「本仓未再改动」）。
+- §5 的 `docs/ADAPTATION.md` §1 → 本仓无对应件：逐 agent 文件拷贝式适配已被插件分发取代；改写为放置约定（技能目录按各宿主原生机制放）。
+- provenance 行补本仓差异说明。
 
 ### 6. 重议触发
 
