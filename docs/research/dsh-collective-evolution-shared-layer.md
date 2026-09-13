@@ -232,10 +232,10 @@ evidence: { benchmark: ..., passed_checks: N/N, ci_run: ... }
 
 ## 11. 未决问题（需拍板）
 
-> 2026-09-06 回写：1/3/4 已由 ADR `2026-09-06-p2-shared-consumer` 拍板收口（结论见各条）。
+> 2026-09-06 回写：1/3/4 已由 ADR `2026-09-06-p2-shared-consumer` 拍板收口（结论见各条）。2026-09-14 回写：2/5 已由批次 5 开题轮 ADR（`2026-09-14-batch5-opening-round`）拍板收口（结论见各条）。
 
 1. ~~基因库命名 / 域名划分~~ **已拍板（2026-09-06）**：P2 首批本仓即库（`ZK-Andy/noogenesis` 的 `genes/` 即库），独立基因库仓随贡献开放再立、命名走 `noogenesis` 系（占位名 `dsh-gene-bank` 弃用）；taxonomy 细分（沿用 domain 语义还是重建）仍 open，随贡献开放拍板。
-2. `validate.yml` 具体复刻哪些 `verify-*`（最小集先跑通，还是全覆盖）。
+2. ~~`validate.yml` 具体复刻哪些 `verify-*`（最小集先跑通，还是全覆盖）~~ **已拍板（2026-09-14）**：全覆盖为终局——`validate.yml` 实现为穷尽矩阵，与「CI 拥有穷尽矩阵」纪律同向（结论与证据见批次 5 开题轮 ADR）。
 3. ~~共享层首批是"只读消费公开基因库"起步，还是直接开放"贡献 PR"~~ **已拍板（2026-09-06）**：只读消费起步；贡献 PR 随多人阶段再开（分阶段）。
 4. ~~是否保留"单人队列 → 共享"的迁移开关~~ **已拍板（2026-09-06）**：保留——引擎默认离线、`engine pull` 手动入口；adapter `geneBankUrl` 缺省官方库（`false` 显式禁用）、触发点随会话工作区（P2 ADR D4/D7 + bug-fix ADR `2026-09-06-bank-pull-session-trigger`）。
-5. 与 `dsh-continual-evolve` 的边界：协议层放同一插件还是独立插件。
+5. ~~与 `dsh-continual-evolve` 的边界：协议层放同一插件还是独立插件~~ **已拍板（2026-09-14）**：协议层归属本仓插件包 `noogenesis-dsh` 为终局（触发 = 出现第二真实消费者时重议拆分；结论见批次 5 开题轮 ADR）。

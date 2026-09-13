@@ -13,7 +13,7 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 现状事实（2026-09-13 实读，只列差集判定相关者）：
 
 - **已交付**：Gene 协议 + 引擎八命令（select/propose/evaluate/solidify/pull/observe/capsule/mutation）+ `gates.json` 白名单 + Capsule / Mutation 两原语与事件 kind 五件 + Event 扩字段（跨链 `mutation_id`/`capsule_id` + 环境指纹 `env_fingerprint`）+ Evaluate 的 blast-radius 改动面度量（文件 / 行 / 范围）+ 候选比较 / 答案盲选择判据（通道封闭集 + 不排序；机器面判不立）；适配层 A1–A7 接线（A5 会话开始位与 A6 停止前续跑能力位均零策略；prompt 提交 / 工具前后折进 A2/A3/A4）；M1 技能守卫 + M2 规范面接入；token 基线两轨（预算判据 + 宿主读数）；技能随库分发；P2 只读消费（pull + manifest + 缓存合并）；记忆线第一期观测面与 `advice:` 建议档；胶囊 01 内容主体（7 技能 + method/cookbook/流程卡/门禁）。
-- **未交付**：下方批次表余 26 项（序 1–20 已落终态，游标 = 批次 5）。
+- **未交付**：下方批次表余 20 项（序 1–20 与序 23/24/25/27/28/29 已落终态，游标 = 批次 6；序 21/22/26 为前提/策展保留位）。
 - **受宿主约束未交付**：A8 会话事件轨 / 状态投影——撤除理由 = 宿主读路径对未标 `ignorable` 的下游插件事件 fail-closed，且 `Session.append` 无 `ignorable` 写入口。连带 M3 原形态记录件（同节重议触发；同一失败面已由 session-close 对账步承接，[序 8 重拍 ADR](../../implemented/architecture/2026-09-13-m3-review-record-verdict.md)）。
 
 ## Proposal
@@ -76,13 +76,13 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 |---|---|---|---|
 | 21 | 贡献闸（staging + PR + CI 跨机器复验 + 维护者合入） | 主设计 §9.3 | 前提 = 真实使用面与可贡献内容 |
 | 22 | 独立基因库仓 + 命名 | 主设计 §9.1 | P2 D1「随贡献开放再立」 |
-| 23 | taxonomy 细分拍板 | 主设计 §13-1 | 未决 |
-| 24 | schema 扩字段（`provenance`/`evidence_ref`/`version`）+ YAML 决策 | 共享层稿 §6.2；P1 遗留 | `js-yaml` 例外权保留至今未动用 |
-| 25 | gene→skill 渲染语义 | M2 M4 | 现口径「维持后置不取代」 |
-| 26 | Genesis 世界观基因入档 | P2 D3 | 内容策展 |
-| 27 | `capsules/` 三义术语拍板 | 主设计 §8.2/§9.1；共享层稿 §6.2 | [HANDOFF-todos](../../../../HANDOFF-todos.md)（D）条 |
-| 28 | `validate.yml` 覆盖范围（最小集 vs 全覆盖） | 主设计 §13-2；共享层稿 §11-2 | 未决 |
-| 29 | 与 `dsh-continual-evolve` 融合边界 | 主设计 §13-5 | 未决；记忆线融合已收口，协议层归属仍 open |
+| 23 | taxonomy 细分拍板 | 主设计 §13-1 | done（[开题轮 ADR](../../implemented/architecture/2026-09-14-batch5-opening-round.md)）：维持后置——触发 = 贡献开放轮开轮第一批拍（三处既有口径不变）；Mutation `category` 维持无值域 |
+| 24 | schema 扩字段（`provenance`/`evidence_ref`/`version`）+ YAML 决策 | 共享层稿 §6.2；P1 遗留 | done（[开题轮 ADR](../../implemented/architecture/2026-09-14-batch5-opening-round.md)）：维持后置（P2 D3 口径不变）——三字段单机各有本地替身（`gene_sha`/`actor`/`evidence`），字段先于消费者即死字段；JSON 八字段 + `js-yaml` 例外权不动 |
+| 25 | gene→skill 渲染语义 | M2 M4 | done（[开题轮 ADR](../../implemented/architecture/2026-09-14-batch5-opening-round.md)）：确认落账——维持 P2 D3 后置口径（随贡献开放轮拍渲染语义；技能分发半边已提前收口为「技能随库分发」） |
+| 26 | Genesis 世界观基因入档 | P2 D3 | 内容策展（保留位置；随贡献开放轮或用户给内容） |
+| 27 | `capsules/` 三义术语拍板 | 主设计 §8.2/§9.1；共享层稿 §6.2 | done（[Capsule ADR](../../implemented/architecture/2026-09-13-capsule-primitive.md) C1；[开题轮 ADR](../../implemented/architecture/2026-09-14-batch5-opening-round.md) 确认落账）：`capsules/` 只指 Capsule 原语，§8.2 知识原子归序 42 |
+| 28 | `validate.yml` 覆盖范围（最小集 vs 全覆盖） | 主设计 §13-2；共享层稿 §11-2 | done（[开题轮 ADR](../../implemented/architecture/2026-09-14-batch5-opening-round.md)）：确认全覆盖为终局——现状已是穷尽矩阵（第一梯队全量 + 独立件 + tier + self-test 抽查 + 双 selftest）；两稿未决条同批回写 |
+| 29 | 与 `dsh-continual-evolve` 融合边界 | 主设计 §13-5 | done（[开题轮 ADR](../../implemented/architecture/2026-09-14-batch5-opening-round.md)）：协议层归属本仓插件包为终局（旧引擎冻结 D6；触发 = 出现第二真实消费者时重议拆分）；两稿未决条同批回写 |
 
 **批次 6 — P3 元演化**
 
