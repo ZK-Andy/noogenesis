@@ -26,7 +26,7 @@ dsh plugin --profile <name> -- add noogenesis-dsh   # initialize the profile + i
 dsh --profile <name>                                # boot it
 ```
 
-A profile named after a shipped template (`web` / `headless` / `acp` / `sdk`) is initialized with that template's app bundle; any other name gets only `@deepseek-ai/dsh-base`, so initialize a custom-named app profile first:
+A profile named after a shipped template (`web` / `headless` / `acp` / `sdk` / `sdk-minimal`) is initialized with that template's bundle set; a name matching no template gets only `@deepseek-ai/dsh-base`, so initialize a custom-named app profile first:
 
 ```sh
 dsh --profile <name> --from-default-profile web --dump-config >/dev/null   # init only, no boot

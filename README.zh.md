@@ -26,7 +26,7 @@ dsh plugin --profile <name> -- add noogenesis-dsh   # 初始化 profile + 装包
 dsh --profile <name>                                # 启动
 ```
 
-以 shipped 模板名（`web` / `headless` / `acp` / `sdk`）命名的 profile 首用带上该模板的 app bundle；其余名字只得 `@deepseek-ai/dsh-base`，故自定义名的 app profile 需先初始化：
+以 shipped 模板名（`web` / `headless` / `acp` / `sdk` / `sdk-minimal`）命名的 profile 首用带上该模板的 bundle 集；无对应模板的名字只得 `@deepseek-ai/dsh-base`，故自定义名的 app profile 需先初始化：
 
 ```sh
 dsh --profile <name> --from-default-profile web --dump-config >/dev/null   # 只初始化不启动

@@ -2,7 +2,7 @@
 
 Status: implemented
 
-Review: LIGHT/2026-09-14/pending（语义评审进行中，收口时回填真实结论）
+Review: LIGHT/2026-09-14/语义评审（范围化子代理 R2：0 Blocker + 2 Suggestion 全采纳——模板名枚举漏 `sdk-minimal` 且「其余名字」判据对它不成立（其 bundle 集仅 `@deepseek-ai/dsh-sdk-minimal`）→ 双语补第五名并改「无对应模板的名字」；ADR 内「不重述机制」与 Problem/Consequences 单源句互拉扯 → 收窄为「机制结论归 M2 ADR，新增实读事实与取舍归本件」；另据实补 `cordis.yml` 落物）
 
 Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 主设计 [§12-P4](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 安装机制单源 [M2 适配层](2026-09-06-m2-adapter-wiring.md) / [部署收口](2026-09-06-adapter-deploy-hardening.md) · 包面声明 [package.json](../../../../package.json)（`dsh.bundle.patch`）· 豁免面 [cookbook 环境条](../../../../docs/cookbook.md) · 消费者面 [根 README 安装节](../../../../README.md)
 
@@ -11,8 +11,8 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/archit
 批次表行 34（P4 发布首件）要求「一行安装收口（npm 已具备，补 profile 一键）」。npm 面已交付（`noogenesis-dsh@0.2.6` 已发布，`dsh.bundle.patch` 在包清单在案）。开工前取证（2026-09-14，本机实装代宿主源码实读 + 临时 `DSH_HOME` 探针，全量）：
 
 - **宿主 `dsh plugin` 已含「首用初始化」**：`runPlugin`（`lib/plugin-Ddi42qoW.js`）在 profile 无 `package.json` 时执行 `initProfile(dir, template?.bundles ?? DEFAULT_PROFILE_BUNDLES, …)` 并打印 `initialized profile <name> at <dir>`，随后在 profile 目录转发 pnpm，最后按**已装状态**对账 `dsh.profile.bundles`（声明 `dsh.bundle` 的依赖自动成为 bundle 层）。我方的 `dsh.bundle.patch` 声明因此自动入层，无需手改用户 patch——「profile 一键」的机制半边在宿主侧已在场。
-- **profile 名即判据**：shipped 模板名（`acp` / `web` / `headless` / `sdk` / `sdk-minimal`）首用带对应 app bundles；其余名字只得 `DEFAULT_PROFILE_BUNDLES = ["@deepseek-ai/dsh-base"]`（无 app）。未初始化的名字 boot 直接报错（临时 `DSH_HOME` 探针复现）：`dsh: profile "<name>" does not exist; create it with 'dsh plugin --profile <name> add <package>'`。
-- **专用 app profile 的非交互初始化**：`dsh --profile <name> --from-default-profile <template> --dump-config`（临时 `DSH_HOME` 实跑 exit 0；落 `package.json` + `cordis.patch.yml` + `pnpm-workspace.yaml`，`bundles` = `["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app"]`）。
+- **profile 名即判据**：shipped 模板名（`acp` / `web` / `headless` / `sdk` / `sdk-minimal`）首用带该模板的 bundle 集（`web` = `@deepseek-ai/dsh-base` + `@deepseek-ai/dsh-web-app`；`sdk-minimal` = 仅 `@deepseek-ai/dsh-sdk-minimal`）；无对应模板的名字只得 `DEFAULT_PROFILE_BUNDLES = ["@deepseek-ai/dsh-base"]`。未初始化的名字 boot 直接报错（临时 `DSH_HOME` 探针复现）：`dsh: profile "<name>" does not exist; create it with 'dsh plugin --profile <name> add <package>'`。
+- **专用 app profile 的非交互初始化**：`dsh --profile <name> --from-default-profile <template> --dump-config`（临时 `DSH_HOME` 实跑 exit 0；落 `package.json` + `cordis.patch.yml` + `cordis.yml` + `pnpm-workspace.yaml`，`bundles` = `["@deepseek-ai/dsh-base", "@deepseek-ai/dsh-web-app"]`）。
 - **本地检出安装形态**：`anchorPathSpec` 把 `.` / `..`（含 `file:` / `link:` 形态）锚到**调用目录**（pnpm 的 cwd 是 profile 目录，故裸 `.` 会被宿主改写）——`dsh plugin --profile <dev> -- add .` 是宿主明示支持的从源安装。
 - **消费者面缺口（本序的增量）**：根 README 安装节只给装命令，缺 boot 行、缺 profile 名判据（任意名 = 无 app），缺专用 profile 与本地检出两条路径。
 
@@ -29,11 +29,11 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/archit
 3. **专用 app profile**：先 `dsh --profile <name> --from-default-profile <template> --dump-config >/dev/null` 初始化（`<template>` ∈ shipped 模板名；`--dump-config` = 只初始化不 boot 的形态），再走 1 / 2。
 4. **从源检出**：仓库根 `dsh plugin --profile <dev> -- add .`（相对路径规格锚调用目录）。
 
-附注（同节）：以 shipped 模板名（如 `web`）为 profile 名时，首用初始化带上该模板的 app bundle。
+附注（同节）：以 shipped 模板名（如 `web`）为 profile 名时，首用初始化带上该模板的 bundle 集（`sdk-minimal` = 仅 `@deepseek-ai/dsh-sdk-minimal`）。
 
 ### 3. 与既有单源的关系
 
-- 安装机制（pnpm 装包 + bundle 层对账、不写用户 patch）单源仍在 [M2 ADR](2026-09-06-m2-adapter-wiring.md) 系；本件只收口消费者侧命令序列，不重述机制。
+- 安装机制结论（pnpm 装包 + bundle 层对账 + 不写用户 patch）单源仍在 [M2 ADR](2026-09-06-m2-adapter-wiring.md) 系，本件不复述其推导；本件新增的是 Problem 的三项宿主实读事实（首用初始化 / 模板名 bundle 集 / `anchorPathSpec` 锚定）与消费者命令序列。
 - `minimumReleaseAge` 豁免归 [cookbook](../../../../docs/cookbook.md) 环境条；本件不复制。
 
 ## Alternatives considered
@@ -48,5 +48,5 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/archit
 
 - **变更面**：`README.md` + `README.zh.md` 安装节；本 ADR；批次表行 34 done + 「未交付」计数 16 → 15 + 游标 = 序 35；HANDOFF ⏭ / 当前状态 / 滚动窗；todos (A)；journal。
 - **机制零变化**：`engine/**`、`adapters/**`、`scripts/**`、`package.json`、`cordis.patch.yml` 零改动——本件 LIGHT 档（路径触发集未命中，`adapters` 面不动）。
-- **单源**：安装命令序列单源 = 根 README 安装节；宿主机制事实与取舍单源 = 本件 Problem / Decision；包面声明单源 = `package.json`。
+- **单源**：安装命令序列单源 = 根 README 安装节；本件新增的宿主实读事实与「不造包装器」的取舍单源 = 本件 Problem / Decision；安装机制结论单源 = [M2 ADR](2026-09-06-m2-adapter-wiring.md) 系；包面声明单源 = `package.json`。
 - **重议触发**：宿主给出一等「初始化 profile」子命令（不再依赖 `--dump-config` 侧效），或出现第三方 profile 模板注册面——任一到达即重开本件、重排四条路径。
