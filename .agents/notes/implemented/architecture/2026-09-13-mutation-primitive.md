@@ -49,13 +49,13 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/archit
 ### C4（校验闸与复算）：扩展 `verify-gene-format.mts`，不新增门禁件
 
 - 新增 `mutations/` 一节：布局封闭、schema 封闭六字段、跨域 id 唯一（事件只记 id，引用必须无歧义）。
-- **S2 重拍（第二次）**：kind 封闭集四件 → 五件（增 `mutation.added`）；事件键集三面条件化——五键共通（`ts` / `actor` / `kind` / `outcome` / `evidence`）+ gene 面 `gene` / `gene_sha`、capsule 面 `capsule` / `capsule_sha`、mutation 面 `mutation` / `mutation_sha`。S2 的月卷、时间序与复算分型不变。
+- **S2 重拍（第二次）**：kind 封闭集四件 → 五件（增 `mutation.added`）；事件键集三面条件化——五键共通（`ts` / `actor` / `kind` / `outcome` / `evidence`）+ gene 面 `gene` / `gene_sha`、capsule 面 `capsule` / `capsule_sha`、mutation 面 `mutation` / `mutation_sha`。S2 的月卷、时间序与复算分型不变。**现值随序 3 第三次重拍**（必需键不变 + 按 kind 的允许可选键）：见 [Event 扩字段 ADR](2026-09-13-event-field-extension.md) E5。
 - **复算**：最近一条 `mutation.added`(ok) 的 `mutation_sha` = 文件字节 sha256；工作树 Mutation 必须有事件轨（`mutation add` 是唯一入口）。Mutation 无 update/retire 面，故无分段。
 - 违约夹具与合规夹具同批入 self-test（布局 / 非 kebab id / 域锚点 / 未知字段 / 缺字段 / `risk_level` 越界 / 空 `category` / sha 失配 / 无事件轨 / 跨域重名 / 事件键集错配 / 事件无文件 / 文件无 ok 事件）。
 
 ### C5（与 Capsule、序 3 的边界）
 
-- `capsule add` **不要求也不检查**引用某条 Mutation：Capsule schema 封闭七字段（无 mutation 面），两者的关联归 Event 面，随批次表序 3 的 `mutation_id` 落地。提前绑定 = 抢先序 3，并把两条独立命令耦合成一条链。
+- `capsule add` **不要求也不检查**引用某条 Mutation：Capsule schema 封闭七字段（无 mutation 面），两者的关联在 Event 面（`mutation_id` 跨链键，已随[批次 1 序 3](2026-09-13-event-field-extension.md)落地）。强制绑定 = 把两条独立命令耦合成一条链。
 - 本批**不实现** §6 Mutate 阶段的判断逻辑（谁在何时该声明）：引擎不承担 Detect / Select / Mutate 的自动性（骨架 D2/D3 一脉），只提供协议与闸。
 
 ### C6（新顶层目录准入四问，architecture-standards R2）
@@ -76,6 +76,6 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/archit
 - **采用面**：`engine/mutation.ts`（协议 + 渲染）、`engine/solidify.ts` 的 `recordMutation`（写路径）、`engine/bin.ts` 的 `mutation add|show`；`verify-gene-format.mts` 覆盖 `mutations/` 与三面条件化事件键集；引擎 self-test 与门禁 self-test 各带合规 / 违约夹具。
 - **声明面同步**：`engine/README.md`（命令面 + Mutation 节）、`engine/AGENTS.md`、两 README、`code-standards` 的命令计数（七 → 八）——由 `verify-command-surface` 机械校核。
 - **单源指针**：协议细节单源 = 本 ADR + `engine/README.md`「Mutation 面」节；S2 的其余口径仍在 schema ADR，本 ADR 只记与其相异处（kind 集与键集）。
-- **遗留面（逐条归口）**：Event 扩字段四件（`mutation_id` / `capsule_id` / `env_fingerprint` / `validation_report_id`）随批次表序 3；Hypothesize（序 16）与 memory-graph 因果边（序 18）是本原语的下游消费者；`category` 的封闭集随真实种群出现再拍（触发 = 同一 category 值在多条声明中稳定复用）。
+- **遗留面（逐条归口）**：Event 扩字段三件（`mutation_id` / `capsule_id` / `env_fingerprint`）已随[批次 1 序 3](2026-09-13-event-field-extension.md)落地，`validation_report_id` 按该 ADR E4 具名延期；Hypothesize（序 16）与 memory-graph 因果边（序 18）是本原语的下游消费者；`category` 的封闭集随真实种群出现再拍（触发 = 同一 category 值在多条声明中稳定复用）。
 - **已命名的覆盖缺口**：本批无实测 Mutation 落盘（`mutations/` 尚无成员）——首个真实声明要等「动改动面前显式声明意图」成为流程动作；同一路径由闸件夹具与引擎 self-test 覆盖，缺口是 e2e 证据而非判据。
 - **批次表状态**：序 2 已收口，批次表对应行标 done 并指向本笔记。

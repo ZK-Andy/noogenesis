@@ -5,7 +5,9 @@
 
 ## 候选
 
-- **（2026-09-13）简化候选：同族原语的第三份拷贝已到共享件拐点**：症状 = `engine/mutation.ts` 的身份/读入外壳与 `capsule.ts`/`gene.ts` 逐字节同形（`validate*` 字段守卫 10 行、`read*` 读入抛物、`assert*IdUnique`、`*Path` 四组），`recordMutation` 与 `recordCapsule` 只差一行引用校验；`verify-gene-format.mts` 的 mutations 布局段与 capsules 段约 2/3 行是标识符替换，复算段同理。抽 `engine/protocol.ts` / 按 `{dir,noun,idKey,shaKey}` 参数化闸件段的收益 = 消除第三份拷贝且错误文案可保面名；代价 = 回触已冻结的 `gene.ts`/`capsule.ts` 与 py-parity 移植件「每面一段」的直读形状。触发 = 第 4 个原语落地前（序 3 或后续）。出处 = 批次 1 序 2 R1 评审 Suggestion 1/2。
+- **（2026-09-13，序 3 更新）简化候选：同族原语的第三份拷贝已到共享件拐点**：症状 = `engine/mutation.ts` 的身份/读入外壳与 `capsule.ts`/`gene.ts` 逐字节同形（`validate*` 字段守卫 10 行、`read*` 读入抛物、`assert*IdUnique`、`*Path` 四组），`recordMutation` 与 `recordCapsule` 只差一行引用校验；`verify-gene-format.mts` 的 mutations 布局段与 capsules 段约 2/3 行是标识符替换，复算段同理（`<domain>/<id>` 正则一项已随批次 1 序 3 折叠为 `engine/util.ts` 的 `KEBAB_REF_RE` 单一来源，不在本候选内）。抽 `engine/protocol.ts` / 按 `{dir,noun,idKey,shaKey}` 参数化闸件段的收益 = 消除第三份拷贝且错误文案可保面名；代价 = 回触已冻结的 `gene.ts`/`capsule.ts` 与 py-parity 移植件「每面一段」的直读形状。触发 = 第 4 个原语落地前。出处 = 批次 1 序 2 R1 评审 Suggestion 1/2 + 序 3 R1 Suggestion 1。
+
+- **（2026-09-13）纪律漏项候选：已收口泳道的简报会挡住下一路的发射闸**：症状 = R1/R2 收口提交后 HEAD 前移，留在 `.review-briefs/` 的两份已收口简报仍被 `verify-review-brief --enforce` 的「brief head 须钉住本仓 HEAD」判据扫到而报红（`--lanes R3` 不豁免该判据，本会话实测）——发射下一路前必须先把已收口简报移入 `archive/`。判据面 = 该闸按文件夹里的全部简报判 head，而非按本次发射的泳道；是否该按 `--lanes` 收窄待判，当前处置 = 收口一路即归档一路。出处 = 批次 1 序 3 三审发射。
 
 - **（2026-09-13）契约候选：`capsule add` / `mutation add` 静默吞多余位置参数与重复 `--actor`**：症状 = `mutation add m.json --actor t extra.json` → exit 0（`extra.json` 被吞）、`--actor a --actor b` → exit 0 且事件 `actor='a'`；两命令同款（既有形态，非本批引入）。判据面 = 位置参数筛选式 `rest.find(...)` 无「恰一个候选」收窄、旗标无重复计数。若判为契约缺陷应与两条命令同批收紧（多余/未知参数 → exit 2），并同步 `engine/README.md` 合同面。出处 = 批次 1 序 2 R2 评审 Suggestion 4。
 

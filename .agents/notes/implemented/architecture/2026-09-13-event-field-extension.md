@@ -1,8 +1,9 @@
 # Agent Note: Event 扩字段——跨链键、环境指纹与验证报告面的裁决（批次 1 序 3）
 
-Status: proposed
+Status: implemented
+Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 
-Related: 批次表 [2026-09-13-feature-completion-backlog](2026-09-13-feature-completion-backlog.md) · 既有协议 [gene-event-schema](../../implemented/architecture/2026-09-05-gene-event-schema.md)（S2）· 相邻原语 [Capsule 原语](../../implemented/architecture/2026-09-13-capsule-primitive.md)（序 1）／[Mutation 原语](../../implemented/architecture/2026-09-13-mutation-primitive.md)（序 2）· 主设计 [§5.1/§6](../../../../docs/research/dsh-swarm-evolution-framework-design.md)
+Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 既有协议 [gene-event-schema](2026-09-05-gene-event-schema.md)（S2）· 相邻原语 [Capsule 原语](2026-09-13-capsule-primitive.md)（序 1）／[Mutation 原语](2026-09-13-mutation-primitive.md)（序 2）· 主设计 [§5.1/§6](../../../../docs/research/dsh-swarm-evolution-framework-design.md)
 
 ## Problem
 
@@ -14,7 +15,7 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](2026-09-13-feature-co
 
 同时 S2 的事件键集判据（按 kind 条件化、精确等于七键）须第三次重拍，否则可选跨链键一进来就被判违约。
 
-## Proposal
+## Decision
 
 ### E1（总则）：进 schema 的两个条件——对象已到位 + 有真实生产者
 
@@ -37,7 +38,7 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](2026-09-13-feature-co
 
 ### E3（`env_fingerprint`）：引擎进程运行时三元的可读规范串
 
-- **值** = `node<major.minor.patch>/<platform>/<arch>`（如 `node26.8.1/linux/x64`），写入时由引擎计算，五 kind 全带。
+- **值** = `node<major.minor.patch>[-<prerelease>]/<platform>/<arch>`（如 `node26.8.1/linux/x64`），写入时由引擎计算，五 kind 全带。预发布后缀（nightly / rc）放行——Node 的 `process.version` 带该后缀，收窄会让引擎写得出、闸件判违约。
 - **形态取可读串而非 sha**：消费者是「人读审计 + 跨机比较」，可读串直接答"哪台、哪个运行时"，sha 只能答"同/不同"；本仓 sha 锚点族（`gene_sha` 等）是防篡改面，本字段不是。
 - **强度上限（写明）**：它标识**写这条事件的引擎进程的运行时**，不是完整工具链冻结——门禁子进程的解释器版本、宿主 OS 补丁级别都不在内。做成完整清单 = 为一个不存在的"环境一致性"诉求建脚手架；跨机复现的真正证据是 CI 复验（批次表序 21）。
 - **闸面形态**：允许可选键 + 在场即形状校验。既有 8 行事件写于本字段之前、且审计行 append-only 不可改写，故闸面不追溯强制（见 Consequences）；"新写入恒带"由引擎 self-test 锁。

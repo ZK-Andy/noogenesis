@@ -24,8 +24,8 @@ function sha256Hex(buf: Buffer | string): string {
 }
 
 // 事件记录环境指纹（批次 1 序 3 ADR E3）：引擎进程运行时三元的可读规范串
-// `node<major.minor.patch>/<platform>/<arch>`。强度上限 = 标识写事件的运行时，
-// 不是完整工具链冻结；闸件的形状正则与本函数同批（scripts/verify-gene-format.mts）。
+// `node<major.minor.patch>[-<prerelease>]/<platform>/<arch>`。强度上限 = 标识写事件的
+// 运行时，不是完整工具链冻结；闸件的形状正则与本函数同批（scripts/verify-gene-format.mts）。
 function envFingerprint(): string {
   return `node${process.version.replace(/^v/, '')}/${process.platform}/${process.arch}`;
 }

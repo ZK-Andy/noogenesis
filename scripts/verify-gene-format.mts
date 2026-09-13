@@ -76,7 +76,8 @@ const MUTATION_EVENT_KEY_LIST = ["actor", "evidence", "kind", "mutation", "mutat
 const GENE_EVENT_OPTIONAL_LIST = ["capsule_id", "env_fingerprint", "mutation_id"];
 const CAPSULE_EVENT_OPTIONAL_LIST = ["env_fingerprint", "mutation_id"];
 const MUTATION_EVENT_OPTIONAL_LIST = ["env_fingerprint"];
-// 环境指纹形状（批次 1 序 3 ADR E3）：与 engine/util.js 的 envFingerprint 同口径。
+// 环境指纹形状（批次 1 序 3 ADR E3）：与 engine/util.js 的 envFingerprint 同口径——
+// 预发布后缀（nightly / rc）放行，否则在预发布 Node 上引擎写得出、闸件判违约。
 const ENV_FINGERPRINT_RE = /^node\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?\/[a-z0-9]+\/[a-z0-9]+$/;
 /** 判据文案里的键列表形态（py list repr，供违约行比对）。 */
 function fieldsRepr(keys: string[]): string {
@@ -420,7 +421,7 @@ function checkEvents(display: string, fsPath: string, errors: string[]): EventRo
     if ("env_fingerprint" in ev) {
       const fp = ev.env_fingerprint;
       if (!(typeof fp === "string" && ENV_FINGERPRINT_RE.test(fp))) {
-        errors.push(`${display}:${lineno}: env_fingerprint must be node<major.minor.patch>/<platform>/<arch>`);
+        errors.push(`${display}:${lineno}: env_fingerprint must be node<major.minor.patch>[-<prerelease>]/<platform>/<arch>`);
       }
     }
     for (const linkKey of ["mutation_id", "capsule_id"]) {
@@ -1395,6 +1396,19 @@ function selfTest(): number {
         + `${pyDumps({ ts: "2026-09-05T03:00:00Z", actor: "t", kind: "mutation.added", mutation: "sample-mutation", mutation_sha: mutationSha(t), mutation_id: "sample-mutation", outcome: "ok", evidence: "e" }, null)}\n`);
     },
     ["event fields must be exactly"], "mutation event carrying mutation_id -> fail",
+  ]);
+
+  // 预发布后缀放行（正则与引擎 process.version 同口径，防「引擎写得出、闸件判违约」）
+  cases.push([
+    (t) => {
+      linkTree(t);
+      mk(t, "events/2026-09.jsonl",
+        `${eventLine("gene.added", "sample-gene", shaOf(t, "genes/process/sample-gene.json"))}\n`
+        + `${linkedEventLine(t, { mutation_id: "sample-mutation", capsule_id: "sample-capsule", env_fingerprint: "node26.8.1-nightly20260101/linux/x64" }, "2026-09-05T02:00:00Z")}\n`
+        + `${capsuleEventLine("sample-capsule", shaOf(t, "capsules/process/sample-capsule.json"), "ok", "2026-09-05T03:00:00Z")}\n`
+        + `${mutationEventLine("sample-mutation", shaOf(t, "mutations/process/sample-mutation.json"), "ok", "2026-09-05T04:00:00Z")}\n`);
+    },
+    [], "env_fingerprint prerelease suffix -> pass",
   ]);
 
   cases.push([
