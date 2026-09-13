@@ -11,6 +11,8 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-13｜**批次 3 序 13 Detect 逐源裁决 `agent/turn-stopping`（LIGHT；R2 2B+3S 全采纳）**：事件 = 93.4% 正常回合的关闭边界、载荷无失败位 → 判不立，A6 维持零策略。[ADR](.agents/notes/implemented/architecture/2026-09-13-detect-source-verdict-turn-stopping.md)；`5e5f1ba`→`5958d14`。README 无漂移。
+
 - 2026-09-13｜**批次 3 序 12 Detect 逐源裁决 `agent/error`（LIGHT；R2 2B+2S 全采纳）**：186 卷实扫 5 个错误回合（可观测子集全为 provider/API 面），无可命名失败与动作面 → 判不立。[ADR](.agents/notes/implemented/architecture/2026-09-13-detect-source-verdict-agent-error.md)；`fc0d9e5`→`1925794`。README 核对：无漂移。
 
 - 2026-09-13｜**批次 3 序 11 Detect 逐源裁决 `session/event`（LIGHT；R2 2B+5S 全采纳）**：D2 禁区重拍为「默认关 + 逐源门槛」，本源判不立（写面封、读面开；四候选面无可命名具体失败）。[ADR](.agents/notes/implemented/architecture/2026-09-13-detect-source-verdict-session-event.md)；`75b38fe`→`c7639ea`。README 核对：无漂移。
@@ -49,8 +51,6 @@
 - 2026-09-13｜**0.2.6 发版（release-flow 第三次实走）**：npm latest 0.2.6（tag `dsh-v0.2.6`，指向版本面 `ad2e549`）+ 双语 Release Latest；bump `a43c63c`；[实发节](.agents/notes/implemented/process/2026-09-09-release-shape-alignment.md)；CI run `34706452446` 绿。README 已同步。
 - 2026-09-13｜**bank provider 注册时序修复批（FULL 三审全采纳）**：注册改 `ctx.inject(["skills"], …)` 可重试路径 + 提醒面按可达集点名；[修复件 ADR](.agents/notes/implemented/bug-fix/2026-09-12-bank-skill-provider-registration.md)；`5dcca48`→`aa9be0f`。README 有变更；真机复验 = todos (B) 条。
 - 2026-09-12｜**release-note 聚合档批（FULL 三审 R1 0B/3S、R2 1B/2S、R3 2B/4S；采纳 8 拒绝 3）**：Release 正文末节按提交日归并成每日一条（0.2.4 区间 42 条 → 3 条；条目零丢弃、按 `%cs` 日期串建 Map）；[聚合档 ADR](.agents/notes/implemented/process/2026-09-12-release-note-daily-aggregation.md)。README 无漂移。
-
-- 2026-09-12｜**0.2.5 真机复验轮（零仓变更）**：装机件矩阵三形态 push 全中／五负例全不中；实机新实例 `git -c … push` 命中一行 advice、重复不重提、bash 重定向写 `.md` 走后缀面命中、跨通道抑制成立；重启后守卫状态复位（新实例）。异仓腿随 bank 批。
 
 
 ## 背景

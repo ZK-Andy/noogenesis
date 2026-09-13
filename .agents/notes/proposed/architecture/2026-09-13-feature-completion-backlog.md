@@ -147,5 +147,5 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 
 - **单源与指针**：本表是设计稿差集的唯一单源；[HANDOFF-todos](../../../../HANDOFF-todos.md) 承载当批可办项，[HANDOFF.md](../../../../HANDOFF.md) ⏭ 指向本表。
 - **状态推进**：每批收口时更新本表对应行（pending → done）；全部完成或用户改向时，本笔记转 implemented 或由新笔记取代。
-- **封条纪律**：批次 3 的 D2 重拍件已立（[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-session-event.md)：默认关 + 逐源门槛），行 13–14 可在其下直接裁决、行 15 须自身过 HERO；批次 4 开工前必须先有独立的重拍 ADR。
+- **封条纪律**：批次 3 的 D2 重拍件已立（[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-session-event.md)：默认关 + 逐源门槛），行 14 可在其下直接裁决、行 15 须自身过 HERO；批次 4 开工前必须先有独立的重拍 ADR。
 - **不承诺工期**：本表承诺的是「差集不再重新对账」，不是排期。
