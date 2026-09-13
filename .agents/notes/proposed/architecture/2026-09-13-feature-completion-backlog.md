@@ -98,7 +98,7 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 | 序 | 功能 | 设计出处 | 备注 |
 |---|---|---|---|
 | 34 | 一行安装收口（npm 已具备，补 profile 一键） | 主设计 §12-P4 | done（[一行安装 ADR](../../implemented/architecture/2026-09-14-one-line-install.md)）：宿主 `dsh plugin` 首用初始化 + 包自带 `dsh.bundle.patch` 自动入层 → 一行装 / 一行起；交付 = 根 README 双语安装节四条路径，零机器面 |
-| 35 | 多 harness 适配 | 主设计 §12-P4 | done（[Hermes hook 桥 ADR](../../implemented/architecture/2026-09-14-hermes-hook-bridge.md)）：第二宿主 = Hermes——原生读 `AGENTS.md` 链 + `.agents/skills` 项目技能路径（零适配）；第一刀 = `adapters/hermes/` 写码在环拦回（`pre_tool_call` + `write_file`，判据复用仓根 oxlint + `verify-export-docs`） |
+| 35 | 多 harness 适配 | 主设计 §12-P4 | done（[Hermes hook 桥 ADR](../../implemented/architecture/2026-09-14-hermes-hook-bridge.md)）：第二宿主 = Hermes——原生读 `AGENTS.md` 链 + `.agents/skills` 项目技能路径（零适配）；第一刀 = `adapters/hermes/` 写码在环拦回（`pre_tool_call` + `write_file`，判据 = 仓根 oxlint 半） |
 | 36 | 胶囊组合成 preset / profile | 主设计 §2.3/§11.2 | 依赖序 1/25；组合能力面归口本行（行 31 判不立，[指针](../../implemented/architecture/2026-09-14-batch6-composition-meta-verdict.md)） |
 | 37 | 插件市场 / capability manifest 适配 | 主设计 §11.2/§12-P4 | — |
 
