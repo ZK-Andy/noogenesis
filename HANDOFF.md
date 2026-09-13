@@ -11,6 +11,8 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-14｜**批次 5 开题讨论轮（LIGHT；R2 2B+2S 全采纳）**：四题拍板：taxonomy 与 schema 扩字段+YAML 维持后置、validate.yml 确认全覆盖、协议层归属本仓插件；序 25/27 落账，游标进批次 6（序 30 须重拍 P1 D3）。[ADR](.agents/notes/implemented/architecture/2026-09-14-batch5-opening-round.md)；`8d9eb82`→`8852c21`。
+
 - 2026-09-14｜**批次 4 重拍（LIGHT；R2 0B+1S 全采纳）**：第二期判裁重议维持判不立（触发条与判裁时逐值同）+ 序 18 因果边现算判已交付（= 第一期派生面）；行 16/17/19/20 落终态，游标推进批次 5，机制零变化。[ADR](.agents/notes/implemented/architecture/2026-09-14-memory-line-phase2-reshoot.md)；`7f9dcc1`→`8686bab`。README 无漂移。
 
 - 2026-09-13｜**批次 3 序 15 情境按需注入裁决（LIGHT；R2 2B+5S 全采纳）**：四派生面全落已裁/不可判面、现网 `injectSignals` 零声明无消费面 → 判不立，机制零变化。[ADR](.agents/notes/implemented/architecture/2026-09-13-situational-injection-verdict.md)；`3fed70f`→`0726e03`。README 无漂移。
@@ -53,7 +55,6 @@
 - 2026-09-13｜**护栏建设轮余项收尾批（FULL 三审 R1 1B/2S、R2 1B/2S、R3 3B/9S；采纳 17 延后 1）**：决定 1 建议行 + 决定 2 两本账落点落地，[ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md) 三段落账（含两条勘误）；`c671ce5`→`6f72c8d`。README 已同步。
 - 2026-09-13｜**护栏建设轮实现批（决定 1 落地）**：常驻注入字面预算判据入 `section.mts` + `config.mts` 装载期拒收；实测**预算 2048 会把已发布缺省 12 行判违约** → 改由缺省推导；selftest 6 条断言；设计稿/blueprint token-meter 归口同步。README 已同步。
 - 2026-09-13｜**护栏建设轮立项讨论轮**：三题拍板 = token 基线两轨 / 改进度量两本账 / canary 判不立；[护栏建设轮 ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md) 触发条到达并收口。
-- 2026-09-13｜**0.2.6 真机复验（零仓变更）**：外仓 desktop 与 dsh-frecency 新会话目录均含 7 件 `noo-*`（活副本零、缓存 7 件 → 来源 = `noogenesis-bank`）；A2 路标行与 A3 提醒只点名可达集，dsh-frecency 实任务会话提醒→载入成功、零 `unknown`、零诊断 warn。todos (B) 翻 x。
 
 
 

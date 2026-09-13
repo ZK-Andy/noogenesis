@@ -79,7 +79,7 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 | 23 | taxonomy 细分拍板 | 主设计 §13-1 | done（[开题轮 ADR](../../implemented/architecture/2026-09-14-batch5-opening-round.md)）：维持后置——触发 = 贡献开放轮开轮第一批拍（三处既有口径不变）；Mutation `category` 维持无值域 |
 | 24 | schema 扩字段（`provenance`/`evidence_ref`/`version`）+ YAML 决策 | 共享层稿 §6.2；P1 遗留 | done（[开题轮 ADR](../../implemented/architecture/2026-09-14-batch5-opening-round.md)）：维持后置（P2 D3 口径不变）——三字段单机各有本地替身（`gene_sha`/`actor`/`evidence`），字段先于消费者即死字段；JSON 八字段 + `js-yaml` 例外权不动 |
 | 25 | gene→skill 渲染语义 | M2 M4 | done（[开题轮 ADR](../../implemented/architecture/2026-09-14-batch5-opening-round.md)）：确认落账——维持 P2 D3 后置口径（随贡献开放轮拍渲染语义；技能分发半边已提前收口为「技能随库分发」） |
-| 26 | Genesis 世界观基因入档 | P2 D3 | 内容策展（保留位置；随贡献开放轮或用户给内容） |
+| 26 | Genesis 世界观基因入档 | P2 D3 | 内容策展（保留位置；触发 = P2 D3 首批外部基因轮，或用户给出世界观内容） |
 | 27 | `capsules/` 三义术语拍板 | 主设计 §8.2/§9.1；共享层稿 §6.2 | done（[Capsule ADR](../../implemented/architecture/2026-09-13-capsule-primitive.md) C1；[开题轮 ADR](../../implemented/architecture/2026-09-14-batch5-opening-round.md) 确认落账）：`capsules/` 只指 Capsule 原语，§8.2 知识原子归序 42 |
 | 28 | `validate.yml` 覆盖范围（最小集 vs 全覆盖） | 主设计 §13-2；共享层稿 §11-2 | done（[开题轮 ADR](../../implemented/architecture/2026-09-14-batch5-opening-round.md)）：确认全覆盖为终局——现状已是穷尽矩阵（第一梯队全量 + 独立件 + tier + self-test 抽查 + 双 selftest）；两稿未决条同批回写 |
 | 29 | 与 `dsh-continual-evolve` 融合边界 | 主设计 §13-5 | done（[开题轮 ADR](../../implemented/architecture/2026-09-14-batch5-opening-round.md)）：协议层归属本仓插件包为终局（旧引擎冻结 D6；触发 = 出现第二真实消费者时重议拆分）；两稿未决条同批回写 |
@@ -147,5 +147,5 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 
 - **单源与指针**：本表是设计稿差集的唯一单源；[HANDOFF-todos](../../../../HANDOFF-todos.md) 承载当批可办项，[HANDOFF.md](../../../../HANDOFF.md) ⏭ 指向本表。
 - **状态推进**：每批收口时更新本表对应行（pending → done）；全部完成或用户改向时，本笔记转 implemented 或由新笔记取代。
-- **封条纪律**：批次 3 的 D2 重拍件已立（[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-session-event.md)：默认关 + 逐源门槛），行 11–15 已全部裁决（全判不立）；批次 4 的记忆线重拍件已立（[重拍 ADR](../../implemented/architecture/2026-09-14-memory-line-phase2-reshoot.md)），行 16–20 落终态，游标 = 批次 5。
+- **封条纪律**：批次 3 的 D2 重拍件已立（[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-session-event.md)：默认关 + 逐源门槛），行 11–15 已全部裁决（全判不立）；批次 4 的记忆线重拍件已立（[重拍 ADR](../../implemented/architecture/2026-09-14-memory-line-phase2-reshoot.md)），行 16–20 落终态；批次 5 的开题轮拍板件已落（[开题轮 ADR](../../implemented/architecture/2026-09-14-batch5-opening-round.md)），行 23–29 落终态（21/22/26 保留位），游标 = 批次 6。
 - **不承诺工期**：本表承诺的是「差集不再重新对账」，不是排期。
