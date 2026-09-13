@@ -124,6 +124,9 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 	const logger = ctx.logger("noogenesis");
 	// A3 advice 投递降级提示（每会话至多一条；keyless carve-out 见 createSessionWarnOnce）。
 	const warnOnceAdvisory = createSessionWarnOnce((message) => logger.warn(message));
+	// A6 续跑投递降级提示：独立预算——与 A3 共用同一每会话布尔时，先告警的一路会
+	// 吞掉另一路的能力位缺席/投递失败留痕（warnOnceAdvisory 单门）。
+	const warnOnceSteering = createSessionWarnOnce((message) => logger.warn(message));
 
 	// 常驻注入面宿主读数（观察面，非门槛；护栏 ADR 2026-09-13-guardrail-construction-round
 	// 决定 1 建议行）：服务经 `ctx.get` 懒取用（无 inject 要求；缺席静默、晚到可读），
@@ -270,26 +273,31 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 		return { ...downstream, additionalContexts: [adviceMessage(merged.context), ...(downstream.additionalContexts ?? [])] };
 	});
 
-	// A6 停止前（agent/turn-stopping，serial、无 next）：能力位 = 建议行经
-	// agent.inject（排队下一 pre-step，非阻断）+ 强制续跑经 agent.steer（阻断档，
-	// 零策略不启用——a6-turn-stopping-mount ADR Proposal 3）。两条通道都投：
-	// 合并器在 steer 胜出时仍返回已累积建议行，早退丢弃 = 永不补投（A3 同款纪律）。
-	// 能力位缺席或投递异常 → warn 降级（每会话至多一条），回合关闭绝不因此改变。
+	// A6 停止前（agent/turn-stopping，serial、无 next）：停止前唯一投递面 = agent.steer
+	// （强制续跑一步；属阻断/续跑档，零策略不启用——a6-turn-stopping-mount ADR
+	// Proposal 1/3）。agent.inject 不作通道：宿主回合循环按 `inbox.nextStep.length === 0`
+	// 决定是否关闭回合，而 inject 即 next-step 入队，投了同样再跑一步（只差不唤醒
+	// idle driver）——标它「非阻断」会与真实机器语义相反。
+	// 合并与投递各自 try/catch：合并异常不得连带丢掉续跑投递（A3 同款纪律），
+	// 能力位缺席/投递异常 → 每会话至多一条 warn，回合关闭结果不被改变。
 	ctx.on("agent/turn-stopping", (payload: TurnStoppingPayload) => {
+		let merged;
 		try {
-			const merged = mergeTurnStopping(mounts.turnStopping, payload);
-			if (merged.advice.length > 0) {
-				const injectContext = payload.agent?.inject;
-				if (typeof injectContext === "function") injectContext.call(payload.agent, adviceMessage(merged.advice));
-				else warnOnceAdvisory(payload.agent?.session, "noogenesis turn-stop advice delivery unavailable: agent.inject capability missing");
-			}
-			if (merged.steer !== undefined) {
-				const steerTurn = payload.agent?.steer;
-				if (typeof steerTurn === "function") steerTurn.call(payload.agent, adviceMessage([merged.steer]));
-				else warnOnceAdvisory(payload.agent?.session, "noogenesis turn-stop steering unavailable: agent.steer capability missing");
-			}
+			merged = mergeTurnStopping(mounts.turnStopping, payload);
 		} catch (cause) {
 			logger.warn(`noogenesis turn-stopping mount failed: ${cause instanceof Error ? cause.message : String(cause)}`);
+			return;
+		}
+		if (merged.steer === undefined) return;
+		const steerTurn = payload.agent?.steer;
+		if (typeof steerTurn !== "function") {
+			warnOnceSteering(payload.agent?.session, "noogenesis turn-stop steering unavailable: agent.steer capability missing");
+			return;
+		}
+		try {
+			steerTurn.call(payload.agent, adviceMessage([merged.steer]));
+		} catch (cause) {
+			warnOnceSteering(payload.agent?.session, `noogenesis turn-stop steering failed: ${cause instanceof Error ? cause.message : String(cause)}`);
 		}
 	});
 

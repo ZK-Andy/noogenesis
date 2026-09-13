@@ -6,9 +6,13 @@
  *
  * 五挂载点（A2–A6）各一组策略接口 + 一个合并器——hook-protocol 判定
  * 语义的本地蒸馏（蓝图 §7 边界：不建两方言桥，deny→A3 阻断并回消息 /
- * block→A4 结果面拦回 / additionalContexts→A4 上下文附加 / advice→A3/A6
+ * block→A4 结果面拦回 / additionalContexts→A4 上下文附加 / advice→A3
  * 非阻断建议行（agent.inject 投递，M1 守卫②）/ steer→A6 强制续跑 /
- * 非阻断→降级日志）。
+ * 非阻断→降级日志）。**A6 无 advice 通道**：宿主回合循环在 await 完
+ * `agent/turn-stopping` 后按 `inbox.nextStep.length === 0` 决定是否关闭回合，而
+ * `agent.inject` 即 `send(msg, "next-step", false)`——停止前投 inject 同样入队
+ * next-step、同样再跑一步，只差不唤醒 idle driver；停止前唯一投递面是 `steer`
+ * （实证与决策见 A6 能力位 ADR Problem 节）。
  * 策略件在 mount-policies.mts（存留件 = A2 开场地图 + A4 写码在环两判据
  * 〔lint + 注释面〕+ A3 技能触点提醒；A5/A6 零策略能力位，记录件不挂——撤除 ADR）；宿主 ctx.on 胶水与消息构造在 index.mts。本模块零宿主依赖（防火墙
  * 规则 2，selftest 机器扫描）——宿主 payload 只取本地窄结构面（同
@@ -65,10 +69,11 @@ export interface SessionStartPayload extends AgentCarrier {
 	source?: unknown;
 }
 
-/** A6 停止前 payload（`agent/turn-stopping` 窄面；serial 无 next，两条能力位：
- * `inject` = 排队下一 pre-step 的模型可见上下文，`steer` = 强制续跑一步）。 */
+/** A6 停止前 payload（`agent/turn-stopping` 窄面；serial 无 next，能力位 =
+ * `steer` 强制续跑一步——停止前 `agent.inject` 同为 next-step 入队，故不列为
+ * 能力位，见 A6 能力位 ADR Problem 节）。 */
 export interface TurnStoppingPayload extends AgentCarrier {
-	agent?: AgentRef & { inject?(message: unknown): void; steer?(message: unknown): void };
+	agent?: AgentRef & { steer?(message: unknown): void };
 	turn?: number;
 	signal?: unknown;
 }
@@ -88,9 +93,9 @@ export type ToolPostPolicyDecision = { kind: "block"; feedback: string } | { kin
 /** A5 策略决策：inject = 会话开始注入上下文行（非阻塞）。 */
 export type SessionStartPolicyDecision = { kind: "inject"; lines: string[] };
 
-/** A6 策略决策：advice = 建议行经 `agent.inject` 排队下一 pre-step（非阻断）；
- * steer = 强制续跑一步的模型可见消息（阻断档，零策略面不启用）。 */
-export type TurnStoppingPolicyDecision = { kind: "advice"; lines: string[] } | { kind: "steer"; message: string };
+/** A6 策略决策：steer = 强制续跑一步的模型可见消息（停止前唯一投递面；属阻断/续跑
+ * 档，任何策略启用前逐件过 HERO 并配套防死锁面，零策略面不启用）。 */
+export type TurnStoppingPolicyDecision = { kind: "steer"; message: string };
 
 /** 策略接口五件（A8 记录投影面不挂——撤除 ADR；A5/A6 零策略件）。 */
 export type PreStepPolicy = (payload: PreStepPayload) => PreStepPolicyDecision | void;
@@ -247,24 +252,17 @@ export function mergeSessionStart(policies: readonly SessionStartPolicy[], paylo
 	return lines;
 }
 
-/** A6 合并结果：steer = 首个强制续跑消息（胜出即停）；advice = 建议行（注册序累积）。 */
+/** A6 合并结果：steer = 首个强制续跑消息（胜出即停）。 */
 export interface MergedTurnStopping {
 	steer?: string;
-	advice: string[];
 }
 
-/** A6 合并语义：逐策略顺序过；首个 steer 胜出并停止（此时已累积的建议行随行返回，
- * 不早退丢弃——A3 deny 同款纪律）；advice 行按注册序累积；无策略 = 空决策。 */
+/** A6 合并语义：逐策略顺序过；首个 `steer` 胜出并停止扫描；无策略 = 空决策。
+ * 单决策种（停止前无 advice 通道，见本文件头注）——不做建议行累积。 */
 export function mergeTurnStopping(policies: readonly TurnStoppingPolicy[], payload: TurnStoppingPayload): MergedTurnStopping {
-	const merged: MergedTurnStopping = { advice: [] };
 	for (const policy of policies) {
 		const decision = policy(payload);
-		if (!decision) continue;
-		if (decision.kind === "steer") {
-			merged.steer = decision.message;
-			return merged;
-		}
-		merged.advice.push(...decision.lines);
+		if (decision) return { steer: decision.message };
 	}
-	return merged;
+	return {};
 }

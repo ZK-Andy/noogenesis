@@ -1005,12 +1005,17 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.deepEqual(mergeSessionStart([() => ({ kind: "inject" as const, lines: ["a", "b"] })], {}), ["a", "b"]);
 	ok("mounts: session-start merge — inject lines accumulate (non-blocking)");
 
-	// A6 合并语义：advice 累积；首个 steer 胜出并停止扫描（胜出时已累积的 advice
-	// 随行返回，不被早退丢弃）；零策略 = 空决策。
-	assert.deepEqual(mergeTurnStopping([() => ({ kind: "advice" as const, lines: ["a"] }), () => ({ kind: "advice" as const, lines: ["b"] })], {}), { advice: ["a", "b"] });
-	assert.deepEqual(mergeTurnStopping([() => ({ kind: "advice" as const, lines: ["kept"] }), () => ({ kind: "steer" as const, message: "hold on" }), () => ({ kind: "advice" as const, lines: ["unscanned"] })], {}), { steer: "hold on", advice: ["kept"] });
-	assert.deepEqual(mergeTurnStopping([], {}), { advice: [] });
-	ok("mounts: turn-stopping merge — advice accumulates; first steer wins and stops scanning, carried advice survives");
+	// A6 合并语义：单决策种（停止前无 advice 通道）——首个 steer 胜出并停止扫描；
+	// void 策略跳过；零策略 = 空决策。
+	let scannedAfterSteer = 0;
+	assert.deepEqual(
+		mergeTurnStopping([() => ({ kind: "steer" as const, message: "hold on" }), () => { scannedAfterSteer += 1; return { kind: "steer" as const, message: "later" }; }], {}),
+		{ steer: "hold on" },
+	);
+	assert.equal(scannedAfterSteer, 0, "first steer wins and stops scanning");
+	assert.deepEqual(mergeTurnStopping([() => undefined, () => ({ kind: "steer" as const, message: "second" })], {}), { steer: "second" });
+	assert.deepEqual(mergeTurnStopping([], {}), {});
+	ok("mounts: turn-stopping merge — first steer wins and stops scanning; void policies skipped; zero policies = empty");
 
 	// 会话键控存储：同键共享实例、异键隔离、无键降级为即席实例（残留面仅
 	// 单门布尔，GC 自清兜底）。
@@ -1445,16 +1450,14 @@ function writeFixtureGene(repoRoot: string): void {
 		await sessionStart({ agent });
 		ok("mounts: A5 wiring — session-start capability wired, zero-policy no-op safe");
 
-		// A6：零策略件 → 无注入、无续跑、零 warn（能力位在场即冒烟；两条投递分支
-		// 在策略增挂前不可达，合并语义由上面的单测钉住）。
-		const injectedAtStop: unknown[] = [];
+		// A6：零策略件 → 无续跑、零 warn（能力位在场即冒烟；投递与降级两分支在策略
+		// 增挂前不可达，合并语义由上面的单测钉住）。
 		const steeredAtStop: unknown[] = [];
-		await turnStopping({ agent: { ...agent, inject: (m: unknown) => injectedAtStop.push(m), steer: (m: unknown) => steeredAtStop.push(m) }, turn: 1 });
-		assert.equal(injectedAtStop.length, 0);
+		await turnStopping({ agent: { ...agent, steer: (m: unknown) => steeredAtStop.push(m) }, turn: 1 });
 		assert.equal(steeredAtStop.length, 0);
 		await turnStopping({ agent });
 		assert.equal(warns.filter((m) => m.includes("turn-stop") || m.includes("turn-stopping")).length, 0);
-		ok("mounts: A6 wiring — turn-stopping capability wired, zero-policy no-op safe (no inject, no steer, no warn)");
+		ok("mounts: A6 wiring — turn-stopping capability wired, zero-policy no-op safe (no steer, no warn)");
 	}
 }
 

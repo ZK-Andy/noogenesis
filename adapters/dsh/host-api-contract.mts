@@ -11,8 +11,9 @@
  * - 工具 exec/result 形状：**键存在性**（宿主改名/删键即红）与**形状相容**
  *   （本层窄类型不得窄于宿主形状；对应 `mount.mts` 的 `ToolExecLike` /
  *   `ToolResultLike`）——两组互补，缺一有盲区；
- * - 停止前 payload 形状相容（A6 能力位；对应 `mount.mts` 的
- *   `TurnStoppingPayload`——`inject` / `steer` 为可选能力位，本层不窄化）；
+ * - 停止前 payload 键存在性 + 形状相容（A6 能力位；对应 `mount.mts` 的
+ *   `TurnStoppingPayload`——该面全字段可选，形状相容单独对宿主改名/删键零
+ *   证伪力，故 `agent` / `agent.steer` 两键另配存在性断言）；
  * - 决策判别式：`PreToolDecision` 三态、`PostToolDecision` 的 accept/block 与
  *   `additionalContexts`（`index.mts` 的消费面）；
  * - tokenMeter 读数面：服务键 `tokenMeter`（`index.mts` 的 `ctx.get` 取用点）、
@@ -56,6 +57,12 @@ type _ResultContentKey = Assert<"content" extends keyof ToolExecutionResult ? tr
 // ── 形状相容：本层窄类型不得窄于宿主形状（宿主放宽/换型即红）────────────
 type _ExecShape = Assert<ToolExecution extends ToolExecLike ? true : false>;
 type _ResultShape = Assert<ToolExecutionResult extends ToolResultLike ? true : false>;
+
+// ── 停止前 payload：键存在性 + 形状相容（两组互补，缺一有盲区）──────────
+// 本层该面全字段可选，单靠 `extends` 对宿主改名/删键零证伪力（可选成员恒相容），
+// 故消费的键另配存在性断言。
+type _TurnStoppingAgentKey = Assert<"agent" extends keyof Parameters<Events["agent/turn-stopping"]>[0] ? true : false>;
+type _TurnStoppingAgentSteerKey = Assert<"steer" extends keyof Parameters<Events["agent/turn-stopping"]>[0]["agent"] ? true : false>;
 type _TurnStoppingShape = Assert<Parameters<Events["agent/turn-stopping"]>[0] extends TurnStoppingPayload ? true : false>;
 
 // ── 决策判别式：index.mts 的 deny / ask / block / context 消费面 ──────────
