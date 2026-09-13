@@ -13,7 +13,7 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 现状事实（2026-09-13 实读，只列差集判定相关者）：
 
 - **已交付**：Gene 协议 + 引擎八命令（select/propose/evaluate/solidify/pull/observe/capsule/mutation）+ `gates.json` 白名单 + Capsule / Mutation 两原语与事件 kind 五件 + Event 扩字段（跨链 `mutation_id`/`capsule_id` + 环境指纹 `env_fingerprint`）+ Evaluate 的 blast-radius 改动面度量（文件 / 行 / 范围）+ 候选比较 / 答案盲选择判据（通道封闭集 + 不排序；机器面判不立）；适配层 A1–A7 接线（A5 会话开始位与 A6 停止前续跑能力位均零策略；prompt 提交 / 工具前后折进 A2/A3/A4）；M1 技能守卫 + M2 规范面接入；token 基线两轨（预算判据 + 宿主读数）；技能随库分发；P2 只读消费（pull + manifest + 缓存合并）；记忆线第一期观测面与 `advice:` 建议档；胶囊 01 内容主体（7 技能 + method/cookbook/流程卡/门禁）。
-- **未交付**：下方批次表余 31 项（序 1–15 已 done，批次 3 进行中）。
+- **未交付**：下方批次表余 26 项（序 1–20 已落终态，游标 = 批次 5）。
 - **受宿主约束未交付**：A8 会话事件轨 / 状态投影——撤除理由 = 宿主读路径对未标 `ignorable` 的下游插件事件 fail-closed，且 `Session.append` 无 `ignorable` 写入口。连带 M3 原形态记录件（同节重议触发；同一失败面已由 session-close 对账步承接，[序 8 重拍 ADR](../../implemented/architecture/2026-09-13-m3-review-record-verdict.md)）。
 
 ## Proposal
@@ -59,16 +59,16 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 | 13 | Detect 逐源裁决：`agent/turn-stopping` | 同上 | done（[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-turn-stopping.md)）：事件 = 93.4% 正常回合的关闭边界、载荷无失败位（唯二非 completed 可达子面 `max-tokens` 实测 n=0），判不立 |
 | 14 | Detect 逐源裁决：`tool/result` | 同上 | done（[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-tool-result.md)）：结果对象已由 A4 在 `tools/post-execute` 消费（实测失败面 A4 判据 41.8% + 宿主 fs 面 38.6% = 80.5%），判不立；四源裁决组收口 |
 | 15 | 情境按需注入（命中节动态信号，替代静态 `injectSignals`） | 主设计 §8.3 | done（[裁决 ADR](../../implemented/architecture/2026-09-13-situational-injection-verdict.md)）：四派生面全落已裁面或不可判面、现网 `injectSignals` 零声明无消费面，判不立 |
-| 16 | Hypothesize 阶段（记录「信号 + gene + mutation → 预期结果」） | 主设计 §6 | 落 memory-graph，依赖序 18 |
-| 17 | 观测面自动接线（写者集合扩至挂载面） | 记忆线 D7-3 | 现判「挂载面暂不立」，重议触发 = 出现需无人写入的真实场景 |
+| 16 | Hypothesize 阶段（记录「信号 + gene + mutation → 预期结果」） | 主设计 §6 | done（[重拍 ADR](../../implemented/architecture/2026-09-14-memory-line-phase2-reshoot.md)）：判不立——自动写已被 D4「运行不记」封，人工写的消费者（预期-实际对账）属序 19 面；预期声明的既有家 = Mutation `expected_effect`；触发条与序 19 同面 |
+| 17 | 观测面自动接线（写者集合扩至挂载面） | 记忆线 D7-3 | done（[重拍 ADR](../../implemented/architecture/2026-09-14-memory-line-phase2-reshoot.md)）：确认维持「挂载面暂不立」，重议触发 = 出现需无人写入的真实场景 |
 
 **批次 4 — Select 消费面（须先重议判不立）**
 
 | 序 | 功能 | 设计出处 | 备注 |
 |---|---|---|---|
-| 18 | memory-graph 因果边现算（(signal, gene) → outcome） | 主设计 §5.1 | 现仅 `advice:` 计数 |
-| 19 | 排序 / 禁用 / 阈值 / 半衰期 | 主设计 §5.1 | 记忆线 phase1 判不立（无对象），开工前重议 |
-| 20 | 观测透镜（采用 / 被拒 / 传播 / 分歧；只观测无积分） | 主设计 §9.4 | P2 D3 后置 |
+| 18 | memory-graph 因果边现算（(signal, gene) → outcome） | 主设计 §5.1 | done（[重拍 ADR](../../implemented/architecture/2026-09-14-memory-line-phase2-reshoot.md)）：判已交付——现算面 = 第一期实现 ADR Decision 3 的读路径派生边 `(signal::gene)→{ok,fail,last_ts}`（advice 建议档、零观测零行），形态单源 = 融合立宪 D7-1/D8；设计「驱动选择」列 = 序 19 消费面 |
+| 19 | 排序 / 禁用 / 阈值 / 半衰期 | 主设计 §5.1 | done（[重拍 ADR](../../implemented/architecture/2026-09-14-memory-line-phase2-reshoot.md)）：开工前重议 2026-09-14 维持判不立——触发条实测与判裁时逐值相同（genes 6/12、观测零记录）；触发条单源不变 = 第一期实现 ADR Decision 4 |
+| 20 | 观测透镜（采用 / 被拒 / 传播 / 分歧；只观测无积分） | 主设计 §9.4 | done（[重拍 ADR](../../implemented/architecture/2026-09-14-memory-line-phase2-reshoot.md)）：维持 P2 D3 后置——门 = 共享层 P3 口径（[P2 ADR](../../implemented/architecture/2026-09-06-p2-shared-consumer.md) D3；前提面 = 序 21 贡献开放轮），非记忆线判裁 |
 
 **批次 5 — 共享层后半**
 
@@ -124,7 +124,7 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 ### 需显式重拍的决策面
 
 - **P1 骨架 D2 禁区 + M2「Detect 显式不做」**：站立规则已重拍为「自动 Detect 默认关 + 逐源过 HERO 两问」——重拍件 = [Detect 逐源裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-session-event.md)（行 11 `session/event` 判不立；行 12 `agent/error` 判不立，[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-agent-error.md)；行 13 `agent/turn-stopping` 判不立，[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-turn-stopping.md)；行 14 `tool/result` 判不立，[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-tool-result.md)）——四源（行 11–14）裁决组收口；行 15 情境按需注入在同一规则下判不立（[裁决 ADR](../../implemented/architecture/2026-09-13-situational-injection-verdict.md)）。
-- **记忆线第二期判裁**（排序 / 禁用 / 阈值 / 半衰期判不立；行为评估自建判不立）：批次 4 开工前重议。
+- **记忆线第二期判裁**（排序 / 禁用 / 阈值 / 半衰期判不立；行为评估自建判不立）：已重议（2026-09-14，[重拍 ADR](../../implemented/architecture/2026-09-14-memory-line-phase2-reshoot.md)）——维持判不立，触发条单源不变（[第一期实现 ADR](../../implemented/architecture/2026-09-11-memory-line-phase1-observation-face.md) Decision 4）；行为评估自建不属该重拍面（判据 = 评分对象缺席）。
 - **P1 骨架 D3（propose 不产新基因）**：批次 6 的序 30 需重拍（批次 1 序 1 已就产出面重拍一次）。**schema ADR S2（事件 kind 集与键集）**：批次 1 的序 1–3 已三轮重拍收敛（五 kind、必需键 + 按 kind 允许可选键），序 30 若再触该面须重拍。
 - **「已判不做」清单**内任何一项被选中，逐条重拍（见下节）。
 
@@ -147,5 +147,5 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 
 - **单源与指针**：本表是设计稿差集的唯一单源；[HANDOFF-todos](../../../../HANDOFF-todos.md) 承载当批可办项，[HANDOFF.md](../../../../HANDOFF.md) ⏭ 指向本表。
 - **状态推进**：每批收口时更新本表对应行（pending → done）；全部完成或用户改向时，本笔记转 implemented 或由新笔记取代。
-- **封条纪律**：批次 3 的 D2 重拍件已立（[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-session-event.md)：默认关 + 逐源门槛），行 11–15 已全部裁决（全判不立）；批次 4 开工前必须先有独立的重拍 ADR。
+- **封条纪律**：批次 3 的 D2 重拍件已立（[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-session-event.md)：默认关 + 逐源门槛），行 11–15 已全部裁决（全判不立）；批次 4 的记忆线重拍件已立（[重拍 ADR](../../implemented/architecture/2026-09-14-memory-line-phase2-reshoot.md)），行 16–20 落终态，游标 = 批次 5。
 - **不承诺工期**：本表承诺的是「差集不再重新对账」，不是排期。
