@@ -13,7 +13,7 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 现状事实（2026-09-13 实读，只列差集判定相关者）：
 
 - **已交付**：Gene 协议 + 引擎八命令（select/propose/evaluate/solidify/pull/observe/capsule/mutation）+ `gates.json` 白名单 + Capsule / Mutation 两原语与事件 kind 五件 + Event 扩字段（跨链 `mutation_id`/`capsule_id` + 环境指纹 `env_fingerprint`）+ Evaluate 的 blast-radius 改动面度量（文件 / 行 / 范围）+ 候选比较 / 答案盲选择判据（通道封闭集 + 不排序；机器面判不立）；适配层 A1–A7 接线（A5 会话开始位与 A6 停止前续跑能力位均零策略；prompt 提交 / 工具前后折进 A2/A3/A4）；M1 技能守卫 + M2 规范面接入；token 基线两轨（预算判据 + 宿主读数）；技能随库分发；P2 只读消费（pull + manifest + 缓存合并）；记忆线第一期观测面与 `advice:` 建议档；胶囊 01 内容主体（7 技能 + method/cookbook/流程卡/门禁）。
-- **未交付**：下方批次表余 36 项（序 1–10 已 done，批次 2 收口）。
+- **未交付**：下方批次表余 35 项（序 1–11 已 done，批次 3 进行中）。
 - **受宿主约束未交付**：A8 会话事件轨 / 状态投影——撤除理由 = 宿主读路径对未标 `ignorable` 的下游插件事件 fail-closed，且 `Session.append` 无 `ignorable` 写入口。连带 M3 原形态记录件（同节重议触发；同一失败面已由 session-close 对账步承接，[序 8 重拍 ADR](../../implemented/architecture/2026-09-13-m3-review-record-verdict.md)）。
 
 ## Proposal
@@ -54,7 +54,7 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 
 | 序 | 功能 | 设计出处 | 备注 |
 |---|---|---|---|
-| 11 | Detect 逐源裁决：`session/event` | 主设计 §6；P1 D2 禁区 | 逐源答 HERO 两问 |
+| 11 | Detect 逐源裁决：`session/event` | 主设计 §6；P1 D2 禁区 | done（[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-session-event.md)）：D2 禁区重拍为「默认关 + 逐源门槛」，本源 HERO 两问判不立 |
 | 12 | Detect 逐源裁决：`agent/error` | 同上 | 同上 |
 | 13 | Detect 逐源裁决：`agent/turn-stopping` | 同上 | 同上 |
 | 14 | Detect 逐源裁决：`tool/result` | 同上 | 同上 |
@@ -123,7 +123,7 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 
 ### 需显式重拍的决策面
 
-- **P1 骨架 D2 禁区 + M2「Detect 显式不做」**：批次 3 的四源逐条裁决，逐条答 HERO 两问后成文。
+- **P1 骨架 D2 禁区 + M2「Detect 显式不做」**：站立规则已重拍为「自动 Detect 默认关 + 逐源过 HERO 两问」——重拍件 = [Detect 逐源裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-session-event.md)（行 11 `session/event` 判不立）；余三源（行 12–14）在其站立规则下逐条裁决后成文。
 - **记忆线第二期判裁**（排序 / 禁用 / 阈值 / 半衰期判不立；行为评估自建判不立）：批次 4 开工前重议。
 - **P1 骨架 D3（propose 不产新基因）**：批次 6 的序 30 需重拍（批次 1 序 1 已就产出面重拍一次）。**schema ADR S2（事件 kind 集与键集）**：批次 1 的序 1–3 已三轮重拍收敛（五 kind、必需键 + 按 kind 允许可选键），序 30 若再触该面须重拍。
 - **「已判不做」清单**内任何一项被选中，逐条重拍（见下节）。
@@ -147,5 +147,5 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 
 - **单源与指针**：本表是设计稿差集的唯一单源；[HANDOFF-todos](../../../../HANDOFF-todos.md) 承载当批可办项，[HANDOFF.md](../../../../HANDOFF.md) ⏭ 指向本表。
 - **状态推进**：每批收口时更新本表对应行（pending → done）；全部完成或用户改向时，本笔记转 implemented 或由新笔记取代。
-- **封条纪律**：批次 3/4 开工前必须先有独立的重拍 ADR；未重拍不得动代码。
+- **封条纪律**：批次 3 的 D2 重拍件已立（[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-session-event.md)：默认关 + 逐源门槛），行 12–14 可在其下直接裁决、行 15 须自身过 HERO；批次 4 开工前必须先有独立的重拍 ADR。
 - **不承诺工期**：本表承诺的是「差集不再重新对账」，不是排期。

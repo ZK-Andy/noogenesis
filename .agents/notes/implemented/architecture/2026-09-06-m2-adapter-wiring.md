@@ -33,9 +33,9 @@ Noogenesis/                  ← npm 包根（真包首发时替换占位 0.0.0�
 - **ESM/CJS 分叉**：根 `package.json` 的 `"type"` 钉 `commonjs`（引擎 `.js` 保持 CJS 零改动），适配层用显式 `.mjs` 写 ESM——零构建链（无 tsc）。退路（若 DSH 装载器要求包级 ESM）= `engine/*.js` 机械改名 `.cjs`，行为零变。
 - **Config 校验**：手工校验（`config.mjs`，类型违约 fail-closed 抛错），不引 schemastery——宿主运行时依赖收敛为 `@deepseek-ai/dsh-tools`（defineTool，经依赖注入进 tools.mjs）+ `@deepseek-ai/dsh-llm`（createUserMessage，注入消息构造——允许集扩第二件随 [2026-09-08-b4-mount-wiring](2026-09-08-b4-mount-wiring.md)）。
 
-**M2 接线点 = 最小四件**（Detect 信号源全表不做）：
+**M2 接线点 = 最小四件**（Detect 信号源不做；站立规则 = 自动 Detect 默认关 + 逐源门槛，重拍件 = [Detect 逐源裁决 ADR](2026-09-13-detect-source-verdict-session-event.md)）：
 
-1. **system-prompt 双节**：基座节（固定极小，陈述工具面 + 写路径纪律）+ 命中节（`injectSignals` 显式声明的信号喂引擎 select，命中基因逐行注入、行数封顶、单行截断）；空命中渲染 `""` → 宿主 prompt 渲染器丢弃 → 零 token（`injectSignals` 为空时短路，不 spawn 引擎）。引擎 stdout 进宿主 prompt 前对 `{{` 做零宽中性化——宿主 interpolate 对未知 `{{name}}` 抛错且 renderPrompt 每模型步无包裹调用（R2-B1），模板语法的基因 summary 不得原样透传。信号只来自显式声明（配置 / 模型调工具），Detect 禁区（骨架 D2）不解除。
+1. **system-prompt 双节**：基座节（固定极小，陈述工具面 + 写路径纪律）+ 命中节（`injectSignals` 显式声明的信号喂引擎 select，命中基因逐行注入、行数封顶、单行截断）；空命中渲染 `""` → 宿主 prompt 渲染器丢弃 → 零 token（`injectSignals` 为空时短路，不 spawn 引擎）。引擎 stdout 进宿主 prompt 前对 `{{` 做零宽中性化——宿主 interpolate 对未知 `{{name}}` 抛错且 renderPrompt 每模型步无包裹调用（R2-B1），模板语法的基因 summary 不得原样透传。信号只来自显式声明（配置 / 模型调工具），自动 Detect 默认关（站立规则与逐源裁决见 [Detect 逐源裁决 ADR](2026-09-13-detect-source-verdict-session-event.md)）。
 2. **`defineTool` 三件**：`noo_select` / `noo_propose` / `noo_evaluate`——模型面只读路径。退出码映射：0=结果文本；1=闸红（红是有效评测结论，以 `RED (exit 1)` 文本返回，不抛错）——但 **exit 1 + 空 stdout = 引擎内部故障**（非 EngineError 走 `throw e`，崩溃退出码同为 1 且无报告），按 fail-closed 抛错不放行；2=fail-closed（抛错，重试无益）。
 3. **solidify 触发**：挂 `agent/disposed`（in-flight 去重逐仓隔离——同仓近同时 dispose 不重复弹问/重复入档，异仓互不阻塞；逐仓口径见 [2026-09-06-adapter-deploy-hardening](2026-09-06-adapter-deploy-hardening.md)）。发现 staging 目录（默认 `genes-staging/`，相对目标仓根）下的 `<id>.json` 候选 → 提问人工确认（`userQuestions` **不在 inject 声明**，disposal 时懒取用——cordis 对缺席注入服务会推迟整个插件装载，声明注入会让降级不可达；ask 兜底超时 300s，超时/缺席/拒绝 → 只输出带精确命令的提醒）；批准才逐候选实跑 solidify。绝不自动写。
 4. **`/noo` 人面命令**：后补，不在本层。
@@ -59,7 +59,7 @@ Noogenesis/                  ← npm 包根（真包首发时替换占位 0.0.0�
 ## Alternatives considered
 
 - **纯技能包（无代码接线）**：落败——"装上即转"的接线闸永不过，M2 的存在理由（引擎↔会话接线）直接落空。
-- **接线全量一步到位（设计稿 §6 全表）**：落败——Detect 信号源（agent/error、turn-stopping、goal/change…）每一处都是行为面决策，P1 骨架 D2 仍列禁区；一次性全挂等于把 D2 禁区整批解除，违保守护栏纪律。
+- **接线全量一步到位（设计稿 §6 全表）**：落败——Detect 信号源（agent/error、turn-stopping、goal/change…）每一处都是行为面决策，D2 的自动扫描禁区默认关（站立规则 = 逐源门槛）；一次性全挂等于整批解除，违保守护栏纪律。
 - **只读先行（不做 solidify 触发）**：落败——写路径不接则演化闭环在 DSH 侧断裂，solidify 只能靠人在 CLI 手跑，"装上即转"名不副实；人工确认默认已兜住写风险。
 - **进程内 import**：落败——引擎是 CJS、插件生态是 ESM，需互操作或引擎转 ESM（churn）；JS API + CLI 双合同是漂移温床，违 D1。
 - **混合（只读进程内 / 写路径 spawn）**：落败——最快但双合同，且 select/propose 是人/agent 量级调用频次而非热循环，子进程开销可承受，换不来值得背的漂移面。

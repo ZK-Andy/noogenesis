@@ -28,7 +28,7 @@ Review: FULL/2026-09-05/R1=ok R2=ok R3=ok
 
 - **选型**：select 的信号输入 = 调用者显式给出（CLI 参数/stdin，一个或多个信号键）；Detect 职责留在方法论侧——人发起、流程卡约定时机，引擎只做机械匹配。
 - **口径**：信号键 v0 = 自由字符串，与 gene `signals` 字段（[schema ADR](2026-09-05-gene-event-schema.md) S1 定名）精确匹配；归一化钉死 = trim → 小写化 → 内部连续空白折叠为单空格（self-test 夹具覆盖归一化）；一次 select 可喂多键，命中取并集；信号词汇表不预设封闭集，随首批基因手工翻译自然形成（manifest 索引归 P2 共享库，P1 无 manifest——schema ADR S1）。
-- **禁区**：引擎自动扫描固定面（门禁输出/journal/git 推导信号）在 M2（钩子适配层落地）之前禁止实现——"常开自动性"已被 #18 负结果（单例用户判定，[cookbook 条目](../../../../docs/cookbook.md)）约束：自动蒸馏零可追溯收益、token 成本倒挂；按需调用是既定姿态。M2 已落地（解除与否见遗留面）。
+- **禁区**：引擎自动扫描固定面（门禁输出/journal/git 推导信号）**默认关**，解除 = 逐源过 HERO 两问并落独立裁决件（站立规则重拍件 = [Detect 逐源裁决 ADR](2026-09-13-detect-source-verdict-session-event.md)）——"常开自动性"已被 #18 负结果（单例用户判定，[cookbook 条目](../../../../docs/cookbook.md)）约束：自动蒸馏零可追溯收益、token 成本倒挂；按需调用是既定姿态。
 - **依据**：胶囊哲学 = 引擎保持愚钝、方法论承担智能；信号发现的判断（"现在像不像踩过那个坑的场景"）放在人与流程卡里，引擎只做匹配——这是主设计 §7"只在无金标下用代理信号"纪律的最诚实版本：P1 连代理信号都不假装有，人就是信号源。
 - **被否选项**：B 引擎自动扫固定面（重建 evolver daemon，与 #18 单例判定约束及"不插电也能转"相悖）；C 约定落盘点（session-close 写约定文件、引擎读文件）——本质是"谁来喂"的纪律问题而非引擎能力，留作实现轮流程卡的一行可选增强（遗留面归口），不进引擎合同面。
 
@@ -60,6 +60,6 @@ Review: FULL/2026-09-05/R1=ok R2=ok R3=ok
 ## Consequences
 
 - **采用面**：`engine/` 目录与四命令按 D1–D4 实现；协议细节按 [schema ADR](2026-09-05-gene-event-schema.md) S1–S3；首批基因人工策展翻译（不自动生成）。
-- **遗留面（显式 open，逐条归口）**：`js-yaml` 例外权与基因格式 YAML 化迁移器——M2 插件化已完成且未动用该例外权，归口 = 贡献开放轮（[P2 ADR](2026-09-06-p2-shared-consumer.md) 口径，单源在本条）；D2 禁区的条件「M2 之前」已到期而解除未拍（M2 拍板「Detect 显式不做」，见 [M2 ADR](2026-09-06-m2-adapter-wiring.md)）——逐源解除 `session/event` / `agent/error` / `agent/turn-stopping` / `tool/result` 连带 M3 重议，对账与触发见 [HANDOFF-todos](../../../../HANDOFF-todos.md)（D）条；流程卡「谁来喂信号」增强已落地（[session-open](../../../workflows/session-open.md) 第 5 步可选喂信号条）。已收口项：严格改进文档域度量（D4）、token 基线不变量与 canary 进程隔离——终局见 [护栏建设轮 ADR](2026-09-13-guardrail-construction-round.md)；hooks/CI 引 `gates.json` 完整合一（2026-09-06，`scripts/gates.py` 单源发射，见 [M2 ADR](2026-09-06-m2-adapter-wiring.md)）。
+- **遗留面（显式 open，逐条归口）**：`js-yaml` 例外权与基因格式 YAML 化迁移器——M2 插件化已完成且未动用该例外权，归口 = 贡献开放轮（[P2 ADR](2026-09-06-p2-shared-consumer.md) 口径，单源在本条）；D2 禁区的站立规则 = 自动 Detect 默认关 + 逐源门槛（重拍件 = [Detect 逐源裁决 ADR](2026-09-13-detect-source-verdict-session-event.md)；四源逐条裁决在案，行 11 `session/event` 判不立，余三源行 12–14），连带 M3 重议，对账与触发见 [HANDOFF-todos](../../../../HANDOFF-todos.md)（D）条；流程卡「谁来喂信号」增强已落地（[session-open](../../../workflows/session-open.md) 第 5 步可选喂信号条）。已收口项：严格改进文档域度量（D4）、token 基线不变量与 canary 进程隔离——终局见 [护栏建设轮 ADR](2026-09-13-guardrail-construction-round.md)；hooks/CI 引 `gates.json` 完整合一（2026-09-06，`scripts/gates.py` 单源发射，见 [M2 ADR](2026-09-06-m2-adapter-wiring.md)）。
 - **依赖姿态是门禁级约束**：engine 引入任何第三方依赖须先修订本 ADR D1（或其例外条款）。
 - **运行时假设**：Node 单运行时——若未来引擎要进无 Node 环境（边缘/容器最小镜像），CLI 合同面保证可换 Go/Rust 内核而不动接口。
