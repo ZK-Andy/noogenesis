@@ -328,6 +328,18 @@ function selfTest() {
       const bl4 = blastRadius(sd, deriveSlots(sd));
       ok(bl4.files === 1 && bl4.added === 2, 'blast: whitespace-edge filename read verbatim');
     }
+    // 四面齐备：已提交区间（第二笔提交）+ 未暂存 + 未跟踪同时在场，行面两侧都非零
+    {
+      const cd = mkRepo(mkTemp());
+      fs.writeFileSync(path.join(cd, 'base.txt'), 'base\nline2\n');
+      git(cd, ['add', '-A']);
+      git(cd, ['commit', '-qm', 'second']);
+      fs.writeFileSync(path.join(cd, 'base.txt'), 'base\n');
+      fs.writeFileSync(path.join(cd, 'new.txt'), 'n1\nn2\n');
+      const bl5 = blastRadius(cd, deriveSlots(cd));
+      ok(bl5.files === 2 && bl5.added === 3 && bl5.deleted === 1,
+        'blast: committed + unstaged + untracked faces all counted');
+    }
 
     // spawn 失败根因并入 tail（code=-1 时 stderr 常空——二进制缺失只在此可见）
     writeGates(gatesDir, [{ name: 'ghost-bin', cmd: 'no-such-binary-xyz', args: ['--version'] }]);

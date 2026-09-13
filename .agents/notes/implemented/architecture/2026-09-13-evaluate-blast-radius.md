@@ -1,7 +1,7 @@
 # Agent Note: Evaluate 的 blast-radius——改动面度量、判据对接与 Capsule 字段裁决（批次 1 序 4）
 
 Status: implemented
-Review: FULL/2026-09-13/pending（三重审核进行中，收口时回填真实结论）
+Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 
 Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 主设计 [§5.1/§6/§10](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 相邻原语 [Capsule 原语](2026-09-13-capsule-primitive.md)（序 1）· 出入账口径 [P1 骨架](2026-09-05-p1-engine-skeleton.md)（D4）／[P1 实现](2026-09-05-p1-engine-implementation.md)（D4）· 影响面方法论 [architecture-standards](../../../../docs/method/architecture-standards.md) §2.4
 
@@ -23,7 +23,7 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/archit
 ### B1（度量口径与家）：`blastRadius(repoRoot, slots)` 是改动面的唯一度量入口
 
 - 一次调用返回 `{files, added, deleted, scope, paths}`，`files === paths.length`；`evaluate` 只调它一次，约束检查与报告都从同一个对象取数（不再各自数一遍出账集）。
-- **计量面 = base→工作区**：已提交区间（`base...HEAD`）+ index（`diff --cached`）+ 未暂存 + 未跟踪文件整文件行数。文件面 = 四面并集去重；行面 = 前三面的 `--numstat` 增删之和 + 未跟踪文件的行数（未跟踪没有基线，唯一可复算的读数就是整文件行数）。
+- **计量面 = base→工作区**：已提交区间（`base...HEAD`）+ index（`diff --cached`）+ 未暂存 + 未跟踪文件整文件行数。文件面 = 四面并集去重；行面 = 前三面的 `--numstat` 增删之和 + 未跟踪文件的行数（未跟踪没有基线，唯一可复算的读数就是整文件行数）。三条 diff 面的行数**互补而非重叠**：index 面 = index vs HEAD、未暂存面 = worktree vs index、已提交面 = base vs HEAD，同一文件在两面各计自己那段 hunk，三者之和恰是 HEAD→工作区的总 churn。
 - **行数记 churn（`added + deleted`）不记净变化**：删 100 行加 100 行的改动面是 200，净变化会读成 0。
 - **二进制与不可读文件记 0 行**：`--numstat` 对二进制给 `-`（解析为非数即跳过），未跟踪面按「含 NUL 字节」判二进制跳过——行数不是字节数，二进制面没有行语义。
 - **`scope` = 顶层路径段的分布**：`{dir, files}[]`，按文件数降序、同数按段名码点序（确定性）；空集合渲染为 `-`。顶层段答「影响面跨了几棵树」，更细的完整路径表是 `scripts/change-scope.mts` 的职责，不在此复写。
@@ -72,11 +72,11 @@ blast radius: files 3, lines +120/-8, scope engine(2), docs(1)
 
 ## Consequences
 
-- **采用面**：`engine/util.ts`（`changedPaths` 四面 + 未跟踪面单列返回 + `blastRadius` + `scopeOf` / `numstatTotals` / `untrackedLines`）+ `engine/evaluate.ts`（`checkConstraints` 收 blast、报告行）+ `engine/selftest.ts`（度量七条断言：四面计数 / 未跟踪行数 / 删除侧 / scope 序 / 报告行 / 二进制跳过 / 空白边界文件名）；`scripts/change-scope.mts`（index 面）。
+- **采用面**：`engine/util.ts`（`changedPaths` 四面 + 未跟踪面单列返回 + `blastRadius` + `scopeOf` / `numstatTotals` / `untrackedLines`）+ `engine/evaluate.ts`（`checkConstraints` 收 blast、报告行）+ `engine/selftest.ts`（度量八条断言：四面齐备 / index 面 / 未跟踪行数 / 删除侧 / scope 序 / 报告行 / 二进制跳过 / 空白边界文件名）；`scripts/change-scope.mts`（index 面）。
 - **声明面同步**：`engine/README.md`（合同面「改动面度量」条、util 行、constraints 对照面）；`verify-command-surface` 机械校核命令面与 README 一致性，命令计数不变。
 - **相邻 ADR 事实行同步**：[P1 骨架](2026-09-05-p1-engine-skeleton.md)「收窄归口」（blast-radius 不再后置）、[P1 实现](2026-09-05-p1-engine-implementation.md) D4（三条 → 四条 changed-path 命令）、[Capsule 原语](2026-09-13-capsule-primitive.md)（`blast_radius` 的预告改为指向本 ADR 的判不立）。
 - **单源指针**：度量口径单源 = 本 ADR + `engine/README.md`；blast-radius 作为**影响面识别方法论**的口径仍在 [architecture-standards](../../../../docs/method/architecture-standards.md) §2.4 R9（本序只落其机器面），互链不重抄。
 - **强度上限（写明）**：度量是**行数、文件数、顶层段分布**三个标量，不是依赖图/编译面/扇出的影响分析——「改动可能影响谁」的语义判断仍归 R9 的人读清单；本序只把可机械计算的改动面读数落地。
 - **遗留面（逐条归口）**：Capsule 字段随 B3 的触发；`validation_report_id` 按[序 3 ADR](2026-09-13-event-field-extension.md) E4 具名延期；评分/候选比较随批次表序 5+。
-- **实测样本（n=1【探索性】）**：本批收口时对真实仓跑 `evaluate doc/doc-single-home` → `blast radius: files 23, lines +741/-90, scope engine(9), .agents(8), scripts(2), …`，exit 0（门禁全绿）。bl 读数不落盘，故只有当下读数、无趋势面——与 B3 判不立同一个理由（无区间锚点）。
+- **实测样本（n=1【探索性】）**：本批收口时对真实仓跑 `evaluate doc/doc-single-home`，首行 = `blast radius: files 23, lines +791/-104, scope engine(9), .agents(8), scripts(2), HANDOFF*.md(3), journal(1)`，exit 0（门禁全绿）。可复算的部分是**形状**（首行格式 + 三个读数在场），不是数值——**行读数随工作树而变**（同批两次读 `+741/-90` → `+791/-104`），因为它没有区间锚点（读数不落盘、不进 Event，与 B3 判不立同一个理由）；文件数与范围面在批内稳定。
 - **批次表状态**：序 4 已收口，批次表对应行标 done 并指向本笔记。
