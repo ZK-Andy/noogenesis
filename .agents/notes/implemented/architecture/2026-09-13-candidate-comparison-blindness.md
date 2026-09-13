@@ -1,7 +1,7 @@
 # Agent Note: 候选比较 / 答案盲选择判据——代理信号通道封闭集与机器面裁决（批次 1 序 5）
 
 Status: implemented
-Review: FULL/2026-09-13/pending（三重审核进行中，收口时回填真实结论）
+Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 
 Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 主设计 [§7.1-5/§7.2](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 参考调研 [JIT-Agent 报告 §5/§6.2/§7.2](../../../../docs/research/JIT-Agent_Research_Report_20260831.md) · 影响面判据 [序 4 Evaluate blast-radius](2026-09-13-evaluate-blast-radius.md)（B3）· 骨架封条 [P1 引擎骨架](2026-09-05-p1-engine-skeleton.md)（D1/D2/D4）· [护栏建设轮](2026-09-13-guardrail-construction-round.md)（Decision 2）· 记忆线一期 [观测输入面](2026-09-11-memory-line-phase1-observation-face.md)（Decision 4）· 操作入口 [根 AGENTS「评审检查项」](../../../../AGENTS.md)
 
@@ -29,7 +29,7 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/archit
 ### C2（通道证成：本仓可用通道只有两条）
 
 - **`independent_execution`** = 候选各自真跑确定性验证的结果（门禁 / 基因 `validation` 声明的验证命令）。它是 §7.2「测试用例 = 资产自带的验证命令」的可用部分：可判定、可复算、与被比较者独立。参考实现里这条对应沙箱执行验证。
-- **`observation`** = 观测面 `(signal::gene) → {ok, fail}`（记忆线一期面）：基因被真实采用后由人显式记录的读数。它是「部署期无金标」下唯一有真实样本的代理信号面。
+- **`observation`** = 观测面 `(signal::gene) → {ok, fail}`（记忆线一期面）：基因被真实采用后由人显式记录的读数。它是「部署期无金标」下唯一有真实样本的代理信号面。该面的 `select` `advice:` 行是**建议档**（不排序 / 不禁用 / 无阈值 / 无衰减，[记忆线一期](2026-09-11-memory-line-phase1-observation-face.md) Decision 4），不构成自动择优面。
 - **logprob / judge 判不可行**：引擎零 LLM 零网络（D1 一脉），本仓不引入模型调用。参考实现用它们，是因为它就在模型内部；本仓没有这个位置。将来若要引入，先重拍 D1，不在本项。
 - **金标判不可入**：参考调研把选择期使用 benchmark 分明确标为 leakage；本仓文档域也确无金标（D4）。两层理由各自独立成立。
 - **骨架 D4 点名的两个候选信号不做选择信号**（论证归各所有者）：评审 Blocker 数追踪 = 评审账（[护栏建设轮](2026-09-13-guardrail-construction-round.md) Decision 2，过程账非通道）；token 常驻注入度量 = §7.1-6 token 基线不变量的刻度。
@@ -41,7 +41,7 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/archit
 - **「候选比较命令」（≥2 候选并排跑确定性检查、输出对照表）**：新增判定面与现有面重叠——候选不合格本就进不了档（`evaluate` 拒红、`solidify` 拒不合格），命令的增量判定为零；质量侧无标可读，命令只能复述既有读数。**落败**。
 - **「选择账」记录件（选了谁 / 压倒谁 / 依据哪个通道）**：选择的家已在 ADR `## Alternatives considered`（强制）与 journal，它们是复盘时真正被读的面；机器写账**无具名消费者**，而 schema 扩面 = 合同面 + 夹具 + 门禁成本一起进。**落败**。
 - **触发条（任一到达即另立 ADR，本项不重开记忆线判裁）**：
-  1. 出现「同一信号下 ≥2 个已入档基因需按代理信号优选」且观测样本量足以支撑排序（沿用记忆线一期 Decision 4 的触发条）；
+  1. 出现「同一信号下 ≥2 个已入档基因需按代理信号优选」——沿用记忆线一期 Decision 4 的触发条（命中数逼近常驻注入上限，**或**观测样本量足以支撑排序）；
   2. 出现「选择不可从 ADR / journal 复盘」的跨会话真实场景（同一比较被反复重做且结论漂移）。
 - **本项不构成序 4 B3 的触发**：B3 要的是「事后按执行记录横向比较影响面的消费者 + 区间锚点」；本项判的是**没有这样的消费者**，故 Capsule `blast_radius` 维持不进 schema，B3 触发条原样保留。
 

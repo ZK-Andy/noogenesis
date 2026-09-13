@@ -79,6 +79,6 @@ blast radius: files 3, lines +120/-8, scope engine(2), docs(1)
 - **相邻 ADR 事实行同步**：[P1 骨架](2026-09-05-p1-engine-skeleton.md)「收窄归口」（blast-radius 不再后置）、[P1 实现](2026-09-05-p1-engine-implementation.md) D4（三条 → 四条 changed-path 命令）、[Capsule 原语](2026-09-13-capsule-primitive.md)（`blast_radius` 的预告改为指向本 ADR 的判不立）。
 - **单源指针**：度量口径单源 = 本 ADR + `engine/README.md`；blast-radius 作为**影响面识别方法论**的口径仍在 [architecture-standards](../../../../docs/method/architecture-standards.md) §2.4 R9（本序只落其机器面），互链不重抄。
 - **强度上限（写明）**：度量是**行数、文件数、顶层段分布**三个标量，不是依赖图/编译面/扇出的影响分析——「改动可能影响谁」的语义判断仍归 R9 的人读清单；本序只把可机械计算的改动面读数落地。
-- **遗留面（逐条归口）**：Capsule 字段随 B3 的触发；`validation_report_id` 按[序 3 ADR](2026-09-13-event-field-extension.md) E4 具名延期；评分与候选比较已按[序 5 ADR](2026-09-13-candidate-comparison-blindness.md)落判据（不立数值评分、候选比较不做机器面）。
+- **遗留面（逐条归口）**：Capsule 字段随 B3 的触发；`validation_report_id` 按[序 3 ADR](2026-09-13-event-field-extension.md) E4 具名延期；评分 = [护栏建设轮 ADR](2026-09-13-guardrail-construction-round.md) Decision 2（不立数值评分），候选比较 = [序 5 ADR](2026-09-13-candidate-comparison-blindness.md)（判据 + 机器面判不立）。
 - **实测样本（n=1【探索性】）**：本批收口时对真实仓跑 `evaluate doc/doc-single-home`，首行 = `blast radius: files 23, lines +791/-104, scope engine(9), .agents(8), scripts(2), HANDOFF*.md(3), journal(1)`，exit 0（门禁全绿）。可复算的部分是**形状**（首行格式 + 三个读数在场），不是数值——**行读数随工作树而变**（同批两次读 `+741/-90` → `+791/-104`），因为它没有区间锚点（读数不落盘、不进 Event，与 B3 判不立同一个理由）；文件数与范围面在批内稳定。
 - **批次表状态**：序 4 已收口，批次表对应行标 done 并指向本笔记。

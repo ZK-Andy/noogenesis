@@ -11,7 +11,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-13｜**批次 1 序 5 候选比较 / 答案盲选择判据（FULL 三审）**：候选比较只用通道封闭集 {独立执行, 观测} 的可复算读数，金标类与作者自报分永不入通道，不造评分、引擎不排序不择优（择优归人）；机器面判不立（两处具名触发）；操作入口 = 根 AGENTS 评审检查项第 7 条。[判据 ADR](.agents/notes/implemented/architecture/2026-09-13-candidate-comparison-blindness.md)。
+- 2026-09-13｜**批次 1 序 5 候选比较判据（FULL 三审 R1 0B/4S、R2 0B/2S、R3 1B/3S；采纳 8 拒绝 2）**：候选比较只用通道封闭集 {独立执行, 观测} 的读数，金标类与自报分永不入通道，引擎不排序不择优；机器面判不立（两处具名触发），入口 = 根 AGENTS 检查项第 7 条。[判据 ADR](.agents/notes/implemented/architecture/2026-09-13-candidate-comparison-blindness.md)。
 
 - 2026-09-13｜**批次 1 序 4 Evaluate 的 blast-radius（FULL 三审 0B；R1/R2 全采纳、R3 部分采纳）**：改动面度量入 `evaluate` 报告首行 + `max_files` 取同一度量 + 出入账补 index 面；[ADR](.agents/notes/implemented/architecture/2026-09-13-evaluate-blast-radius.md)；`a5f360a`→`2264554`。engine README 有变更。
 
