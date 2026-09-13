@@ -2,7 +2,7 @@
 
 Status: implemented
 
-Review: LIGHT/2026-09-14/pending（范围化语义评审 R2 进行中，收口回填）
+Review: LIGHT/2026-09-14/语义评审（范围化子代理 R2：2 Blocker + 2 Suggestion 全采纳——T1 逐字复述 architecture-standards §4 的构建墙钟触发条却给不同动作 → T1 收窄为「可复现的 I/O 外瓶颈」+ 明写墙钟触发条归 §4；HANDOFF ⏭ 末句「最新批 = 序 38」与本批条目矛盾 → 改序 39；批次表现状事实的命令计数改动与「2026-09-13 实读」日期口径不符 → 改单源指针 + Consequences 记账；T2 漏行 44 `/evolve` benchmark 命令面 → 补）
 
 Related: 批次表 [行 39](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 主设计 [§10 / §4.1 / §7.2](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 复杂度裁决家 [architecture-standards §4](../../../../docs/method/architecture-standards.md) · 引擎消耗画像 [P1 骨架 ADR](2026-09-05-p1-engine-skeleton.md) · 上下文预算 [护栏建设轮 ADR](2026-09-13-guardrail-construction-round.md) · 改动面度量 [序 4 ADR](2026-09-13-evaluate-blast-radius.md) · 候选比较禁金标 [序 5 ADR](2026-09-13-candidate-comparison-blindness.md) · Detect 裁决组 [序 11 ADR](2026-09-13-detect-source-verdict-session-event.md) · 前序裁决 [序 38](2026-09-14-project-init-domain-verdict.md) / [序 37](2026-09-14-plugin-marketplace-verdict.md) · 范围契约 [anti-overdesign](../../../../docs/method/anti-overdesign.md)
 
@@ -44,8 +44,8 @@ CPU 面无具名失败类：引擎消耗画像 = I/O + 子进程编排（【推�
 
 ### 6. 重议触发
 
-- **T1（性能）**：门禁 / 构建墙钟实测恶化到阻塞日常迭代，或出现可复现的 I/O 外瓶颈 → 开性能测量批（先实测分布，再定阈值；工具形状 = 实测基线档 + 复现脚本）。
-- **T2（benchmark）**：行 21/22 贡献开放轮落地或行 45 开批 → 随该批重估 benchmark 门禁与跨机复验证据面。
+- **T1（性能）**：出现可复现的 I/O 外瓶颈（引擎 / 门禁 CPU 侧失守）→ 开性能测量批（先实测分布，再定阈值；工具形状 = 实测基线档 + 复现脚本）。构建 / 类型检查墙钟的触发条归 architecture-standards §4（project references 拆分），本件不重复、不另给动作。
+- **T2（benchmark）**：行 21/22 贡献开放轮落地、行 44（`/evolve` benchmark 命令面）或行 45 开批 → 随该批重估 benchmark 门禁与跨机复验证据面。
 - **T3（复杂度）**：真实失控件出现（architecture-standards §4 三判别式之一）→ 按该节触发条评估，以届时实测 max × 1.5 为候选阈值。
 - **T4（新篇）**：出现第一条既有家都装不下的「优雅高效实现」规则 → 另立 `docs/method/` 篇。
 
@@ -59,8 +59,8 @@ CPU 面无具名失败类：引擎消耗画像 = I/O + 子进程编排（【推�
 
 ## Consequences
 
-- **批次表单源更新**：行 39 备注改 `done（指针 = 本件）`；「未交付」计数 11 → 10；游标 = 序 40（踩坑原子化）。
+- **批次表单源更新**：行 39 备注改 `done（指针 = 本件）`；「未交付」计数 11 → 10；游标 = 序 40（踩坑原子化）；同处把「现状事实」的引擎命令面表述改为单源指针（手抄计数不随交付更新）。
 - **档位**：纯文档收口，路径触发集未命中（无 `docs/method/**` / `engine/**` / `adapters/**` / `scripts/**` / `templates/**` / `.agents/workflows/**` / 任意 AGENTS.md 变更）→ LIGHT 单路语义评审（R2）。
 - **机制零变化**：`engine/**`、`adapters/**`、`scripts/**`、`package.json`、`engine/gates.json` 均不动。
 - **单源**：域内三判不立结论与触发条以本件为家；复杂度裁决单源 = architecture-standards §4；上下文预算单源 = 护栏建设轮 ADR；失败感知单源 = `engine/README.md`（基因字段 + `distill collect` 汇编面）+ cookbook；测试门禁单源 = 各族 AGENTS.md + validate.yml。
-- **评审结论**：待回填。
+- **评审结论**：LIGHT 单路 R2——2 Blocker + 2 Suggestion 全采纳、拒 0（findings 处置见 [journal](../../../../journal/2026-09.md) 本批节）。
