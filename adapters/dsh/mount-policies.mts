@@ -7,7 +7,8 @@
  * 档位：A4 在环判据 = block 拦回（升格批 2026-09-09-lint-block-and-staged-hook；
  * 同文件连续 block 达上限降级 context 防死锁；注释面判据扩面 ADR
  * 2026-09-10-export-docs-inloop）；A3 技能触点提醒 = advice 非阻断
- * （M1 守卫②，2026-09-10-m1-guard-anti-overdesign）；A5 零策略件；降级 = 异常由
+ * （M1 守卫②，2026-09-10-m1-guard-anti-overdesign）；A5/A6 零策略件（A6 能力位
+ * ADR 2026-09-13-a6-turn-stopping-mount）；降级 = 异常由
  * index.mts 胶水 catch → warn，拦回/提醒缺席不阻塞会话。状态按会话 WeakMap 隔离
  * （GC 自清）。零宿主依赖（防火墙规则 2）；fs 只读。
  *
@@ -20,7 +21,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import { createSessionStore, createSessionWarnOnce } from "./mount.mjs";
-import type { PreStepPolicy, SessionStartPolicy, ToolPostPolicy, ToolPrePolicy } from "./mount.mjs";
+import type { PreStepPolicy, SessionStartPolicy, ToolPostPolicy, ToolPrePolicy, TurnStoppingPolicy } from "./mount.mjs";
 import { resolveRepoRoot, sessionWorkspaceOf } from "./engine-bridge.mjs";
 import type { RepoRootConfig } from "./engine-bridge.mjs";
 import { DEFAULT_SKILL_GUARDS } from "./config.mjs";
@@ -155,12 +156,13 @@ export function createSubtreeRulesPolicies(config: RepoRootConfig, deps: SkillSu
 	return { preStep };
 }
 
-/** 全部策略件的挂载面汇总（A5 首批零策略能力位——升格件出现时增挂）。 */
+/** 全部策略件的挂载面汇总（A5/A6 零策略能力位——策略件出现时增挂）。 */
 export interface MountPolicySet {
 	preStep: PreStepPolicy[];
 	toolPre: ToolPrePolicy[];
 	toolPost: ToolPostPolicy[];
 	sessionStart: SessionStartPolicy[];
+	turnStopping: TurnStoppingPolicy[];
 }
 
 /** A4 两判据的注入缝汇总（日志面共享；执行面各自可替换——夹具按判据分别注入桩）。 */
@@ -188,5 +190,8 @@ export function createMountPolicies(config: RepoRootConfig = {}, deps: MountPoli
 		// A4 判据序 = lint → 注释面（合并器首 block 胜出：lint 未过时不叠加注释面反馈）。
 		toolPost: [lintFeedback.toolPost, exportDocs.toolPost],
 		sessionStart: [],
+		// A6 停止前能力位（序 7）：零策略——停止前策略面三条候选各有既定裁决或未到
+		// 触发条（a6-turn-stopping-mount ADR Proposal 2）。
+		turnStopping: [],
 	};
 }

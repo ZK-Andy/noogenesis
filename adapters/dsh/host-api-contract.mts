@@ -11,6 +11,8 @@
  * - 工具 exec/result 形状：**键存在性**（宿主改名/删键即红）与**形状相容**
  *   （本层窄类型不得窄于宿主形状；对应 `mount.mts` 的 `ToolExecLike` /
  *   `ToolResultLike`）——两组互补，缺一有盲区；
+ * - 停止前 payload 形状相容（A6 能力位；对应 `mount.mts` 的
+ *   `TurnStoppingPayload`——`inject` / `steer` 为可选能力位，本层不窄化）；
  * - 决策判别式：`PreToolDecision` 三态、`PostToolDecision` 的 accept/block 与
  *   `additionalContexts`（`index.mts` 的消费面）；
  * - tokenMeter 读数面：服务键 `tokenMeter`（`index.mts` 的 `ctx.get` 取用点）、
@@ -27,14 +29,15 @@
 import type { Context, Events } from "@deepseek-ai/cordis";
 import type { PostToolDecision, PreToolDecision, ToolExecution, ToolExecutionResult } from "@deepseek-ai/dsh-tools";
 import type { TokenMeasurement, TokenMeter } from "@deepseek-ai/dsh-token-meter";
-import type { ToolExecLike, ToolResultLike } from "./mount.mjs";
+import type { ToolExecLike, ToolResultLike, TurnStoppingPayload } from "./mount.mjs";
 
 /** 断言助手：条件为假时 `tsc` 报「`false` 不满足 `true` 约束」。 */
 type Assert<T extends true> = T;
 
-// ── 事件键：index.mts 的六个 ctx.on 注册面 ───────────────────────────────
+// ── 事件键：index.mts 的七个 ctx.on 注册面 ───────────────────────────────
 type _AgentPreStep = Assert<"agent/pre-step" extends keyof Events ? true : false>;
 type _AgentSessionStart = Assert<"agent/session-start" extends keyof Events ? true : false>;
+type _AgentTurnStopping = Assert<"agent/turn-stopping" extends keyof Events ? true : false>;
 type _AgentCreated = Assert<"agent/created" extends keyof Events ? true : false>;
 type _AgentDisposed = Assert<"agent/disposed" extends keyof Events ? true : false>;
 type _ToolsPreExecute = Assert<"tools/pre-execute" extends keyof Events ? true : false>;
@@ -53,6 +56,7 @@ type _ResultContentKey = Assert<"content" extends keyof ToolExecutionResult ? tr
 // ── 形状相容：本层窄类型不得窄于宿主形状（宿主放宽/换型即红）────────────
 type _ExecShape = Assert<ToolExecution extends ToolExecLike ? true : false>;
 type _ResultShape = Assert<ToolExecutionResult extends ToolResultLike ? true : false>;
+type _TurnStoppingShape = Assert<Parameters<Events["agent/turn-stopping"]>[0] extends TurnStoppingPayload ? true : false>;
 
 // ── 决策判别式：index.mts 的 deny / ask / block / context 消费面 ──────────
 type _PreToolAllow = Assert<"allow" extends PreToolDecision["kind"] ? true : false>;

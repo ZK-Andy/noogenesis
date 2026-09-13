@@ -1,24 +1,26 @@
 /**
- * mount.mts — 挂载面能力层（B4 ADR Decision 1；能力面 = A2–A5，A6 记录位与
- * A8 落点不挂——宿主 Session.append 无 ignorable 写入口，下游插件自定义事件
- * 类型会令会话历史在读路径 fail-closed 不可加载，撤除 ADR
- * 2026-09-08-a8-session-record-projection-removal）。
+ * mount.mts — 挂载面能力层（B4 ADR Decision 1 + A6 停止前能力位
+ * 2026-09-13-a6-turn-stopping-mount；能力面 = A2–A6，A8 落点不挂——宿主
+ * Session.append 无 ignorable 写入口，下游插件自定义事件类型会令会话历史在读
+ * 路径 fail-closed 不可加载，撤除 ADR 2026-09-08-a8-session-record-projection-removal）。
  *
- * 四挂载点（A2–A5）各一组策略接口 + 一个合并器——hook-protocol 判定
+ * 五挂载点（A2–A6）各一组策略接口 + 一个合并器——hook-protocol 判定
  * 语义的本地蒸馏（蓝图 §7 边界：不建两方言桥，deny→A3 阻断并回消息 /
- * block→A4 结果面拦回 / additionalContexts→A4 上下文附加 / advice→A3
- * 非阻断建议行（agent.inject 投递，M1 守卫②）/ 非阻断→降级日志）。
+ * block→A4 结果面拦回 / additionalContexts→A4 上下文附加 / advice→A3/A6
+ * 非阻断建议行（agent.inject 投递，M1 守卫②）/ steer→A6 强制续跑 /
+ * 非阻断→降级日志）。
  * 策略件在 mount-policies.mts（存留件 = A2 开场地图 + A4 写码在环两判据
- * 〔lint + 注释面〕+ A3 技能触点提醒，记录件不挂——撤除 ADR）；宿主 ctx.on 胶水与消息构造在 index.mts。本模块零宿主依赖（防火墙
+ * 〔lint + 注释面〕+ A3 技能触点提醒；A5/A6 零策略能力位，记录件不挂——撤除 ADR）；宿主 ctx.on 胶水与消息构造在 index.mts。本模块零宿主依赖（防火墙
  * 规则 2，selftest 机器扫描）——宿主 payload 只取本地窄结构面（同
  * engine-bridge AgentCarrier 口径）。
  *
  * 档位纪律（B4 ADR Decision 7 + 升格批 2026-09-09-lint-block-and-staged-hook +
- * 扩面批 2026-09-10-export-docs-inloop）：合并器提供 deny/block 能力（A3/A4 的
- * 阻断语义单源在案）；A4 两判据均已用 block 拦回档（同文件连续 block 达上限降级
- * context 防死锁，计数协议单源 = `createBlockGate`），A3 deny/ask 仍
- * 零策略件（记录档不挂——撤除 ADR）；其余升格逐件过 HERO 另案。宿主事件与
- * 决策形态实证记录见 B4 ADR Problem 节。
+ * 扩面批 2026-09-10-export-docs-inloop + A6 能力位 ADR
+ * 2026-09-13-a6-turn-stopping-mount）：合并器提供 deny/block/steer 能力（A3/A4/A6
+ * 的阻断语义单源在案）；A4 两判据均已用 block 拦回档（同文件连续 block 达上限降级
+ * context 防死锁，计数协议单源 = `createBlockGate`），A3 deny/ask 与 A6 steer 仍
+ * 零策略件（记录档不挂——撤除 ADR）；其余升格逐件过 HERO 另案（steer 另须配套防死锁面）。
+ * 宿主事件与决策形态实证记录见 B4 ADR Problem 节 + A6 能力位 ADR Problem 节。
  */
 import type { AgentCarrier } from "./engine-bridge.mjs";
 
@@ -63,6 +65,14 @@ export interface SessionStartPayload extends AgentCarrier {
 	source?: unknown;
 }
 
+/** A6 停止前 payload（`agent/turn-stopping` 窄面；serial 无 next，两条能力位：
+ * `inject` = 排队下一 pre-step 的模型可见上下文，`steer` = 强制续跑一步）。 */
+export interface TurnStoppingPayload extends AgentCarrier {
+	agent?: AgentRef & { inject?(message: unknown): void; steer?(message: unknown): void };
+	turn?: number;
+	signal?: unknown;
+}
+
 /** A2 策略决策：reject = 权威拒绝一步（阻断档，首批不用）；advice = 建议档消息行。 */
 export type PreStepPolicyDecision = { kind: "reject"; reason: string } | { kind: "advice"; lines: string[] };
 
@@ -78,11 +88,16 @@ export type ToolPostPolicyDecision = { kind: "block"; feedback: string } | { kin
 /** A5 策略决策：inject = 会话开始注入上下文行（非阻塞）。 */
 export type SessionStartPolicyDecision = { kind: "inject"; lines: string[] };
 
-/** 策略接口四件（A6/A8 记录投影面不挂——撤除 ADR；A5 零策略件）。 */
+/** A6 策略决策：advice = 建议行经 `agent.inject` 排队下一 pre-step（非阻断）；
+ * steer = 强制续跑一步的模型可见消息（阻断档，零策略面不启用）。 */
+export type TurnStoppingPolicyDecision = { kind: "advice"; lines: string[] } | { kind: "steer"; message: string };
+
+/** 策略接口五件（A8 记录投影面不挂——撤除 ADR；A5/A6 零策略件）。 */
 export type PreStepPolicy = (payload: PreStepPayload) => PreStepPolicyDecision | void;
 export type ToolPrePolicy = (exec: ToolExecLike) => ToolPrePolicyDecision | void;
 export type ToolPostPolicy = (exec: ToolExecLike, result: ToolResultLike) => ToolPostPolicyDecision | void;
 export type SessionStartPolicy = (payload: SessionStartPayload) => SessionStartPolicyDecision | void;
+export type TurnStoppingPolicy = (payload: TurnStoppingPayload) => TurnStoppingPolicyDecision | void;
 
 /**
  * 每会话键控状态存储（WeakMap，GC 自清）：键 = 宿主 session 对象（dsh-goal
@@ -230,4 +245,26 @@ export function mergeSessionStart(policies: readonly SessionStartPolicy[], paylo
 		if (decision) lines.push(...decision.lines);
 	}
 	return lines;
+}
+
+/** A6 合并结果：steer = 首个强制续跑消息（胜出即停）；advice = 建议行（注册序累积）。 */
+export interface MergedTurnStopping {
+	steer?: string;
+	advice: string[];
+}
+
+/** A6 合并语义：逐策略顺序过；首个 steer 胜出并停止（此时已累积的建议行随行返回，
+ * 不早退丢弃——A3 deny 同款纪律）；advice 行按注册序累积；无策略 = 空决策。 */
+export function mergeTurnStopping(policies: readonly TurnStoppingPolicy[], payload: TurnStoppingPayload): MergedTurnStopping {
+	const merged: MergedTurnStopping = { advice: [] };
+	for (const policy of policies) {
+		const decision = policy(payload);
+		if (!decision) continue;
+		if (decision.kind === "steer") {
+			merged.steer = decision.message;
+			return merged;
+		}
+		merged.advice.push(...decision.lines);
+	}
+	return merged;
 }

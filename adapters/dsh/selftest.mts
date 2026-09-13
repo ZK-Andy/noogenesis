@@ -33,7 +33,7 @@ import { listStagingCandidates, buildSolidifyArgs, solidifyNotice, runSolidifyTr
 import { buildPullArgs, pullBankOnce, createBankPullScheduler } from "./bank-pull.mjs";
 import { BUNDLED_SKILL_RANK, PROVIDER_NAME, createBankSkillProvider, parseSkillFile, registerBankSkills } from "./skill-provider.mjs";
 import { validateConfig, DEFAULT_GENE_BANK_URL } from "./config.mjs";
-import { createSessionStore, mergePreStep, mergeSessionStart, mergeToolPost, mergeToolPre } from "./mount.mjs";
+import { createSessionStore, mergePreStep, mergeSessionStart, mergeToolPost, mergeToolPre, mergeTurnStopping } from "./mount.mjs";
 import { createMountPolicies, createSubtreeRulesPolicies, inspectSkillSurface, SKILL_DIR_CANDIDATES } from "./mount-policies.mjs";
 import { createTokenBaselineReading } from "./token-baseline.mjs";
 import { createLintFeedbackPolicies } from "./lint-feedback.mjs";
@@ -1005,6 +1005,13 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.deepEqual(mergeSessionStart([() => ({ kind: "inject" as const, lines: ["a", "b"] })], {}), ["a", "b"]);
 	ok("mounts: session-start merge — inject lines accumulate (non-blocking)");
 
+	// A6 合并语义：advice 累积；首个 steer 胜出并停止扫描（胜出时已累积的 advice
+	// 随行返回，不被早退丢弃）；零策略 = 空决策。
+	assert.deepEqual(mergeTurnStopping([() => ({ kind: "advice" as const, lines: ["a"] }), () => ({ kind: "advice" as const, lines: ["b"] })], {}), { advice: ["a", "b"] });
+	assert.deepEqual(mergeTurnStopping([() => ({ kind: "advice" as const, lines: ["kept"] }), () => ({ kind: "steer" as const, message: "hold on" }), () => ({ kind: "advice" as const, lines: ["unscanned"] })], {}), { steer: "hold on", advice: ["kept"] });
+	assert.deepEqual(mergeTurnStopping([], {}), { advice: [] });
+	ok("mounts: turn-stopping merge — advice accumulates; first steer wins and stops scanning, carried advice survives");
+
 	// 会话键控存储：同键共享实例、异键隔离、无键降级为即席实例（残留面仅
 	// 单门布尔，GC 自清兜底）。
 	{
@@ -1104,14 +1111,15 @@ function writeFixtureGene(repoRoot: string): void {
 	}
 
 	// 策略件组装：A2 地图件 + A3 触点提醒件（缺省守卫表）+ A4 写码在环两判据
-	// （lint + 注释面）+ A5 零策略能力位（A6/A8 投影面不挂——撤除 ADR）。
+	// （lint + 注释面）+ A5/A6 零策略能力位（A8 投影面不挂——撤除 ADR）。
 	{
 		const set = createMountPolicies({ repoRoot: "/tmp/assembly" });
 		assert.equal(set.preStep.length, 1);
 		assert.equal(set.toolPre.length, 1);
 		assert.equal(set.toolPost.length, 2);
 		assert.deepEqual(set.sessionStart, []);
-		ok("mounts: policy set assembly — A2 map + A3 skill guard + A4 lint/export-docs judges + A5 zero-policy lane");
+		assert.deepEqual(set.turnStopping, []);
+		ok("mounts: policy set assembly — A2 map + A3 skill guard + A4 lint/export-docs judges + A5/A6 zero-policy lanes");
 	}
 
 	// M1 守卫②：A3 触点提醒策略逐条合同（缺省守卫表直调，零宿主依赖）。三类
@@ -1324,19 +1332,20 @@ function writeFixtureGene(repoRoot: string): void {
 			},
 		};
 		apply(fakeMountCtx as never, { repoRoot: repo, geneBankUrl: false });
-		for (const event of ["agent/session-start", "agent/pre-step", "tools/pre-execute", "tools/post-execute"]) {
+		for (const event of ["agent/session-start", "agent/pre-step", "tools/pre-execute", "tools/post-execute", "agent/turn-stopping"]) {
 			assert.equal(listeners.get(event)?.length, 1, `${event} must be wired exactly once`);
 		}
 		// 注册 = 可重试注入（index → registerBankSkills 走 ctx.inject(["skills"], …)）。
 		assert.equal(injectCalls.length, 1);
 		assert.deepEqual(injectCalls[0]!.deps, ["skills"]);
-		ok("mounts: index wiring — surviving four mounting points registered one listener each; skills registration defers on ctx.inject");
+		ok("mounts: index wiring — surviving five mounting points registered one listener each; skills registration defers on ctx.inject");
 
 		const agent = { session: { header: { cwd: repo } } };
 		const preStep = listeners.get("agent/pre-step")![0]!;
 		const toolPre = listeners.get("tools/pre-execute")![0]!;
 		const toolPost = listeners.get("tools/post-execute")![0]!;
 		const sessionStart = listeners.get("agent/session-start")![0]!;
+		const turnStopping = listeners.get("agent/turn-stopping")![0]!;
 
 		// A2：首步地图追加一条建议消息（技能只在缓存通道且未注册 → 地图无路标行，
 		// 并留一条诊断 warn）；后续步零追加；reject 下游直通。
@@ -1435,6 +1444,17 @@ function writeFixtureGene(repoRoot: string): void {
 		// A5：零策略件 → 无注入不抛（能力位在场即冒烟）。
 		await sessionStart({ agent });
 		ok("mounts: A5 wiring — session-start capability wired, zero-policy no-op safe");
+
+		// A6：零策略件 → 无注入、无续跑、零 warn（能力位在场即冒烟；两条投递分支
+		// 在策略增挂前不可达，合并语义由上面的单测钉住）。
+		const injectedAtStop: unknown[] = [];
+		const steeredAtStop: unknown[] = [];
+		await turnStopping({ agent: { ...agent, inject: (m: unknown) => injectedAtStop.push(m), steer: (m: unknown) => steeredAtStop.push(m) }, turn: 1 });
+		assert.equal(injectedAtStop.length, 0);
+		assert.equal(steeredAtStop.length, 0);
+		await turnStopping({ agent });
+		assert.equal(warns.filter((m) => m.includes("turn-stop") || m.includes("turn-stopping")).length, 0);
+		ok("mounts: A6 wiring — turn-stopping capability wired, zero-policy no-op safe (no inject, no steer, no warn)");
 	}
 }
 

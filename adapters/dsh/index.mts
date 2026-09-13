@@ -29,8 +29,8 @@ import { registerBankSkills } from "./skill-provider.mjs";
 import { createTokenBaselineReading } from "./token-baseline.mjs";
 import type { TokenMeterLike } from "./token-baseline.mjs";
 import { validateConfig } from "./config.mjs";
-import { mergePreStep, mergeSessionStart, mergeToolPost, mergeToolPre, createSessionWarnOnce } from "./mount.mjs";
-import type { PreStepPayload, SessionStartPayload, ToolExecLike, ToolResultLike } from "./mount.mjs";
+import { mergePreStep, mergeSessionStart, mergeToolPost, mergeToolPre, mergeTurnStopping, createSessionWarnOnce } from "./mount.mjs";
+import type { PreStepPayload, SessionStartPayload, ToolExecLike, ToolResultLike, TurnStoppingPayload } from "./mount.mjs";
 import { createMountPolicies } from "./mount-policies.mjs";
 
 export const name = "noogenesis";
@@ -270,7 +270,30 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 		return { ...downstream, additionalContexts: [adviceMessage(merged.context), ...(downstream.additionalContexts ?? [])] };
 	});
 
-	// 存留挂载面 = A2/A3/A4/A5 四点 + 挂载点各自降级；A6/A8 记录投影不挂——
+	// A6 停止前（agent/turn-stopping，serial、无 next）：能力位 = 建议行经
+	// agent.inject（排队下一 pre-step，非阻断）+ 强制续跑经 agent.steer（阻断档，
+	// 零策略不启用——a6-turn-stopping-mount ADR Proposal 3）。两条通道都投：
+	// 合并器在 steer 胜出时仍返回已累积建议行，早退丢弃 = 永不补投（A3 同款纪律）。
+	// 能力位缺席或投递异常 → warn 降级（每会话至多一条），回合关闭绝不因此改变。
+	ctx.on("agent/turn-stopping", (payload: TurnStoppingPayload) => {
+		try {
+			const merged = mergeTurnStopping(mounts.turnStopping, payload);
+			if (merged.advice.length > 0) {
+				const injectContext = payload.agent?.inject;
+				if (typeof injectContext === "function") injectContext.call(payload.agent, adviceMessage(merged.advice));
+				else warnOnceAdvisory(payload.agent?.session, "noogenesis turn-stop advice delivery unavailable: agent.inject capability missing");
+			}
+			if (merged.steer !== undefined) {
+				const steerTurn = payload.agent?.steer;
+				if (typeof steerTurn === "function") steerTurn.call(payload.agent, adviceMessage([merged.steer]));
+				else warnOnceAdvisory(payload.agent?.session, "noogenesis turn-stop steering unavailable: agent.steer capability missing");
+			}
+		} catch (cause) {
+			logger.warn(`noogenesis turn-stopping mount failed: ${cause instanceof Error ? cause.message : String(cause)}`);
+		}
+	});
+
+	// 存留挂载面 = A2/A3/A4/A5/A6 五点 + 挂载点各自降级；A8 记录投影不挂——
 	// 宿主读路径对未标 ignorable 的下游插件事件类型 fail-closed，Session.append
 	// 无 ignorable 写入口（撤除 ADR 2026-09-08-a8-session-record-projection-removal）。
 
