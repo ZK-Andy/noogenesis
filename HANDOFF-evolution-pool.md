@@ -46,6 +46,8 @@
 
 - **（2026-09-14）踩坑候选：`verify-doc-budgets` 不带 `--manifest` 时静默 SKIP 且 exit 0**：症状 = 本地复跑或简报自证若写 `node scripts/verify-doc-budgets.mts`，默认路径 `./doc-budgets.manifest.json` 不存在 → 输出 `SKIP: manifest … not found`、exit 0——绿色被读成「已跑且通过」，实为零覆盖；仓内 gate 条目与 hooks 均带 `--manifest scripts/doc-budgets.manifest.json`，但简报自证行只记 `doc-budgets:0`。规避 = 自证行的命令形态须与 `engine/gates.json` 条目逐字一致，或闸件缺 manifest 时改为非零。出处 = 批次 8 序 38 三审 R1 附注。
 
+- **（2026-09-14）纪律漏项候选：HANDOFF ⏭ 末句「最新批 = …」不随游标推进同步**：症状 = 批次 8 序 39 改 ⏭ 前半（下一步 / 游标 = 序 40）时漏改同一行末句「最新批 = 批次 8 序 38」，与同 diff 新增的滚动窗首条（序 39）及当前状态条矛盾（R2 Blocker 2，本批已就地修）。根因 = 「最新批」句与滚动窗首条 / 当前状态条三处同说一事实（同族「批次推进时不在当批 diff 面的指针进入 checklist 就漏」的第 N 例，见序 38 手抄枚举条）。候选修法 = 删该句（滚动窗首条即最新批，单源），或纳入收批同步清单。出处 = 批次 8 序 39 R2 评审 Blocker 2。
+
 ## 待定（已记录的需求，待后续拍板）
 
 - **池件自身的机器面**：条数 / 字数预算是否上闸（形态参照 [verify-handoff-structure](scripts/verify-handoff-structure.mts)），待池规模有实测再判。
