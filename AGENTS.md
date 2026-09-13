@@ -41,7 +41,7 @@
 4. **编码规范语义面**：机器面已盖（导出函数/类注释存在性、TODO/FIXME 词面、未用变量、`as const`；写码当轮在环拦回机器可判违规〔lint + 导出契约注释〕、同文件连续拦回达上限降级 context 防死锁）——评审核对注释**内容**（契约是否说清、变更史/推理转写/控制流复述、命名是否揭示意图）与格式约定（头注三要素/尾随注释/中英混杂）— [code-standards](docs/method/code-standards.md) 各「[R] 留评审」档条目。
 5. **防过度设计语义面**：范围契约（约束修法不约束找问题）+ 评审自身义务（跑检查前先答核心两问、对的就说对、按案例 ID 质询防相似度误杀）— [anti-overdesign](docs/method/anti-overdesign.md) + [cases 索引](docs/research/anti-overdefense-cases-index.md)。
 6. **流程与机制结构面**：新增/改写阶段卡、流程卡或机制件（门禁、守卫、对账步）时，核对**步序 / 角色位 / 关口**是否齐（写作规则 = [doc-standards](docs/method/doc-standards.md) 铁律 7），以及机制件是否有匹配的机器面或对账点（门槛家 = [发现机械化 ADR](.agents/notes/implemented/process/2026-09-11-review-finding-mechanization.md) Decision 1）——只有出口清单与产出物的阶段会被按最低成本解释（出处 = ADR [2026-09-11-stage-card-structure](.agents/notes/implemented/process/2026-09-11-stage-card-structure.md)）。
-7. **答案盲选择面**：≥2 备选择优（候选基因 / 方案备选 / 三审 findings 处置）只用通道封闭集 {`independent_execution`（候选各自真跑确定性验证的读数）, `observation`（观测面 ok/fail 计数）} 的可复算读数——金标类（期望答案 / 基准真值 / 目标 diff）与作者自报分不得入通道；引擎不排序、不择优，选择须可复盘 — [判据单源 ADR](.agents/notes/implemented/architecture/2026-09-13-candidate-comparison-blindness.md)。
+7. **答案盲选择面**：≥2 备选择优（候选基因文件 / 已入档基因 / 方案备选，含三审 findings 的处置）只用通道封闭集 {`independent_execution`（候选各自真跑确定性验证的读数）, `observation`（观测面 ok/fail 计数）} 的可复算读数——金标类（期望答案 / 基准或评测集真值 / 目标 diff）与作者自报分不得入通道；引擎不排序、不择优，选择须可复盘 — [判据单源 ADR](.agents/notes/implemented/architecture/2026-09-13-candidate-comparison-blindness.md)。
 
 ## 防过度设计（范围契约）
 
