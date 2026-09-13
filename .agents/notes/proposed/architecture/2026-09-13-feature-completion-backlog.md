@@ -91,7 +91,7 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 | 30 | 蒸馏（失败 → 基因候选，人工在环） | 主设计 §12-P3 | done（[distill 命令 ADR](../../implemented/architecture/2026-09-14-distill-command.md)；边界单源 = [P1 D3 重拍 ADR](../../implemented/architecture/2026-09-14-p1-d3-distillation-reshoot.md)） |
 | 31 | 组合（Capsule → 预设 / 流程） | 主设计 §12-P3 | done（[批次 6 裁决 ADR](../../implemented/architecture/2026-09-14-batch6-composition-meta-verdict.md)）：判不立——能力面归口行 36 + 序 25 渲染语义门（触发 T1–T3 具名）；补取证 = `capsules/` 零实例、宿主组合面 = CLI + `$DSH_HOME/profiles/` |
 | 32 | 策略自身可搜索（元演化） | 主设计 §12-P3 | done（[批次 6 裁决 ADR](../../implemented/architecture/2026-09-14-batch6-composition-meta-verdict.md)）：判不立——与序 5 C3-1 同面，触发条不新立 |
-| 33 | 长程递归演化 | 主设计 §12-P3 | done（[批次 6 裁决 ADR](../../implemented/architecture/2026-09-14-batch6-composition-meta-verdict.md)）：顺延（判不立）——依赖行 32 判立 + D2 逐源任一解锁 |
+| 33 | 长程递归演化 | 主设计 §12-P3 | done（[批次 6 裁决 ADR](../../implemented/architecture/2026-09-14-batch6-composition-meta-verdict.md)）：顺延（判不立）——依赖行 32 判立 + 某 Detect 源过 HERO 两问（T1–T3 单条到达不等于过门） |
 
 **批次 7 — P4 分发**
 

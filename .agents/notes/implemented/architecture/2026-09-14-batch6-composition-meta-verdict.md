@@ -2,7 +2,7 @@
 
 Status: implemented
 
-Review: LIGHT/2026-09-14/pending（语义评审进行中，收口时回填真实结论）
+Review: LIGHT/2026-09-14/语义评审（范围化子代理 R2：0 Blocker + 1 Suggestion 全采纳——序 33 触发括注把 HERO 两问与四源各自 T1–T3 重开触发条等同，收窄为「单条到达不等于过门」）
 
 Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 主设计 [§11 / §12-P3](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 前序重拍 [P1 D3 蒸馏重拍](2026-09-14-p1-d3-distillation-reshoot.md)（序 30 放行形态）· 实现件 [distill 命令](2026-09-14-distill-command.md) · 判据单源 [候选比较 / 答案盲选择](2026-09-13-candidate-comparison-blindness.md)（C1-4 / C2 / C3）· 封条 [P1 引擎骨架](2026-09-05-p1-engine-skeleton.md)（D1/D2/D4）· [D2 站立规则与四源裁决](2026-09-13-detect-source-verdict-session-event.md)（T1–T3）· 记忆线触发条 [第一期实现件](2026-09-11-memory-line-phase1-observation-face.md) Decision 4 · 渲染语义门 [批次 5 开题轮](2026-09-14-batch5-opening-round.md)（序 25 后置）· 原语 [Capsule](2026-09-13-capsule-primitive.md) · [批次 4 重拍](2026-09-14-memory-line-phase2-reshoot.md)（拆件取舍先例）
 
@@ -40,7 +40,7 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/archit
 
 依赖序 30–32：32 判不立 ⇒ 递归环的择优段缺席；D2 站立规则封自动触发（四源全判不立）、D4 封自动写（观测写权归人）。为 O(0) 成功实例建自动多轮循环 = 脚手架。
 
-重议触发：行 32 判立 **且** D2 逐源任一源过 HERO 两问（该源 T1–T3 到达）。
+重议触发：行 32 判立 **且** 某个 Detect 源经独立裁决件过 HERO 两问——该源的 T1–T3 是重开触发条，单条到达不等于过门。
 
 ### 4. 批次 6 收口
 
