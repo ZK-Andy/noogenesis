@@ -1,6 +1,7 @@
 # Agent Note: 批次 6 重拍——P1 骨架 D3 重议：蒸馏产「候选」放行，入档边界维持（序 30 开工资格过门）
 
 Status: implemented
+Review: LIGHT/2026-09-14/语义评审（范围化子代理单路 R2：0 Blocker + 1 Suggestion 全采纳——batch5 开题轮 ADR 前向现值句未随重拍同步，补重拍件指针；五项定向检查 5 真）
 
 Related: 重议对象 [P1 骨架 ADR](2026-09-05-p1-engine-skeleton.md) D3 · 蒸馏负结果 [cookbook #18 条](../../../../docs/cookbook.md) · 批次表 [行 30 与「需显式重拍的决策面」节](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 主设计 [§6 Solidify「触发蒸馏」/ §12-P3 蒸馏](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · schema 封闭集 [S2](2026-09-05-gene-event-schema.md) · 评估闸 [D4](2026-09-05-p1-engine-skeleton.md) · 信号入口 [D2](2026-09-05-p1-engine-skeleton.md) · 前次产出面重拍先例 [Capsule ADR](2026-09-13-capsule-primitive.md) C5
 
