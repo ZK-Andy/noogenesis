@@ -1,6 +1,6 @@
 # AGENTS.md 分层模板（适用任意语言/任意平台项目）
 
-> Provenance：逐字节搬运自 dotnet-deepseek-harness-desktop `templates/agents-hierarchy.md`（MIT，2026-09-05）。血统：desktop 版自身已修复 devops-template 版（`agnents` typo、预算值与上游不一致无出处）；本仓未再改动。
+> Provenance：搬运自 dotnet-deepseek-harness-desktop `templates/agents-hierarchy.md`（MIT，2026-09-05）。血统：desktop 版自身已修复 devops-template 版（`agnents` typo、预算值与上游不一致无出处）；本仓差异 = 两处指向源仓未随迁文档的指针（`docs/方法论提炼.md` / `docs/ADAPTATION.md`）改为自述口径。
 
 > 原则：**每个事实只有一个家**；根文件只放"每次会话都需要的常驻命令"（每条 1-3 行 + 链接）；详情放专属文档，由 agent 按需读取。
 > 用法：把下面各节内容填入对应文件，删掉不需要的节；按 `## 字数预算` 表为每份文件定上限。
@@ -53,7 +53,7 @@
 
 ```
 .agents/notes/
-├── AGENTS.md        # 笔记系统规则（引用模板 docs/方法论提炼.md §2.2）
+├── AGENTS.md        # 笔记系统规则（完整单源 = 本目录 README.md）
 ├── README.md        # 笔记规则：分类/时机/格式/归档
 ├── proposed/        # 提案（评审中）
 │   └── <class>/yyyy-mm-dd-<topic>.md
@@ -79,4 +79,4 @@
 ## 5. 其他 agent 规则文件
 
 - `CLAUDE.md` → symlink 到 `AGENTS.md`（Claude Code 兼容，单一事实源）
-- `.claude/skills/`、`.agents/skills/` 等技能放置见 `docs/ADAPTATION.md` §1
+- 技能放置：按各宿主原生机制放项目级技能目录（DSH / opencode / Codex 通用约定 = `.agents/skills/`），技能随 agent 自动发现，无需注册。
