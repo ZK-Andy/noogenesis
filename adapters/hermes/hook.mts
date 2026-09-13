@@ -3,9 +3,9 @@
  *
  * 接线面 = Hermes shell hooks（`~/.hermes/config.yaml` 的 `hooks:` 块，子进程 +
  * stdin/stdout JSON 协议）。本入口只认 `pre_tool_call` + `write_file`：
- * 判据命中即回 `{"action":"block","message":…}`，其余一律零输出。
+ * 判据命中即回 Hermes wire shape 的 block，其余一律零输出。
  *
- * 纪律：进程永远 exit 0；任何解析/判据异常都走 fail-open（无输出）。判据本体 =
+ * 纪律：进程永远 exit 0；任何解析/判据异常都走 fail-open（零输出）。判据本体 =
  * `judge.mjs`（零宿主依赖）。
  */
 import fs from "node:fs";
@@ -19,7 +19,7 @@ interface HookPayload {
 	cwd?: unknown;
 }
 
-/** 读尽 stdin（fd 0）；读不到返回空串（调用方按 fail-open 处理）。 */
+/** 读尽 stdin（fd 0）；读不到返回空串。 */
 function readStdin(): string {
 	try {
 		return fs.readFileSync(0, "utf8");
@@ -30,7 +30,6 @@ function readStdin(): string {
 
 /** 单次 hook 调用：返回要写往 stdout 的 JSON 行，或 null（零输出）。 */
 function decide(raw: string): string | null {
-	if (raw.trim().length === 0) return null;
 	const payload = JSON.parse(raw) as HookPayload;
 	if (payload.hook_event_name !== "pre_tool_call" || payload.tool_name !== "write_file") return null;
 	const cwd = typeof payload.cwd === "string" ? payload.cwd : "";
@@ -48,8 +47,7 @@ function decide(raw: string): string | null {
 function main(): void {
 	let out: string | null = null;
 	try {
-		const raw = readStdin();
-		out = decide(raw);
+		out = decide(readStdin());
 	} catch {
 		out = null;
 	}

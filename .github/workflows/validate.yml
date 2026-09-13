@@ -90,7 +90,7 @@ jobs:
       - name: adapter self-test
         run: node dist/adapters/dsh/selftest.mjs
 
-      # 第二宿主（Hermes）hook 桥自测（批次 7 序 35 ADR）：判据复用仓根 oxlint
-      # 与 scripts/verify-export-docs.mts，进程级 e2e 覆盖放行 / 拦回 / 降级边界
+      # 第二宿主（Hermes）hook 桥自测（批次 7 序 35 ADR）：判据复用仓根 oxlint；
+      # 进程级 e2e 覆盖放行 / 拦回 / 降级边界 + 源码面防火墙静态断言
       - name: hermes hook self-test
         run: node dist/adapters/hermes/selftest.mjs

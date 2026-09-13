@@ -40,7 +40,7 @@ dsh plugin --profile <dev> -- add .
 
 ### Hermes (second host)
 
-Hermes reads this repository's `AGENTS.md` chain natively and treats `.agents/skills/` as one of its project skill paths (`hermes skills trust` once per repo). The shipped bridge is the write-time gate: merge [adapters/hermes/hooks.example.yml](adapters/hermes/hooks.example.yml) into your `~/.hermes/config.yaml`, and `.ts`/`.mts` writes inside the repository run the same oxlint + export-contract judgement as this repo's gates and get blocked on violations. Contract: [adapters/hermes/README.md](adapters/hermes/README.md).
+Hermes reads this repository's `AGENTS.md` chain natively and treats `.agents/skills/` as one of its project skill paths (`hermes skills trust` once per repo). The shipped bridge is the write-time gate: merge [adapters/hermes/hooks.example.yml](adapters/hermes/hooks.example.yml) into your `~/.hermes/config.yaml`, and `.ts`/`.mts` writes inside the repository run the repo's oxlint gate and get blocked on violations. Contract: [adapters/hermes/README.md](adapters/hermes/README.md).
 
 The adapter's `geneBankUrl` defaults to the official gene bank (`false` disables pulling explicitly); a fresh install pulls the bank with zero configuration. Releases newer than pnpm's `minimumReleaseAge` window need a one-command exemption — see the environment entries in the [cookbook](docs/cookbook.md). Package naming rules live in [adapters/dsh/README.md](adapters/dsh/README.md).
 

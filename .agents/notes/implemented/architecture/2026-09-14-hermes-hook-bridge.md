@@ -4,7 +4,7 @@ Status: implemented
 
 Review: FULL/2026-09-14/pending（三重审核进行中，收口时回填真实结论）
 
-Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 主设计 [§12-P4 / §11.2](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 蓝图 [§7 A4 / §9 不做清单](../../../../docs/research/framework-rebuild-blueprint.md) · DSH 侧同判据 [lint 在环 ADR](2026-09-08-lint-in-loop-feedback.md) + [升格批](2026-09-09-lint-block-and-staged-hook.md) + [注释面扩面](2026-09-10-export-docs-inloop.md) · 防火墙 [adapters/AGENTS](../../../AGENTS.md) · 消费契约 [adapters/hermes/README](../../../../adapters/hermes/README.md)
+Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 主设计 [§12-P4 / §11.2](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 蓝图 [§7 A4 / §9 不做清单](../../../../docs/research/framework-rebuild-blueprint.md) · DSH 侧同判据 [lint 在环 ADR](2026-09-08-lint-in-loop-feedback.md) + [升格批](2026-09-09-lint-block-and-staged-hook.md) + [注释面扩面](2026-09-10-export-docs-inloop.md) · 防火墙 [adapters/AGENTS](../../../../adapters/AGENTS.md) · 消费契约 [adapters/hermes/README](../../../../adapters/hermes/README.md)
 
 ## Problem
 
@@ -19,10 +19,10 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/archit
 ## Decision
 
 1. **第二宿主 = Hermes；第一刀 = 写码在环拦回 hook 桥**（`pre_tool_call` + `write_file`）。
-2. **判据面零新增**：跑仓根 oxlint（`--config .oxlintrc.json --deny-warnings -f json`）与仓内判据件 `scripts/verify-export-docs.mts <file>`——与 DSH 侧 A4 同判据、同 5s 超时、同 10 行截断；命中即回 `{"action":"block","message":…}`（Hermes-canonical shape）。判据单源仍是那两个文件与 `.oxlintrc.json`。
+2. **判据面零新增（v1 = lint 半判据）**：跑仓根 oxlint（`--config .oxlintrc.json --deny-warnings -f json`）——与 DSH 侧 A4 的 lint 半同参数、同 5s 超时、同 10 行截断 + `…(+N more)` 溢出记号；命中即回 `{"action":"block","message":…}`（Hermes wire shape）。判据单源仍是 `.oxlintrc.json`。**export-docs 半判据本刀不接**：`scripts/verify-export-docs.mts` 的文件目标模式按域归属判（`SOURCE_ROOTS = ["adapters/dsh","scripts"]`），在环候选落仓外临时目录一律 skip/exit 0——接了是死路（评审 R1-B1 / R2-B1 实证），故不接、改为具名后置（见 Consequences 未覆盖面）。
 3. **接线面 = `adapters/hermes/`**：`hook.mts`（入口：stdin 载荷 → 判据 → stdout 响应）、`judge.mts`（判据本体，零宿主依赖）、`selftest.mts`（进程级 e2e）、`hooks.example.yml`（用户侧配置样例）、`README.md`（消费契约）。构建面 = [tsconfig.build.json](../../../../tsconfig.build.json) include 增 `adapters/hermes/**/*.mts`；CI 增 `node dist/adapters/hermes/selftest.mjs`。
 4. **降级纪律同 DSH，差异写明**：任何不确定面（非 `write_file` / 非 `pre_tool_call` / 目标出仓 / 非 `.ts`,`.mts` / 缺 oxlint 或判据件 / spawn 异常 / 超时 / 坏 JSON）一律 fail-open——进程 exit 0、零输出。不引入 DSH 的「同文件连续拦回降级」门：`pre_tool_call` 在写入前判、无重试计数面（模型可改内容或改路径，不会死锁）。
-5. **验证分两层**：判据面 = 自测 12 断言（真 oxlint + 真判据件，含违约/干净/越界/事件外全边界）；宿主接线面 = `HERMES_HOME=<tmp> hermes hooks test pre_tool_call` 实测（hook 被发射、exit 0、响应形状被 Hermes 解成 wire shape）。真会话写码载荷（真 `write_file`）留 (B) 真机复验。
+5. **验证分两层**：判据与源码面 = 自测 25 断言（真 oxlint 覆盖违约 / 干净 / 越界 / 事件外 / 坏 JSON 全边界 + `adapters/hermes/` 源码面防火墙静态断言：零 `.py`/`.sh`、零宿主依赖 import、相对 import 不出目录）；宿主接线面 = `HERMES_HOME=<tmp> hermes hooks test pre_tool_call` 实测（hook 被发射、exit 0、响应形状被 Hermes 解成 wire shape）。真会话写码载荷（真 `write_file`）留 (B) 真机复验。
 
 ## Alternatives considered
 
@@ -36,8 +36,8 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/archit
 
 ## Consequences
 
-- **变更面**：新增 `adapters/hermes/{judge,hook,selftest}.mts` + `hooks.example.yml` + `README.md`；`tsconfig.build.json` include；`.github/workflows/validate.yml` 自测步；`adapters/AGENTS.md` 一条；根 README 双语 Install 增 Hermes 小节；批次表行 35 done + 「未交付」计数 15 → 14 + 游标 = 序 36；HANDOFF ⏭ / 当前状态 / 滚动窗；todos (A) + (B) 真机复验条；journal。
+- **变更面**：新增 `adapters/hermes/{judge,hook,selftest}.mts` + `hooks.example.yml` + `README.md`；`tsconfig.build.json` include；`.github/workflows/validate.yml` 自测步；`adapters/AGENTS.md` 一条；根 README 双语 Install 增 Hermes 小节；`package.json` files 白名单 + `scripts/verify-package-invariants.mts` 必需件表各增两件（`adapters/hermes/README.md`、`hooks.example.yml`）；批次表行 35 done + 「未交付」计数 15 → 14 + 游标 = 序 36；HANDOFF ⏭ / 当前状态 / 滚动窗；todos (A) + (B) 真机复验条；journal。
 - **档位**：FULL（`adapters/**` 行为契约面 + `.github/workflows/**` 门禁面）→ R1/R2/R3 三重审核。
 - **单源**：adapter 消费契约 = `adapters/hermes/README.md`；判据单源 = `/.oxlintrc.json` + `scripts/verify-export-docs.mts`；Hermes 侧协议单源 = 宿主文档 `hooks.md`。
 - **C1 与防火墙**：`adapters/hermes/` 零宿主依赖、零 `.py`/`.sh`；不 import 引擎模块（只 spawn 仓内脚本），不 import Hermes 面。
-- **未覆盖面（具名触发）**：`patch` 工具（载荷形状未取证；触发 = 真机 `patch` 命中）；`pre_llm_call` 上下文注入（触发 = 出现 `AGENTS.md` 链覆盖不到的常驻知识面）；Hermes 原生插件面（触发 = C1 放开 Python 或宿主给出 JS/TS plugin API）；`hermes skills trust` 用户侧一步（触发 = 宿主给出项目技能自动信任面）。
+- **未覆盖面（具名触发）**：**export-docs 半判据**（触发 = 判据件开出「给定内容 + 逻辑域」入口，或宿主给出可阻断的写后事件面）；**`SOURCE_ROOTS` 不含 `adapters/hermes`**（新目录导出契约注释面零机器覆盖，本批三件恰好自带 JSDoc 故门禁不说话；触发 = 该目录首件导出面违规实例出现，或判据件域表扩展轮）；`patch` 工具（载荷形状未取证；触发 = 真机 `patch` 命中）；`pre_llm_call` 上下文注入（触发 = 出现 `AGENTS.md` 链覆盖不到的常驻知识面）；Hermes 原生插件面（触发 = C1 放开 Python 或宿主给出 JS/TS plugin API）；`hermes skills trust` 用户侧一步（触发 = 宿主给出项目技能自动信任面）。

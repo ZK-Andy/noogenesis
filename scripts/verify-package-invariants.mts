@@ -41,6 +41,8 @@ const REQUIRED_FILES_ENTRIES = [
 	"engine/gates.json",
 	"engine/README.md",
 	"adapters/dsh/README.md",
+	"adapters/hermes/README.md",
+	"adapters/hermes/hooks.example.yml",
 	"cordis.patch.yml",
 	"README.md",
 	"LICENSE",

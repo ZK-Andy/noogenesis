@@ -40,7 +40,7 @@ dsh plugin --profile <dev> -- add .
 
 ### Hermes（第二宿主）
 
-Hermes 原生读本仓 `AGENTS.md` 链，并把 `.agents/skills/` 当作其项目技能路径之一（每仓跑一次 `hermes skills trust`）。本仓交付的桥 = 写码在环拦回：把 [adapters/hermes/hooks.example.yml](adapters/hermes/hooks.example.yml) 合并进 `~/.hermes/config.yaml` 后，仓内 `.ts`/`.mts` 写入会跑与本仓门禁同一套 oxlint + 导出面判据，违约即拦回。契约见 [adapters/hermes/README.md](adapters/hermes/README.md)。
+Hermes 原生读本仓 `AGENTS.md` 链，并把 `.agents/skills/` 当作其项目技能路径之一（每仓跑一次 `hermes skills trust`）。本仓交付的桥 = 写码在环拦回：把 [adapters/hermes/hooks.example.yml](adapters/hermes/hooks.example.yml) 合并进 `~/.hermes/config.yaml` 后，仓内 `.ts`/`.mts` 写入会跑与本仓门禁同一套 oxlint 判据，违约即拦回。契约见 [adapters/hermes/README.md](adapters/hermes/README.md)。
 
 适配层 `geneBankUrl` 缺省官方基因库（`false` 显式禁用拉库），默认安装零配置即拉库。新发版本满 pnpm `minimumReleaseAge` 窗口前需单命令豁免，见 [docs/cookbook.md](docs/cookbook.md) [环境] 条目；包名规则见 [adapters/dsh/README.md](adapters/dsh/README.md)。
 
