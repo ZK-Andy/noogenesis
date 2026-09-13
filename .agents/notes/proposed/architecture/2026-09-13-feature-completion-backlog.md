@@ -88,7 +88,7 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 
 | 序 | 功能 | 设计出处 | 备注 |
 |---|---|---|---|
-| 30 | 蒸馏（失败 → 基因候选，人工在环） | 主设计 §12-P3 | 须重拍 P1 D3 |
+| 30 | 蒸馏（失败 → 基因候选，人工在环） | 主设计 §12-P3 | 重拍已过、可开工（[P1 D3 重拍 ADR](../../implemented/architecture/2026-09-14-p1-d3-distillation-reshoot.md)：显式触发、压缩在宿主侧、产物是候选） |
 | 31 | 组合（Capsule → 预设 / 流程） | 主设计 §12-P3 | 依赖序 1 |
 | 32 | 策略自身可搜索（元演化） | 主设计 §12-P3 | — |
 | 33 | 长程递归演化 | 主设计 §12-P3 | 依赖序 30–32 |
@@ -125,7 +125,7 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 
 - **P1 骨架 D2 禁区 + M2「Detect 显式不做」**：站立规则已重拍为「自动 Detect 默认关 + 逐源过 HERO 两问」——重拍件 = [Detect 逐源裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-session-event.md)（行 11 `session/event` 判不立；行 12 `agent/error` 判不立，[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-agent-error.md)；行 13 `agent/turn-stopping` 判不立，[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-turn-stopping.md)；行 14 `tool/result` 判不立，[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-tool-result.md)）——四源（行 11–14）裁决组收口；行 15 情境按需注入在同一规则下判不立（[裁决 ADR](../../implemented/architecture/2026-09-13-situational-injection-verdict.md)）。
 - **记忆线第二期判裁**（排序 / 禁用 / 阈值 / 半衰期判不立；行为评估自建判不立）：已重议（2026-09-14，[重拍 ADR](../../implemented/architecture/2026-09-14-memory-line-phase2-reshoot.md)）——维持判不立，触发条单源不变（[第一期实现 ADR](../../implemented/architecture/2026-09-11-memory-line-phase1-observation-face.md) Decision 4）；行为评估自建不属该重拍面（判据 = 评分对象缺席）。
-- **P1 骨架 D3（propose 不产新基因）**：批次 6 的序 30 需重拍（批次 1 序 1 已就产出面重拍一次）。**schema ADR S2（事件 kind 集与键集）**：批次 1 的序 1–3 已三轮重拍收敛（五 kind、必需键 + 按 kind 允许可选键），序 30 若再触该面须重拍。
+- **P1 骨架 D3（propose 不产新基因）**：已重拍（2026-09-14，[重拍 ADR](../../implemented/architecture/2026-09-14-p1-d3-distillation-reshoot.md)）——D3 实质维持，序 30 蒸馏以「显式触发 + 压缩在宿主侧 + 产物是候选」形态放行，序 30 开工资格过门；批次 1 序 1 曾就产出面重拍一次（[Capsule ADR](../../implemented/architecture/2026-09-13-capsule-primitive.md) C5）。**schema ADR S2（事件 kind 集与键集）**：批次 1 的序 1–3 已三轮重拍收敛（五 kind、必需键 + 按 kind 允许可选键），序 30 若再触该面须重拍。
 - **「已判不做」清单**内任何一项被选中，逐条重拍（见下节）。
 
 ### 受宿主约束不可实现（不排序，记重议触发）
@@ -147,5 +147,5 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 
 - **单源与指针**：本表是设计稿差集的唯一单源；[HANDOFF-todos](../../../../HANDOFF-todos.md) 承载当批可办项，[HANDOFF.md](../../../../HANDOFF.md) ⏭ 指向本表。
 - **状态推进**：每批收口时更新本表对应行（pending → done）；全部完成或用户改向时，本笔记转 implemented 或由新笔记取代。
-- **封条纪律**：批次 3 的 D2 重拍件已立（[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-session-event.md)：默认关 + 逐源门槛），行 11–15 已全部裁决（全判不立）；批次 4 的记忆线重拍件已立（[重拍 ADR](../../implemented/architecture/2026-09-14-memory-line-phase2-reshoot.md)），行 16–20 落终态；批次 5 的开题轮拍板件已落（[开题轮 ADR](../../implemented/architecture/2026-09-14-batch5-opening-round.md)），行 23–29 落终态（21/22/26 保留位），游标 = 批次 6。
+- **封条纪律**：批次 3 的 D2 重拍件已立（[裁决 ADR](../../implemented/architecture/2026-09-13-detect-source-verdict-session-event.md)：默认关 + 逐源门槛），行 11–15 已全部裁决（全判不立）；批次 4 的记忆线重拍件已立（[重拍 ADR](../../implemented/architecture/2026-09-14-memory-line-phase2-reshoot.md)），行 16–20 落终态；批次 5 的开题轮拍板件已落（[开题轮 ADR](../../implemented/architecture/2026-09-14-batch5-opening-round.md)），行 23–29 落终态（21/22/26 保留位），游标 = 批次 6（序 30 的 P1 D3 重拍件已立，[重拍 ADR](../../implemented/architecture/2026-09-14-p1-d3-distillation-reshoot.md)，序 30 可开工）。
 - **不承诺工期**：本表承诺的是「差集不再重新对账」，不是排期。
