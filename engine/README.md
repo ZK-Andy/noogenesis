@@ -24,6 +24,9 @@ node dist/engine/bin.js capsule add <candidate.json> --actor N [--mutation <ref>
 node dist/engine/bin.js capsule show <domain>/<id>          # 读并渲染单条 Capsule（确定性输出）
 node dist/engine/bin.js mutation add <candidate.json> --actor N  # Mutation 声明：mutations/ + events/ 同一 commit
 node dist/engine/bin.js mutation show <domain>/<id>         # 读并渲染单条 Mutation（确定性输出）
+node dist/engine/bin.js distill collect                     # 失败面汇编（events fail / capsules fail / genes avoid；只读）
+node dist/engine/bin.js distill add <candidate.json>        # 候选落盘 candidates/（基因形；不发事件；压缩在宿主侧）
+node dist/engine/bin.js distill show <domain>/<id>          # 读并渲染单条候选（确定性输出）
 node dist/engine/bin.js self-test                           # 元评测夹具（临时沙箱，不触碰真实仓）
 ```
 
@@ -39,6 +42,7 @@ node dist/engine/bin.js self-test                           # 元评测夹具（
 | `gene.ts` | Gene 八字段封闭 schema / 目录扫描（含缓存合并扫描） |
 | `capsule.ts` | Capsule 七字段封闭 schema / 写入与读取（`capsule add` / `capsule show`） |
 | `mutation.ts` | Mutation 六字段封闭 schema / 写入与读取（`mutation add` / `mutation show`） |
+| `distill.ts` | 蒸馏面（批次 6 序 30）：失败面汇编 + 候选落盘（`distill collect` / `add` / `show`；候选 = 基因形落 `candidates/`，压缩在宿主侧） |
 | `observe.ts` | 观测输入面（schema / 追加写 / 派生边） |
 | `select.ts` / `propose.ts` / `evaluate.ts` / `solidify.ts` / `pull.ts` | 其余命令各一（select 兼消费观测派生面；solidify 兼 Capsule / Mutation 入档） |
 | `selftest.ts` | 元评测夹具 |
@@ -111,3 +115,10 @@ node dist/engine/bin.js self-test                           # 元评测夹具（
 - `scripts/verify-secrets.mts`（白名单条目 `secrets`）：凭据绊线扫 `genes/` + `events/` + `.noogenesis/observations/` 三面；**best-effort 绊线，不是安全属性**（强度上限与已知盲区写在件头）。
 - `adapters/dsh/`（M2 适配层）：spawn CLI 单合同的第一个进程外消费者；引擎与 `gates.json` 对适配层零新增要求。
 - CI：`node dist/engine/bin.js self-test`（与 verify-* self-test 平级，不占门禁编号）。
+
+## 蒸馏面（批次 6 序 30）
+
+- **边界单源** = [P1 D3 重拍 ADR](../.agents/notes/implemented/architecture/2026-09-14-p1-d3-distillation-reshoot.md) Decision 2/3：显式触发、压缩步在宿主侧（引擎零 LLM，不产基因内容）、产物是候选。
+- `distill collect` 只读汇编三类 git 内持久失败面——`events/*.jsonl` 的 `outcome: "fail"` 行、`capsules/` 的 `outcome.status = "fail"`、`genes/` 的 `avoid` 字段；观测面（`.noogenesis/observations/`，gitignored 可丢弃权重）不进汇编。三类面全空 = 空汇总，exit 0。
+- `distill add <candidate.json>` 把**基因形候选**落 `candidates/<domain>/<id>.json`（复用 gene 校验器，id=文件名、domain=目录、candidates 内跨域 id 唯一）；重名拒覆盖（fail-closed，改稿 = 显式删后重加）；**零事件、零 git commit**——候选是草稿不是档案。`candidates/` 由 `verify-gene-format` 覆盖（布局封闭 + 协议镜像 + 无复算面）。
+- 候选不在 `genes/` → 不进 select 扫描、不进 manifest、不发 `gene.added`；策展完成后走既有 `solidify <candidate.json>` 入档，入档链路零新增。

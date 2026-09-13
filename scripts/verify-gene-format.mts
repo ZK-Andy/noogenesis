@@ -32,6 +32,11 @@
  *   id/domain kebab-case 且分别等于文件名 stem 与父目录名；category/target/expected_effect
  *   为非空字符串（无值域）；risk_level ∈ {low, medium, high}；id 全树唯一；
  *   布局封闭 mutations/<domain>/<id>.json。
+ * - candidates/<domain>/<id>.json（批次 6 序 30 — 候选面，镜像 engine/gene.ts 校验）：
+ *   候选 = 基因形（S1 八字段封闭 schema，validation 白名单判据同 genes/），
+ *   id/domain 锚点与跨域 id 唯一（candidates 内）同判据；distill add 不发事件，
+ *   故无复算面——只查结构（与 fail/retired 事件分型同理）；
+ *   布局封闭 candidates/<domain>/<id>.json。
  * - 工作树复算（S2 — 内容可寻址）：最近一次 added/updated(ok) 事件的 gene_sha
  *   必须等于文件字节的 sha256；最近 retired ⇒ 文件必须缺席；无事件轨的工作树
  *   基因违约（solidify 是唯一入口）；fail 事件只查结构不复算（被拒候选 ≠ 工作树）。
@@ -41,8 +46,8 @@
  *   mutations 同型：mutation.added(ok) 的 mutation_sha 必须等于文件字节 sha256，无事件轨的
  *   Mutation 违约（mutation add 是唯一入口）；Mutation 无 update/retire 面，故无分段。
  *
- * 结构性例外：白名单外独立件——本件消费 genes/ + capsules/ + mutations/ + events/ 复算
- * 治理自身，进 gates.json 白名单会让 solidify 入档中途复算自身（语义循环）；hooks/CI 保留
+ * 结构性例外：白名单外独立件——本件消费 genes/ + capsules/ + mutations/ + candidates/ +
+ * events/ 复算治理自身，进 gates.json 白名单会让 solidify 入档中途复算自身（语义循环）；hooks/CI 保留
  * 显式调用行。
  *
  * 用法（仓库根运行）：node scripts/verify-gene-format.mts [--repo ROOT]
@@ -541,6 +546,40 @@ function scan(base: string): { checked: number; errors: string[] } {
           errors.push(`${fsPath}: duplicate mutation id '${mid}' (also ${pyJoin(base, mutationFiles.get(mid)!)})`);
         }
         mutationFiles.set(mid, rel);
+      }
+    }
+  }
+
+  // candidates/：布局封闭 candidates/<domain>/<id>.json + 协议面（基因形，批次 6 序 30 —
+  // 镜像 engine/gene.ts 校验）+ candidates 内跨域 id 唯一。候选无事件轨（distill add
+  // 不发事件），无复算面——只查结构（与 fail/retired 事件分型同理）。
+  const candsPath = pyJoin(base, ["candidates"]);
+  const candsIsDir = fs.existsSync(candsPath) && fs.statSync(candsPath).isDirectory();
+  const candidateFiles = new Map<string, string[]>();
+  if (candsIsDir) {
+    const all: string[][] = [];
+    collectJson(candsPath, ["candidates"], all);
+    all.sort(segCompare);
+    for (const rel of all) {
+      checked += 1;
+      if (rel.length !== 3 || rel[0] !== "candidates") {
+        errors.push(`${rel.join("/")}: candidate files must be at candidates/<domain>/<id>.json layout`);
+        continue;
+      }
+      const fsPath = pyJoin(base, rel);
+      const parsed = pyJSONParse(readTextFatal(fsPath));
+      if (!parsed.ok) {
+        errors.push(`${fsPath}: not valid JSON: ${parsed.message}`);
+        continue;
+      }
+      const data = parsed.value;
+      errors.push(...checkGene(data, rel.join("/"), pyStem(rel[2]!), rel[1]!, wl.names));
+      const kid = isObj(data) ? data.id : null;
+      if (typeof kid === "string") {
+        if (candidateFiles.has(kid)) {
+          errors.push(`${fsPath}: duplicate candidate id '${kid}' (also ${pyJoin(base, candidateFiles.get(kid)!)})`);
+        }
+        candidateFiles.set(kid, rel);
       }
     }
   }
@@ -1337,6 +1376,48 @@ function selfTest(): number {
         + `${mutationEventLine("Bad_ID", "f".repeat(64), "ok", "2026-09-05T03:00:00Z")}\n`);
     },
     ["mutation must be a kebab-case id"], "mutation event id non-kebab -> fail",
+  ]);
+
+  // --- 候选面（批次 6 序 30）：基因形、布局封闭、无事件轨（distill add 不发事件）---
+  const candidateTree = (t: string): void => {
+    mk(t, "engine/gates.json", WHITELIST);
+    mk(t, "scripts/stub.py", "print('ok')\n");
+    mk(t, "candidates/process/sample-candidate.json", geneDoc("sample-candidate", "process", { validation: ["stub"] }));
+  };
+
+  cases.push([candidateTree, [], "candidate conforming tree (no event trail) -> pass"]);
+
+  cases.push([
+    (t) => {
+      candidateTree(t);
+      mk(t, "candidates/process/sample-candidate.json", geneDoc("sample-candidate", "process", { validation: ["ghost"] }));
+    },
+    ["not in the whitelist"], "candidate validation outside whitelist -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      mk(t, "engine/gates.json", WHITELIST);
+      mk(t, "scripts/stub.py", "print('ok')\n");
+      mk(t, "candidates/loose.json", geneDoc("sample-candidate", "candidates"));
+    },
+    ["candidates/<domain>/<id>.json layout"], "flat candidate file -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      candidateTree(t);
+      mk(t, "candidates/doc/sample-candidate.json", geneDoc("sample-candidate", "doc"));
+    },
+    ["duplicate candidate id"], "candidate id in two domains -> fail",
+  ]);
+
+  cases.push([
+    (t) => {
+      candidateTree(t);
+      mk(t, "candidates/process/sample-candidate.json", geneDoc("sample-candidate", "doc"));
+    },
+    ["must equal its directory"], "candidate domain != dir -> fail",
   ]);
 
   // --- Event 扩字段面（批次 1 序 3）：必需键 + 允许可选键、形状、跨链可解析 ---

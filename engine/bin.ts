@@ -1,4 +1,4 @@
-// bin.ts — CLI 八命令合同面（骨架 ADR D1：select/propose/evaluate/solidify 为唯一合同面；P2 增 pull 只读消费；融合轮第一期增 observe 观测面写入；批次 1 序 1 增 capsule 写读、序 2 增 mutation 写读）+ self-test 元评测。
+// bin.ts — CLI 九命令合同面（骨架 ADR D1：select/propose/evaluate/solidify 为唯一合同面；P2 增 pull 只读消费；融合轮第一期增 observe 观测面写入；批次 1 序 1 增 capsule 写读、序 2 增 mutation 写读；批次 6 序 30 增 distill 蒸馏面）+ self-test 元评测。
 // 零第三方依赖（Node 标准库 only）；退出码：0 成功 / 1 红（评估不绿、违规） / 2 用法或 fail-closed 错误。
 
 import * as path from 'path';
@@ -22,8 +22,11 @@ function usage(): string {
     '      # Capsule 入档：capsules/ + events/ 同一 commit；--mutation 指向兑现的声明（可选）',
     '  node dist/engine/bin.js capsule show <domain>/<id>                  # 读并渲染单条 Capsule（确定性输出）',
     '  node dist/engine/bin.js mutation add <candidate.json> --actor N     # Mutation 声明：mutations/ + events/ 同一 commit',
-    '  node dist/engine/bin.js mutation show <domain>/<id>                 # 读并渲染单条 Mutation（确定性输出）',
-    '  node dist/engine/bin.js self-test                           # 元评测夹具（临时沙箱，不触碰真实仓）',
+  '  node dist/engine/bin.js mutation show <domain>/<id>                 # 读并渲染单条 Mutation（确定性输出）',
+  '  node dist/engine/bin.js distill collect                    # 失败面汇编（events fail / capsules fail / genes avoid；只读）',
+  '  node dist/engine/bin.js distill add <candidate.json>       # 候选落盘 candidates/（基因形；不发事件；压缩在宿主侧）',
+  '  node dist/engine/bin.js distill show <domain>/<id>         # 读并渲染单条候选（确定性输出）',
+  '  node dist/engine/bin.js self-test                           # 元评测夹具（临时沙箱，不触碰真实仓）',
     '',
   ].join('\n');
 }
@@ -306,6 +309,48 @@ function main(argv: string[]): number {
       return 0;
     }
     fail(sub ? `mutation: unknown subcommand ${sub}` : 'mutation needs a subcommand (add|show)');
+  }
+
+  if (cmd === 'distill') {
+    // 子命令面：collect（只读汇编）/ add（候选落盘）/ show（读）。未知子命令 → exit 2 用法错。
+    const sub = rest[0];
+    if (sub === 'collect') {
+      if (rest.length > 1) fail(`distill collect: unknown argument ${rest[1]}`);
+      const { collect } = require('./distill.js');
+      process.stdout.write(collect(repoRoot));
+      return 0;
+    }
+    if (sub === 'add') {
+      const candidate = rest.find((a, i) => i > 0 && !a.startsWith('--'));
+      if (!candidate) fail('distill add needs <candidate.json>');
+      const { addCandidate } = require('./distill.js');
+      let r;
+      try {
+        r = addCandidate(repoRoot, path.resolve(candidate));
+      } catch (e) {
+        if ((e as { engine?: unknown }).engine) return fail((e as Error).message, 2);
+        throw e;
+      }
+      process.stdout.write(r.report);
+      return 0;
+    }
+    if (sub === 'show') {
+      const ref = rest[1];
+      if (!ref) fail('distill show needs <domain>/<id>');
+      const { showCandidate } = require('./distill.js');
+      let out;
+      try {
+        const [domain, id] = ref.split('/');
+        if (!domain || !id) fail('distill show ref must be <domain>/<id>');
+        out = showCandidate(repoRoot, domain, id);
+      } catch (e) {
+        if ((e as { engine?: unknown }).engine) return fail((e as Error).message, 2);
+        throw e;
+      }
+      process.stdout.write(out);
+      return 0;
+    }
+    fail(sub ? `distill: unknown subcommand ${sub}` : 'distill needs a subcommand (collect|add|show)');
   }
 
   if (cmd === 'self-test') {

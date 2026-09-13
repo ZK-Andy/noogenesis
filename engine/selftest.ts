@@ -16,6 +16,7 @@ import { solidify, retire, recordCapsule, recordMutation } from './solidify.js';
 import { genePath, scanGenes, defaultCacheDir } from './gene.js';
 import { capsulePath, readCapsule, renderCapsule } from './capsule.js';
 import { mutationPath, readMutation, renderMutation } from './mutation.js';
+import { collect, addCandidate, showCandidate, candidatePath } from './distill.js';
 
 let hasFailure = false;
 function ok(cond: unknown, msg: string) {
@@ -638,6 +639,70 @@ function selfTest() {
       ok(!readEvents(td).some((e) => e.mutation === 'mut-rb'), 'mutation: rollback removes appended event line');
       git(td, ['config', '--unset', 'core.hooksPath']);
     }
+  }
+
+  // --- 5.10) 蒸馏面（批次 6 序 30）：失败面汇编（只读）+ 候选落盘（基因形、不发事件）---
+  {
+    const td = mkTemp();
+    mkRepo(td);
+    writeGene(td, 'process', {
+      id: 'dst-gene', domain: 'process', summary: 'distill fixture',
+      signals: ['dst'], strategy: ['s'], avoid: ['avoid row one'],
+    });
+    // 三类汇编面：events fail 行 + capsules fail + genes avoid
+    const staging = path.join(td, 'staging');
+    fs.mkdirSync(staging);
+    fs.mkdirSync(path.join(td, 'events'), { recursive: true });
+    fs.appendFileSync(path.join(td, 'events', '2026-01.jsonl'),
+      JSON.stringify({ ts: '2026-01-01T00:00:00.000Z', actor: 't', kind: 'gene.added', gene: 'gone', gene_sha: 'a'.repeat(64), outcome: 'fail: gate red', evidence: 'evaluate ok: all 9 gates green' }) + '\n');
+    fs.mkdirSync(path.join(td, 'capsules', 'process'), { recursive: true });
+    fs.writeFileSync(path.join(td, 'capsules', 'process', 'cap-f.json'),
+      JSON.stringify({ id: 'cap-f', domain: 'process', gene_ids: ['process/dst-gene'], trigger: 't', steps: ['s'], outcome: { status: 'fail', reason: 'gate red' }, evidence: ['e'] }));
+    fs.writeFileSync(path.join(staging, 'cand-1.json'), JSON.stringify({
+      id: 'cand-1', domain: 'process', summary: 'candidate from failures',
+      signals: ['dst'], strategy: ['step one'],
+    }, null, 2) + '\n');
+
+    const digest = collect(td);
+    ok(digest.includes('events (outcome=fail) (1)') && digest.includes('kind=gene.added'),
+      'distill: collect lists event fail rows');
+    ok(digest.includes('capsules (outcome=fail) (1)') && digest.includes('reason=gate red'),
+      'distill: collect lists failing capsules');
+    ok(digest.includes('genes (avoid) (1)') && digest.includes('avoid row one'),
+      'distill: collect lists gene avoid rows');
+
+    // add：候选落 candidates/、基因形、零事件；重名拒覆盖；跨域 id 唯一
+    const r = addCandidate(td, path.join(staging, 'cand-1.json'));
+    ok(r.ok === true, 'distill: add accepted');
+    ok(fs.existsSync(candidatePath(td, 'process', 'cand-1')), 'distill: placed in candidates/<domain>/');
+    ok(readEvents(td).every((e) => e.kind !== 'gene.added' || e.gene !== 'cand-1'),
+      'distill: no event emitted for candidate');
+    ok(throwsEngine(() => addCandidate(td, path.join(staging, 'cand-1.json'))),
+      'distill: re-adding same candidate refused');
+    const badGene = path.join(staging, 'cand-2.json');
+    fs.writeFileSync(badGene, JSON.stringify({ id: 'cand-2', domain: 'process', summary: 'x' }) + '\n');
+    ok(throwsEngine(() => addCandidate(td, badGene)), 'distill: gene-shaped validation refused (no signals/strategy)');
+    const dup = path.join(staging, 'cand-3.json');
+    fs.writeFileSync(dup, JSON.stringify({ id: 'cand-1', domain: 'doc', summary: 'x', signals: ['d'], strategy: ['s'] }) + '\n');
+    ok(throwsEngine(() => addCandidate(td, dup)), 'distill: cross-domain duplicate id refused');
+
+    // show：基因渲染复用（确定性输出）
+    ok(showCandidate(td, 'process', 'cand-1').includes('candidate from failures'),
+      'distill: show renders candidate via gene renderer');
+
+    // CLI 面：collect/add/show 与用法错
+    const bin = path.join(__dirname, 'bin.js');
+    fs.writeFileSync(path.join(staging, 'cand-4.json'), JSON.stringify({
+      id: 'cand-4', domain: 'doc', summary: 'x', signals: ['d'], strategy: ['s'],
+    }) + '\n');
+    ok(spawnCode([bin, 'distill', 'collect'], td) === 0, 'bin: distill collect -> exit 0');
+    ok(spawnCode([bin, 'distill', 'add', path.join(staging, 'cand-4.json')], td) === 0,
+      'bin: distill add -> exit 0');
+    const shown = execFileSync('node', [bin, 'distill', 'show', 'doc/cand-4'], { cwd: td, encoding: 'utf8', stdio: 'pipe' });
+    ok(shown.includes('[noo-gene doc/cand-4]'), 'bin: distill show renders candidate via gene renderer');
+    ok(spawnCode([bin, 'distill', 'show', 'doc/missing'], td) === 2, 'bin: distill show missing -> exit 2');
+    ok(spawnCode([bin, 'distill', 'bogus'], td) === 2, 'bin: unknown distill subcommand -> exit 2');
+    ok(spawnCode([bin, 'distill'], td) === 2, 'bin: distill without subcommand -> exit 2');
   }
 
   // --- 5.9) Event 扩字段（批次 1 序 3）：五 kind 恒带 env_fingerprint，跨链键可选且可解析 ---
