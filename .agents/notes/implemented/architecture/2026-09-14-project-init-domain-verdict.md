@@ -2,7 +2,7 @@
 
 Status: implemented
 
-Review: FULL/2026-09-14/pending（三重审核进行中，收口时回填真实结论）
+Review: FULL/2026-09-14/R1=ok R2=ok R3=ok（R1 0B+3S、R2 1B+1S、R3 0B+1S，全采纳）
 
 Related: 批次表 [行 38](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 主设计 [§10 / §4.1 / §12-P4](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 初始化内容家 [ai-collaboration-method](../../../../docs/method/ai-collaboration-method.md) · [一行安装 ADR](2026-09-14-one-line-install.md) · [技能随库分发 ADR](2026-09-06-skills-ride-bank.md) · [M2 适配层 ADR](2026-09-06-m2-adapter-wiring.md) · 前序裁决 [序 36](2026-09-14-capsule-composition-verdict.md) / [序 37](2026-09-14-plugin-marketplace-verdict.md) · 档位判据 [review.md](../../../../docs/method/review.md)
 
@@ -60,5 +60,5 @@ Related: 批次表 [行 38](../../proposed/architecture/2026-09-13-feature-compl
 - **批次表单源更新**：行 38 备注改 `done（指针 = 本件）`；「未交付」计数 12 → 11；游标 = 序 39。
 - **档位**：`templates/**` 属行为契约面路径触发（[review.md](../../../../docs/method/review.md) §1），本批 FULL 三审。
 - **机制零变化**：`engine/**`、`adapters/**`、`scripts/**`、`package.json`、`cordis.patch.yml` 均不动。
-- **单源**：域内判据（脚本 / CI 骨架判不立与触发条）以本件为家；初始化内容单源 = `ai-collaboration-method.md`；安装路径单源 = 根 README。
+- **单源**：域内判据（脚本 / CI 骨架判不立与触发条）以本件为家；初始化内容单源 = `ai-collaboration-method.md` 形制骨架 + `templates/`；安装路径单源 = 根 README。
 - **批次 8 开轮**：本件为内容域首件；序 39–42 待办。

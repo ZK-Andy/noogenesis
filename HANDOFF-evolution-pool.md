@@ -42,6 +42,10 @@
 
 - **（2026-09-14）纪律漏项候选：转述他件的触发条 / 条件句时被逐字改写，与本件「单源不变」自述分叉**：症状 = 批次 7 序 36 ADR 把 [批次 6 裁决 ADR](.agents/notes/implemented/architecture/2026-09-14-batch6-composition-meta-verdict.md) 的 T3「宿主给出插件侧 profile 组合 / 挂载服务面」改写成「插件侧 preset / profile 注册面」并新增 `preset` 主体，同时自述「沿用行 31 T1–T3（单源不变）/ 本行不新立」——两件文本分叉（R2 Blocker，本批已就地回退为原文 + 当前事实读数括注）。根因 = 想在同一行同时承载「原触发条件」与「当前事实读数」，改写了条件本体。规避 = 沿用触发条时逐字引原文，事实读数另起括注 / 句；可机械化面待判 = 自称「沿用 X 的触发条」时，其文本须与 X 逐字相同或显式标注差异。出处 = 批次 7 序 36 R2 Blocker 1。
 
+- **（2026-09-14）纪律漏项候选：沿用时手抄的「穷举枚举」随实态漂移**：症状 = 批次 8 序 38 ADR 的包 `files` 白名单枚举（「只含 `dist/` + `engine/gates.json` + 两份 README + …」）沿自 journal 旧文，与 `package.json` 实态不符（实 10 项、4 份 README、漏 `adapters/hermes/hooks.example.yml`），而该枚举是两项「判不立」的唯一证据面；三审 R2 Blocker 抓到（R1 旁注同报，本批已就地改为证伪口径）。根因 = 手抄穷举句无机器面、写时未按字面回跑；可机械化面待判 = 「只含 / 全部 / 共 N」类穷举句与事实源静态对账。出处 = 批次 8 序 38 三审 R2 Blocker 1 + R1 旁注。
+
+- **（2026-09-14）踩坑候选：`verify-doc-budgets` 不带 `--manifest` 时静默 SKIP 且 exit 0**：症状 = 本地复跑或简报自证若写 `node scripts/verify-doc-budgets.mts`，默认路径 `./doc-budgets.manifest.json` 不存在 → 输出 `SKIP: manifest … not found`、exit 0——绿色被读成「已跑且通过」，实为零覆盖；仓内 gate 条目与 hooks 均带 `--manifest scripts/doc-budgets.manifest.json`，但简报自证行只记 `doc-budgets:0`。规避 = 自证行的命令形态须与 `engine/gates.json` 条目逐字一致，或闸件缺 manifest 时改为非零。出处 = 批次 8 序 38 三审 R1 附注。
+
 ## 待定（已记录的需求，待后续拍板）
 
 - **池件自身的机器面**：条数 / 字数预算是否上闸（形态参照 [verify-handoff-structure](scripts/verify-handoff-structure.mts)），待池规模有实测再判。
