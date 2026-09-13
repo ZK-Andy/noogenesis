@@ -2,6 +2,8 @@
 
 Status: implemented
 
+Review: LIGHT/2026-09-14/语义评审（范围化子代理 R2：0 Blocker + 1 Suggestion 全采纳——Consequences 的「P4 分发三行」与其括注枚举的 34–37 四行自相矛盾（批次表 P4 = 四行）→ 改「四行」）
+
 Related: 批次表 [行 37](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 主设计 [§11.2 / §12-P4](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 共享层稿 [§集成面](../../../../docs/research/dsh-collective-evolution-shared-layer.md) · 前序分发件 [一行安装 ADR](2026-09-14-one-line-install.md) · 组合裁决 [序 36 ADR](2026-09-14-capsule-composition-verdict.md) · 发布面闸 [code-standards / package-invariants](../../../../docs/method/code-standards.md) · 宿主声明类型 `@deepseek-ai/dsh-package-manifest`（本机实装代实读）
 
 ## Problem
@@ -50,4 +52,4 @@ Related: 批次表 [行 37](../../proposed/architecture/2026-09-13-feature-compl
 - **批次表单源更新**：行 37 备注改 `done（指针 = 本件）`；「未交付」计数 13 → 12；游标 = 批次 8 序 38（项目初始化域）。
 - **机制零变化**：`engine/**`、`adapters/**`、`scripts/**`、`package.json`、`cordis.patch.yml` 均不动；本件 LIGHT 档（纯文档收口，路径触发集未命中）。
 - **单源**：宿主分发面机制读数与 git 通道缺口触发条以本件为家；安装机制结论单源 = [M2 适配层 ADR](2026-09-06-m2-adapter-wiring.md) 系；用户安装路径单源 = 根 README 安装节（[一行安装 ADR](2026-09-14-one-line-install.md)）。
-- **批次 7 收口**：P4 分发三行（34–36 已落 + 37 本件）全落终态；下一批 = 批次 8（内容域，序 38–42）。
+- **批次 7 收口**：P4 分发四行（34–37）全落终态；下一批 = 批次 8（内容域，序 38–42）。
