@@ -5,13 +5,15 @@
 
 > **⚡ 最高优先级（框架重建）：charter ADR + 七层蓝图 → [.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md](.agents/notes/implemented/architecture/2026-09-06-framework-rebuild-charter.md) · [docs/research/framework-rebuild-blueprint.md](docs/research/framework-rebuild-blueprint.md)**——用户拍板推倒重建（先框架后协作层、本仓原地重建），蓝图定稿（七层三段式 + A1–A8 挂载面 + M1–M3 + C1–C15）；**B0–B5 全批闭环（协作层重建收官，C1–C15 全绿）**——B5 切换批（gates.json cmd 全量重指 TS + 旧机器件零残留 + CI/钩子单轨 + 发版 0.2.0；实现 ADR [.agents/notes/implemented/architecture/2026-09-08-b5-switch.md](.agents/notes/implemented/architecture/2026-09-08-b5-switch.md)，批次表 [.agents/notes/implemented/architecture/2026-09-06-collab-rebuild-impl.md](.agents/notes/implemented/architecture/2026-09-06-collab-rebuild-impl.md)）；**优化轮已收口（2026-09-10）**：问题池条目全部判终态、池文档冻结为调研档案（技能清单补全拍板暂不新增技能 + 既有技能 references 实拆补全；记忆库线另立档案页 [memory-system-dossier.md](docs/state/memory-system-dossier.md)；规范展开 c1/c2 已交付；[收口 ADR](.agents/notes/implemented/process/2026-09-10-optimization-round-closure.md) + [池文档 §2.3 收口账](docs/research/capsule-01-optimization-round.md)）。
 
-> **⏭ 下一步：批次 7 序 36 胶囊组合成 preset / profile（序 35 已收口，2026-09-14）**——多 harness 第一刀 = 第二宿主 Hermes：原生读 `AGENTS.md` 链 + `.agents/skills` 为其项目技能路径（零适配成本），交付 = `adapters/hermes/` 写码在环拦回 hook 桥（`pre_tool_call` + `write_file`，判据 = 仓根 oxlint 半，fail-open）；[ADR](.agents/notes/implemented/architecture/2026-09-14-hermes-hook-bridge.md)。序 30 蒸馏已落地——`distill` 命令面三子命令（collect 失败面汇编〔events fail / capsules fail / genes avoid，只读〕/ add 候选落盘〔基因形落 `candidates/`，不发事件、零 git commit、重名拒覆盖〕/ show）——压缩在宿主侧（引擎零 LLM），入档走既有 solidify 闸；`verify-gene-format` 增 `candidates/` 节（无复算面）；边界单源 = [P1 D3 重拍 ADR](.agents/notes/implemented/architecture/2026-09-14-p1-d3-distillation-reshoot.md)，实现件 = [distill 命令 ADR](.agents/notes/implemented/architecture/2026-09-14-distill-command.md)；**游标 = 批次 7 序 36**（胶囊组合成 preset / profile）。序 1–35 逐行结论与 ADR 指针单源 = [批次表 ADR](.agents/notes/proposed/architecture/2026-09-13-feature-completion-backlog.md)（proposed）。其余候选触发与判据见 [HANDOFF-todos](HANDOFF-todos.md) D 条与 [池件](HANDOFF-evolution-pool.md)。最新批 = 2026-09-14 **批次 7 序 35 多 harness 适配（Hermes 第一刀）**。前序批次见下方滚动窗。
+> **⏭ 下一步：批次 7 序 36 胶囊组合成 preset / profile（序 34–35 已推送、CI 绿，2026-09-14）**——多 harness 第一刀 = 第二宿主 Hermes：原生读 `AGENTS.md` 链 + `.agents/skills` 为其项目技能路径（零适配成本），交付 = `adapters/hermes/` 写码在环拦回 hook 桥（`pre_tool_call` + `write_file`，判据 = 仓根 oxlint 半，fail-open）；[ADR](.agents/notes/implemented/architecture/2026-09-14-hermes-hook-bridge.md)。序 30 蒸馏已落地——`distill` 命令面三子命令（collect 失败面汇编〔events fail / capsules fail / genes avoid，只读〕/ add 候选落盘〔基因形落 `candidates/`，不发事件、零 git commit、重名拒覆盖〕/ show）——压缩在宿主侧（引擎零 LLM），入档走既有 solidify 闸；`verify-gene-format` 增 `candidates/` 节（无复算面）；边界单源 = [P1 D3 重拍 ADR](.agents/notes/implemented/architecture/2026-09-14-p1-d3-distillation-reshoot.md)，实现件 = [distill 命令 ADR](.agents/notes/implemented/architecture/2026-09-14-distill-command.md)；**游标 = 批次 7 序 36**（胶囊组合成 preset / profile）。序 1–35 逐行结论与 ADR 指针单源 = [批次表 ADR](.agents/notes/proposed/architecture/2026-09-13-feature-completion-backlog.md)（proposed）。其余候选触发与判据见 [HANDOFF-todos](HANDOFF-todos.md) D 条与 [池件](HANDOFF-evolution-pool.md)。最新批 = 2026-09-14 **批次 7 序 35 多 harness 适配（Hermes 第一刀）**。前序批次见下方滚动窗。
 
 ## 交接更新记录（摘要滚动窗）
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-14｜**批次 7 序 35 多 harness 第一刀（FULL 三审待跑）**：第二宿主 = Hermes（原生 `AGENTS.md` 链 + `.agents/skills` 技能路径）；交付 = `adapters/hermes/` 写码在环拦回 hook 桥；游标 = 序 36。[ADR](.agents/notes/implemented/architecture/2026-09-14-hermes-hook-bridge.md)
+- 2026-09-14｜**批次 6 余序 31–33 收口 + 批次 7 序 34–35 落地并推送**：序 31–33 判不立 / 顺延（组合归口行 36）；序 34 一行安装四条路径；序 35 多 harness 第一刀 = Hermes hook 桥（FULL 三审全采纳、CI 绿）。`bd1a3a6`→`8a14ea2`，run `34787605506` success。
+
+- 2026-09-14｜**批次 7 序 35 多 harness 第一刀**：第二宿主 = Hermes（原生 `AGENTS.md` 链 + `.agents/skills` 技能路径）；交付 = `adapters/hermes/` 写码在环拦回 hook 桥；游标 = 序 36。[ADR](.agents/notes/implemented/architecture/2026-09-14-hermes-hook-bridge.md)
 
 - 2026-09-14｜**批次 7 序 34 一行安装收口（LIGHT）**：宿主 `dsh plugin` 首用初始化 + 包自带 `dsh.bundle.patch` 自动入层 → 一行装、一行起；交付 = 根 README 双语安装节四条路径（装 / 起 / 专用 app profile / 本地检出），零机器面；游标 = 批次 7 序 35。[ADR](.agents/notes/implemented/architecture/2026-09-14-one-line-install.md)
 
@@ -56,8 +58,6 @@
 - 2026-09-13｜**档案页制度批（FULL 三审 R1 2B/2S、R2 1B/1S、R3 3B/2S；全采纳）**：立 `docs/state/` tier + `verify-dossier-format` 骨架四段机器闸（含重复段判据）+ 摩擦点落点表单源；推广 = 判据立、页不立。[ADR](.agents/notes/implemented/process/2026-09-13-dossier-institution.md)。README 有变更（docs/ 树补 state/）。
 
 - 2026-09-13｜**记忆库线第二期判裁批（LIGHT）**：行为评估自建判不立（家 = 入档闸 / 三路评审 / 两本账 / 观测面）+ 痕迹提炼面判不立并入既有面 + 立宪 ADR `proposed→implemented`；[判裁 ADR](.agents/notes/implemented/architecture/2026-09-13-memory-line-phase2-verdict.md)；文档漂移修正（设计稿 §13.5 → §13 未决问题 5）。README 无漂移。
-
-- 2026-09-13｜**ADR 终局态治理批 + 两处附带修复**：两条已执行/被取代的 `proposed/` 记录收口（延后件删除 + 入站链重定向；批量方案件转 implemented）；池指针移入 todos 头部说明块；P1 后置项两条归口 + 在环反馈无家断言落户；[治理 ADR](.agents/notes/implemented/process/2026-09-13-adr-terminal-state-governance.md)；`b978567`→`653e1b2`，CI 绿。
 
 ## 背景
 
