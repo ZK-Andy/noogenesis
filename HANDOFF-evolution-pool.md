@@ -7,7 +7,9 @@
 
 - **（2026-09-13，序 3 更新）简化候选：同族原语的第三份拷贝已到共享件拐点**：症状 = `engine/mutation.ts` 的身份/读入外壳与 `capsule.ts`/`gene.ts` 逐字节同形（`validate*` 字段守卫 10 行、`read*` 读入抛物、`assert*IdUnique`、`*Path` 四组），`recordMutation` 与 `recordCapsule` 只差一行引用校验；`verify-gene-format.mts` 的 mutations 布局段与 capsules 段约 2/3 行是标识符替换，复算段同理（`<domain>/<id>` 正则一项已随批次 1 序 3 折叠为 `engine/util.ts` 的 `KEBAB_REF_RE` 单一来源，不在本候选内）。抽 `engine/protocol.ts` / 按 `{dir,noun,idKey,shaKey}` 参数化闸件段的收益 = 消除第三份拷贝且错误文案可保面名；代价 = 回触已冻结的 `gene.ts`/`capsule.ts` 与 py-parity 移植件「每面一段」的直读形状。触发 = 第 4 个原语落地前。出处 = 批次 1 序 2 R1 评审 Suggestion 1/2 + 序 3 R1 Suggestion 1。
 
-- **（2026-09-13，序 4 更新：n=2）纪律漏项候选：已收口泳道的简报会挡住下一路的发射闸**：症状 = R1/R2 收口提交后 HEAD 前移，留在 `.review-briefs/` 的两份已收口简报仍被 `verify-review-brief --enforce` 的「brief head 须钉住本仓 HEAD」判据扫到而报红（`--lanes R3` 不豁免该判据；序 3 与序 4 两次实测）。判据面 = 该闸按文件夹里的全部简报判 head，而非按本次发射的泳道；当前处置 = 收口一路即归档一路（序 4 同样一次即成）。是否该按 `--lanes` 收窄待判。出处 = 批次 1 序 3 三审发射 + 序 4 三审发射。
+- **（2026-09-13，序 4 更新：n=2；序 5 更新：n=3）纪律漏项候选：已收口泳道的简报会挡住下一路的发射闸**：症状 = R1/R2 收口提交后 HEAD 前移，留在 `.review-briefs/` 的两份已收口简报仍被 `verify-review-brief --enforce` 的「brief head 须钉住本仓 HEAD」判据扫到而报红（序 3 与序 4 两次实测）。序 5 实测第二形态：**先归档已收口简报**再发射 R3 时，默认泳道推导（FULL → R1,R2,R3）改判「R1/R2 missing brief」——两条路都需显式 `--lanes R3` 才过。判据面 = 该闸按文件夹里的全部简报判 head 与存在性，而非按本次发射的泳道；当前处置 = 收口一路即归档一路 + 发射时显式 `--lanes`（序 4、序 5 各一次即成）。是否该按 `--lanes` 收窄目录扫描待判。出处 = 批次 1 序 3/序 4/序 5 三审发射。
+
+- **（2026-09-13）纪律漏项候选：转写他件决定的处置时，指针错挂在主题相近的 ADR 上**：症状 = 序 5 把「评分不做触发面」的归属写成序 5 ADR（该 ADR 全文无此决定，其自身把该判据指向护栏建设轮 Decision 2），序 4 ADR 遗留面同错——三审 R3 Blocker（本批已就地修，两处改指所有者）。根因 = 按主题相近而非按决策所有者指路；与评审检查项 #2「ADR 口径一致性」同面但更窄（只涉跨件归口指针）。是否值得机械化（如「所有 ADR 引用的判据名须出现在被引 ADR 或由被引 ADR 再指」）待判。出处 = 批次 1 序 5 R3 评审 Blocker 1。
 
 - **（2026-09-13）踩坑候选：git 路径输出不能 trim**：症状 = 带前导/尾随空白的文件名（如 ` lead.txt`）被 `line.trim()` 改写后，`readFileSync` 读不到实际文件，未跟踪行数静默少算为 0（序 4 三审 R2 临时仓实证：`files 1, lines +0/-0`）。根因 = 路径是字节串不是可随意规整的文本；规避 = 按行原样取用、只用 `filter(Boolean)` 去空行。未机械化面 = 是否入 [cookbook](docs/cookbook.md)（该件 2688/2700 词，无余量）。出处 = 批次 1 序 4 R2 评审 Suggestion 1（本批已就地修 + 加空白边界夹具）。
 
