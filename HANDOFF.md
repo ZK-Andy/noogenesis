@@ -11,6 +11,8 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-13｜**批次 2 序 10 `dsh-invariants` 接入裁决（LIGHT；0B+0S）**：本包零自有运行时不变量（设计意图已由字面预算/契约闸兑现）、落蓝图 §9 封条 → 判不接；重议触发 T1–T3，批次 2 收口。[ADR](.agents/notes/implemented/architecture/2026-09-13-invariants-integration-verdict.md)；`23b6a21`→`18379cc`。README 核对：无漂移。
+
 - 2026-09-13｜**批次 2 序 9 M1 升格档评估（LIGHT；0B+5S 全采纳）**：服从面实测 47/51（92%）照办、未照办 4 例零代价归因 → 维持单次 advice、不升阻断；升格触发 T1–T3 具名。[ADR](.agents/notes/implemented/architecture/2026-09-13-m1-escalation-verdict.md)；`ec010dd`→`a6a96cd`。README 核对：无漂移。
 
 - 2026-09-13｜**批次 2 序 8 M3 记录件重拍（LIGHT；0B+2S 全采纳）**：M3 原形态「记录落事件轨」立宿主约束面（A8 已封）判不可实现；同一失败面由 session-close ③ 对账承接，②/阻断候选维持既有触发、不新立机器件。[ADR](.agents/notes/implemented/architecture/2026-09-13-m3-review-record-verdict.md)；`8d6d829`→`b5b603f`。README 核对：无漂移。
@@ -49,8 +51,6 @@
 - 2026-09-12｜**0.2.5 发版（release-flow 第二次实走）**：npm latest 0.2.5（tag `dsh-v0.2.5`）+ 双语 Release Latest；bump `7cdb625` → 版本面 `66b40d1`；[发版 ADR](.agents/notes/implemented/process/2026-09-09-release-shape-alignment.md) 第二次实发节。README 已同步（版本面三处）。
 
 - 2026-09-12｜**演化轮首次落账批（FULL 三审 R1 1B/5S、R2 2B/5S〔B2 误报驳回〕、R3 2B/2S；采纳 11 拒绝 1）**：push 面正则前缀容错 + 池件销账口径（[修复件](.agents/notes/implemented/bug-fix/2026-09-12-skill-guard-push-pattern-reachability.md) + 销账 ADR）；`cf26475`→`bb0d3a0`。README 无漂移。
-
-- 2026-09-12｜**演化轮池独立成件批（FULL 三审全 ok；采纳 8 拒绝 1）**：新增池件 [HANDOFF-evolution-pool.md](HANDOFF-evolution-pool.md)（吸收后处置规则已落地）+ [池件 ADR](.agents/notes/implemented/process/2026-09-12-evolution-pool-file.md)；归集面指针全域改指；`6b95e36`→`6376d92`。README 已同步（结构表加池件）。
 
 
 ## 背景

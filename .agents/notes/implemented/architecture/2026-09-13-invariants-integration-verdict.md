@@ -1,7 +1,7 @@
 # Agent Note: `dsh-invariants` 接入裁决——本包零自有运行时不变量，判不接（批次 2 序 10）
 
 Status: implemented
-Review: LIGHT/2026-09-13/待回填
+Review: LIGHT/2026-09-13/语义评审（范围化子代理 R2：0 Blocker + 0 Suggestion——宿主三陈述/组合面三读数/零自有不变量穷尽性/封条引述/链接与计数五项定向检查独立复核全真）
 
 Related: 批次表 [行 10](../../proposed/architecture/2026-09-13-feature-completion-backlog.md)（「已判不做」节）· 蓝图 [§9 不做清单](../../../../docs/research/framework-rebuild-blueprint.md) · 主设计 [§7.3 / §11.2](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · token 面兑现 [护栏建设轮 ADR](2026-09-13-guardrail-construction-round.md) · 契约兑现 [轨道 B ADR](2026-09-08-coding-enforcement-track-b.md) · 会话事件面封条 [A8 撤除批](2026-09-08-a8-session-record-projection-removal.md) · 宿主包读面 `@deepseek-ai/dsh-invariants@0.1.5-rc.2`
 
