@@ -6,7 +6,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { EngineError, KEBAB_RE } from './util.js';
-import { validateGene } from './gene.js';
+import { readGene } from './gene.js';
 import { renderGene } from './propose.js';
 
 const CANDIDATES_DIR = 'candidates';
@@ -98,7 +98,7 @@ function collectGeneAvoids(repoRoot: string): { ref: string; evidence: string }[
   return out;
 }
 
-// 汇编输出：按面分组、组内按出现序（文件序/行序已排序），确定性逐字输出（self-test 金样）。
+// 汇编输出：按面分组、组内按落盘序（事件行 = 月卷内时间序、目录面 = 字典序），确定性逐字输出（self-test 金样）。
 function collect(repoRoot: string): string {
   const groups: [string, { ref: string; evidence: string }[]][] = [
     ['events (outcome=fail)', collectEventFails(repoRoot)],
@@ -133,24 +133,12 @@ function assertCandidateIdUnique(repoRoot: string, domain: string, id: string) {
   }
 }
 
-// 候选落盘：以 gene 校验器验形（八字段封闭 schema），落 candidates/<domain>/<id>.json。
+// 候选落盘：读入即以 gene 校验器验形（八字段封闭 schema，skipDirAnchor——源文件可放
+// staging 任意处），再校验 signals/strategy 与闸同判据，落 candidates/<domain>/<id>.json。
 // 零事件、零 git commit——候选是草稿不是档案（序 30 ADR Decision 1）；重名拒覆盖
 // （fail-closed，改稿 = 显式删后重加）。
 function addCandidate(repoRoot: string, candidateFile: string): { report: string; ok: boolean } {
-  let raw: string;
-  try {
-    raw = fs.readFileSync(candidateFile, 'utf8');
-  } catch (e) {
-    throw new EngineError(`cannot read candidate file ${candidateFile}: ${(e as Error).message}`);
-  }
-  let obj: any;
-  try {
-    obj = JSON.parse(raw);
-  } catch (e) {
-    throw new EngineError(`${candidateFile}: not valid JSON: ${(e as Error).message}`);
-  }
-  const errors = validateGene(obj, { fileName: path.basename(candidateFile), parentDir: null });
-  if (errors.length) throw new EngineError(`${candidateFile}: ${errors.join('; ')}`);
+  const obj = readGene(candidateFile, { skipDirAnchor: true });
   // validateGene 对缺席数组宽松（引擎面可选）；候选要与 genes/ 闸同判据：
   // signals/strategy 缺席即拒（否则候选过不了 verify-gene-format，solidify 必红）。
   for (const field of ['signals', 'strategy']) {
@@ -173,26 +161,8 @@ function addCandidate(repoRoot: string, candidateFile: string): { report: string
   };
 }
 
-function readCandidate(filePath: string) {
-  let raw: string;
-  try {
-    raw = fs.readFileSync(filePath, 'utf8');
-  } catch (e) {
-    throw new EngineError(`cannot read candidate file ${filePath}: ${(e as Error).message}`);
-  }
-  let obj: any;
-  try {
-    obj = JSON.parse(raw);
-  } catch (e) {
-    throw new EngineError(`${filePath}: not valid JSON: ${(e as Error).message}`);
-  }
-  const errors = validateGene(obj, { fileName: path.basename(filePath), parentDir: path.basename(path.dirname(filePath)) });
-  if (errors.length) throw new EngineError(`${filePath}: ${errors.join('; ')}`);
-  return obj;
-}
-
 function showCandidate(repoRoot: string, domain: string, id: string): string {
-  return renderGene(readCandidate(candidatePath(repoRoot, domain, id)));
+  return renderGene(readGene(candidatePath(repoRoot, domain, id)));
 }
 
-export { collect, addCandidate, readCandidate, showCandidate, candidatePath, CANDIDATES_DIR };
+export { collect, addCandidate, showCandidate, candidatePath, CANDIDATES_DIR };

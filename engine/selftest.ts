@@ -696,6 +696,10 @@ function selfTest() {
       id: 'cand-4', domain: 'doc', summary: 'x', signals: ['d'], strategy: ['s'],
     }) + '\n');
     ok(spawnCode([bin, 'distill', 'collect'], td) === 0, 'bin: distill collect -> exit 0');
+    // collect 分诊面：坏 JSON 面（事件行/文件）→ EngineError → exit 2（非堆栈 exit 1）
+    fs.appendFileSync(path.join(td, 'events', '2099-01.jsonl'), '{broken\n');
+    ok(spawnCode([bin, 'distill', 'collect'], td) === 2, 'bin: distill collect with broken event line -> exit 2');
+    fs.unlinkSync(path.join(td, 'events', '2099-01.jsonl'));
     ok(spawnCode([bin, 'distill', 'add', path.join(staging, 'cand-4.json')], td) === 0,
       'bin: distill add -> exit 0');
     const shown = execFileSync('node', [bin, 'distill', 'show', 'doc/cand-4'], { cwd: td, encoding: 'utf8', stdio: 'pipe' });

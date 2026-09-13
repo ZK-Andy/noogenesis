@@ -22,10 +22,10 @@ function usage(): string {
     '      # Capsule 入档：capsules/ + events/ 同一 commit；--mutation 指向兑现的声明（可选）',
     '  node dist/engine/bin.js capsule show <domain>/<id>                  # 读并渲染单条 Capsule（确定性输出）',
     '  node dist/engine/bin.js mutation add <candidate.json> --actor N     # Mutation 声明：mutations/ + events/ 同一 commit',
-  '  node dist/engine/bin.js mutation show <domain>/<id>                 # 读并渲染单条 Mutation（确定性输出）',
-  '  node dist/engine/bin.js distill collect                    # 失败面汇编（events fail / capsules fail / genes avoid；只读）',
-  '  node dist/engine/bin.js distill add <candidate.json>       # 候选落盘 candidates/（基因形；不发事件；压缩在宿主侧）',
-  '  node dist/engine/bin.js distill show <domain>/<id>         # 读并渲染单条候选（确定性输出）',
+  '  node dist/engine/bin.js mutation show <domain>/<id>          # 读并渲染单条 Mutation（确定性输出）',
+  '  node dist/engine/bin.js distill collect                      # 失败面汇编（events fail / capsules fail / genes avoid；只读）',
+  '  node dist/engine/bin.js distill add <candidate.json>         # 候选落盘 candidates/（基因形；不发事件；压缩在宿主侧）',
+  '  node dist/engine/bin.js distill show <domain>/<id>           # 读并渲染单条候选（确定性输出）',
   '  node dist/engine/bin.js self-test                           # 元评测夹具（临时沙箱，不触碰真实仓）',
     '',
   ].join('\n');
@@ -317,7 +317,14 @@ function main(argv: string[]): number {
     if (sub === 'collect') {
       if (rest.length > 1) fail(`distill collect: unknown argument ${rest[1]}`);
       const { collect } = require('./distill.js');
-      process.stdout.write(collect(repoRoot));
+      let out;
+      try {
+        out = collect(repoRoot);
+      } catch (e) {
+        if ((e as { engine?: unknown }).engine) return fail((e as Error).message, 2);
+        throw e;
+      }
+      process.stdout.write(out);
       return 0;
     }
     if (sub === 'add') {

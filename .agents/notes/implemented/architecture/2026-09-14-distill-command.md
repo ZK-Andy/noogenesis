@@ -11,7 +11,7 @@ Related: 边界单源 [P1 D3 重拍 ADR](2026-09-14-p1-d3-distillation-reshoot.m
 ## Decision
 
 1. **命令面 = `distill` 三子命令**（与 capsule/mutation 同构的子命令风格）：
-   - `distill collect`——**失败面汇编**（只读，确定性 stdout）：汇总三类既有落盘失败面——`events/*.jsonl` 中 `outcome: "fail"` 的行（入档失败带拒因）、`capsules/` 中 `outcome.status = "fail"` 的 Capsule、`genes/` 各基因的 `avoid` 字段（失败面压缩的既有家）。按面分组、组内按 ref 字典序，零写盘、零 spawn；三类面全空时输出空汇总照常 exit 0（空是合法读数，不是错误）。
+   - `distill collect`——**失败面汇编**（只读，确定性 stdout）：汇总三类既有落盘失败面——`events/*.jsonl` 中 `outcome: "fail"` 的行（入档失败带拒因）、`capsules/` 中 `outcome.status = "fail"` 的 Capsule、`genes/` 各基因的 `avoid` 字段（失败面压缩的既有家）。按面分组、组内按落盘序（事件行 = 月卷内时间序、目录面 = 字典序），零写盘、零 spawn；三类面全空时输出空汇总照常 exit 0（空是合法读数，不是错误）。
    - `distill add <candidate.json>`——**候选落盘**：候选以 gene 校验器验形（复用 `engine/gene.ts` 的 `validateGene`，`skipDirAnchor` 姿态），落 `candidates/<domain>/<id>.json`（id = 文件名、domain = 目录，锚点规则同基因）；已存在同名候选 → exit 2 拒覆盖（改稿 = 显式删后重加，fail-closed）；**零事件、零 git commit**——候选是草稿不是档案，append-only 原子提交面是 `genes/` / `capsules/` / `mutations/` 的语义，候选不占。
    - `distill show <domain>/<id>`——读并渲染单条候选（复用 `renderGene`，确定性输出）。
 2. **候选 = 基因形，零私有字段**：候选文件就是合法 gene（S1 八字段封闭 schema），与基因的唯一差别 = 落盘位置（`candidates/` 非 `genes/`）——这正是 D3 边界的物理形态：不在 `genes/` 就不进 select 扫描、不进 manifest、不发 `gene.added`。策展改写完成后走既有 `solidify <candidate.json>` 入档，入档路径零新增。`distill collect` 的输出即策展的原料，压缩工作在宿主会话中完成（引擎不产基因内容——重拍 ADR Decision 2）。
