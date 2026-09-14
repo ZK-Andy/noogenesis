@@ -22,6 +22,8 @@ import { runEngine, runEngineSync, resolveRepoRoot, sessionWorkspaceOf } from ".
 import type { AgentCarrier } from "./engine-bridge.mjs";
 import { registerNooTools } from "./tools.mjs";
 import type { ToolHost } from "./tools.mjs";
+import { registerEvolveCommand } from "./commands.mjs";
+import type { CommandRegistryLike } from "./commands.mjs";
 import { BASE_SECTION, createHitsSection } from "./section.mjs";
 import { runSolidifyTrigger, listStagingCandidates, createInFlightGate, ASK_TIMEOUT_MS } from "./solidify-trigger.mjs";
 import { createBankPullScheduler } from "./bank-pull.mjs";
@@ -127,6 +129,9 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 	// A6 续跑投递降级提示：独立预算——与 A3 共用同一每会话布尔时，先告警的一路会
 	// 吞掉另一路的能力位缺席/投递失败留痕（warnOnceAdvisory 单门）。
 	const warnOnceSteering = createSessionWarnOnce((message) => logger.warn(message));
+	// 逐仓 in-flight 闸提前到命令面前：wrapup 命令位与 agent/disposed 触发共享
+	// 同一闸（命令面 ADR D6——不共享就各自撞候选 exit 2 假失败）。
+	const solidifyGate = createInFlightGate();
 
 	// 常驻注入面宿主读数（观察面，非门槛；护栏 ADR 2026-09-13-guardrail-construction-round
 	// 决定 1 建议行）：服务经 `ctx.get` 懒取用（无 inject 要求；缺席静默、晚到可读），
@@ -166,6 +171,7 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 	};
 	bankPull.pullAtLoad().catch(onCrash);
 	ctx.on("agent/created", (payload) => {
+		evolutionCommandRetry();
 		bankPull.pullForSession(payload).catch(onCrash);
 	});
 
@@ -184,6 +190,25 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 	});
 
 	registerNooTools(ctx, { defineTool, runEngine, repoRoot: repoRootFor });
+
+	// /evolve 命令面（批次 9 序 44 命令面 ADR）：宿主 commands 服务懒取用（不进
+	// inject——缺席只降级该面，不推迟插件装载）；晚到经 agent/created 补注册。
+	// /evolve 命令面（批次 9 序 44 命令面 ADR）：宿主 commands 服务懒取用（不进
+	// inject——缺席只降级该面，不推迟插件装载）；晚到经 agent/created 补注册。
+	// wrapup 复用 disposed 触发的同一 in-flight 闸与 ask 封装：命令位与会话边界
+	// 是同一条写路径的两个入口，不共享就各自撞候选 exit 2 假失败。
+	const evolveCommand = registerEvolveCommand({
+		getRegistry: () => ctx.get("commands") as CommandRegistryLike | undefined,
+		repoRootOf: (carrier) => repoRootFor(carrier as AgentCarrier | null),
+		runEngine,
+		stagingDir: cfg.stagingDir,
+		actor: cfg.actor,
+		ask: cfg.askOnDispose ? askFactory(ctx) : null,
+		gate: solidifyGate,
+		warn: (message) => logger.warn(message),
+	});
+	// commands 服务晚到补注册入口（agent/created 幂等重试；成功一次后 no-op）。
+	const evolutionCommandRetry = () => evolveCommand.tryRegister();
 
 	// ── 挂载面接线（B4 ADR Decision 1–2 + Decision 7 档位纪律：能力层
 	// mount.mts 合并器 + 策略层 mount-policies.mts；A4 在环两判据〔lint + 注释面〕
@@ -309,8 +334,8 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 	// 解析（payload 携带 { agent }，与 auto 触发面同款实证）——异仓会话各归
 	// 各仓；in-flight 去重逐仓隔离：同仓近同时 dispose 不重复弹问/重复入档
 	// （重复跑会把已入档候选撞成 exit 2 假失败），异仓互不阻塞（ask 窗口可达
-	// 5 分钟，全局旗标会把异仓提示静默丢掉）。
-	const solidifyGate = createInFlightGate();
+	// 5 分钟，全局旗标会把异仓提示静默丢掉）。闸实例在上方创建（与 /evolve wrapup
+	// 命令位共享，命令面 ADR D6）。
 	ctx.on("agent/disposed", (payload) => {
 		const disposalRepoRoot = resolveRepoRoot(cfg, sessionWorkspaceOf(payload));
 		if (!solidifyGate.acquire(disposalRepoRoot)) return;

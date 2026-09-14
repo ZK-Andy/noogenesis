@@ -27,6 +27,7 @@ node dist/engine/bin.js mutation show <domain>/<id>         # 读并渲染单条
 node dist/engine/bin.js distill collect                     # 失败面汇编（events fail / capsules fail / genes avoid；只读）
 node dist/engine/bin.js distill add <candidate.json>        # 候选落盘 candidates/（基因形；不发事件；压缩在宿主侧）
 node dist/engine/bin.js distill show <domain>/<id>          # 读并渲染单条候选（确定性输出）
+node dist/engine/bin.js list                                # 只读盘点：genes（含 cache 标记）/capsules/mutations
 node dist/engine/bin.js self-test                           # 元评测夹具（临时沙箱，不触碰真实仓）
 ```
 
@@ -44,6 +45,7 @@ node dist/engine/bin.js self-test                           # 元评测夹具（
 | `mutation.ts` | Mutation 六字段封闭 schema / 写入与读取（`mutation add` / `mutation show`） |
 | `distill.ts` | 蒸馏面（批次 6 序 30）：失败面汇编 + 候选落盘（`distill collect` / `add` / `show`；候选 = 基因形落 `candidates/`，压缩在宿主侧） |
 | `observe.ts` | 观测输入面（schema / 追加写 / 派生边） |
+| `list.ts` | 只读盘点面（批次 9 序 44 命令面 ADR）：`list` 三资产枚举，行格式 `<kind> <domain>/<id>[(cache)]` |
 | `select.ts` / `propose.ts` / `evaluate.ts` / `solidify.ts` / `pull.ts` | 其余命令各一（select 兼消费观测派生面；solidify 兼 Capsule / Mutation 入档） |
 | `selftest.ts` | 元评测夹具 |
 

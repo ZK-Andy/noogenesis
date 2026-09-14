@@ -1,4 +1,4 @@
-// bin.ts — CLI 九命令合同面（骨架 ADR D1：select/propose/evaluate/solidify 为唯一合同面；P2 增 pull 只读消费；融合轮第一期增 observe 观测面写入；批次 1 序 1 增 capsule 写读、序 2 增 mutation 写读；批次 6 序 30 增 distill 蒸馏面）+ self-test 元评测。
+// bin.ts — CLI 十命令合同面（骨架 ADR D1：select/propose/evaluate/solidify 为唯一合同面；P2 增 pull 只读消费；融合轮第一期增 observe 观测面写入；批次 1 序 1 增 capsule 写读、序 2 增 mutation 写读；批次 6 序 30 增 distill 蒸馏面；批次 9 序 44 增 list 只读盘点面）+ self-test 元评测。
 // 零第三方依赖（Node 标准库 only）；退出码：0 成功 / 1 红（评估不绿、违规） / 2 用法或 fail-closed 错误。
 
 import * as path from 'path';
@@ -26,6 +26,7 @@ function usage(): string {
   '  node dist/engine/bin.js distill collect                      # 失败面汇编（events fail / capsules fail / genes avoid；只读）',
   '  node dist/engine/bin.js distill add <candidate.json>         # 候选落盘 candidates/（基因形；不发事件；压缩在宿主侧）',
   '  node dist/engine/bin.js distill show <domain>/<id>           # 读并渲染单条候选（确定性输出）',
+  '  node dist/engine/bin.js list                                # 只读盘点：genes（含 cache 标记）/capsules/mutations（命令面 ADR）',
   '  node dist/engine/bin.js self-test                           # 元评测夹具（临时沙箱，不触碰真实仓）',
     '',
   ].join('\n');
@@ -309,6 +310,22 @@ function main(argv: string[]): number {
       return 0;
     }
     fail(sub ? `mutation: unknown subcommand ${sub}` : 'mutation needs a subcommand (add|show)');
+  }
+
+  if (cmd === 'list') {
+    // 只读盘点面（批次 9 序 44 命令面 ADR D1）：零参数、零写零事件；scanGenes
+    // 的缓存坏件 warn-skip 照旧（stderr 一行，exit 不红）。
+    if (rest.length) fail(`list accepts no arguments (got ${rest.join(' ')})`);
+    const { runList } = require('./list.js');
+    let r;
+    try {
+      r = runList(repoRoot);
+    } catch (e) {
+      if ((e as { engine?: unknown }).engine) return fail((e as Error).message, 2);
+      throw e;
+    }
+    process.stdout.write(r.report);
+    return 0;
   }
 
   if (cmd === 'distill') {

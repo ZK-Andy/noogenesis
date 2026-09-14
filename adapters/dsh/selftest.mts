@@ -36,6 +36,7 @@ import { validateConfig, DEFAULT_GENE_BANK_URL } from "./config.mjs";
 import { createSessionStore, mergePreStep, mergeSessionStart, mergeToolPost, mergeToolPre, mergeTurnStopping } from "./mount.mjs";
 import { createMountPolicies, createSubtreeRulesPolicies, inspectSkillSurface, SKILL_DIR_CANDIDATES } from "./mount-policies.mjs";
 import { createTokenBaselineReading } from "./token-baseline.mjs";
+import { registerEvolveCommand, handleEvolveCommand, evolveHelp } from "./commands.mjs";
 import { createLintFeedbackPolicies } from "./lint-feedback.mjs";
 import type { LintDiagnostic, LintRunContext } from "./lint-feedback.mjs";
 import { createExportDocsPolicies } from "./export-docs-feedback.mjs";
@@ -1820,6 +1821,78 @@ function writeFixtureGene(repoRoot: string): void {
 		/- insert:\s*\n\s*- id: noogenesis\s*\n\s*name: 'noogenesis-dsh'/,
 	);
 	ok("patch: plugin row insert shape matches loader dialect (id noogenesis, package noogenesis-dsh)");
+
+	// ── /evolve 命令面（批次 9 序 44 命令面 ADR）：零宿主假件全路径驱动 ──
+	{
+		const registeredDefs: Array<{ name: string; input?: { hint?: string } }> = [];
+		const fakeRegistry = (definition: { name: string; input?: { hint?: string } }) => {
+			registeredDefs.push(definition);
+			return () => {};
+		};
+		let warns = 0;
+		const makeDeps = (over: Record<string, unknown> = {}): any => ({
+			getRegistry: () => undefined,
+			repoRootOf: () => "/fallback",
+			runEngine: async () => ({ code: 0, stdout: "genes: 0\ncapsules: 0\nmutations: 0\n", stderr: "" }),
+			stagingDir: "genes-staging",
+			actor: "t",
+			ask: null,
+			gate: createInFlightGate(),
+			warn: (_message: string) => { warns += 1; },
+			...over,
+		});
+
+		const degraded = registerEvolveCommand(makeDeps());
+		assert.equal(degraded.registered, false, "commands service absent -> not registered");
+		assert.ok(warns >= 1, "registry absence warns");
+		ok("commands: registry absence degrades with warn");
+
+		const deps = makeDeps({ getRegistry: () => ({ register: fakeRegistry }) });
+		const registration = registerEvolveCommand(deps);
+		assert.equal(registration.registered, true, "commands service present -> registered");
+		assert.equal(registeredDefs[0]?.name, "evolve", "registered command name is evolve");
+		assert.ok(registeredDefs[0]?.input?.hint?.includes("list"), "input hint lists verbs");
+		ok("commands: registers /evolve with verb hint");
+
+		const ask = (rawInput: string, runEngineFn?: any): Promise<any> =>
+			handleEvolveCommand({ rawInput } as any, { ...deps, runEngine: runEngineFn ?? deps.runEngine });
+		assert.match(String((await ask("")).text), /Usage: \/evolve /, "empty input -> usage");
+		assert.match(String((await ask("help")).text), /wrapup/, "help verb -> usage includes wrapup");
+		assert.match(evolveHelp(), /verify /, "help text lists verify");
+		ok("commands: empty/help verb returns usage");
+
+		const unknown = await ask("bogus x");
+		assert.equal(unknown.kind, "error", "unknown verb -> error result");
+		ok("commands: unknown verb -> error result");
+
+		assert.equal((await ask("verify BAD")).kind, "error", "verify malformed ref -> error text");
+		const green = await ask("verify demo/demo-g", async () => ({ code: 0, stdout: "green report\n", stderr: "" }));
+		assert.match(String(green.text), /-> GREEN/, "exit 0 -> GREEN conclusion");
+		const red = await ask("verify demo/demo-g", async () => ({ code: 1, stdout: "FAIL: x\n", stderr: "" }));
+		assert.match(String(red.text), /-> RED/, "exit 1 -> RED as text (not thrown)");
+		let threw = false;
+		try { await ask("verify demo/demo-g", async () => ({ code: 2, stdout: "", stderr: "boom" })); } catch { threw = true; }
+		assert.ok(threw, "exit 2 -> throw (host settles error)");
+		ok("commands: verify exit mapping 0/1/2");
+
+		const listed = await ask("list", async () => ({ code: 0, stdout: "genes: 1\ngene demo/demo-hit\n", stderr: "" }));
+		assert.match(String(listed.text), /gene demo\/demo-hit/, "list carries engine inventory");
+		ok("commands: list renders engine inventory text");
+
+		// wrapup：真实 staging 夹具仓 + 假引擎（写路径已批准流，including 闸释放）。
+		const repo = tempRepo("wrapup-cmd");
+		fs.mkdirSync(path.join(repo, "genes-staging"), { recursive: true });
+		fs.writeFileSync(path.join(repo, "genes-staging", "staged-a.json"), JSON.stringify(FIXTURE_GENE));
+		const wrapDeps = makeDeps({
+			repoRootOf: () => repo,
+			runEngine: async () => ({ code: 0, stdout: "solidified\n", stderr: "" }),
+			ask: async () => "archive",
+		});
+		const wrap = await handleEvolveCommand({ rawInput: "wrapup" } as any, wrapDeps);
+		assert.match(String(wrap.text), /archived 1/, "wrapup archive flow summary");
+		assert.ok(wrapDeps.gate.acquire(repo), "wrapup releases the shared in-flight gate");
+		ok("commands: wrapup runs approval flow and releases gate");
+	}
 }
 
 console.log(`\nadapter self-test: ${PASSED.length} fixture groups passed`);

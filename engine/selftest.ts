@@ -40,6 +40,10 @@ function spawnCode(nodeArgs: string[], cwd: string): number | null {
   }
 }
 
+function spawnStdout(nodeArgs: string[], cwd: string): string {
+  return execFileSync('node', nodeArgs, { cwd, encoding: 'utf8', stdio: 'pipe' }) as unknown as string;
+}
+
 function mkTemp() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'noo-engine-selftest-'));
 }
@@ -220,6 +224,16 @@ function selfTest() {
     ok(spawnCode([bin, 'observe', '--signal', 'review', '--outcome', 'ok', '--actor', 't'], ce) === 2,
       'bin: observe missing --gene -> exit 2');
     ok(readObservations(ce).records.length === 1, 'bin: rejected observe attempts wrote nothing');
+
+    // 命令面 ADR：list 只读盘点 —— 三资产枚举 + cache 标记 + 用法参量 exit 2。
+    const ld = mkRepo(mkTemp());
+    writeGene(ld, 'process', { id: 'gene-a', domain: 'process', summary: 'A', signals: ['k'], strategy: ['s1'] });
+    ok(spawnStdout([bin, 'list'], ld).replace(/\r/g, '') === 'genes: 1\ngene process/gene-a\ncapsules: 0\nmutations: 0\n',
+      'bin: list enumerates genes deterministically');
+    fs.mkdirSync(path.join(ld, '.noogenesis', 'genes-cache', 'genes', 'process'), { recursive: true });
+    fs.writeFileSync(path.join(ld, '.noogenesis', 'genes-cache', 'genes', 'process', 'b.json'), JSON.stringify({ id: 'b', domain: 'process', summary: 'B', signals: ['k'], strategy: ['s1'] }));
+    ok(spawnStdout([bin, 'list'], ld).includes('gene process/gene-a\ngene process/b (cache)'), 'bin: list marks cache genes');
+    ok(spawnCode([bin, 'list', 'extra'], ld) === 2, 'bin: list rejects arguments -> exit 2');
   }
 
   // --- 3) propose 金样渲染（确定性：同输入必同输出）---
