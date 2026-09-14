@@ -2,7 +2,7 @@
 
 Status: implemented
 
-Review: LIGHT/2026-09-14/pending（语义评审进行中，收口时回填真实结论）
+Review: LIGHT/2026-09-14/语义评审（范围化子代理单路 R2：0 Blocker + 0 Suggestion——五条定向检查逐条独立复跑成立，无发现）
 
 Related: 批次表 [行 41](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 主设计 [§10 / §4.1](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 模式契约 [session-modes](../../../workflows/session-modes.md) · 执行流卡 [feature-flow](../../../workflows/feature-flow.md) / [release-flow](../../../workflows/release-flow.md) / [github-research](../../../workflows/github-research.md) · 生命周期卡 [session-open](../../../workflows/session-open.md) / [session-close](../../../workflows/session-close.md) · 档位判据 [review.md](../../../../docs/method/review.md) · 档位机械面 [verify-review-tier](../../../../scripts/verify-review-tier.mts) · 检查范围 [change-scope](../../../../scripts/change-scope.mts) + [noo-pre-push-checks](../../../skills/noo-pre-push-checks/SKILL.md) · 搬迁处置 [migration-plan §6](../../../../journal/capsule-01-migration-plan.md) · 前序裁决 [序 40](2026-09-14-pitfall-atomization-verdict.md) / [序 39](2026-09-14-elegant-implementation-verdict.md) / [序 38](2026-09-14-project-init-domain-verdict.md)
 
@@ -60,4 +60,4 @@ Related: 批次表 [行 41](../../proposed/architecture/2026-09-13-feature-compl
 - **档位**：纯文档收口（`.agents/notes/**` + HANDOFF 家庭 + journal），路径触发集未命中 → LIGHT 单路语义评审（R2）。
 - **机制零变化**：`.agents/workflows/**`、`docs/method/**`、`engine/**`、`adapters/**`、`scripts/**`、`genes/` 均不动。
 - **单源**：模式契约单源 = [session-modes](../../../workflows/session-modes.md)；执行流单源 = 各卡；档位单源 = [review.md](../../../../docs/method/review.md) §1 + [verify-review-tier](../../../../scripts/verify-review-tier.mts)；检查范围单源 = [change-scope](../../../../scripts/change-scope.mts) + [noo-pre-push-checks](../../../skills/noo-pre-push-checks/SKILL.md)；域内判据（候选余项与触发条）以本件为家。
-- **评审结论**：待回填。
+- **评审结论**：LIGHT 单路 R2——0 Blocker + 0 Suggestion（无发现）；五条定向检查逐条独立复跑成立。
