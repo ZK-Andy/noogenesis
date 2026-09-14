@@ -11,7 +11,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-15｜**演化轮落账批（残余候选 + add 参数收紧，FULL）**：`capsule/mutation add` 参数面收紧为恰一位置参数 + 旗标至多一次（含夹具与变异证据）+ git 路径 trim 入 cookbook + 夹具变异纪律落 scripts/AGENTS + 6 条销账；池件 7→1。[ADR](.agents/notes/implemented/process/2026-09-15-residual-candidate-disposal.md)
+- 2026-09-15｜**演化轮落账批（残余候选 + add 参数收紧，FULL）**：add 参数面收紧为恰一位置参数 + 旗标至多一次 + git 路径 trim 入 cookbook + 夹具变异纪律落 scripts/AGENTS + 6 条销账，池件 7→1，`3965511`→`1093c66`。[ADR](.agents/notes/implemented/process/2026-09-15-residual-candidate-disposal.md)
 
 - 2026-09-15｜**演化轮落账批（纪律漏项族处置，FULL）**：12 条纪律漏项候选一次销账——删 HANDOFF ⏭ 复本句 + notes/README 补「外部观测值免同步」「读数伴判据」+ 评审检查项 #2 扩沿引/现值同步；两条批次表类触发表终局判不立，`178b8be`→`ddff158`。[ADR](.agents/notes/implemented/process/2026-09-15-discipline-candidate-disposal.md)
 
