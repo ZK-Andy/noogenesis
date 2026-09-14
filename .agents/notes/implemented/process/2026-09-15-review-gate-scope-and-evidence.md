@@ -1,9 +1,9 @@
 # Agent Note: 评审闸作用域与证据面——brief lane 收窄 + tier 迁移提交裁决
 
 Status: implemented
-Review: FULL/2026-09-15/pending（三重审核进行中，收口时回填真实结论）
+Review: FULL/2026-09-15/R1=ok R2=ok R3=ok
 
-> Related：出处 = [演化轮池](../../../../HANDOFF-evolution-pool.md) 候选「已收口泳道的简报会挡住下一路的发射闸」（n=3）与「`verify-review-tier` 在 proposed → implemented 迁移提交上把本批证据判为缺」（n=1）；落地件 = [verify-review-brief](../../../../scripts/verify-review-brief.mts)；契约单源 = [review.md §3](../../../../docs/method/review.md)；销账口径 = [销账 ADR](2026-09-12-evolution-pool-candidate-disposal.md)。
+> Related：出处 = [演化轮池](../../../../HANDOFF-evolution-pool.md) 候选「已收口泳道的简报会挡住下一路的发射闸」（n=3）与「`verify-review-tier` 在 proposed → implemented 迁移提交上把本批证据判为缺」（n=1）；落地件 = [verify-review-brief](../../../../scripts/verify-review-brief.mts)；契约单源 = [review.md §3](../../../../docs/method/review.md)；owning note（被本件收窄的部分）= [评审机械闸](2026-09-05-review-mechanical-gate.md)（其 brief 闸 Decision 的 `--lanes` 覆盖表述）；销账口径 = [销账 ADR](2026-09-12-evolution-pool-candidate-disposal.md)。
 
 ## Problem
 
@@ -31,4 +31,4 @@ Review: FULL/2026-09-15/pending（三重审核进行中，收口时回填真实�
 - **采用面**：[scripts/verify-review-brief.mts](../../../../scripts/verify-review-brief.mts)（`checkRepo` 收窄 + 缺简报消息 + 夹具 16 组）、[docs/method/review.md](../../../../docs/method/review.md) §3（`--lanes` 作用域）。
 - **行为变化面**：显式 `--lanes` 下他泳道残留简报不再报红；缺省推导与 [engine/gates.json](../../../../engine/gates.json) 的 `--lanes R1,R2,R3` 入口行为不变。
 - **未覆盖**：无 `--lanes` 时「已归档收口泳道 + 新发余下泳道」仍须显式 `--lanes` 才过——闸无从知道已归档泳道已完成，缺简报消息给出指引。
-- **评审收口**：（待回填）
+- **评审收口（2026-09-15，FULL 三审）**：R1 0B/2S、R2 0B/2S、R3 1B/1S，全部采纳、拒 0——R1-S1/R2-S1 = `checkRepo` 死存与跨分支重复 pins 上提统一；R1-S2 = `verify-md-links` 就近注释对齐共享跳过表；R2-S2 = `--lanes` 作用域单源（头注只留指针、细则归 `checkRepo` JSDoc）；R3-B1/S1 = 姊妹 bug-fix 件补【探索性 · n=2】与 owning note 交叉链接。修复 = `bf4e30f` + 本收口笔。
