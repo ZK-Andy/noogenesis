@@ -36,7 +36,7 @@
 评审代理按此清单显式核对机器门禁盖不住的语义面（契约与机制见 [review.md](docs/method/review.md) §5）；新增兜底项时同变更更新本节：
 
 1. **文档纪律语义面**：单源（同一事实一个家）、写当前状态不写变更史 — [doc-standards](docs/method/doc-standards.md)。
-2. **ADR 口径一致性**：决策与实现/README/头注对同一事实的表述一致；沿用他件的触发条/决定逐字引原文并指向所有者（不改写、不错挂主题相近的 ADR）；被新决定证伪的现值表述同批同步；证据严肃性三件套（现象/机制分离 · 数值标强度 · 勘误通道）— [.agents/notes/README.md](.agents/notes/README.md)。
+2. **ADR 口径一致性**：决策与实现/README/头注对同一事实的表述一致；沿引逐字、指针归属、现值同步、证据严肃性（现象/机制分离 · 数值标强度 · 勘误通道 · 读数伴判据）— [.agents/notes/README.md](.agents/notes/README.md)。
 3. **胶囊内容域与门禁判据口径一致** — [doc-standards](docs/method/doc-standards.md) tier 表 + [standard-authoring](docs/method/standard-authoring.md)；架构域语义面（新目录准入、named-only 最小化、影响面清单、失败传导通则）— [architecture-standards](docs/method/architecture-standards.md) 各「[R] 留评审」条目。
 4. **编码规范语义面**：机器面已盖（导出函数/类注释存在性、TODO/FIXME 词面、未用变量、`as const`；写码当轮在环拦回机器可判违规〔lint + 导出契约注释〕、同文件连续拦回达上限降级 context 防死锁）——评审核对注释**内容**（契约是否说清、变更史/推理转写/控制流复述、命名是否揭示意图）与格式约定（头注三要素/尾随注释/中英混杂）— [code-standards](docs/method/code-standards.md) 各「[R] 留评审」档条目。
 5. **防过度设计语义面**：范围契约（约束修法不约束找问题）+ 评审自身义务（跑检查前先答核心两问、对的就说对、按案例 ID 质询防相似度误杀）— [anti-overdesign](docs/method/anti-overdesign.md) + [cases 索引](docs/research/anti-overdefense-cases-index.md)。
