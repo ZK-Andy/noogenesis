@@ -11,7 +11,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-14｜**批次 9 序 46 裁决（LIGHT）+ 批次表终局**：manifest 向量检索判不立（零具名失败 + 零依赖铁律 + 不排序判据，触发 T1–T3 具名）；批次表 46 行全部终态，表转 implemented，游标面退役；游标 = 序 46。[ADR](.agents/notes/implemented/architecture/2026-09-14-manifest-vector-search-verdict.md)
+- 2026-09-14｜**批次 9 序 46 裁决（LIGHT）+ 批次表终局**：manifest 向量检索判不立（零具名失败 + 零依赖铁律 + 不排序判据，触发 T1–T3 具名）；批次表 46 行全部终态，表转 implemented，游标面退役。[ADR](.agents/notes/implemented/architecture/2026-09-14-manifest-vector-search-verdict.md)
 
 - 2026-09-14｜**批次 9 序 45 裁决（LIGHT）**：合并携带自校验证据——边界证据面（solidify 入档闸 + Event 证据键）与跨机合并闸已交付；PR 闸与「验证报告」对象判不立（序 21 前提 + E1），`validation_report_id` 终局；游标 = 序 46。[ADR](.agents/notes/implemented/architecture/2026-09-14-merge-self-validation-evidence-verdict.md)
 

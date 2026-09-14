@@ -2,7 +2,7 @@
 
 Status: implemented
 
-Review: LIGHT/2026-09-14/语义评审（范围化子代理单路 R2：待审）
+Review: LIGHT/2026-09-14/语义评审（范围化子代理单路 R2：0 Blocker…实际 1 Blocker + 4 Suggestion 全采纳——B1 滚动窗「游标 = 序 46」残句删除；S1 journal 链接改写计数改实测（在册 32 份 / 33 处）；S2 批次表 done 计数重算 43+3=46；S3 基因库规模改实测 6 份；S4 重启通道补两段式表述）
 
 Related: 批次表 [行 46](2026-09-13-feature-completion-backlog.md) · 共享层稿 [§10-P3](../../../../docs/research/dsh-collective-evolution-shared-layer.md) · 情境注入裁决 [序 15](2026-09-13-situational-injection-verdict.md) · 候选比较判据 [序 5](2026-09-13-candidate-comparison-blindness.md) · P2 消费面 [P2 ADR](2026-09-06-p2-shared-consumer.md) · [序 45 裁决](2026-09-14-merge-self-validation-evidence-verdict.md)
 
@@ -10,7 +10,7 @@ Related: 批次表 [行 46](2026-09-13-feature-completion-backlog.md) · 共享�
 
 批次表行 46「manifest 检索增强（向量）」（共享层稿 §10-P3，标注**可选**）：基因库规模大后把 `manifest.json` 的 domain / 关键词检索升级为向量语义匹配，注入时选 top-N 相关基因。用户拍板（2026-09-14）：判不立、留重议触发、批次表就此终局。开工前取证（2026-09-14，本仓实读）：
 
-- **零具名失败**：现基因库规模 ~10 条（本仓 8 条 + 缓存），`select` 的字面短语精确匹配未产生过「该命中未命中」的实例；同面裁决序 15 已判「现网 `injectSignals` 零声明、无消费面」，[P2 ADR](2026-09-06-p2-shared-consumer.md) 的 `manifest.json` 是检索索引而非排序器。
+- **零具名失败**：现基因库规模（本仓 `genes/` 实测 6 份，缓存镜像同集），`select` 的字面短语精确匹配未产生过「该命中未命中」的实例；同面裁决序 15 已判「现网 `injectSignals` 零声明、无消费面」，[P2 ADR](2026-09-06-p2-shared-consumer.md) 的 `manifest.json` 是检索索引而非排序器。
 - **违约发动机合同**：[`engine/`](../../../../engine/AGENTS.md) 零第三方依赖、零网络、零 LLM（D1 骨架拍板）——向量检索须引入 embedding 模型或向量库，直接破坏合同；基因 `signals` 全为自然语言短语，消费方式 = 主会话显式喂信号（[序 11 裁决](2026-09-13-detect-source-verdict-session-event.md) 站立规则），不是语义排序。
 - **撞已封判据**：[序 5](2026-09-13-candidate-comparison-blindness.md) 判据「引擎不排序、不择优（择优归人）」——向量 top-N 是排序面。
 

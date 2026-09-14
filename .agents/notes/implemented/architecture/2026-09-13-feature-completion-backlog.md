@@ -13,7 +13,7 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 现状事实（2026-09-13 实读，只列差集判定相关者）：
 
 - **已交付**：Gene 协议 + 引擎命令面（select/propose/evaluate/solidify/pull/observe/capsule/mutation/distill；单源 = `engine/bin.ts` usage）+ `gates.json` 白名单 + Capsule / Mutation 两原语与事件 kind 五件 + Event 扩字段（跨链 `mutation_id`/`capsule_id` + 环境指纹 `env_fingerprint`）+ Evaluate 的 blast-radius 改动面度量（文件 / 行 / 范围）+ 候选比较 / 答案盲选择判据（通道封闭集 + 不排序；机器面判不立）；适配层 A1–A7 接线（A5 会话开始位与 A6 停止前续跑能力位均零策略；prompt 提交 / 工具前后折进 A2/A3/A4）；M1 技能守卫 + M2 规范面接入；token 基线两轨（预算判据 + 宿主读数）；技能随库分发；P2 只读消费（pull + manifest + 缓存合并）；记忆线第一期观测面与 `advice:` 建议档；胶囊 01 内容主体（7 技能 + method/cookbook/流程卡/门禁）。
-- **未交付**：零——46 行全部终态（41 行交付 / 拒行落终态 + 序 21/22/26 三行前提保留位原地生效）。重启通道 = 各行备注的 T1–T3 触发。
+- **未交付**：零——46 行全部终态（43 行交付 / 拒行落终态（含行 46） + 序 21/22/26 三行前提保留位原地生效）。重启通道 = 序 21/22/26 三行前提保留位 + 各判不立行备注的 T1–T3 触发。
 - **受宿主约束未交付**：A8 会话事件轨 / 状态投影——撤除理由 = 宿主读路径对未标 `ignorable` 的下游插件事件 fail-closed，且 `Session.append` 无 `ignorable` 写入口。连带 M3 原形态记录件（同节重议触发；同一失败面已由 session-close 对账步承接，[序 8 重拍 ADR](../../implemented/architecture/2026-09-13-m3-review-record-verdict.md)）。
 
 ## Decision
