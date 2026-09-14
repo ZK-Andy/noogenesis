@@ -20,10 +20,9 @@
  *
  * 泳道推导（单源 = tier 分类）：默认由简报自报 base..head 范围的 tier 决定
  * （FULL→R1/R2/R3，LIGHT→R2；适配先提交后评审的批次序）；--lanes R1,R2,R3
- * 覆盖 = **只判这些泳道**——目录里他泳道的残留简报（已收口未归档、或 head 已
- * 滞后于 HEAD 的旧简报）不参与 head/base pin 与重复判据，收口一路后发射余下
- * 泳道无须先清目录；保守回退 = 三条全要。飞行中简报的 base..head 必须一致
- * （防一份更窄的范围把整场评审泳道集静默降级）。
+ * 覆盖 = 只判这些泳道（作用域细则单源 = checkRepo 的 JSDoc）；保守回退 = 三条
+ * 全要。飞行中简报的 base..head 必须一致（防一份更窄的范围把整场评审泳道集
+ * 静默降级）。
  *
  * 输出面：违规明细按泳道（R1→R2→R3）分组打印；跨泳道违规（如 base..head
  * 范围分歧）无泳道前缀，落「violations outside lane scope」兜底节——不变式 =
@@ -369,28 +368,23 @@ function checkRepo(repo: string, lanes?: string[] | null): string[] {
   let checked: Record<string, string>;
   if (lanes === null || lanes === undefined) {
     if (LANES.every((l) => paths[l] === undefined)) return duplicates;
-    out = [
-      ...duplicates,
-      ...inconsistentRangeViolations(paths, repo),
-      ...basePinsCommitViolations(paths, repo),
-      ...headPinsHeadViolations(paths, repo),
-    ];
     required = lanesFromBriefRange(repo, paths);
     checked = paths;
+    out = [...duplicates, ...inconsistentRangeViolations(paths, repo)];
   } else {
     checked = {};
     for (const lane of lanes) {
       if (paths[lane] !== undefined) checked[lane] = paths[lane]!;
     }
-    out = [
-      ...duplicates.filter((d) => lanes.some((l) => d.startsWith(`${l}:`))),
-      ...basePinsCommitViolations(checked, repo),
-      ...headPinsHeadViolations(checked, repo),
-    ];
     required = lanes;
+    out = [...duplicates.filter((d) => lanes.some((l) => d.startsWith(`${l}:`)))];
   }
+  out.push(
+    ...basePinsCommitViolations(checked, repo),
+    ...headPinsHeadViolations(checked, repo),
+  );
   for (const lane of required) {
-    const p = paths[lane];
+    const p = checked[lane];
     out.push(...(p !== undefined
       ? violationsForLane(path.join(repo, p), lane)
       : [`${lane}: missing brief ${BRIEFS_DIR}/R${lane[1]}-*.md (write it before launching; a lane already closed may be left out of --lanes)`]));

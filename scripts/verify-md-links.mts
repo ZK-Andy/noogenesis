@@ -86,7 +86,7 @@ function cmpParts(a: string[], b: string[]): number {
 function scan(rootArg: string): { checked: number; errors: string[] } {
   const errors: string[] = [];
   let checked = 0;
-  // 第三方/生成物目录：缓存、依赖、构建产物（其内 README 常带外部相对链接）
+  // 跳过的目录段：第三方/生成物（其内 README 常带外部相对链接）与 gitignored 本地评审工件（判据见头注）
   const skipSegments = [".cache", "bin", "obj", "node_modules", ".review-briefs"];
   const files = collectMd(rootArg).sort((x, y) => cmpParts(x.parts, y.parts));
   for (const md of files) {
