@@ -3,7 +3,8 @@
  * verify-doc-budgets — 常驻文档字数预算门禁（manifest 驱动）。
  *
  * 判据：manifest（repo 根 doc-budgets.manifest.json，或 --manifest 显式给定）存在且
- * 可解析——缺失即违约（缺件 = 零覆盖，报绿会被读成「已跑且通过」）；其
+ * 可解析——缺失 = 违约（缺件 = 零覆盖，报绿会被读成「已跑且通过」）、坏 JSON =
+ * fail-closed exit 2（判不了即拒跑）；其
  * budgets[] 逐条：文件缺失 = 违约（预算条目失去文件 = 文档消失或 manifest 过期）；
  * 计词（代码块与表格行剔除后）超上限 = 违约，带字数与超限处理序三步。
  * 计词口径：WORD_RE = unicode 词字符连续段（JS 侧用 [\p{L}\p{N}_\u4e00-\u9fff]+ + u
@@ -15,7 +16,7 @@
  *   node scripts/verify-doc-budgets.mts                 # manifest 缺省 ./doc-budgets.manifest.json
  *   node scripts/verify-doc-budgets.mts --manifest <p>  # 显式 manifest 路径（支持 --manifest=v、前缀缩写）
  *   node scripts/verify-doc-budgets.mts --self-test     # 补齐缺口：py 无自检，B1 按夹具纪律补最小组
- * 退出码：0 = PASS，1 = FAIL（违约，含 manifest 缺失），2 = 参数面错误（同 py argparse 语义）。
+ * 退出码：0 = PASS，1 = FAIL（违约，含 manifest 缺失），2 = 参数面错误或 fail-closed（manifest 存在但不可解析）——同 py argparse 语义。
  * 模块形态：显式 .mts（ESM），node ≥22.18 原生 type stripping 直跑，零 devDependency。
  *
  * Provenance: distilled from dotnet-deepseek-harness-desktop/scripts/verify-doc-budgets.py
@@ -72,12 +73,17 @@ function budgetsCheck(manifestArg: string, baseDir: string = process.cwd()): { e
   const err: string[] = [];
   const manifest = normPyPath(manifestArg);
   if (!isFile(manifest)) {
-    // 缺 manifest = 零覆盖：报绿会被读成「已跑且通过」（简报自证行只记 gate 名与 exit），
-    // 故 fail-closed 而非 SKIP。
+    // 缺 manifest = 零覆盖：报绿会被读成「已跑且通过」（简报自证行只记 gate 名与 exit）。
     out.push(`FAIL: manifest ${manifest} not found`);
     return { exit: 1, out, err };
   }
-  const data: any = JSON.parse(fs.readFileSync(manifest, "utf-8"));
+  let data: any;
+  try {
+    data = JSON.parse(fs.readFileSync(manifest, "utf-8"));
+  } catch {
+    err.push(`verify-doc-budgets: FAIL-CLOSED — manifest 不可解析: ${manifest}`);
+    return { exit: 2, out, err };
+  }
 
   const errors: string[] = [];
   for (const entry of data["budgets"]) {
@@ -172,7 +178,7 @@ function parseManifestArg(argv: string[]): string {
 
 /** 补齐缺口（py 无 --self-test，B1 按 scripts/AGENTS.md 夹具纪律补最小组）：
  *  临时 manifest + 临时文档——合规 PASS、超限 FAIL（文案含处理序三步）、
- *  manifest 缺失 FAIL、条目指向缺失文件 FAIL；另含 CJK 计词口径断言。 */
+ *  manifest 缺失 FAIL、坏 JSON fail-closed、条目指向缺失文件 FAIL；另含 CJK 计词口径断言。 */
 function selfTest(): number {
   const failures: string[] = [];
   const created: string[] = [];
@@ -220,6 +226,11 @@ function selfTest(): number {
     if (r.exit !== 1 || r.out.join("\n") !== `FAIL: manifest ${path.join(missingDir, "manifest.json")} not found`) {
       failures.push(`manifest 缺失样例应为 FAIL/1（exit=${r.exit}，out=${JSON.stringify(r.out)}）`);
     }
+
+    // manifest 坏 JSON → fail-closed(2)，不是未捕获栈
+    const badManifest = mk({ "manifest.json": "{ not json" });
+    r = budgetsCheck(path.join(badManifest, "manifest.json"), badManifest);
+    if (r.exit !== 2) failures.push(`坏 manifest 样例应 fail-closed/2（exit=${r.exit}，err=${JSON.stringify(r.err)}）`);
 
     // 条目指向缺失文件 → FAIL（stale manifest 提示）
     const stale = mk({

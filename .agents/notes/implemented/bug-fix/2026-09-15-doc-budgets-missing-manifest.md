@@ -15,13 +15,13 @@ Review: FULL/2026-09-15/pending
 
 `budgetsCheck` 缺 manifest 时输出 `FAIL: manifest <p> not found`、exit 1（原 SKIP / exit 0）；头注退出码语义与自检夹具同批改写（夹具「manifest 缺失样例」由期望 SKIP/0 改期望 FAIL/1）。
 
-退出码面：0 = PASS，1 = FAIL（违约，含缺 manifest），2 = 参数面错误（同 py argparse 语义）。缺件 = 判不了 = 拒跑，不静默放行。
+退出码面：0 = PASS，1 = FAIL（违约，含缺 manifest），2 = 参数面错误或 fail-closed（manifest 存在但不可解析——`JSON.parse` 加守卫，不留未捕获栈）。缺件 = 判不了 = 拒跑，不静默放行。
 
 ## Alternatives considered
 
 - **保留 SKIP、把简报自证行的命令形态钉到 gates.json 条目**：落败——那是纪律面（人遵守），机器面仍可被误读；且自证行形态不受任何闸约束，改不掉「零覆盖 = 绿」的读法。
 - **默认 manifest 路径改 `scripts/doc-budgets.manifest.json`**：落败——闸件是 manifest 驱动的通用件（外部宿主自建同款清单即用），默认值硬化成心源仓布局；且对「显式传入但不存在」的路径仍会静默。
-- **缺 manifest 判 exit 2**：落败——这是数据/环境缺件（与「条目指向缺失文件」的 FAIL 同类），不是参数面错误；exit 2 语义留给 argparse 面（未知参数 / 缺值）。
+- **缺 manifest 判 exit 2**：落败——这是数据/环境缺件（与「条目指向缺失文件」的 FAIL 同类），不是参数面错误；exit 2 语义留给参数面与 fail-closed（未知参数 / 缺值 / manifest 不可解析）。
 - **不修**：落败——「绿色可能是零覆盖」违背本仓最小可信护栏对 fail-closed 的要求，且修复面极小（一处返回 + 夹具同批改）。
 
 ## Consequences

@@ -18,18 +18,18 @@ Review: FULL/2026-09-15/pending
 
 **1. 自检入口面立闸** `scripts/verify-self-test-surface.mts`，白名单条目 `self-test-surface`——pre-push / CI 随平面清单跑，engine evaluate 白名单同步可见。判据两侧互为全集：
 
-- 声明侧（validate.yml「self-test 抽查」步骤 run 块）：每条 `node scripts/<file>.mts` 指向的件必须实存且支持 `--self-test`；
+- 声明侧（validate.yml「self-test 抽查」步骤 run 块）：每条 `node scripts/<file>.mts` 该行必须带 `--self-test`（不带 flag 的登记在任何消费者里都不执行），且指向的件实存、自身支持 `--self-test`；
 - 实态侧（`scripts/*.mts`）：支持 `--self-test` 的件必须都在声明侧清单里。
 
-自检支持判定 = 注释剥离后源码仍含 `--self-test` 字面量（字符串保留，故派发用的 `process.argv[2] === "--self-test"` 计入；纯注释提及不计——共享件 `mdref` / `pypara` / `srctree` 靠此排除）。无自检入口的 `scripts` 件（`change-scope` / `pre-push` / `pre-push-selftest`）自然不入集。步骤名或 run 块结构认不出 → fail-closed exit 2（判不了即拒跑）。
+自检支持判定 = TypeScript AST 扫字符串字面量 `--self-test`（派发用的字符串计入；注释与模板串文本不计——共享件 `mdref` / `pypara` / `srctree` 靠此排除，与 [verify-export-docs](../../../../scripts/verify-export-docs.mts) / [verify-host-service-reads](../../../../scripts/verify-host-service-reads.mts) 同款扫描）。无自检入口的 `scripts` 件（`change-scope` / `pre-push` / `pre-push-selftest`）自然不入集。步骤名或 run 块结构认不出 → fail-closed exit 2（判不了即拒跑）。
 
-**2. 宿主发布面并入既有闸**：`verify-package-invariants.mts` 增判据 2c——盘面 `adapters/<host>/README.md` 必须被 `files` 覆盖。宿主清单从盘面推导，不手抄；随之把两个适配层 README 从 `REQUIRED_FILES_ENTRIES` 摘除（单源），该常量只留非适配层契约件。
+**2. 宿主发布面并入既有闸**：`verify-package-invariants.mts` 增判据 2c——盘面 `adapters/<host>/README.md` 必须被 `files` 覆盖。宿主清单从盘面推导，不手抄；随之把两个适配层 README 从 `REQUIRED_FILES_ENTRIES` 摘除（单源），该常量只留盘面推导不出的契约件（如适配层的 `hooks.example.yml`）。
 
-**3. 覆盖面 fail-closed 与夹具**：新闸自检 = 7 组（合规 / 漏登 / 点名不存在的件 / 点名无自检入口的件 / 纯注释提及不入集 / 缺 workflow / 步骤结构认不出）；`verify-package-invariants` 夹具 18 → 20（摘除既有宿主 README、盘面新增宿主两形态）。两件都随 CI「self-test 抽查」清单消费。
+**3. 覆盖面 fail-closed 与夹具**：新闸自检 = 9 组（合规 / 漏登 / 点名不存在的件 / 点名无自检入口的件 / 有自检入口但清单行漏 flag / 字符串字面量计入 / 纯注释提及不入集 / 缺 workflow / 步骤结构认不出）；`verify-package-invariants` 夹具 18 → 20（摘除既有宿主 README、盘面新增宿主两形态）。两件都随 CI「self-test 抽查」清单消费。
 
 **4. 噪声实测**：两闸对当前树实跑 exit 0（`self-test-surface` = 22 条 CI 声明 ↔ 22 件盘面自检入口；`package-invariants` = 20 夹具通过），两类检查在真实树上零假阳性。
 
-**5. 销账**：本批处理掉池件两条候选（自检入口面、宿主发布面），按 [销账 ADR](2026-09-12-evolution-pool-candidate-disposal.md) 从「候选」节删除。
+**5. 销账**：本件处理掉池件两条候选（自检入口面、宿主发布面），按 [销账 ADR](2026-09-12-evolution-pool-candidate-disposal.md) 从「候选」节删除；同轮修复件另销一条（doc-budgets 缺 manifest），本演化轮合计三条。
 
 ## Alternatives considered
 
@@ -44,6 +44,6 @@ Review: FULL/2026-09-15/pending
 
 - **采用面**：[engine/gates.json](../../../../engine/gates.json)（条目 `self-test-surface`；条目集单源 = `scripts/gates.mts --list`）、[scripts/verify-self-test-surface.mts](../../../../scripts/verify-self-test-surface.mts)（新件）、[scripts/verify-package-invariants.mts](../../../../scripts/verify-package-invariants.mts)（判据 2c）、[.github/workflows/validate.yml](../../../../.github/workflows/validate.yml)（self-test 抽查清单）、[scripts/verify-doc-budgets.mts](../../../../scripts/verify-doc-budgets.mts)（同批修复件）。
 - **成本护栏**：每加一条门禁 = 多一个维护面；本件的约束是判据只认形状 + 盘面推导 + 结构性 fail-closed（三处都在闸件头注里写成合同）。
-- **判据外的规避形（如实记）**：自检支持靠「注释剥离后含 `--self-test` 字面量」启发式——若某非闸件把该 token 写进代码字符串会误入集（当前无此形态，触发 = 真出现该形态）；宿主 README 面只锚 README，适配层其他发布件（如 `hooks.example.yml`）仍靠 `REQUIRED_FILES_ENTRIES` 手抄，新增宿主的非 README 件漏登不在判据内（触发 = 出现第二个非 README 宿主件漏登）。
+- **判据外的规避形（如实记）**：自检支持靠 AST 字符串字面量 `--self-test` 判定——若某非闸件把该 token 写进代码字符串会误入集（当前无此形态，触发 = 真出现该形态）；宿主 README 面只锚 README，适配层其他发布件（如 `hooks.example.yml`）仍靠 `REQUIRED_FILES_ENTRIES` 手抄，新增宿主的非 README 件漏登不在判据内（触发 = 出现第二个非 README 宿主件漏登）。
 - **未覆盖**：清单内容是否**正确**（该跑的自检是否真的跑得动）仍归各件自检与 CI 实跑；本闸只判「声明面与盘面互为全集」。
 - **评审收口（2026-09-15，FULL 三审）**：待收口。

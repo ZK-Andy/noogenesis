@@ -243,8 +243,15 @@ function realRun(repoRoot: string): number {
 	return code;
 }
 
-/** 夹具合成仓须造出的宿主 README 盘面（判据 2c 从盘面推导，夹具须复刻真实目录形状）。 */
-const FIXTURE_ADAPTER_READMES = [`${ADAPTERS_DIR}/dsh/${ADAPTER_README}`, `${ADAPTERS_DIR}/hermes/${ADAPTER_README}`];
+/** 真实仓的宿主 README 盘面（判据 2c 与夹具合成同源，不手抄宿主清单）。 */
+function realAdapterReadmes(repoRoot: string): string[] {
+	const dir = path.join(repoRoot, ADAPTERS_DIR);
+	if (!fs.existsSync(dir)) return [];
+	return fs
+		.readdirSync(dir, { withFileTypes: true })
+		.filter((entry) => entry.isDirectory() && fs.existsSync(path.join(dir, entry.name, ADAPTER_README)))
+		.map((entry) => `${ADAPTERS_DIR}/${entry.name}/${ADAPTER_README}`);
+}
 
 /** 夹具自测：以真实 package.json 为基线合成临时包，违约样例必须 FAIL、合规必须 PASS。 */
 function selfTest(repoRoot: string): number {
@@ -260,7 +267,7 @@ function selfTest(repoRoot: string): number {
 	): number => {
 		const root = path.join(dir, label);
 		fs.mkdirSync(root, { recursive: true });
-		for (const rel of [...DIST_KEY_FILES, ...REQUIRED_FILES_ENTRIES, ...FIXTURE_ADAPTER_READMES]) {
+		for (const rel of [...DIST_KEY_FILES, ...REQUIRED_FILES_ENTRIES, ...realAdapterReadmes(repoRoot)]) {
 			const abs = path.join(root, rel);
 			fs.mkdirSync(path.dirname(abs), { recursive: true });
 			fs.writeFileSync(abs, "");

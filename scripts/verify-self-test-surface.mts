@@ -3,78 +3,52 @@
  * verify-self-test-surface — CI self-test 清单 ↔ scripts/*.mts 自检入口 对账面。
  *
  * 判据（两侧互为全集）：
- *   1. 声明侧：.github/workflows/validate.yml 的「self-test 抽查」步骤 run 块里逐行
- *      \`node scripts/<file>.mts …\`——每个 <file> 必须实存且支持 \`--self-test\`；
- *   2. 实态侧：scripts/*.mts 中支持 \`--self-test\` 的件必须都在声明侧清单里。
+ *   1. 声明侧：.github/workflows/validate.yml 的「self-test 抽查」步骤 run 块里逐行的
+ *      `node scripts/<file>.mts …`——该行必须带 `--self-test`（登记了却不带 flag =
+ *      夹具在任何消费者里都不执行），且 <file> 实存、自身支持 `--self-test`；
+ *   2. 实态侧：scripts/*.mts 中支持 `--self-test` 的件必须都在声明侧清单里。
  *
- * 判据 2 拦的形态：新 verify-* 件自带夹具但漏登 CI——pre-push 只跑 \`gates.mts --run\`
- * 平跑、不跑任何 \`--self-test\`，漏登即该件夹具在任何消费者里都不执行（评审在
- * host-service-reads 上实测的 Blocker）。判据 1 拦反向漂移（清单点名不存在的件 /
- * 不支持自检的件）。
+ * 判据 2 拦的形态：新 verify-* 件自带夹具但漏登 CI——pre-push 只跑 `gates.mts --run`
+ * 平跑、不跑任何 `--self-test`，漏登即该件夹具在任何消费者里都不执行。判据 1 拦反向
+ * 漂移（点名不存在的件 / 不支持自检的件 / 有自检入口但清单行漏 flag）。
  *
- * 自检支持判定 = 注释剥离后源码仍含 \`--self-test\` 字面量的行（字符串保留，故派发用
- * 的 \`process.argv[2] === "--self-test"\` 计入；纯注释提及不计——共享件 mdref / pypara /
- * srctree 即靠此排除）。无自检入口的 scripts 件（change-scope / pre-push /
- * pre-push-selftest）自然不入集。
+ * 自检支持判定 = TypeScript AST 扫字符串字面量 `--self-test`（注释与模板串文本天然
+ * 不计——共享件 mdref / pypara / srctree 靠此排除）；无自检入口的 scripts 件
+ * （change-scope / pre-push / pre-push-selftest）自然不入集。
  *
  * 用法（仓库根运行）：node scripts/verify-self-test-surface.mts [--self-test]
  * 退出码：0 = PASS，1 = 违约，2 = fail-closed（validate.yml 缺失或「self-test 抽查」
  * 步骤结构不可识别——判不了即拒跑）。
- * 模块形态：显式 .mts（ESM），相对 import 带显式扩展，只依赖 node: 内建。
+ * 模块形态：显式 .mts（ESM），相对 import 带显式扩展；AST 扫描用 devDependency
+ * typescript（与 verify-export-docs / verify-host-service-reads 同款）。
  */
 import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { fileURLToPath } from "node:url";
+import ts from "typescript";
 
 const PROGRAM = "verify-self-test-surface.mts";
 const WORKFLOW_REL = path.join(".github", "workflows", "validate.yml");
 const SELF_TEST_STEP = "self-test 抽查";
 const SCRIPTS_DIR = "scripts";
+const SELF_TEST_FLAG = "--self-test";
 const CI_SCRIPT_RE = /node\s+(scripts\/[A-Za-z0-9_.-]+\.mts)/g;
 
-/** 剥掉 // 与 /* *​/ 注释、保留字符串字面量（派发用的 "--self-test" 在字符串里）。 */
-function stripComments(src: string): string {
-	let out = "";
-	let i = 0;
-	while (i < src.length) {
-		const c = src[i]!;
-		if (c === '"' || c === "'" || c === "`") {
-			out += c;
-			i += 1;
-			while (i < src.length) {
-				const d = src[i]!;
-				out += d;
-				if (d === "\\") {
-					i += 1;
-					if (i < src.length) out += src[i]!;
-					i += 1;
-					continue;
-				}
-				i += 1;
-				if (d === c) break;
-			}
-			continue;
+/** 源码是否声明自检入口：AST 里存在字符串字面量 `--self-test`（注释与模板串文本不计）。 */
+function supportsSelfTest(file: string, src: string): boolean {
+	const sf = ts.createSourceFile(file, src, ts.ScriptTarget.ESNext, true, ts.ScriptKind.TS);
+	let found = false;
+	const visit = (node: ts.Node): void => {
+		if (found) return;
+		if (ts.isStringLiteral(node) && node.text === SELF_TEST_FLAG) {
+			found = true;
+			return;
 		}
-		if (c === "/" && src[i + 1] === "/") {
-			while (i < src.length && src[i] !== "\n") i += 1;
-			continue;
-		}
-		if (c === "/" && src[i + 1] === "*") {
-			i += 2;
-			while (i < src.length && !(src[i] === "*" && src[i + 1] === "/")) i += 1;
-			i += 2;
-			continue;
-		}
-		out += c;
-		i += 1;
-	}
-	return out;
-}
-
-/** 源码是否声明自检入口（注释剥离后仍含 --self-test 字面量）。 */
-function supportsSelfTest(src: string): boolean {
-	return stripComments(src).includes("--self-test");
+		ts.forEachChild(node, visit);
+	};
+	visit(sf);
+	return found;
 }
 
 /** 盘面：scripts/*.mts 中支持 --self-test 的件（文件名，含扩展名）。 */
@@ -85,26 +59,38 @@ function localSelfTestScripts(repoRoot: string): string[] {
 		.readdirSync(dir, { withFileTypes: true })
 		.filter((entry) => entry.isFile() && entry.name.endsWith(".mts"))
 		.map((entry) => entry.name)
-		.filter((name) => supportsSelfTest(fs.readFileSync(path.join(dir, name), "utf-8")))
+		.filter((name) => supportsSelfTest(name, fs.readFileSync(path.join(dir, name), "utf-8")))
 		.sort();
 }
 
-/** 抽出「self-test 抽查」步骤 run 块里声明的 scripts/*.mts 集（去重保序）。 */
-function declaredCiScripts(workflow: string): string[] | null {
+/** 声明条目：run 块里的 scripts/*.mts 与「同行是否带 --self-test」。 */
+interface DeclaredEntry {
+	rel: string;
+	flagged: boolean;
+}
+
+/** 抽出「self-test 抽查」步骤 run 块里声明的条目（按 rel 去重保序）。 */
+function declaredCiScripts(workflow: string): DeclaredEntry[] | null {
 	const stepIdx = workflow.indexOf(`- name: ${SELF_TEST_STEP}`);
 	if (stepIdx === -1) return null;
 	const runIdx = workflow.indexOf("run: |", stepIdx);
 	if (runIdx === -1) return null;
 	const runIndent = workflow.slice(workflow.lastIndexOf("\n", runIdx) + 1, runIdx).match(/^\s*/)![0].length;
 	const rest = workflow.slice(workflow.indexOf("\n", runIdx) + 1);
-	const names: string[] = [];
+	const seen = new Set<string>();
+	const entries: DeclaredEntry[] = [];
 	for (const line of rest.split("\n")) {
 		if (line.trim() === "") continue;
 		const indent = line.match(/^\s*/)![0].length;
 		if (indent <= runIndent) break;
-		for (const match of line.matchAll(new RegExp(CI_SCRIPT_RE.source, "g"))) names.push(match[1]!);
+		for (const match of line.matchAll(new RegExp(CI_SCRIPT_RE.source, "g"))) {
+			const rel = match[1]!;
+			if (seen.has(rel)) continue;
+			seen.add(rel);
+			entries.push({ rel, flagged: line.includes(SELF_TEST_FLAG) });
+		}
 	}
-	return [...new Set(names)];
+	return entries;
 }
 
 /** 判据主体（纯函数：CLI 与夹具共用）。 */
@@ -116,14 +102,15 @@ function evaluateSurface(repoRoot: string): { code: number; lines: string[] } {
 		return { code: 2, lines: [`${PROGRAM}: FAIL-CLOSED — 认不出「${SELF_TEST_STEP}」步骤的 run 内容`] };
 	}
 	const violations: string[] = [];
-	const declaredSet = new Set(declared.map((rel) => path.basename(rel)));
-	for (const rel of declared) {
+	const declaredSet = new Set(declared.map((entry) => path.basename(entry.rel)));
+	for (const { rel, flagged } of declared) {
 		const abs = path.join(repoRoot, rel);
 		if (!fs.existsSync(abs)) {
 			violations.push(`self-test 清单点名不存在的件：${rel}`);
-			continue;
+		} else if (!supportsSelfTest(rel, fs.readFileSync(abs, "utf-8"))) {
+			violations.push(`self-test 清单条目不支持 --self-test：${rel}`);
 		}
-		if (!supportsSelfTest(fs.readFileSync(abs, "utf-8"))) violations.push(`self-test 清单条目不支持 --self-test：${rel}`);
+		if (!flagged) violations.push(`self-test 清单条目未带 --self-test（登记了也不执行）：${rel}`);
 	}
 	for (const name of localSelfTestScripts(repoRoot)) {
 		if (!declaredSet.has(name)) violations.push(`${SCRIPTS_DIR}/${name} 有 --self-test 但未登记 CI「${SELF_TEST_STEP}」清单`);
@@ -171,6 +158,10 @@ function selfTest(): number {
 		expect("stale-entry", 1, base, WF(["node scripts/gates.mts --self-test", "node scripts/verify-a.mts --self-test", "node scripts/verify-ghost.mts --self-test"]));
 		// 清单点名不支持自检的既有件（仅注释提及的不算支持）→ 违约（判据 1）
 		expect("entry-without-selftest", 1, { ...base, "verify-comment.mts": "// --self-test in a comment only\n" }, WF(["node scripts/gates.mts --self-test", "node scripts/verify-a.mts --self-test", "node scripts/verify-comment.mts --self-test"]));
+		// 有自检入口但清单行漏 flag → 违约（登记了也不执行）
+		expect("entry-without-flag", 1, base, WF(["node scripts/gates.mts --self-test", "node scripts/verify-a.mts"]));
+		// 字符串字面量在，注释里的不算
+		expect("string-literal-counts", 0, { "x.mts": 'const f = "--self-test";\n', "y.mts": "/* --self-test */\n" }, WF(["node scripts/x.mts --self-test"]));
 		// 纯注释提及不算自检入口 → 不入集，CI 不列也 PASS
 		expect("comment-only-not-a-gate", 0, { "mdref.mts": "// consumers cover --self-test\n", "gates.mts": GATE() }, WF(["node scripts/gates.mts --self-test"]));
 		// 缺 workflow / 认不出步骤 → fail-closed(2)
