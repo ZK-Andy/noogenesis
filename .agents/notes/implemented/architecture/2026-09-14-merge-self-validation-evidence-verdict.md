@@ -2,7 +2,7 @@
 
 Status: implemented
 
-Review: LIGHT/2026-09-14/语义评审（范围化子代理单路 R2：待审）
+Review: LIGHT/2026-09-14/语义评审（范围化子代理单路 R2：0 Blocker + 1 Suggestion，采纳 1——S1 括注字段精度：红路径违约理由落 `outcome`、`evidence` 记拒入事实回写 Problem 表述）
 
 Related: 批次表 [行 45](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 主设计 [§7.2](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · [序 43 裁决](2026-09-14-subagent-auto-validation-verdict.md) · Event 扩字段 [E4](2026-09-13-event-field-extension.md) · [序 44 命令面](2026-09-14-evolve-command-surface.md) · 贡献闸前提 [P2 D3](2026-09-06-p2-shared-consumer.md) · 跨机复验 [validate.yml](../../../../.github/workflows/validate.yml) · 入档闸 [solidify.ts](../../../../engine/solidify.ts)
 
@@ -10,7 +10,7 @@ Related: 批次表 [行 45](../../proposed/architecture/2026-09-13-feature-compl
 
 批次表行 45「合并携带自校验证据」，出处主设计 §7.2「发起合并时带自校验结果」行：合并（PR / consolidate）时必须携带机器已验证的证据（验证命令结果、测试通过数、token 基线 diff、benchmark 结果），合并闸由 CI 复跑同一验证（跨机器可复现），绿了才合入。行备注 = 依赖序 21（贡献闸）。开工前取证（2026-09-14，本仓实读）：
 
-- **本仓唯一演化内容合并边界 = solidify 入档闸**：`evaluate` 对候选真 spawn `gates.json` 全集，全绿才落 `genes/`；绿与红都落事件——`evidence` = `evaluate ok: all N gates green`（红 = 违约理由），`gene_sha`（内容寻址锚点）+ `env_fingerprint` 同行在案，`genes/` 变更与事件行同 commit（原子证据，写入失败回滚）。
+- **本仓唯一演化内容合并边界 = solidify 入档闸**：`evaluate` 对候选真 spawn `gates.json` 全集，全绿才落 `genes/`；绿与红都落事件——`evidence` = `evaluate ok: all N gates green`（红 = `outcome` 载违约理由，`evidence` 记拒入事实），`gene_sha`（内容寻址锚点）+ `env_fingerprint` 同行在案，`genes/` 变更与事件行同 commit（原子证据，写入失败回滚）。
 - **跨机合并闸已交付**：[validate.yml](../../../../.github/workflows/validate.yml) 在 CI 复跑同一套门禁与 self-test，绿了才允许合入——「CI 复跑同一验证、绿了才合入」半边已是现网事实（序 43 裁决 Decision 1 同面指针）。
 - **consolidate 半边已判不立**（序 44 裁决：T1 = 多来源同 id 候选冲突）；**PR / 贡献闸半边的前提未达**：序 21（staging + PR + CI 跨机器复验 + 维护者合入）的前提 = 真实使用面与可贡献内容，实测为零（P2 D3 口径不变）。
 - **「验证报告」对象不存在**：`evaluate` 的报告渲染到 stdout 即散；[E4](2026-09-13-event-field-extension.md) 已裁 `evidence` 是它当下的唯一落点，无 id、无落盘、无检索面。`validation_report_id` 的最后一条触发（序 45）由此件裁决。
