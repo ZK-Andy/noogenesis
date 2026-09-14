@@ -1,7 +1,7 @@
 # Agent Note: 覆盖面静默绿治理批——自检入口与宿主 README 两侧上闸
 
 Status: implemented
-Review: FULL/2026-09-15/pending
+Review: FULL/2026-09-15/R1=ok R2=ok R3=ok
 
 > Related：立闸门槛单源 = [机械化 ADR](2026-09-11-review-finding-mechanization.md) Decision 1；销账口径 = [销账 ADR](2026-09-12-evolution-pool-candidate-disposal.md)；出处 = [演化轮池](../../../../HANDOFF-evolution-pool.md) 候选「CI self-test 抽查清单 ↔ `scripts/verify-*.mts`」+「新增宿主目录 ↔ 发布面清单」；落地件 = [verify-self-test-surface](../../../../scripts/verify-self-test-surface.mts) + [verify-package-invariants](../../../../scripts/verify-package-invariants.mts)；同批修复件 = [doc-budgets 缺 manifest fail-closed](../bug-fix/2026-09-15-doc-budgets-missing-manifest.md)。
 
@@ -27,7 +27,7 @@ Review: FULL/2026-09-15/pending
 
 **3. 覆盖面 fail-closed 与夹具**：新闸自检 = 9 组（合规 / 漏登 / 点名不存在的件 / 点名无自检入口的件 / 有自检入口但清单行漏 flag / 字符串字面量计入 / 纯注释提及不入集 / 缺 workflow / 步骤结构认不出）；`verify-package-invariants` 夹具 18 → 20（摘除既有宿主 README、盘面新增宿主两形态）。两件都随 CI「self-test 抽查」清单消费。
 
-**4. 噪声实测**：两闸对当前树实跑 exit 0（`self-test-surface` = 22 条 CI 声明 ↔ 22 件盘面自检入口；`package-invariants` = 20 夹具通过），两类检查在真实树上零假阳性。
+**4. 噪声实测（【探索性 · n=1 次本机单树实跑】）**：两闸对当前树实跑 exit 0——`self-test-surface` 两侧集合互为全集、`package-invariants` 全部夹具通过（条数以 `gates.mts --list` 与闸自身输出为准，本件不复述）；两类检查在真实树上零假阳性。
 
 **5. 销账**：本件处理掉池件两条候选（自检入口面、宿主发布面），按 [销账 ADR](2026-09-12-evolution-pool-candidate-disposal.md) 从「候选」节删除；同轮修复件另销一条（doc-budgets 缺 manifest），本演化轮合计三条。
 
@@ -46,4 +46,4 @@ Review: FULL/2026-09-15/pending
 - **成本护栏**：每加一条门禁 = 多一个维护面；本件的约束是判据只认形状 + 盘面推导 + 结构性 fail-closed（三处都在闸件头注里写成合同）。
 - **判据外的规避形（如实记）**：自检支持靠 AST 字符串字面量 `--self-test` 判定——若某非闸件把该 token 写进代码字符串会误入集（当前无此形态，触发 = 真出现该形态）；宿主 README 面只锚 README，适配层其他发布件（如 `hooks.example.yml`）仍靠 `REQUIRED_FILES_ENTRIES` 手抄，新增宿主的非 README 件漏登不在判据内（触发 = 出现第二个非 README 宿主件漏登）。
 - **未覆盖**：清单内容是否**正确**（该跑的自检是否真的跑得动）仍归各件自检与 CI 实跑；本闸只判「声明面与盘面互为全集」。
-- **评审收口（2026-09-15，FULL 三审）**：待收口。
+- **评审收口（2026-09-15，FULL 三审）**：R1（简化路）1B/1S、R2（代码路）1B/2S、R3（ADR 路）1B/1S，共 7 条全采纳、0 拒绝——清单行须带 `--self-test` 才算登记（R2-B1，补夹具）；自检支持判定改 AST 字符串字面量、删手写剥离器（R1-S1 + R2-S2）；决策句改「只留盘面推导不出的契约件」（R1-B1）；销账计数限本件（R2-S5）；Decision 4 去无闸覆盖的门禁条数并按先例标【探索性 · n=1】（R3-B1 + R3-S1）。修复 = `3a76593`。

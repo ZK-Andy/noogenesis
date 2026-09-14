@@ -1,7 +1,7 @@
 # Agent Note: doc-budgets 缺 manifest 由静默 SKIP 改 fail-closed
 
 Status: implemented
-Review: FULL/2026-09-15/pending
+Review: FULL/2026-09-15/R1=ok R2=ok R3=ok
 
 > Related：出处 = [演化轮池](../../../../HANDOFF-evolution-pool.md) 候选「`verify-doc-budgets` 不带 `--manifest` 时静默 SKIP 且 exit 0」，同批上闸件 = [覆盖面静默绿治理批](../process/2026-09-15-surface-coverage-gates.md)；落地件 = [verify-doc-budgets](../../../../scripts/verify-doc-budgets.mts)。
 
@@ -29,4 +29,4 @@ Review: FULL/2026-09-15/pending
 - **采用面**：[scripts/verify-doc-budgets.mts](../../../../scripts/verify-doc-budgets.mts)（缺件返回 + 头注 + 自检夹具）。调用面无改——gates.json 与 hooks 均显式传 `--manifest`，真跑行为不变。
 - **行为变化面**：手工裸跑（不带 `--manifest`）由「SKIP 且绿」变「FAIL 且红」。仓内无消费方依赖旧的 SKIP/0（已核：gates.json / lefthook / CI 全带显式路径）。
 - **判据外**：不修默认路径布局、不给 `--manifest` 补前缀推导——触发 = 出现「裸跑应成功」的真实场景。
-- **评审收口（2026-09-15，FULL 三审）**：待收口。
+- **评审收口（2026-09-15，FULL 三审）**：R2（代码路）0B/2S，全采纳——去掉被取代行为对照注释（变更史）；`JSON.parse` 加守卫（坏 manifest → fail-closed exit 2 + 夹具）。修复 = `3a76593`。
