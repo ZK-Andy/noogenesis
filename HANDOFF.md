@@ -11,7 +11,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-15｜**演化轮落账批（覆盖面静默绿治理，FULL）**：池件三候选落账——新闸 self-test-surface（CI 自检清单 ↔ 盘面入口互全集）+ package-invariants 判据 2c（宿主 README ↔ files）+ doc-budgets 缺 manifest 改 fail-closed。[ADR](.agents/notes/implemented/process/2026-09-15-surface-coverage-gates.md)
+- 2026-09-15｜**演化轮落账批（覆盖面静默绿，FULL）**：池件三候选落账——新闸 self-test-surface + package-invariants 2c（宿主 README ↔ files）+ doc-budgets 缺 manifest fail-closed；三审 9 条全采纳，`8fc5dc5`→`6ffed31`。[ADR](.agents/notes/implemented/process/2026-09-15-surface-coverage-gates.md)
 
 - 2026-09-15｜**TS 官方架构基准对照（§4 回填 + FULL 三审收口）**：六原则对照无实质违背；三处差异裁决（引擎 CLI 无 bin / 三件 selftest 进 dist / 两族 import 形态不适配）；§4 填入第二基线（n=64、146 条语句）。[ADR](.agents/notes/implemented/architecture/2026-09-15-ts-official-architecture-baseline.md)
 
