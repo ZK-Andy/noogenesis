@@ -20,7 +20,7 @@ Review: FULL/2026-09-06/R1=ok R2=ok R3=ok
 
 1. **可执行门禁清单单一事实源 = `engine/gates.json`（`scripts/gates.mts --list` 发射、`--run` 消费）**：根 AGENTS.md「质量门」节收敛为短契约（清单来源 + 运行入口 + gene-format 例外指针），删除 11 行命令块；README 双语「Gates/门禁」节删除命令块改指针；四个结构性例外（review-tier / review-brief / change-scope / gene-format）的机制说明单家在 gates.mts 头注，散文不再复制。
 2. **散文中的门禁计数与手抄清单全部去除**：feature-flow / session-open / release-flow 的计数改「清单见根 AGENTS「质量门」」表述；HANDOFF 状态区的门禁清单行指针化、「门禁 9→10」类变更叙事修剪；README 双语 Status 的「十一件」去除。
-3. **「评审检查项（AI 兜底）」清单补位于根 AGENTS.md**（编号 + 指向规则的家；v0 三项：文档纪律语义面 / ADR 口径一致性含证据严肃性三件套 / 胶囊内容域与门禁判据口径一致）；review.md §5 保留契约与机制、内嵌清单迁出防双家；两个技能与 standard-authoring 的既有指称就此落位，不再改。
+3. **「评审检查项（AI 兜底）」清单补位于根 AGENTS.md**（编号 + 指向规则的家；v0 三项：文档纪律语义面 / ADR 口径一致性含证据严肃性约定 / 胶囊内容域与门禁判据口径一致）；review.md §5 保留契约与机制、内嵌清单迁出防双家；两个技能与 standard-authoring 的既有指称就此落位，不再改。
 4. **HANDOFF「开始步骤」并入 session-open 卡**：HANDOFF 只留一行指针；session-open 步骤 1 同步去掉对「开始步骤」子节的引用，消除循环。
 5. **capsule-01-migration-plan.md 下沉 journal/**（tier 表明载的过程资产家、入 git；`git mv` 保留历史）：根 AGENTS「参考」、README 双语 Status、HANDOFF 背景共四处入站链接同变更改写；计划内 1 处相对链接随新位置修正。
 6. **doc-standards tier 表补 docs/research/ 行**（设计文档与调研：设计意图与外部解剖，非当下状态快照）；HANDOFF 位置表去「3 份」计数。

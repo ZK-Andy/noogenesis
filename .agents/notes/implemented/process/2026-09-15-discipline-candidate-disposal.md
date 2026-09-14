@@ -1,9 +1,9 @@
 # Agent Note: 纪律漏项候选族处置——单源消除 / 口径成文 / 检查项扩展
 
 Status: implemented
-Review: FULL/2026-09-15/pending（三重审核进行中，收口时回填真实结论）
+Review: FULL/2026-09-15/R1=ok R2=ok R3=ok
 
-> Related：出处 = [演化轮池](../../../../HANDOFF-evolution-pool.md)「候选」节的 12 条纪律漏项候选（随本件销账）；规则家 = [.agents/notes/README.md](../../README.md)（维护纪律 + 证据严肃性）、[根 AGENTS.md](../../../../AGENTS.md) 评审检查项 #2；同源先例 = [findings 机械化 ADR](2026-09-11-review-finding-mechanization.md) Decision 1（立闸门槛）。
+> Related：出处 = [演化轮池](../../../../HANDOFF-evolution-pool.md)「候选」节的 12 条纪律漏项候选（随本件销账）；规则家 = [.agents/notes/README.md](../../README.md)（维护纪律 + 证据严肃性）、[根 AGENTS.md](../../../../AGENTS.md) 评审检查项 #2；检查项清单立位先例 = [doc-single-sourcing](2026-09-06-doc-single-sourcing.md) Decision 3；立闸门槛先例 = [findings 机械化 ADR](2026-09-11-review-finding-mechanization.md) Decision 1。
 
 ## Problem
 
@@ -25,7 +25,7 @@ Review: FULL/2026-09-15/pending（三重审核进行中，收口时回填真实�
 
 **3. 检查项扩展**：根 AGENTS 评审检查项 #2 的枚举补「沿引逐字 / 指针归属 / 现值同步」与第四件证据约定，并指向 [.agents/notes/README.md](../../README.md)——语义面唯一的机器面是评审，检查项只作标签与指针。
 
-**4. 销账**：12 条全部销账——「行标 done 的时点」与「表内『同上』占位」两条的触发面是批次表推进，而批次表已 46/46 终局、游标面退役（[批次表 ADR](../architecture/2026-09-13-feature-completion-backlog.md)），形态不可达，判不立；其余各条由上述成文规则或检查项承接，按[销账 ADR](2026-09-12-evolution-pool-candidate-disposal.md)从池件删除。
+**4. 销账**：12 条全部销账——「行标 done 的时点」与「表内『同上』占位」两条的触发面是批次表推进，而批次表已 46/46 终局、游标面退役（[批次表 ADR](../architecture/2026-09-13-feature-completion-backlog.md)），形态不可达，判不立（重启表/游标时该口径随新表 ADR 重议）；其余各条由上述成文规则或检查项承接，按[销账 ADR](2026-09-12-evolution-pool-candidate-disposal.md)从池件删除。
 
 ## Alternatives considered
 
@@ -37,7 +37,7 @@ Review: FULL/2026-09-15/pending（三重审核进行中，收口时回填真实�
 
 ## Consequences
 
-- **采用面**：[HANDOFF.md](../../../../HANDOFF.md)（删复本句）、[.agents/notes/README.md](../../README.md)（维护纪律 + 证据严肃性）、[根 AGENTS.md](../../../../AGENTS.md)（评审检查项 #2）。
+- **采用面**：[HANDOFF.md](../../../../HANDOFF.md)（删复本句）、[.agents/notes/README.md](../../README.md)（维护纪律 + 证据严肃性）、[.agents/notes/AGENTS.md](../../AGENTS.md)（删与 README 重复的同步规则行）、[根 AGENTS.md](../../../../AGENTS.md)（评审检查项 #2）。
 - **行为变化面**：无机器闸改动；评审检查项 #2 的核对面扩宽（评审代理按该条显式核对沿引与现值同步）。
 - **未覆盖**：语义判读仍归评审——本件只把口径成文并扩检查项，不声称机器能判同类。
-- **评审收口**：（待回填）
+- **评审收口（2026-09-15，FULL 三审）**：R1 1B/5S、R2 1B/3S、R3 1B/3S，共 3B/11S 全采纳、拒 0——R1/R2-B1 = 证据约定口径未随 3→4 对齐（README 节首「三件套」+ 检查项 #2 枚举仅三件）；R1-S1/R2-S3 = 池件无编号，durable 面「#10/#12」改具名；R1-S2 = ADR 出处改「随本件销账」；R1-S3 = 「共八例」与枚举对齐改范围式；R1-S4 = Decision 只给动作 + 指针；R1-S5 = 沿引/现值规则正文入 README、检查项只作标签；R2-S2 = notes/AGENTS.md 与 README 重复的同步规则行删除（单源）；R3-B1 = 采用面补第四件落地；R3-S1 = 读数伴判据补覆盖范围断言；R3-S2 = 技能与 doc-single-sourcing 的「三件套」现值同步；R3-S3 = 两条批次表类补重启触发。修复 = `293b268` + 本收口笔。

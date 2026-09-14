@@ -13,7 +13,7 @@ description: Use when adding, auditing, pruning, archiving, or reviewing Agent N
 
 ## Sources of truth（只读，不重述）
 
-- [.agents/notes/README.md](../../notes/README.md) — 笔记规则：生命周期/class/命名、implemented 现在时、Alternatives 强制、证据严肃性三件套。
+- [.agents/notes/README.md](../../notes/README.md) — 笔记规则：生命周期/class/命名、implemented 现在时、Alternatives 强制、证据严肃性约定。
 - [根 AGENTS.md](../../../AGENTS.md)「文档纪律」— rationale → ADR；durable 文档写当前状态。
 - [scripts/verify-adr-format.mts](../../../scripts/verify-adr-format.mts) — 机器门禁（头/骨架/状态-目录一致性/命名日期规则）。
 
