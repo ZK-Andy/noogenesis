@@ -2,7 +2,7 @@
 
 Status: implemented
 
-Review: LIGHT/2026-09-14/pending（语义评审进行中，收口时回填真实结论）
+Review: LIGHT/2026-09-14/语义评审（范围化子代理单路 R2：0 Blocker + 1 Suggestion，采纳 1——pre-commit 消费白名单口径收窄为快检子集；五条定向检查逐条独立复跑成立）
 
 Related: 批次表 [行 43](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 主设计 [§7.1 / §7.2 / §7.3](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 候选比较判据 [序 5 裁决](2026-09-13-candidate-comparison-blindness.md) · 验证报告字段触发 [Event 扩字段 E4](2026-09-13-event-field-extension.md) · Detect 站立规则 [序 11 裁决](2026-09-13-detect-source-verdict-session-event.md) · 评审契约 [review.md §4/§6](../../../../docs/method/review.md) · 评审闸 [verify-review-brief](../../../../scripts/verify-review-brief.mts) / [verify-review-tier](../../../../scripts/verify-review-tier.mts) · 开发主链路 [feature-flow §4/§4.5](../../../workflows/feature-flow.md) · 验证执行面 [evaluate.ts](../../../../engine/evaluate.ts) / [solidify.ts](../../../../engine/solidify.ts) · 门禁发射器 [gates.mts](../../../../scripts/gates.mts) · 跨机复验 [validate.yml](../../../../.github/workflows/validate.yml) · 子代理跳过口径 [mount-policies.mts](../../../../adapters/dsh/mount-policies.mts)
 
@@ -10,7 +10,7 @@ Related: 批次表 [行 43](../../proposed/architecture/2026-09-13-feature-compl
 
 批次表行 43（批次 9 开门件）要求「子代理自动执行验证（候选入闸真跑；执行者 / 评审者分离）」，出处主设计 §7.2「用户启动子代理自动跑」行：演化候选进入验证闸时，由宿主**子代理在新鲜沙箱自动执行**验证命令集（`subagent/*`），真执行非自报；执行者与评审者分离（防自产自审）；行备注 = 现为人工跑门禁。开工前取证（2026-09-14，本仓实读）：
 
-- **「候选入闸真跑」有确定性执行面**：[`evaluate`](../../../../engine/evaluate.ts) 对候选跑 [`gates.json`](../../../../engine/gates.json) 全集——`run(inst.cmd, inst.args, repoRoot)` 真 spawn 子进程，读数 = 退出码（不是调用方填的文本）；[`solidify`](../../../../engine/solidify.ts) 只在 evaluate 全绿时落 `genes/`，事件与文件同 commit；[`gates.mts`](../../../../scripts/gates.mts) `--run` 是同一清单的发射器（DAG runner，退出码三档 0/1/2），pre-commit / pre-push 消费同一白名单。
+- **「候选入闸真跑」有确定性执行面**：[`evaluate`](../../../../engine/evaluate.ts) 对候选跑 [`gates.json`](../../../../engine/gates.json) 全集——`run(inst.cmd, inst.args, repoRoot)` 真 spawn 子进程，读数 = 退出码（不是调用方填的文本）；[`solidify`](../../../../engine/solidify.ts) 只在 evaluate 全绿时落 `genes/`，事件与文件同 commit；[`gates.mts`](../../../../scripts/gates.mts) `--run` 是同一清单的发射器（DAG runner，退出码三档 0/1/2），pre-push 与 CI 消费同一白名单（pre-commit 是 `lefthook.yml` 快检子集，不经 `gates.mts`）。
 - **跨机复验已交付**：[validate.yml](../../../../.github/workflows/validate.yml) 在 CI 重跑同一套第一梯队门禁与逐件 self-test——「真执行非自报」在另一台机器、另一进程树上同样可复算。
 - **执行者 / 评审者分离有流程面**：语义评审由**独立子代理**跑泳道（[review.md](../../../../docs/method/review.md) §4 三路 / §6 并行与裁决；[feature-flow](../../../workflows/feature-flow.md) §4.5 后台评审子代理 + 等待纪律）；发射前 [`verify-review-brief --enforce`](../../../../scripts/verify-review-brief.mts) 拦简报缺项与自证脱节，push 前 [`verify-review-tier --enforce`](../../../../scripts/verify-review-tier.mts) 拒推缺证据的 FULL 变更，收尾由 session-close ③ 对账机器面闭集标记。执行者 = 主会话、评审者 = 另起子代理，是本仓各批三审与单路 R2 的长期形态（journal 在案）。
 - **宿主确有子代理 seam，本包未消费**：宿主服务 `subagents`（`@deepseek-ai/dsh-subagent`）+ 委派工具 + 多后端（in-process / ACP / SDK / Codex / Claude Code）——设计 §7.3「`subagent/*` 原生提供子代理执行/委托 seam」成立。本仓 `adapters/**` 对 `subagents` 零消费（实读无命中），引擎侧也不经宿主。
@@ -59,4 +59,4 @@ Related: 批次表 [行 43](../../proposed/architecture/2026-09-13-feature-compl
 - **机制零变化**：`engine/**`、`adapters/**`、`scripts/**`、`.github/workflows/**`、`genes/`、`events/`、`manifest.json` 均不动。
 - **单源**：验证执行面 = [`evaluate.ts`](../../../../engine/evaluate.ts) + `engine/gates.json`（[`gates.mts`](../../../../scripts/gates.mts) 发射）+ [`validate.yml`](../../../../.github/workflows/validate.yml)；执行者 / 评审者分离 = [review.md](../../../../docs/method/review.md) §4/§6 + 两道评审闸 + session-close ③ 对账；「子代理自动跑 / 新鲜沙箱」的判不立与触发条以本件为家。
 - **相邻归口**：`validation_report_id` 触发收窄到序 45；[序 5 C2](2026-09-13-candidate-comparison-blindness.md) 的 `independent_execution` 通道口径不变。
-- **评审结论**：待回填。
+- **评审结论**：LIGHT 单路 R2——0 Blocker + 1 Suggestion（全采纳）：ADR Problem 第 1 条「pre-commit / pre-push 消费同一白名单」对 pre-commit 不成立（lefthook 快检子集，不经 `gates.mts`），已收窄为 pre-push / CI；五条定向检查逐条独立复跑成立。
