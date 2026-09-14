@@ -40,14 +40,18 @@ function requireStringArray(value: unknown, tool: string): string[] {
 	}
 	return value;
 }
-
+/** gene ref 形校验单源（层内唯一：tools 与 commands 共用；引擎侧同一正则因防火墙不可引）。 */
 function requireGeneRef(value: unknown, tool: string): string {
-	if (typeof value !== "string" || !/^[a-z0-9]+(-[a-z0-9]+)*\/[a-z0-9]+(-[a-z0-9]+)*$/.test(value)) {
+	if (!isGeneRef(value)) {
 		throw new Error(`${tool}: gene must be "<domain>/<id>" (lowercase kebab, matching the gene file layout)`);
 	}
-	return value;
+	return value as string;
 }
 
+/** gene ref 形谓词（<domain>/<id> 小写 kebab 两段；判定唯一家，commands 复用）。 */
+export function isGeneRef(value: unknown): value is string {
+	return typeof value === "string" && /^[a-z0-9]+(-[a-z0-9]+)*\/[a-z0-9]+(-[a-z0-9]+)*$/.test(value);
+}
 /** fail-closed 统一抛错：指名引擎退出码与 stderr（诊断纪律：失败主体 + 违反规则）。 */
 function failClosed(tool: string, result: EngineResult): never {
 	throw new Error(`${tool}: engine fail-closed (exit 2) — ${String(result.stderr || result.stdout || "(no output)").trim()}`);

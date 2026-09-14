@@ -117,7 +117,7 @@ Related: 设计基准 [主设计](../../../../docs/research/dsh-swarm-evolution-
 | 序 | 功能 | 设计出处 | 备注 |
 |---|---|---|---|
 | 43 | 子代理自动执行验证（候选入闸真跑；执行者 / 评审者分离） | 主设计 §7.2 | done（[裁决 ADR](../../implemented/architecture/2026-09-14-subagent-auto-validation-verdict.md)）：候选入闸真执行 = `evaluate` 真 spawn + `gates.json` + CI 跨机复跑（已交付）；执行者 / 评审者分离 = 评审子代理泳道 + 两道评审闸 + 收尾对账（已交付）；「宿主子代理自动 spawn / 新鲜沙箱」判不立（增量判定为零 + 无自报入口 + 合同成本；宿主 `subagents` seam 不消费），触发 T1–T3 具名；`validation_report_id` 触发收窄到序 45 |
-| 44 | `/evolve` 命令面（list / consolidate / wrapup / verify / benchmark） | 主设计 §11.2 | done（[命令面 ADR](../../implemented/architecture/2026-09-14-evolve-command-surface.md)）：三动词已交付（list = 引擎新增 `list` 盘点命令〔九→十命令〕+ staging 面；`verify <ref>` = evaluate 用户位；`wrapup` = solidify 触发的命令位入口，与 disposed 共享闸）；consolidate / benchmark 判不立（D3 cfgs D4；T1 = 多来源同 id 候选冲突）；宿主 commands 服务懒取用（缺席降级该面 + agent/created 补注册）；防火墙允许集零扩面 |
+| 44 | `/evolve` 命令面（list / consolidate / wrapup / verify / benchmark） | 主设计 §11.2 | done（[命令面 ADR](../../implemented/architecture/2026-09-14-evolve-command-surface.md)）：三动词已交付（list = 引擎新增 `list` 盘点命令〔九→十命令〕+ staging 面；`verify <ref>` = evaluate 用户位；`wrapup` = solidify 触发的命令位入口，与 disposed 共享闸）；consolidate / benchmark 判不立（D3/D4；T1 = 多来源同 id 候选冲突）；宿主 commands 服务懒取用（缺席降级该面 + agent/created 补注册）；防火墙允许集零扩面 |
 | 45 | 合并携带自校验证据 | 主设计 §7.2 | 依赖序 21 |
 | 46 | manifest 检索增强（向量） | 共享层稿 §10-P3（可选） | 可选 |
 

@@ -10,7 +10,9 @@
  * runSolidifyTrigger 的命令位复用，共享同一 in-flight 闸与 ask 面）。
  * consolidate 与 benchmark 已判不立（命令面 ADR D3/D4），不进 dispatch。
  */
+import path from "node:path";
 import { listStagingCandidates, runSolidifyTrigger } from "./solidify-trigger.mjs";
+import { isGeneRef } from "./tools.mjs";
 import type { EngineRunner, AgentCarrier } from "./engine-bridge.mjs";
 
 /** 与宿主 @deepseek-ai/dsh-commands 合同对齐的本地窄结果面。 */
@@ -53,24 +55,18 @@ export function evolveHelp(): string {
 	].join("\n");
 }
 
-/** verify 的 ref 形校验（与 tools.mts requireGeneRef 同款正则；形错当结果文本，不抛）。 */
+/** verify 的 ref 形校验（谓词单源 = tools.mts isGeneRef；形错当结果文本，不抛）。 */
 function parseVerifyRef(rawInput: string): { ok: true; ref: string } | { ok: false; text: string } {
 	const ref = rawInput.trim();
-	if (!/^[a-z0-9]+(-[a-z0-9]+)*\/[a-z0-9]+(-[a-z0-9]+)*$/.test(ref)) {
+	if (!isGeneRef(ref)) {
 		return { ok: false, text: "verify needs a gene ref as <domain>/<id> (lowercase kebab)" };
 	}
 	return { ok: true, ref };
 }
 
-/** staging 相对路径行（list 尾段；复用 solidify-trigger 唯一扫描源）。 */
+/** staging 相对路径行（list 尾段；复用 solidify-trigger 唯一扫描源；候选本就 resolve 自 repoRoot，直用 path.relative 单表示）。 */
 function stagingLines(repoRoot: string, stagingDir: string): string[] {
-	return listStagingCandidates(repoRoot, stagingDir).map((candidate) => "staged candidate " + relativeTo(repoRoot, candidate));
-}
-
-function relativeTo(repoRoot: string, target: string): string {
-	const norm = target.replace(/\\/g, "/");
-	const root = repoRoot.replace(/\\/g, "/").replace(/\/+$/, "");
-	return norm.startsWith(root + "/") ? norm.slice(root.length + 1) : norm;
+	return listStagingCandidates(repoRoot, stagingDir).map((candidate) => "staged candidate " + path.relative(repoRoot, candidate));
 }
 
 /**
@@ -124,6 +120,11 @@ export async function handleEvolveCommand(invocation: AgentCarrier & { rawInput:
 		if (!parsed.ok) return { kind: "error", text: parsed.text };
 		const result = await deps.runEngine(["evaluate", parsed.ref], { repoRoot });
 		if (result.code === 2) throw new Error(`/evolve verify: engine fail-closed (exit 2) — ${(result.stderr || result.stdout || "").trim()}`);
+		// 工具面同款第四判据（tools.mts）：exit 1 且双流空 = 引擎内部故障，按 fail-closed
+		// 抛错放行；有报告的红才是结论。
+		if (result.code === 1 && !result.stdout.trim() && !(result.stderr || "").trim()) {
+			throw new Error("/evolve verify: engine internal failure (exit 1 with no report)");
+		}
 		const verdict = result.code === 0 ? "GREEN" : "RED";
 		const body = result.stdout.trim() || (result.stderr || "").trim();
 		return { kind: "success", text: `/evolve verify ${parsed.ref} -> ${verdict}\n${body}\n` };
@@ -138,7 +139,7 @@ export async function handleEvolveCommand(invocation: AgentCarrier & { rawInput:
 			}
 			const notice = [
 				`/evolve wrapup: ${candidates.length} staged candidate(s) await solidify (human-approved write path):`,
-				...candidates.map((candidate) => `  ${relativeTo(repoRoot, candidate)}`),
+				...candidates.map((candidate) => `  ${path.relative(repoRoot, candidate)}`),
 			].join("\n") + "\n";
 			const outcome = await runSolidifyTrigger({
 				repoRoot,
