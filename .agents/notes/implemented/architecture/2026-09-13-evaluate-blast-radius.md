@@ -3,7 +3,7 @@
 Status: implemented
 Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 
-Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 主设计 [§5.1/§6/§10](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 相邻原语 [Capsule 原语](2026-09-13-capsule-primitive.md)（序 1）· 出入账口径 [P1 骨架](2026-09-05-p1-engine-skeleton.md)（D4）／[P1 实现](2026-09-05-p1-engine-implementation.md)（D4）· 影响面方法论 [architecture-standards](../../../../docs/method/architecture-standards.md) §2.4
+Related: 批次表 [2026-09-13-feature-completion-backlog](2026-09-13-feature-completion-backlog.md) · 主设计 [§5.1/§6/§10](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 相邻原语 [Capsule 原语](2026-09-13-capsule-primitive.md)（序 1）· 出入账口径 [P1 骨架](2026-09-05-p1-engine-skeleton.md)（D4）／[P1 实现](2026-09-05-p1-engine-implementation.md)（D4）· 影响面方法论 [architecture-standards](../../../../docs/method/architecture-standards.md) §2.4
 
 ## Problem
 

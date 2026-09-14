@@ -3,7 +3,7 @@
 Status: implemented
 Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 
-Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 主设计 [§5.1/§6/§9.1](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 共享层稿 [§6.2](../../../../docs/research/dsh-collective-evolution-shared-layer.md) · 既有协议 [gene-event-schema](2026-09-05-gene-event-schema.md)（S1–S3）· 骨架拍板 [p1-engine-skeleton](2026-09-05-p1-engine-skeleton.md)（D3/D4）· 说明 `capsules/` 只有本仓面，共享/贡献面见批次表序 21/31
+Related: 批次表 [2026-09-13-feature-completion-backlog](2026-09-13-feature-completion-backlog.md) · 主设计 [§5.1/§6/§9.1](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 共享层稿 [§6.2](../../../../docs/research/dsh-collective-evolution-shared-layer.md) · 既有协议 [gene-event-schema](2026-09-05-gene-event-schema.md)（S1–S3）· 骨架拍板 [p1-engine-skeleton](2026-09-05-p1-engine-skeleton.md)（D3/D4）· 说明 `capsules/` 只有本仓面，共享/贡献面见批次表序 21/31
 
 ## Problem
 

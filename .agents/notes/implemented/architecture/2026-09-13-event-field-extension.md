@@ -3,7 +3,7 @@
 Status: implemented
 Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 
-Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 既有协议 [gene-event-schema](2026-09-05-gene-event-schema.md)（S2）· 相邻原语 [Capsule 原语](2026-09-13-capsule-primitive.md)（序 1）／[Mutation 原语](2026-09-13-mutation-primitive.md)（序 2）· 主设计 [§5.1/§6](../../../../docs/research/dsh-swarm-evolution-framework-design.md)
+Related: 批次表 [2026-09-13-feature-completion-backlog](2026-09-13-feature-completion-backlog.md) · 既有协议 [gene-event-schema](2026-09-05-gene-event-schema.md)（S2）· 相邻原语 [Capsule 原语](2026-09-13-capsule-primitive.md)（序 1）／[Mutation 原语](2026-09-13-mutation-primitive.md)（序 2）· 主设计 [§5.1/§6](../../../../docs/research/dsh-swarm-evolution-framework-design.md)
 
 ## Problem
 

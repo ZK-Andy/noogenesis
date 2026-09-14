@@ -4,7 +4,7 @@ Status: implemented
 Review: FULL/2026-09-14/R1=ok R2=ok R3=ok
 > 三审明细：R1 0B+3S（readGene 复用两处采纳、walk 合并拒——边际收益）；R2 1B+2S 全采纳（collect 分诊 try/catch 补、ADR 排序措辞对齐、usage 缩进 + 坏 JSON 行断言）；R3 0B+2S 全采纳（todos 括号 + journal 计数笔误）。
 
-Related: 边界单源 [P1 D3 重拍 ADR](2026-09-14-p1-d3-distillation-reshoot.md) Decision 2/3 · 批次表 [行 30](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 主设计 [§12-P3 蒸馏 / §6 Solidify](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · gene 协议 [S1](2026-09-05-gene-event-schema.md) · 格式闸 [verify-gene-format](../../../../scripts/verify-gene-format.mts) · 入档面 [solidify.ts](../../../../engine/solidify.ts)
+Related: 边界单源 [P1 D3 重拍 ADR](2026-09-14-p1-d3-distillation-reshoot.md) Decision 2/3 · 批次表 [行 30](2026-09-13-feature-completion-backlog.md) · 主设计 [§12-P3 蒸馏 / §6 Solidify](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · gene 协议 [S1](2026-09-05-gene-event-schema.md) · 格式闸 [verify-gene-format](../../../../scripts/verify-gene-format.mts) · 入档面 [solidify.ts](../../../../engine/solidify.ts)
 
 ## Problem
 

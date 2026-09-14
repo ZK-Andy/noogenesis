@@ -4,7 +4,7 @@ Status: implemented
 
 Review: FULL/2026-09-14/R1=ok R2=ok R3=ok
 
-Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 主设计 [§12-P4 / §11.2](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 蓝图 [§7 A4 / §9 不做清单](../../../../docs/research/framework-rebuild-blueprint.md) · DSH 侧 A4 [lint 在环 ADR](2026-09-08-lint-in-loop-feedback.md) + [升格批](2026-09-09-lint-block-and-staged-hook.md)（本刀同判据 = lint 半）+ [注释面扩面](2026-09-10-export-docs-inloop.md)（export-docs 半，本刀不接） · 防火墙 [adapters/AGENTS](../../../../adapters/AGENTS.md) · 消费契约 [adapters/hermes/README](../../../../adapters/hermes/README.md)
+Related: 批次表 [2026-09-13-feature-completion-backlog](2026-09-13-feature-completion-backlog.md) · 主设计 [§12-P4 / §11.2](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 蓝图 [§7 A4 / §9 不做清单](../../../../docs/research/framework-rebuild-blueprint.md) · DSH 侧 A4 [lint 在环 ADR](2026-09-08-lint-in-loop-feedback.md) + [升格批](2026-09-09-lint-block-and-staged-hook.md)（本刀同判据 = lint 半）+ [注释面扩面](2026-09-10-export-docs-inloop.md)（export-docs 半，本刀不接） · 防火墙 [adapters/AGENTS](../../../../adapters/AGENTS.md) · 消费契约 [adapters/hermes/README](../../../../adapters/hermes/README.md)
 
 ## Problem
 

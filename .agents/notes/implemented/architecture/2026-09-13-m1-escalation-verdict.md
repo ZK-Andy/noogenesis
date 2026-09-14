@@ -3,7 +3,7 @@
 Status: implemented
 Review: LIGHT/2026-09-13/语义评审（范围化子代理 R2：0 Blocker + 5 Suggestion 全采纳收口——样本扫描面改 183/328、代价面改「零件归因返工」并剔除 (a)/(d) 矛盾、独立佐证只留 `f6ea2796`、T3 补阈值与责任面）
 
-Related: 机制立项 [2026-09-10-m1-guard-anti-overdesign](2026-09-10-m1-guard-anti-overdesign.md)（Decision 1② 与 Alternatives「阻断档判不立」——本件以实测复核该判据）· 触发面现态 [2026-09-11-skill-guard-trigger-faces](2026-09-11-skill-guard-trigger-faces.md)（阻断档再次判不立；本件补服从面）· [推送形态修复件](../bug-fix/2026-09-12-skill-guard-push-pattern-reachability.md) · [可达性门](../bug-fix/2026-09-12-bank-skill-provider-registration.md) · 对账面 [session-close](../../../workflows/session-close.md) §2 · 蓝图 [§7 M1](../../../../docs/research/framework-rebuild-blueprint.md) · 批次表 [行 9](../../proposed/architecture/2026-09-13-feature-completion-backlog.md)
+Related: 机制立项 [2026-09-10-m1-guard-anti-overdesign](2026-09-10-m1-guard-anti-overdesign.md)（Decision 1② 与 Alternatives「阻断档判不立」——本件以实测复核该判据）· 触发面现态 [2026-09-11-skill-guard-trigger-faces](2026-09-11-skill-guard-trigger-faces.md)（阻断档再次判不立；本件补服从面）· [推送形态修复件](../bug-fix/2026-09-12-skill-guard-push-pattern-reachability.md) · [可达性门](../bug-fix/2026-09-12-bank-skill-provider-registration.md) · 对账面 [session-close](../../../workflows/session-close.md) §2 · 蓝图 [§7 M1](../../../../docs/research/framework-rebuild-blueprint.md) · 批次表 [行 9](2026-09-13-feature-completion-backlog.md)
 
 ## Problem
 

@@ -4,7 +4,7 @@ Status: implemented
 
 Review: LIGHT/2026-09-14/语义评审（范围化子代理 R2：0 Blocker + 1 Suggestion 全采纳——Consequences 的「P4 分发三行」与其括注枚举的 34–37 四行自相矛盾（批次表 P4 = 四行）→ 改「四行」）
 
-Related: 批次表 [行 37](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 主设计 [§11.2 / §12-P4](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 共享层稿 [§集成面](../../../../docs/research/dsh-collective-evolution-shared-layer.md) · 前序分发件 [一行安装 ADR](2026-09-14-one-line-install.md) · 组合裁决 [序 36 ADR](2026-09-14-capsule-composition-verdict.md) · 发布面闸 [code-standards / package-invariants](../../../../docs/method/code-standards.md) · 宿主声明类型 `@deepseek-ai/dsh-package-manifest`（本机实装代实读）
+Related: 批次表 [行 37](2026-09-13-feature-completion-backlog.md) · 主设计 [§11.2 / §12-P4](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 共享层稿 [§集成面](../../../../docs/research/dsh-collective-evolution-shared-layer.md) · 前序分发件 [一行安装 ADR](2026-09-14-one-line-install.md) · 组合裁决 [序 36 ADR](2026-09-14-capsule-composition-verdict.md) · 发布面闸 [code-standards / package-invariants](../../../../docs/method/code-standards.md) · 宿主声明类型 `@deepseek-ai/dsh-package-manifest`（本机实装代实读）
 
 ## Problem
 

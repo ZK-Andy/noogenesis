@@ -3,7 +3,7 @@
 Status: implemented
 Review: LIGHT/2026-09-13/语义评审（范围化子代理 R2：2 Blocker + 5 Suggestion 全采纳——批次表封条行残留 + profile 数口径矛盾；grep 漏 `*.yml`、A2/A5 归属、`noo_select` 口径、与四源关系措辞、两件先前 ADR 的前向现值句）
 
-Related: 站立规则 [Detect 逐源裁决（一）](2026-09-13-detect-source-verdict-session-event.md)（自动 Detect 默认关 + 逐源门槛）· 四源收口 [(四) `tool/result`](2026-09-13-detect-source-verdict-tool-result.md) · 批次表 [行 15](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · [M2 适配层 ADR](2026-09-06-m2-adapter-wiring.md)（system-prompt 双节 = 命中节与 `injectSignals` 的家）· [B4 挂载面 ADR](2026-09-08-b4-mount-wiring.md)（A2 子树规则地图 + HERO 答案 + A1 注入时序实证）· [M1 立项 ADR](2026-09-10-m1-guard-anti-overdesign.md)（A3 技能触点提醒）· [护栏建设轮 ADR](2026-09-13-guardrail-construction-round.md)（常驻注入字面预算）· [P1 骨架 D2](2026-09-05-p1-engine-skeleton.md) · 主设计 [§8.3 DSH 注入点 / §6 生命周期](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 蓝图 [§7 挂载面表](../../../../docs/research/framework-rebuild-blueprint.md)
+Related: 站立规则 [Detect 逐源裁决（一）](2026-09-13-detect-source-verdict-session-event.md)（自动 Detect 默认关 + 逐源门槛）· 四源收口 [(四) `tool/result`](2026-09-13-detect-source-verdict-tool-result.md) · 批次表 [行 15](2026-09-13-feature-completion-backlog.md) · [M2 适配层 ADR](2026-09-06-m2-adapter-wiring.md)（system-prompt 双节 = 命中节与 `injectSignals` 的家）· [B4 挂载面 ADR](2026-09-08-b4-mount-wiring.md)（A2 子树规则地图 + HERO 答案 + A1 注入时序实证）· [M1 立项 ADR](2026-09-10-m1-guard-anti-overdesign.md)（A3 技能触点提醒）· [护栏建设轮 ADR](2026-09-13-guardrail-construction-round.md)（常驻注入字面预算）· [P1 骨架 D2](2026-09-05-p1-engine-skeleton.md) · 主设计 [§8.3 DSH 注入点 / §6 生命周期](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 蓝图 [§7 挂载面表](../../../../docs/research/framework-rebuild-blueprint.md)
 
 ## Problem
 

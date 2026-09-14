@@ -3,7 +3,7 @@
 Status: implemented
 Review: LIGHT/2026-09-14/语义评审（范围化子代理 R2：0 Blocker + 1 Suggestion 全采纳——P1 骨架「收窄归口」段 memory-graph 半边状态句失准，补现状指针；五项定向检查 4 真 1 partial，partial 即该条）
 
-Related: 重议对象 [第二期判裁 ADR](2026-09-13-memory-line-phase2-verdict.md)（其 Decision 2 的触发条单源指向第一期实现件）· 触发条家 [第一期实现 ADR](2026-09-11-memory-line-phase1-observation-face.md) Decision 4 · 形态单源 [融合立宪 ADR](2026-09-10-memory-line-fusion-charter.md) D7-1/D8 · 批次表 [行 16–20 与「需显式重拍的决策面」节](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 线状态家 [memory-system-dossier](../../../../docs/state/memory-system-dossier.md) · 主设计 [§5.1 原语表 / §6 生命周期 / §9.4 蜂群观测](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 预期声明的既有家 [Mutation 原语 ADR](2026-09-13-mutation-primitive.md) · 观测透镜后置 [P2 ADR](2026-09-06-p2-shared-consumer.md) D3
+Related: 重议对象 [第二期判裁 ADR](2026-09-13-memory-line-phase2-verdict.md)（其 Decision 2 的触发条单源指向第一期实现件）· 触发条家 [第一期实现 ADR](2026-09-11-memory-line-phase1-observation-face.md) Decision 4 · 形态单源 [融合立宪 ADR](2026-09-10-memory-line-fusion-charter.md) D7-1/D8 · 批次表 [行 16–20 与「需显式重拍的决策面」节](2026-09-13-feature-completion-backlog.md) · 线状态家 [memory-system-dossier](../../../../docs/state/memory-system-dossier.md) · 主设计 [§5.1 原语表 / §6 生命周期 / §9.4 蜂群观测](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 预期声明的既有家 [Mutation 原语 ADR](2026-09-13-mutation-primitive.md) · 观测透镜后置 [P2 ADR](2026-09-06-p2-shared-consumer.md) D3
 
 ## Problem
 

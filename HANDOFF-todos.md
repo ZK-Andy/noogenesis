@@ -74,5 +74,5 @@
 - [x] （A）M1 批 A 守卫三件套 2026-09-10（FULL 三审全采纳；三件 v0 落地），ADR [2026-09-10-m1-guard-anti-overdesign](.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) implemented（分批批注）。
 - [x] （A）M1 批 B 防过度混合 D 2026-09-10（FULL 三审全采纳；契约块 + 蒸馏篇 + cases 索引 + 检查项第 5 条），ADR [2026-09-10-m1-guard-anti-overdesign](.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) 第二条 Review 行在案。
 - [x] （D）护栏建设轮余项收尾 2026-09-13：建议行落地（`token-baseline.mts` 每会话一行读数，运行期形状闸）+ 两本账落点（发版账 = release ADR 实发节，三次已回填），[ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md) 落账。
-- [ ] （A）批次表（46 项）开工中：批次 9 已全线落账——序 45 合并携带自校验证据裁决落（[ADR](.agents/notes/implemented/architecture/2026-09-14-merge-self-validation-evidence-verdict.md)：合并边界证据面与跨机合并闸已交付，PR/贡献闸与「验证报告」对象判不立，`validation_report_id` 终局）；游标 = **序 46**（可选）。单源 = [批次表 ADR](.agents/notes/proposed/architecture/2026-09-13-feature-completion-backlog.md)。
+- [x] （A）批次表 46 项全部终态、表转 implemented（2026-09-14；46 项逐行结论单源 = [批次表 ADR](.agents/notes/implemented/architecture/2026-09-13-feature-completion-backlog.md)）。
 - [ ] （B）Hermes 写码在环 hook 真机复验（本地环境，不入仓）：`~/.hermes/config.yaml` 合并 `adapters/hermes/hooks.example.yml` 后，真会话让 agent 写违约 `.ts`（含 `var`）→ 期望 `pre_tool_call` 拦回（block 消息带规则与行号）；干净写放行；非 `.ts` / 出仓写不触发；判据件故障面（临时改名 oxlint）期望零阻断。

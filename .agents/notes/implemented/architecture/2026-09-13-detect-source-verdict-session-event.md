@@ -3,7 +3,7 @@
 Status: implemented
 Review: LIGHT/2026-09-13/语义评审（范围化子代理 R2：2 Blocker + 5 Suggestion 全采纳——引错设计稿节 §4.2→§11.1、批次表行 12–14「同上」继承 done 两处为 Blocker；余五条收口指针可查性 / 零实例证据强度 / 残留表述）
 
-Related: 批次表 [行 11 与「需显式重拍的决策面」](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · [P1 骨架 D2](2026-09-05-p1-engine-skeleton.md) · [M2 适配层](2026-09-06-m2-adapter-wiring.md)（信号入口边界）· 主设计 [§6 生命周期 / §11.1 生命周期钩子](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 蓝图 [§7 挂载面表 / §9 不做清单](../../../../docs/research/framework-rebuild-blueprint.md) · [A8 撤除批](2026-09-08-a8-session-record-projection-removal.md) · [B4 挂载面 ADR](2026-09-08-b4-mount-wiring.md)（M1 HERO 答案）· 宿主包读面 `@deepseek-ai/dsh-session@0.1.5-rc.2`
+Related: 批次表 [行 11 与「需显式重拍的决策面」](2026-09-13-feature-completion-backlog.md) · [P1 骨架 D2](2026-09-05-p1-engine-skeleton.md) · [M2 适配层](2026-09-06-m2-adapter-wiring.md)（信号入口边界）· 主设计 [§6 生命周期 / §11.1 生命周期钩子](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 蓝图 [§7 挂载面表 / §9 不做清单](../../../../docs/research/framework-rebuild-blueprint.md) · [A8 撤除批](2026-09-08-a8-session-record-projection-removal.md) · [B4 挂载面 ADR](2026-09-08-b4-mount-wiring.md)（M1 HERO 答案）· 宿主包读面 `@deepseek-ai/dsh-session@0.1.5-rc.2`
 
 ## Problem
 

@@ -3,7 +3,7 @@
 Status: implemented
 Review: LIGHT/2026-09-14/语义评审（范围化子代理 R2：2 Blocker + 2 Suggestion 全采纳——批次表封条行旧游标残留 + ADR self-test 计数与 validate.yml 实跑不符改删计数；序 26 触发措辞统一对齐 P2 D3 + gene_sha 的 S1/S2 面级分表述）
 
-Related: 批次表 [行 21–29 与「需显式重拍的决策面」节](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 主设计 [§13 未决 1/2/5](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 共享层稿 [§6.2 / §11](../../../../docs/research/dsh-collective-evolution-shared-layer.md) · [P1 骨架 ADR](2026-09-05-p1-engine-skeleton.md) D1/D3 · [schema ADR](2026-09-05-gene-event-schema.md) S1 · [P2 ADR](2026-09-06-p2-shared-consumer.md) D3 · [Mutation ADR](2026-09-13-mutation-primitive.md) · [Capsule ADR](2026-09-13-capsule-primitive.md) C1 · [Event 扩字段 ADR](2026-09-13-event-field-extension.md) E4 · [validate.yml](../../../../.github/workflows/validate.yml)
+Related: 批次表 [行 21–29 与「需显式重拍的决策面」节](2026-09-13-feature-completion-backlog.md) · 主设计 [§13 未决 1/2/5](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 共享层稿 [§6.2 / §11](../../../../docs/research/dsh-collective-evolution-shared-layer.md) · [P1 骨架 ADR](2026-09-05-p1-engine-skeleton.md) D1/D3 · [schema ADR](2026-09-05-gene-event-schema.md) S1 · [P2 ADR](2026-09-06-p2-shared-consumer.md) D3 · [Mutation ADR](2026-09-13-mutation-primitive.md) · [Capsule ADR](2026-09-13-capsule-primitive.md) C1 · [Event 扩字段 ADR](2026-09-13-event-field-extension.md) E4 · [validate.yml](../../../../.github/workflows/validate.yml)
 
 ## Problem
 

@@ -3,7 +3,7 @@
 Status: implemented
 Review: LIGHT/2026-09-13/语义评审（范围化子代理 R2：2 Blocker + 2 Suggestion 全采纳——宿主发射面口径收窄为「可观测子集」（四处调用仅主体异常一路落 `turn/end`，另三路被 `kick()` 吞掉且无持久记录）、P1 骨架 D2 现值残留；另两条为滚动窗条目与 §6 措辞）
 
-Related: 站立规则 [Detect 逐源裁决（一）](2026-09-13-detect-source-verdict-session-event.md) · 批次表 [行 12](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · [P1 骨架 D2](2026-09-05-p1-engine-skeleton.md) · [M2 适配层](2026-09-06-m2-adapter-wiring.md) · 主设计 [§6 生命周期 / §11.1 生命周期钩子](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · [A8 撤除批](2026-09-08-a8-session-record-projection-removal.md) · [A4 拦回批](2026-09-08-lint-in-loop-feedback.md) · 宿主合同 `@deepseek-ai/dsh-agent@0.1.5-rc.2`（发射点 = 运行时包 `dsh-agent-loop@0.1.5-rc.2`）
+Related: 站立规则 [Detect 逐源裁决（一）](2026-09-13-detect-source-verdict-session-event.md) · 批次表 [行 12](2026-09-13-feature-completion-backlog.md) · [P1 骨架 D2](2026-09-05-p1-engine-skeleton.md) · [M2 适配层](2026-09-06-m2-adapter-wiring.md) · 主设计 [§6 生命周期 / §11.1 生命周期钩子](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · [A8 撤除批](2026-09-08-a8-session-record-projection-removal.md) · [A4 拦回批](2026-09-08-lint-in-loop-feedback.md) · 宿主合同 `@deepseek-ai/dsh-agent@0.1.5-rc.2`（发射点 = 运行时包 `dsh-agent-loop@0.1.5-rc.2`）
 
 ## Problem
 

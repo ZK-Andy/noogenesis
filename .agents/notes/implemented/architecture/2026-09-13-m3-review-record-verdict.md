@@ -3,7 +3,7 @@
 Status: implemented
 Review: LIGHT/2026-09-13/语义评审（范围化子代理 R2：0 Blocker + 2 Suggestion 全采纳收口——③ 实跑计数改留痕口径、② 档位括注与停止前续跑档拆开）
 
-Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/architecture/2026-09-13-feature-completion-backlog.md)（行 8）· 前置拍板 [2026-09-10-review-execution-reconciliation](2026-09-10-review-execution-reconciliation.md)（F3 不设防 + ② 缓议 + ③ 落卡，本件维持其档位与触发）· [2026-09-13-a6-turn-stopping-mount](2026-09-13-a6-turn-stopping-mount.md)（停止前候选只有续跑档）· 宿主约束件 [2026-09-08-a8-session-record-projection-removal](2026-09-08-a8-session-record-projection-removal.md) · 蓝图 [§7 M3 / §8](../../../../docs/research/framework-rebuild-blueprint.md) · 问题池 [§2.1](../../../../docs/research/capsule-01-optimization-round.md) · 对账步 [session-close](../../../workflows/session-close.md) §2
+Related: 批次表 [2026-09-13-feature-completion-backlog](2026-09-13-feature-completion-backlog.md)（行 8）· 前置拍板 [2026-09-10-review-execution-reconciliation](2026-09-10-review-execution-reconciliation.md)（F3 不设防 + ② 缓议 + ③ 落卡，本件维持其档位与触发）· [2026-09-13-a6-turn-stopping-mount](2026-09-13-a6-turn-stopping-mount.md)（停止前候选只有续跑档）· 宿主约束件 [2026-09-08-a8-session-record-projection-removal](2026-09-08-a8-session-record-projection-removal.md) · 蓝图 [§7 M3 / §8](../../../../docs/research/framework-rebuild-blueprint.md) · 问题池 [§2.1](../../../../docs/research/capsule-01-optimization-round.md) · 对账步 [session-close](../../../workflows/session-close.md) §2
 
 ## Problem
 

@@ -4,7 +4,7 @@ Status: implemented
 
 Review: LIGHT/2026-09-14/语义评审（范围化子代理 R2：0 Blocker + 2 Suggestion 全采纳——模板名枚举漏 `sdk-minimal` 且「其余名字」判据对它不成立（其 bundle 集仅 `@deepseek-ai/dsh-sdk-minimal`）→ 双语补第五名并改「无对应模板的名字」；ADR 内「不重述机制」与 Problem/Consequences 单源句互拉扯 → 收窄为「机制结论归 M2 ADR，新增实读事实与取舍归本件」；另据实补 `cordis.yml` 落物）
 
-Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 主设计 [§12-P4](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 安装机制单源 [M2 适配层](2026-09-06-m2-adapter-wiring.md) / [部署收口](2026-09-06-adapter-deploy-hardening.md) · 包面声明 [package.json](../../../../package.json)（`dsh.bundle.patch`）· 豁免面 [cookbook 环境条](../../../../docs/cookbook.md) · 消费者面 [根 README 安装节](../../../../README.md)
+Related: 批次表 [2026-09-13-feature-completion-backlog](2026-09-13-feature-completion-backlog.md) · 主设计 [§12-P4](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 安装机制单源 [M2 适配层](2026-09-06-m2-adapter-wiring.md) / [部署收口](2026-09-06-adapter-deploy-hardening.md) · 包面声明 [package.json](../../../../package.json)（`dsh.bundle.patch`）· 豁免面 [cookbook 环境条](../../../../docs/cookbook.md) · 消费者面 [根 README 安装节](../../../../README.md)
 
 ## Problem
 

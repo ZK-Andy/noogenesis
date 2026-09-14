@@ -4,7 +4,7 @@ Status: implemented
 
 Review: LIGHT/2026-09-14/语义评审（范围化子代理 R2：1 Blocker + 2 Suggestion 全采纳——T3 被改写成「注册面」并与「沿用行 31 单源」自述分叉 → 回退为行 31 原文 + 当前事实读数括注；mount audit 引据错位〔该 audit 只覆盖 preset 子树内的行，不构成宿主组合 row 的落败理由〕→ 删该引据；profile 层机制读数与批次 6 裁决 ADR 双家 → 改指针）
 
-Related: 批次表 [行 36](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 主设计 [§2.3 / §11.2](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 归口来源 [批次 6 裁决 ADR](2026-09-14-batch6-composition-meta-verdict.md)（行 31 能力面归口本行） · 依赖面 [Capsule 原语](2026-09-13-capsule-primitive.md) / [开题轮 ADR](2026-09-14-batch5-opening-round.md)（序 25 渲染语义后置） · 组合消费面 [一行安装 ADR](2026-09-14-one-line-install.md) · 范围契约 [anti-overdesign](../../../../docs/method/anti-overdesign.md) · 宿主机制面 `@deepseek-ai/dsh-agent-presets`（本机实装代实读）
+Related: 批次表 [行 36](2026-09-13-feature-completion-backlog.md) · 主设计 [§2.3 / §11.2](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 归口来源 [批次 6 裁决 ADR](2026-09-14-batch6-composition-meta-verdict.md)（行 31 能力面归口本行） · 依赖面 [Capsule 原语](2026-09-13-capsule-primitive.md) / [开题轮 ADR](2026-09-14-batch5-opening-round.md)（序 25 渲染语义后置） · 组合消费面 [一行安装 ADR](2026-09-14-one-line-install.md) · 范围契约 [anti-overdesign](../../../../docs/method/anti-overdesign.md) · 宿主机制面 `@deepseek-ai/dsh-agent-presets`（本机实装代实读）
 
 ## Problem
 

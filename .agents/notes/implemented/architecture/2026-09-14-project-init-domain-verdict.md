@@ -4,7 +4,7 @@ Status: implemented
 
 Review: FULL/2026-09-14/R1=ok R2=ok R3=ok
 
-Related: 批次表 [行 38](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 主设计 [§10 / §4.1 / §12-P4](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 初始化内容家 [ai-collaboration-method](../../../../docs/method/ai-collaboration-method.md) · [一行安装 ADR](2026-09-14-one-line-install.md) · [技能随库分发 ADR](2026-09-06-skills-ride-bank.md) · [M2 适配层 ADR](2026-09-06-m2-adapter-wiring.md) · 前序裁决 [序 36](2026-09-14-capsule-composition-verdict.md) / [序 37](2026-09-14-plugin-marketplace-verdict.md) · 档位判据 [review.md](../../../../docs/method/review.md)
+Related: 批次表 [行 38](2026-09-13-feature-completion-backlog.md) · 主设计 [§10 / §4.1 / §12-P4](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 初始化内容家 [ai-collaboration-method](../../../../docs/method/ai-collaboration-method.md) · [一行安装 ADR](2026-09-14-one-line-install.md) · [技能随库分发 ADR](2026-09-06-skills-ride-bank.md) · [M2 适配层 ADR](2026-09-06-m2-adapter-wiring.md) · 前序裁决 [序 36](2026-09-14-capsule-composition-verdict.md) / [序 37](2026-09-14-plugin-marketplace-verdict.md) · 档位判据 [review.md](../../../../docs/method/review.md)
 
 ## Problem
 

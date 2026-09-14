@@ -3,7 +3,7 @@
 Status: implemented
 Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 
-Related: 批次表 [2026-09-13-feature-completion-backlog](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 主设计 [§7.1-5/§7.2](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 参考调研 [JIT-Agent 报告 §5/§6.2/§7.2](../../../../docs/research/JIT-Agent_Research_Report_20260831.md) · 影响面判据 [序 4 Evaluate blast-radius](2026-09-13-evaluate-blast-radius.md)（B3）· 骨架封条 [P1 引擎骨架](2026-09-05-p1-engine-skeleton.md)（D1/D2/D4）· [护栏建设轮](2026-09-13-guardrail-construction-round.md)（Decision 2）· 记忆线一期 [观测输入面](2026-09-11-memory-line-phase1-observation-face.md)（Decision 4）· 操作入口 [根 AGENTS「评审检查项」](../../../../AGENTS.md)
+Related: 批次表 [2026-09-13-feature-completion-backlog](2026-09-13-feature-completion-backlog.md) · 主设计 [§7.1-5/§7.2](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 参考调研 [JIT-Agent 报告 §5/§6.2/§7.2](../../../../docs/research/JIT-Agent_Research_Report_20260831.md) · 影响面判据 [序 4 Evaluate blast-radius](2026-09-13-evaluate-blast-radius.md)（B3）· 骨架封条 [P1 引擎骨架](2026-09-05-p1-engine-skeleton.md)（D1/D2/D4）· [护栏建设轮](2026-09-13-guardrail-construction-round.md)（Decision 2）· 记忆线一期 [观测输入面](2026-09-11-memory-line-phase1-observation-face.md)（Decision 4）· 操作入口 [根 AGENTS「评审检查项」](../../../../AGENTS.md)
 
 ## Problem
 

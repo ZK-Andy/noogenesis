@@ -4,7 +4,7 @@ Status: implemented
 
 Review: LIGHT/2026-09-14/语义评审（范围化子代理单路 R2：0 Blocker + 1 Suggestion，采纳 1——S1 括注字段精度：红路径违约理由落 `outcome`、`evidence` 记拒入事实回写 Problem 表述）
 
-Related: 批次表 [行 45](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 主设计 [§7.2](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · [序 43 裁决](2026-09-14-subagent-auto-validation-verdict.md) · Event 扩字段 [E4](2026-09-13-event-field-extension.md) · [序 44 命令面](2026-09-14-evolve-command-surface.md) · 贡献闸前提 [P2 D3](2026-09-06-p2-shared-consumer.md) · 跨机复验 [validate.yml](../../../../.github/workflows/validate.yml) · 入档闸 [solidify.ts](../../../../engine/solidify.ts)
+Related: 批次表 [行 45](2026-09-13-feature-completion-backlog.md) · 主设计 [§7.2](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · [序 43 裁决](2026-09-14-subagent-auto-validation-verdict.md) · Event 扩字段 [E4](2026-09-13-event-field-extension.md) · [序 44 命令面](2026-09-14-evolve-command-surface.md) · 贡献闸前提 [P2 D3](2026-09-06-p2-shared-consumer.md) · 跨机复验 [validate.yml](../../../../.github/workflows/validate.yml) · 入档闸 [solidify.ts](../../../../engine/solidify.ts)
 
 ## Problem
 
