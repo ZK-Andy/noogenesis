@@ -11,7 +11,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-15｜**演化轮落账批（评审面作用域，FULL）**：池件三候选落账——brief 闸 `--lanes` 收窄到判据面（残留泳道简报不拦发射）+ md-links 跳过 `.review-briefs/` 工件 + review-tier 迁移提交判负判为顺序纪律（不改闸）。[ADR](.agents/notes/implemented/process/2026-09-15-review-gate-scope-and-evidence.md)
+- 2026-09-15｜**演化轮落账批（评审面作用域，FULL）**：池件三候选落账——brief 闸 --lanes 收窄到判据面 + md-links 跳过 .review-briefs/ + tier 迁移提交判负不改闸；三审 1B/5S 全采纳，`de6ba8d`→`0641b45`；README 无漂移。[ADR](.agents/notes/implemented/process/2026-09-15-review-gate-scope-and-evidence.md)
 
 - 2026-09-15｜**演化轮落账批（覆盖面静默绿，FULL）**：池件三候选落账——新闸 self-test-surface + package-invariants 2c（宿主 README ↔ files）+ doc-budgets 缺 manifest fail-closed；三审 9 条全采纳，`8fc5dc5`→`6ffed31`。[ADR](.agents/notes/implemented/process/2026-09-15-surface-coverage-gates.md)
 
