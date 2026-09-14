@@ -23,8 +23,6 @@
 
 - **（2026-09-13）纪律漏项候选：implemented ADR 里作为「决策时记录」的外部版本串，是否豁免「与上线现实同步」——口径未成文**：症状 = 本批把宿主 peer 从 `^0.1.0-rc.8` 升到 `^0.1.5-rc.2`（[升代 ADR](.agents/notes/implemented/architecture/2026-09-13-host-peer-generation-upgrade.md)），而 `b4-mount-wiring` 与 `m2-adapter-wiring` 仍以当时的 peer 串叙述；`.agents/notes/README.md` 的维护纪律只写「文件移动/改名/改默认值时同变更改写（只改事实，不改决定）」，对「决策时观测到的外部版本值」无判据。本批 R1 评审（Suggestion 5）以「决策时记录」分类放行，且先例自洽（M2 的 `^0.1.0-rc.6` 未随 B4 改写），但该分类此前只存在于本批 ADR 的影响面清账表。同类第二例 = cookbook 条的前提句在本批失效（R2 Suggestion 2，已就地转历史态）。触发 = 第二次遇到同类外部值需要同步时（或 notes/README 维护纪律下一轮修订）。出处 = 演化轮池归集（feature-flow §4.6.2）。
 
-- **（2026-09-13）机械化候选：「CI self-test 抽查清单 ↔ `scripts/verify-*.mts`」可静态判**：形态 = 扫 `.github/workflows/validate.yml` self-test 块的命令集，与 `ls scripts/verify-*.mts` 对照（例外面具名：共享件 `mdref` / `pypara` / `srctree` 与 `change-scope.mts` 无 `--self-test` 入口、`gen-manifest.mts` 非 verify-*）。出处 = 演化轮落账批 R2 Blocker（新闸 `host-service-reads` 是清单里唯一缺席的 verify-* 件，而该块行注释自称「清单与 `scripts/*.mts` 一一对应」）——本批只采纳一行登记修法，判据稳定后开轮落闸。
-
 - **（2026-09-13）护栏轮之经验：`git add -A` 在多会话共用工作树下会卷走他人在飞改动**：本会话与他会话并行时实际发生（他方 `section.mts` 未提交改动被卷，档位闸拦下后 `reset --soft` 退回）——纪律面已落 [cookbook](docs/cookbook.md)「协作」条；未机械化面 = 「提交前工作树里出现非己方路径」是否值得上闸（机械判定的代价：无法区分合法协同与误卷）。出处 = [护栏建设轮 ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md) 收口批。
 - **（2026-09-13）`verify-review-tier` 在「proposed → implemented 迁移提交」上会把本批证据判为缺**：迁移提交只含 ADR 的改名与新 Review 行时，工作树态（未提交改名）下 `<since>..HEAD` 的 per-path diff 为空 → 证据判负；提交后即刻转绿（本会话实遇，收口提交后 `--enforce` 通过）。判据是否需要把「工作树rename + 同路径新增行」计入 = 待判；当前处置 = 先提交再核（顺序纪律，无需改闸）。出处 = [机械化 ADR](.agents/notes/implemented/process/2026-09-11-review-finding-mechanization.md) 门禁判据类。
 - **（2026-09-13）纪律漏项候选：批次表「行标 done 的时点」口径未成文**：症状 = 批次 2 序 7 的 R3 依前例（序 4 `d1d57f7`、序 5 `05e64d1` 均在实现提交标 done）判「实现提交即标 done」，而本批按「评审收口提交」处置；两种做法各自可自洽，但判据不在任何卡上，每次靠回溯 git 举证。待判 = 口径成文（实现提交标 done 还是收口标 done，及与 Review 行的先后）。出处 = 批次 2 序 7 R3 Blocker 1。
@@ -38,13 +36,9 @@
 
 - **（2026-09-13）纪律漏项候选：取证命令按其字面不能证伪所载断言**：症状 = 批次 3 序 15 ADR 载 `grep -rn injectSignals ~/.dsh --include=*.json --include=*.yaml`，漏 `*.yml`——而 profile 用户层恰是 `cordis.yml` / `cordis.patch.yml`（R2 Suggestion 3 实证：结论按 `.json/.yml/.yaml` 全扫成立，但所载命令无法证伪它）；同族两例 = 序 15 同句「本机三 profile（括号列两项）」数词与枚举自相矛盾（R2 Blocker 2）、序 14 分类桶与自带读数矛盾（R2 Blocker 1）。根因 = 证据句随写随记、未按命令字面回跑一次，数词与枚举未同步核。规避 = 带命令的取证句贴进 ADR 前按字面复跑一次、数词与括号内枚举对齐。触发 = 下次写带命令或带计数的证据句时。出处 = 批次 3 序 15 R2 Blocker 2 + Suggestion 3（同族见序 14 R2 Blocker 1）。
 
-- **（2026-09-14）机械化候选：新增宿主目录 ↔ 发布面清单可静态判**：症状 = 批次 7 序 35 新增 `adapters/hermes/` 后，`package.json` 的 `files` 与 `verify-package-invariants.mts` 的 `REQUIRED_FILES_ENTRIES` 都没跟上（而同仓已发布 README 正指向 `adapters/hermes/hooks.example.yml` 与 `README.md`），门禁不报警（R2-B2）。形态 = 扫 `adapters/<host>/README.md` 的存在集，与 `files` 白名单 + 必需件表对照；成本低、判据稳定。出处 = 批次 7 序 35 R2 Blocker 2。
-
 - **（2026-09-14）纪律漏项候选：转述他件的触发条 / 条件句时被逐字改写，与本件「单源不变」自述分叉**：症状 = 批次 7 序 36 ADR 把 [批次 6 裁决 ADR](.agents/notes/implemented/architecture/2026-09-14-batch6-composition-meta-verdict.md) 的 T3「宿主给出插件侧 profile 组合 / 挂载服务面」改写成「插件侧 preset / profile 注册面」并新增 `preset` 主体，同时自述「沿用行 31 T1–T3（单源不变）/ 本行不新立」——两件文本分叉（R2 Blocker，本批已就地回退为原文 + 当前事实读数括注）。根因 = 想在同一行同时承载「原触发条件」与「当前事实读数」，改写了条件本体。规避 = 沿用触发条时逐字引原文，事实读数另起括注 / 句；可机械化面待判 = 自称「沿用 X 的触发条」时，其文本须与 X 逐字相同或显式标注差异。出处 = 批次 7 序 36 R2 Blocker 1。
 
 - **（2026-09-14）纪律漏项候选：沿用时手抄的「穷举枚举」随实态漂移**：症状 = 批次 8 序 38 ADR 的包 `files` 白名单枚举（「只含 `dist/` + `engine/gates.json` + 两份 README + …」）沿自 journal 旧文，与 `package.json` 实态不符（实 10 项、4 份 README、漏 `adapters/hermes/hooks.example.yml`），而该枚举是两项「判不立」的唯一证据面；三审 R2 Blocker 抓到（R1 旁注同报，本批已就地改为证伪口径）。根因 = 手抄穷举句无机器面、写时未按字面回跑；可机械化面待判 = 「只含 / 全部 / 共 N」类穷举句与事实源静态对账。出处 = 批次 8 序 38 三审 R2 Blocker 1 + R1 旁注。
-
-- **（2026-09-14）踩坑候选：`verify-doc-budgets` 不带 `--manifest` 时静默 SKIP 且 exit 0**：症状 = 本地复跑或简报自证若写 `node scripts/verify-doc-budgets.mts`，默认路径 `./doc-budgets.manifest.json` 不存在 → 输出 `SKIP: manifest … not found`、exit 0——绿色被读成「已跑且通过」，实为零覆盖；仓内 gate 条目与 hooks 均带 `--manifest scripts/doc-budgets.manifest.json`，但简报自证行只记 `doc-budgets:0`。规避 = 自证行的命令形态须与 `engine/gates.json` 条目逐字一致，或闸件缺 manifest 时改为非零。出处 = 批次 8 序 38 三审 R1 附注。
 
 - **（2026-09-14）纪律漏项候选：HANDOFF ⏭ 末句「最新批 = …」不随游标推进同步**：症状 = 批次 8 序 39 改 ⏭ 前半（下一步 / 游标 = 序 40）时漏改同一行末句「最新批 = 批次 8 序 38」，与同 diff 新增的滚动窗首条（序 39）及当前状态条矛盾（R2 Blocker 2，本批已就地修）。根因 = 「最新批」句与滚动窗首条 / 当前状态条三处同说一事实（同族「批次推进时不在当批 diff 面的指针进入 checklist 就漏」的第 N 例，见序 38 手抄枚举条）。候选修法 = 删该句（滚动窗首条即最新批，单源），或纳入收批同步清单。出处 = 批次 8 序 39 R2 评审 Blocker 2。
 

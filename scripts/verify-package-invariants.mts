@@ -6,8 +6,10 @@
  * 判据 = package.json 与 dist 发布面的结构一致性（JSON/AST 级，不跑 npm pack）：
  *   1. `main` / `exports`（含裸字符串、条件对象、嵌套条件）的每个字符串目标实存；
  *   2. 上述目标被 `files` 白名单覆盖（`package.json` 恒由 npm 附带，豁免），且
- *      `files` 显式收录契约件清单（engine/gates.json、两 README、cordis.patch.yml、
- *      README.md、LICENSE、THIRD-PARTY-NOTICES.md）；
+ *      `files` 显式收录契约件清单（engine/gates.json、engine/README.md、
+ *      adapters/hermes/hooks.example.yml、cordis.patch.yml、README.md、LICENSE、
+ *      THIRD-PARTY-NOTICES.md）+ 盘面上每个 `adapters/<host>/README.md`（宿主目录
+ *      的 README 是发布面锚点：新增宿主目录漏登 files = 仓库可见而包内缺席）；
  *   3. dist 关键件实存（适配层入口 / 引擎 CLI / 门禁清单）；
  *   4. `engines.node` 在场、`dsh.bundle.patch` 指向实存件、`peerDependencies`
  *      的 `@deepseek-ai/*` 两件（dsh-tools + dsh-llm）在场；
@@ -40,14 +42,16 @@ const DIST_KEY_FILES = ["dist/adapters/dsh/index.mjs", "dist/engine/bin.js", "di
 const REQUIRED_FILES_ENTRIES = [
 	"engine/gates.json",
 	"engine/README.md",
-	"adapters/dsh/README.md",
-	"adapters/hermes/README.md",
 	"adapters/hermes/hooks.example.yml",
 	"cordis.patch.yml",
 	"README.md",
 	"LICENSE",
 	"THIRD-PARTY-NOTICES.md",
 ];
+
+/** 宿主目录 README 的盘面锚点（judgment 2c 从盘面推导，不手抄宿主清单）。 */
+const ADAPTERS_DIR = "adapters";
+const ADAPTER_README = "README.md";
 
 /** 不得进发布白名单的目录前缀（源码/测试/本地缓存）。 */
 const FORBIDDEN_FILES_PREFIXES = ["src/", "tests/", ".cache/"];
@@ -148,6 +152,18 @@ function collectViolations(repoRoot: string, pkg: PackageManifest): string[] {
 		if (!coveredBy(files, required)) violations.push(`files 白名单缺契约件：${required}`);
 	}
 
+	// 2c) 宿主目录 README 必须进发布面（新增 adapters/<host>/ 时漏登 files = 包内缺席 README）
+	const adaptersRoot = path.join(repoRoot, ADAPTERS_DIR);
+	if (fs.existsSync(adaptersRoot)) {
+		for (const entry of fs.readdirSync(adaptersRoot, { withFileTypes: true })) {
+			if (!entry.isDirectory()) continue;
+			const rel = `${ADAPTERS_DIR}/${entry.name}/${ADAPTER_README}`;
+			if (fs.existsSync(path.join(repoRoot, rel)) && !coveredBy(files, rel)) {
+				violations.push(`宿主目录 README 未被 files 白名单覆盖：${rel}`);
+			}
+		}
+	}
+
 	// 3) dist 关键件实存
 	for (const key of DIST_KEY_FILES) {
 		if (!fs.existsSync(path.join(repoRoot, key))) violations.push(`dist 关键件缺失：${key}（先 npm run build）`);
@@ -227,6 +243,9 @@ function realRun(repoRoot: string): number {
 	return code;
 }
 
+/** 夹具合成仓须造出的宿主 README 盘面（判据 2c 从盘面推导，夹具须复刻真实目录形状）。 */
+const FIXTURE_ADAPTER_READMES = [`${ADAPTERS_DIR}/dsh/${ADAPTER_README}`, `${ADAPTERS_DIR}/hermes/${ADAPTER_README}`];
+
 /** 夹具自测：以真实 package.json 为基线合成临时包，违约样例必须 FAIL、合规必须 PASS。 */
 function selfTest(repoRoot: string): number {
 	const failures: string[] = [];
@@ -241,7 +260,7 @@ function selfTest(repoRoot: string): number {
 	): number => {
 		const root = path.join(dir, label);
 		fs.mkdirSync(root, { recursive: true });
-		for (const rel of [...DIST_KEY_FILES, ...REQUIRED_FILES_ENTRIES]) {
+		for (const rel of [...DIST_KEY_FILES, ...REQUIRED_FILES_ENTRIES, ...FIXTURE_ADAPTER_READMES]) {
 			const abs = path.join(root, rel);
 			fs.mkdirSync(path.dirname(abs), { recursive: true });
 			fs.writeFileSync(abs, "");
@@ -291,6 +310,15 @@ function selfTest(repoRoot: string): number {
 		});
 		expect("files-uncovered", 1, (pkg) => {
 			pkg.files = (pkg.files ?? []).filter((f) => f !== "dist/");
+		});
+		// 判据 2c：宿主 README 漏登 files（既有宿主被摘除）与盘面新增宿主两种形态
+		expect("adapter-readme-uncovered", 1, (pkg) => {
+			pkg.files = (pkg.files ?? []).filter((f) => f !== "adapters/dsh/README.md");
+		});
+		expect("new-adapter-readme-uncovered", 1, () => {}, undefined, (root) => {
+			const abs = path.join(root, "adapters/newhost/README.md");
+			fs.mkdirSync(path.dirname(abs), { recursive: true });
+			fs.writeFileSync(abs, "# newhost\n");
 		});
 		expect("engines-missing", 1, (pkg) => {
 			delete pkg.engines;

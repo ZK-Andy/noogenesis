@@ -11,6 +11,8 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-15｜**演化轮落账批（覆盖面静默绿治理，FULL）**：池件三候选落账——新闸 self-test-surface（CI 自检清单 ↔ 盘面入口互全集）+ package-invariants 判据 2c（宿主 README ↔ files）+ doc-budgets 缺 manifest 改 fail-closed。[ADR](.agents/notes/implemented/process/2026-09-15-surface-coverage-gates.md)
+
 - 2026-09-15｜**TS 官方架构基准对照（§4 回填 + FULL 三审收口）**：六原则对照无实质违背；三处差异裁决（引擎 CLI 无 bin / 三件 selftest 进 dist / 两族 import 形态不适配）；§4 填入第二基线（n=64、146 条语句）。[ADR](.agents/notes/implemented/architecture/2026-09-15-ts-official-architecture-baseline.md)
 
 - 2026-09-14｜**批次 9 序 46 裁决（LIGHT）+ 批次表终局**：manifest 向量检索判不立（零具名失败 + 零依赖铁律 + 不排序判据，触发 T1–T3 具名）；批次表 46 行全部终态，表转 implemented，游标面退役。[ADR](.agents/notes/implemented/architecture/2026-09-14-manifest-vector-search-verdict.md)
@@ -56,14 +58,6 @@
 - 2026-09-13｜**批次 3 序 14 Detect 逐源裁决 `tool/result`（LIGHT；R2 1B+5S 全采纳）**：结果面已由 A4 消费（失败面 80.5% = A4 判据 + 宿主 fs 面）→ 判不立，四源裁决组收口。[ADR](.agents/notes/implemented/architecture/2026-09-13-detect-source-verdict-tool-result.md)；`ef2d93a`→`6e60560`。README 无漂移。
 
 - 2026-09-13｜**批次 3 序 13 Detect 逐源裁决 `agent/turn-stopping`（LIGHT；R2 2B+3S 全采纳）**：事件 = 93.4% 正常回合的关闭边界、载荷无失败位 → 判不立，A6 维持零策略。[ADR](.agents/notes/implemented/architecture/2026-09-13-detect-source-verdict-turn-stopping.md)；`5e5f1ba`→`5958d14`。README 无漂移。
-
-- 2026-09-13｜**批次 3 序 12 Detect 逐源裁决 `agent/error`（LIGHT；R2 2B+2S 全采纳）**：186 卷实扫 5 个错误回合（可观测子集全为 provider/API 面），无可命名失败与动作面 → 判不立。[ADR](.agents/notes/implemented/architecture/2026-09-13-detect-source-verdict-agent-error.md)；`fc0d9e5`→`1925794`。README 核对：无漂移。
-
-
-
-
-
-
 
 
 ## 背景
