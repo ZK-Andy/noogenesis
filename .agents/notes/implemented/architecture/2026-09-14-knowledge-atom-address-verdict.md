@@ -2,7 +2,7 @@
 
 Status: implemented
 
-Review: LIGHT/2026-09-14/pending（语义评审进行中，收口时回填真实结论）
+Review: LIGHT/2026-09-14/语义评审（范围化子代理单路 R2：0 Blocker + 0 Suggestion——五条定向检查逐条独立复跑成立，无发现）
 
 Related: 批次表 [行 42](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 主设计 [§8.2 / §8.1 / §5.1](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 共享层稿 [§6.2 schema](../../../../docs/research/dsh-collective-evolution-shared-layer.md) · 协议单源 [schema ADR S1/S2](2026-09-05-gene-event-schema.md) · 复算闸 [verify-gene-format](../../../../scripts/verify-gene-format.mts) · 地址写入面 [solidify.ts](../../../../engine/solidify.ts) · 术语与粒面 [Capsule ADR C1](2026-09-13-capsule-primitive.md) / [序 27](../../proposed/architecture/2026-09-13-feature-completion-backlog.md) · 踩坑原子 [序 40 裁决](2026-09-14-pitfall-atomization-verdict.md) · 版本后置 [开题轮 ADR](2026-09-14-batch5-opening-round.md) · 前序裁决 [序 41](2026-09-14-dev-process-selection-verdict.md) · 档位判据 [review.md](../../../../docs/method/review.md)
 
@@ -58,4 +58,4 @@ Related: 批次表 [行 42](../../proposed/architecture/2026-09-13-feature-compl
 - **档位**：纯文档收口（`.agents/notes/**` + HANDOFF 家庭 + journal），路径触发集未命中 → LIGHT 单路语义评审（R2）。
 - **机制零变化**：`engine/**`、`adapters/**`、`scripts/**`、`genes/`、`events/`、`manifest.json`、`docs/cookbook.md` 均不动。
 - **单源**：知识原子内容单源 = 三既有家（cookbook / notes / AGENTS+method+workflows）；机器地址面单源 = [schema ADR S1/S2](2026-09-05-gene-event-schema.md) + [verify-gene-format](../../../../scripts/verify-gene-format.mts) 复算段；版本后置口径单源 = [开题轮 ADR](2026-09-14-batch5-opening-round.md) 行 24；域内判据（候选余项与触发条）以本件为家。
-- **评审结论**：待回填。
+- **评审结论**：LIGHT 单路 R2——0 Blocker + 0 Suggestion（无发现）；五条定向检查逐条独立复跑成立。
