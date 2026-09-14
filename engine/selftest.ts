@@ -44,6 +44,16 @@ function spawnStdout(nodeArgs: string[], cwd: string): string {
   return execFileSync('node', nodeArgs, { cwd, encoding: 'utf8', stdio: 'pipe' }) as unknown as string;
 }
 
+// 判据只体现为 stderr 文案（退出码恒被其他判据压成 2）时，须断言 stderr 才算夹具。
+function spawnStderr(nodeArgs: string[], cwd: string): string {
+  try {
+    execFileSync('node', nodeArgs, { cwd, encoding: 'utf8', stdio: 'pipe' });
+    return '';
+  } catch (e) {
+    return (e as { stderr?: string }).stderr ?? '';
+  }
+}
+
 function mkTemp() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'noo-engine-selftest-'));
 }
@@ -552,6 +562,10 @@ function selfTest() {
       'bin: capsule add with extra positional -> exit 2');
     ok(spawnCode([bin, 'capsule', 'add', path.join(staging, 'cap-arg.json'), '--actor', 'a', '--actor', 'b'], td) === 2,
       'bin: capsule add with duplicate --actor -> exit 2');
+    ok(spawnCode([bin, 'capsule', 'add', path.join(staging, 'cap-arg.json'), '--actor', '--typo'], td) === 2,
+      'bin: capsule add --actor with a flag as value -> exit 2');
+    ok(spawnStderr([bin, 'capsule', 'add', path.join(staging, 'cap-arg.json'), '--bogus'], td).includes('unknown flag'),
+      'bin: capsule add unknown flag -> exit 2 with unknown-flag message');
     ok(!fs.existsSync(capsulePath(td, 'process', 'cap-arg')), 'bin: capsule add arg errors wrote nothing');
     ok(spawnCode([bin, 'capsule', 'bogus'], td) === 2, 'bin: unknown capsule subcommand -> exit 2');
 
@@ -646,6 +660,10 @@ function selfTest() {
       'bin: mutation add with extra positional -> exit 2');
     ok(spawnCode([bin, 'mutation', 'add', path.join(staging, 'mut-arg.json'), '--actor', 'a', '--actor', 'b'], td) === 2,
       'bin: mutation add with duplicate --actor -> exit 2');
+    ok(spawnCode([bin, 'mutation', 'add', path.join(staging, 'mut-arg.json'), '--actor', '--typo'], td) === 2,
+      'bin: mutation add --actor with a flag as value -> exit 2');
+    ok(spawnStderr([bin, 'mutation', 'add', path.join(staging, 'mut-arg.json'), '--bogus'], td).includes('unknown flag'),
+      'bin: mutation add unknown flag -> exit 2 with unknown-flag message');
     ok(!fs.existsSync(mutationPath(td, 'process', 'mut-arg')), 'bin: mutation add arg errors wrote nothing');
     ok(spawnCode([bin, 'mutation', 'bogus'], td) === 2, 'bin: unknown mutation subcommand -> exit 2');
 

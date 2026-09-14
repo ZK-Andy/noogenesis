@@ -8,7 +8,7 @@
     { "path": "docs/AGENTS.md", "max_words": 300 },
     { "path": ".agents/notes/AGENTS.md", "max_words": 300 },
     { "path": ".agents/notes/README.md", "max_words": 800 },
-    { "path": "docs/cookbook.md", "max_words": 2700 },
+    { "path": "docs/cookbook.md", "max_words": 2720, "_justify_bump": "评审 R1-S3 要求补回「跨调用以 git 为恢复面」半句；同批已压缩 lefthook 条腾位，蒸馏后仍差十余词。" },
     { "path": "docs/method/ai-collaboration-method.md", "max_words": 2000 },
     { "path": "docs/method/doc-standards.md", "max_words": 1200 },
     { "path": "docs/method/review.md", "max_words": 1500 },

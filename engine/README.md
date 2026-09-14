@@ -88,7 +88,7 @@ node dist/engine/bin.js self-test                           # 元评测夹具（
 
 - **语义**：Capsule = 一次真实执行的审计记录（主设计 §5.1），其 `gene_ids` / `steps` / `evidence` 同时是该次执行的可复现路径（共享层稿 §6.2）。落 `capsules/<domain>/<id>.json`，JSON、封闭七字段（`id` / `domain` / `gene_ids` / `trigger` / `steps` / `outcome` / `evidence`）。
 - **append-only**：同 id 重复记录拒收（无 `capsule.updated` / `capsule.retired` 面）；`outcome` 二值 `ok` | `fail`，`fail` 必带 `reason`。
-- **写读命令**：`capsule add <candidate.json> --actor N` 落 `capsules/` + `capsule.added` 事件（同一 commit，原子性同基因入档）；`capsule show <domain>/<id>` 渲染人读面。两者用法错与 fail-closed 都走 exit 2；多余位置参数与重复旗标即用法错（不静默取首个）。
+- **写读命令**：`capsule add <candidate.json> --actor N` 落 `capsules/` + `capsule.added` 事件（同一 commit，原子性同基因入档）；`capsule show <domain>/<id>` 渲染人读面。`capsule add` 的用法错（多余位置参数 / 重复旗标 / 未知旗标 / 旗标缺真值，不静默取首个）与两命令的 fail-closed 都走 exit 2。
 - **复算边界**：`gene_ids` 须曾成功入档——工作树在场，或事件轨上有过 ok 的 `gene.added`/`gene.updated`；写路径的前置更紧（记录时该基因须活在本仓 `genes/`，缓存副本不算）。退役不使既有引用失效。引擎不重跑门禁，`evidence` 由调用方在真实执行后给出（自动复跑归批次表序 43）。
 - **不收的字段**：`diff` / `content`（git 自身即内容面单源）、`score`（骨架 ADR D4 已拍文档域无可信改进分数）、`blast_radius`（git 派生量的复写，且 Capsule 无区间锚点 → 数字不可复算；触发见[序 4 ADR](../.agents/notes/implemented/architecture/2026-09-13-evaluate-blast-radius.md) B3）、`confidence` / `cost_*`（无生产者）。
 
@@ -97,7 +97,7 @@ node dist/engine/bin.js self-test                           # 元评测夹具（
 - **语义**：Mutation = 执行前的意图声明（主设计 §5.1：意图 + 风险），§6 Mutate 阶段的产物；与 Capsule（执行后的审计事实）是同一次演化的两端——声明而未执行是合法状态，故两者不合并。落 `mutations/<domain>/<id>.json`，JSON、封闭六字段（`id` / `domain` / `category` / `target` / `expected_effect` / `risk_level`）。
 - **字段值域**：`risk_level` 是设计 §5.1 明列的封闭三值 `low` / `medium` / `high`；`category` / `target` / `expected_effect` 为非空字符串、无封闭枚举（taxonomy 仍未决，预设即造分类法）。
 - **append-only**：同 id 重复声明拒收（无 `mutation.updated` / `mutation.retired` 面）。
-- **写读命令**：`mutation add <candidate.json> --actor N` 落 `mutations/` + `mutation.added` 事件（同一 commit，原子性同基因/Capsule 入档）；`mutation show <domain>/<id>` 渲染人读面。两者用法错与 fail-closed 都走 exit 2；多余位置参数与重复旗标即用法错（不静默取首个）。
+- **写读命令**：`mutation add <candidate.json> --actor N` 落 `mutations/` + `mutation.added` 事件（同一 commit，原子性同基因/Capsule 入档）；`mutation show <domain>/<id>` 渲染人读面。`mutation add` 的用法错（多余位置参数 / 重复旗标 / 未知旗标 / 旗标缺真值，不静默取首个）与两命令的 fail-closed 都走 exit 2。
 - **复算边界**：`mutation.added`(ok) 的 `mutation_sha` 必须等于文件字节 sha256；工作树 Mutation 必须有事件轨（`mutation add` 是唯一入口）。引擎不构造声明内容、不跑门禁——声明由调用方在动改动面之前显式给出。
 - **不做的事**：`mutation add` 不要求也不检查引用某条 Capsule 或 gene——关联写在 Event 面（`mutation_id` / `capsule_id` 跨链键，由 `solidify` / `capsule add` 的旗标给出，见下节）；引擎不判断「该不该声明」（Detect/Select/Mutate 的自动性不在引擎，骨架 ADR D2/D3）。
 

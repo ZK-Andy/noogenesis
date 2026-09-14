@@ -53,6 +53,28 @@ function consumedIndexes(rest: string[], flags: string[]): Set<number> {
   return out;
 }
 
+/** add 类命令共用的 token 扫描：线性分出旗标与位置参数。旗标各至多一次，且其后
+ *  须跟非旗标值（值本身是 `--` 旗标即拒——否则 `--actor --typo` 会把旗标当值静默取错）；
+ *  未知 `--` 旗标即拒。返回位置参数表，数量由调用方判（恰一个）。 */
+function scanFlagArgs(rest: string[], flags: string[], prefix: string): string[] {
+  const positionals: string[] = [];
+  const seen = new Set<string>();
+  for (let i = 1; i < rest.length; i++) {
+    const tok = rest[i]!;
+    if (flags.includes(tok)) {
+      if (seen.has(tok)) fail(prefix + tok + ' given more than once');
+      seen.add(tok);
+      const value = rest[i + 1];
+      if (value === undefined || value.startsWith('--')) fail(prefix + tok + ' needs a value');
+      i += 1;
+      continue;
+    }
+    if (tok.startsWith('--')) fail(prefix + 'unknown flag ' + tok);
+    positionals.push(tok);
+  }
+  return positionals;
+}
+
 function gitRoot(start: string): string | null {
   const { execFileSync } = require('child_process');
   try {
@@ -237,23 +259,8 @@ function main(argv: string[]): number {
       const actorIdx = rest.indexOf('--actor');
       const actor = actorIdx >= 0 ? rest[actorIdx + 1] : null;
       const mutation = flagValue(rest, '--mutation');
-      if (mutation.present && !mutation.value) fail('capsule add: --mutation needs a <domain>/<id> value');
-      // 契约 = 恰一个位置参数 + 旗标各至多一次：逐 token 分出旗标与位置参数，
-      // 重复旗标/多余位置参数/未知旗标都是用法错（exit 2），不得静默取首个。
-      const flags = ['--actor', '--mutation'];
-      const candidates: string[] = [];
-      const seenFlags = new Set<string>();
-      for (let i = 1; i < rest.length; i++) {
-        const tok = rest[i]!;
-        if (flags.includes(tok)) {
-          if (seenFlags.has(tok)) fail('capsule add: ' + tok + ' given more than once');
-          seenFlags.add(tok);
-          i += 1;
-          continue;
-        }
-        if (tok.startsWith('--')) fail('capsule add: unknown flag ' + tok);
-        candidates.push(tok);
-      }
+      // 契约 = 恰一个位置参数 + 旗标各至多一次且其后是真值（见 scanFlagArgs）。
+      const candidates = scanFlagArgs(rest, ['--actor', '--mutation'], 'capsule add: ');
       if (candidates.length === 0) fail('capsule add needs <candidate.json>');
       if (candidates.length > 1) {
         fail('capsule add takes exactly one <candidate.json> (unexpected: ' + candidates.slice(1).join(', ') + ')');
@@ -296,20 +303,8 @@ function main(argv: string[]): number {
     if (sub === 'add') {
       const actorIdx = rest.indexOf('--actor');
       const actor = actorIdx >= 0 ? rest[actorIdx + 1] : null;
-      // 同上：逐 token 分出旗标与位置参数，重复 --actor / 多余位置 / 未知旗标都 exit 2。
-      const candidates: string[] = [];
-      const seenFlags = new Set<string>();
-      for (let i = 1; i < rest.length; i++) {
-        const tok = rest[i]!;
-        if (tok === '--actor') {
-          if (seenFlags.has(tok)) fail('mutation add: --actor given more than once');
-          seenFlags.add(tok);
-          i += 1;
-          continue;
-        }
-        if (tok.startsWith('--')) fail('mutation add: unknown flag ' + tok);
-        candidates.push(tok);
-      }
+      // 同上：旗标恰一次且其后是真值，未知旗标/多余位置参数都 exit 2。
+      const candidates = scanFlagArgs(rest, ['--actor'], 'mutation add: ');
       if (candidates.length === 0) fail('mutation add needs <candidate.json>');
       if (candidates.length > 1) {
         fail('mutation add takes exactly one <candidate.json> (unexpected: ' + candidates.slice(1).join(', ') + ')');

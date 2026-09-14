@@ -11,18 +11,18 @@ Review: FULL/2026-09-15/pending（三重审核进行中，收口时回填真实�
 
 ## Decision
 
-**1. 踩坑入 cookbook。** 新增 [门禁] 条「git 路径输出不能 trim」（路径是字节串不是文本，按行原样取用）；[门禁] 变异副本条补「跨 bash 调用不共享 `/tmp`，恢复面用仓内 `.cache/` 或同一调用内完成」。
+**1. 踩坑入 cookbook。** 新增 [门禁] 条「git 路径输出不能 trim」（路径是字节串不是文本，按行原样取用）；[门禁] 变异副本条补「跨 bash 调用不共享 `/tmp`；恢复面用仓内 `.cache/`、同一调用内完成或 git（提交后再变异 / `git checkout -- <path>`）」。
 
 **2. 纪律落卡。** [scripts/AGENTS.md](../../AGENTS.md) 的 `--self-test` 夹具纪律补「新增判据分支须过『删该分支』变异，仍绿即无夹具」——语义面唯一的机器面是作者按纪律做，不立闸。
 
 **3. 已覆盖销账。** `git add` 残留（代码修复已落 + cookbook 条 15 已写 `git reset` 清半应用索引）与 `git add -A` 卷他改（cookbook [协作] 条已给显式点名路径 + `reset --soft` 退回）无新动作；「提交前出现非己方路径」判不立，不立闸。
 
-**4. 预算不动。** cookbook 保持 2700（为容纳新条，压缩 [环境] lefthook 条的机制细节为 B3 ADR 指针）；[scripts/AGENTS.md](../../AGENTS.md) 保持 300。
+**4. 预算。** [scripts/AGENTS.md](../../AGENTS.md) 保持 300；cookbook 2700→2720（压缩 [环境] lefthook 条的机制细节为 B3 ADR 指针腾位后，评审 R1-S3 要求补回 git 恢复面，按文档纪律以 `_justify_bump` 提额）。
 
 ## Alternatives considered
 
 - **给「路径不能 trim」加静态门禁**：落败——判的是「代码把路径当文本处理」，静态识别等价于猜语义；真实防线是评审 + 这条踩坑原子。
-- **「判据夹具抽检」上闸（自动逐分支变异）**：落败——需 AST 级逐分支改写，成本与稳定性未实测；落卡 + 当批实做一次变异为证（见 [同批实现件](../bug-fix/2026-09-15-add-command-arg-contract.md) Decision 4）。
+- **「判据夹具抽检」上闸（自动逐分支变异）**：落败——需 AST 级逐分支改写，成本与稳定性未实测；落卡 + 当批实做一次变异为证（见 [同批实现件](../bug-fix/2026-09-15-add-command-arg-contract.md) Decision 4）。门槛单源 = [findings 机械化 ADR](2026-09-11-review-finding-mechanization.md) Decision 1。
 - **跨调用 `/tmp` 单独立条**：落败——与既有变异副本条同根（临时面落点），并条更紧。
 - **cookbook 提额 2700→2800**：落败——既有最大条（lefthook 154 词）的可压缩叙事足够腾位；先精简后提额是文档纪律的既定序。
 

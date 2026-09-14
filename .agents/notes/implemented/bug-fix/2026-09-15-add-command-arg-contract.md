@@ -3,7 +3,7 @@
 Status: implemented
 Review: FULL/2026-09-15/pending（三重审核进行中，收口时回填真实结论）
 
-> Related：出处 = [演化轮池](../../../../HANDOFF-evolution-pool.md) 候选「`capsule add` / `mutation add` 静默吞多余位置参数与重复 `--actor`」；契约单源 = [engine/README.md](../../../../engine/README.md)；落地件 = [engine/bin.ts](../../../../engine/bin.ts)。
+> Related：出处 = [演化轮池](../../../../HANDOFF-evolution-pool.md) 候选「`capsule add` / `mutation add` 静默吞多余位置参数与重复 `--actor`」；契约单源 = [engine/README.md](../../../../engine/README.md)；落地件 = [engine/bin.ts](../../../../engine/bin.ts)；踩坑单源 = [docs/cookbook.md](../../../../docs/cookbook.md)「flag 值解析用单下标排除法」（本件是其在 add 命令面的兑现）。
 
 ## Problem
 
@@ -11,13 +11,13 @@ Review: FULL/2026-09-15/pending（三重审核进行中，收口时回填真实�
 
 ## Decision
 
-**1. 逐 token 扫描分出旗标与位置参数。** 位置参数恰一个（0 → 缺候选；>1 → 多余）、每个旗标至多一次（重复即拒）、未知 `--` 旗标即拒——三种都走 exit 2 用法错，不再静默取首个。重复旗标由显式计数判据拦，不靠「第二个值当多余位置参数」间接拦。
+**1. 逐 token 扫描分出旗标与位置参数。** 位置参数恰一个（0 → 缺候选；>1 → 多余）、每个旗标至多一次（重复即拒）、旗标其后须跟非旗标真值（值本身是 `--` 旗标即拒——否则 `--actor --typo` 会把旗标当 actor 静默落档）、未知 `--` 旗标即拒——四种都走 exit 2 用法错，不再静默取首个。两分支共用一个 `scanFlagArgs` 助手（各 18 行的同构扫描折叠为一处）。
 
 **2. 契约面同步。** [engine/README.md](../../../../engine/README.md) 两条命令的「两者用法错与 fail-closed 都走 exit 2」补「多余位置参数与重复旗标即用法错（不静默取首个）」。
 
-**3. 夹具。** `engine/selftest.ts` 两条命令各加三断言：多余位置参数 → exit 2、重复 `--actor` → exit 2、拒写后目标文件不存在。
+**3. 夹具。** `engine/selftest.ts` 两条命令各加五断言：多余位置参数 → exit 2、重复 `--actor` → exit 2、旗标当值 → exit 2、未知旗标 → exit 2 且 stderr 含 unknown flag、拒写后目标文件不存在。
 
-**4. 变异证据。** 删去重复旗标判据后 `node dist/engine/bin.js self-test` exit 1（夹具捕获），恢复后 exit 0——本批实跑。
+**4. 变异证据。** 逐分支只删后实跑 `node dist/engine/bin.js self-test`：删重复旗标 / 删位置参数数量 / 删「旗标值不得是旗标」/ 删未知旗标，四者各致 exit 1（夹具捕获），恢复后 exit 0——本批实跑。
 
 ## Alternatives considered
 
