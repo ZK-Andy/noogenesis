@@ -546,6 +546,13 @@ function selfTest() {
     ok(shown.includes('[noo-capsule process/cap-3]'), 'bin: capsule show renders');
     ok(spawnCode([bin, 'capsule', 'show', 'process/missing'], td) === 2, 'bin: capsule show missing -> exit 2');
     ok(spawnCode([bin, 'capsule', 'add', cand], td) === 2, 'bin: capsule add without --actor -> exit 2');
+    // 参数面收紧：多余位置参数与重复旗标 = 用法错（exit 2），且不落写面
+    fs.writeFileSync(path.join(staging, 'cap-arg.json'), JSON.stringify({ ...cap, id: 'cap-arg' }, null, 2) + '\n');
+    ok(spawnCode([bin, 'capsule', 'add', path.join(staging, 'cap-arg.json'), 'extra.json', '--actor', 't'], td) === 2,
+      'bin: capsule add with extra positional -> exit 2');
+    ok(spawnCode([bin, 'capsule', 'add', path.join(staging, 'cap-arg.json'), '--actor', 'a', '--actor', 'b'], td) === 2,
+      'bin: capsule add with duplicate --actor -> exit 2');
+    ok(!fs.existsSync(capsulePath(td, 'process', 'cap-arg')), 'bin: capsule add arg errors wrote nothing');
     ok(spawnCode([bin, 'capsule', 'bogus'], td) === 2, 'bin: unknown capsule subcommand -> exit 2');
 
     // commit 失败 → 写面与索引都回滚（只清工作树会让回滚的记录以暂存态残留）
@@ -633,6 +640,13 @@ function selfTest() {
     ok(shown.includes('[noo-mutation process/mut-4]'), 'bin: mutation show renders');
     ok(spawnCode([bin, 'mutation', 'show', 'process/missing'], td) === 2, 'bin: mutation show missing -> exit 2');
     ok(spawnCode([bin, 'mutation', 'add', cand], td) === 2, 'bin: mutation add without --actor -> exit 2');
+    // 参数面收紧：多余位置参数与重复旗标 = 用法错（exit 2），且不落写面
+    fs.writeFileSync(path.join(staging, 'mut-arg.json'), JSON.stringify({ ...mut, id: 'mut-arg' }, null, 2) + '\n');
+    ok(spawnCode([bin, 'mutation', 'add', path.join(staging, 'mut-arg.json'), 'extra.json', '--actor', 't'], td) === 2,
+      'bin: mutation add with extra positional -> exit 2');
+    ok(spawnCode([bin, 'mutation', 'add', path.join(staging, 'mut-arg.json'), '--actor', 'a', '--actor', 'b'], td) === 2,
+      'bin: mutation add with duplicate --actor -> exit 2');
+    ok(!fs.existsSync(mutationPath(td, 'process', 'mut-arg')), 'bin: mutation add arg errors wrote nothing');
     ok(spawnCode([bin, 'mutation', 'bogus'], td) === 2, 'bin: unknown mutation subcommand -> exit 2');
 
     // commit 失败 → 写面与索引都回滚（只清工作树会让回滚的记录以暂存态残留）

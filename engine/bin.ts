@@ -238,10 +238,27 @@ function main(argv: string[]): number {
       const actor = actorIdx >= 0 ? rest[actorIdx + 1] : null;
       const mutation = flagValue(rest, '--mutation');
       if (mutation.present && !mutation.value) fail('capsule add: --mutation needs a <domain>/<id> value');
+      // 契约 = 恰一个位置参数 + 旗标各至多一次：逐 token 分出旗标与位置参数，
+      // 重复旗标/多余位置参数/未知旗标都是用法错（exit 2），不得静默取首个。
       const flags = ['--actor', '--mutation'];
-      const skip = consumedIndexes(rest, flags);
-      const candidate = rest.find((a, i) => i > 0 && !skip.has(i) && !flags.includes(a));
-      if (!candidate) fail('capsule add needs <candidate.json>');
+      const candidates: string[] = [];
+      const seenFlags = new Set<string>();
+      for (let i = 1; i < rest.length; i++) {
+        const tok = rest[i]!;
+        if (flags.includes(tok)) {
+          if (seenFlags.has(tok)) fail('capsule add: ' + tok + ' given more than once');
+          seenFlags.add(tok);
+          i += 1;
+          continue;
+        }
+        if (tok.startsWith('--')) fail('capsule add: unknown flag ' + tok);
+        candidates.push(tok);
+      }
+      if (candidates.length === 0) fail('capsule add needs <candidate.json>');
+      if (candidates.length > 1) {
+        fail('capsule add takes exactly one <candidate.json> (unexpected: ' + candidates.slice(1).join(', ') + ')');
+      }
+      const candidate = candidates[0]!;
       if (!actor) fail('capsule add needs --actor <name>');
       const { recordCapsule } = require('./solidify.js');
       let r;
@@ -279,8 +296,25 @@ function main(argv: string[]): number {
     if (sub === 'add') {
       const actorIdx = rest.indexOf('--actor');
       const actor = actorIdx >= 0 ? rest[actorIdx + 1] : null;
-      const candidate = rest.find((a, i) => i > 0 && a !== '--actor' && i !== actorIdx + 1);
-      if (!candidate) fail('mutation add needs <candidate.json>');
+      // 同上：逐 token 分出旗标与位置参数，重复 --actor / 多余位置 / 未知旗标都 exit 2。
+      const candidates: string[] = [];
+      const seenFlags = new Set<string>();
+      for (let i = 1; i < rest.length; i++) {
+        const tok = rest[i]!;
+        if (tok === '--actor') {
+          if (seenFlags.has(tok)) fail('mutation add: --actor given more than once');
+          seenFlags.add(tok);
+          i += 1;
+          continue;
+        }
+        if (tok.startsWith('--')) fail('mutation add: unknown flag ' + tok);
+        candidates.push(tok);
+      }
+      if (candidates.length === 0) fail('mutation add needs <candidate.json>');
+      if (candidates.length > 1) {
+        fail('mutation add takes exactly one <candidate.json> (unexpected: ' + candidates.slice(1).join(', ') + ')');
+      }
+      const candidate = candidates[0]!;
       if (!actor) fail('mutation add needs --actor <name>');
       const { recordMutation } = require('./solidify.js');
       let r;

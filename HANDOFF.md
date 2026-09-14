@@ -11,6 +11,8 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-15｜**演化轮落账批（残余候选 + add 参数收紧，FULL）**：`capsule/mutation add` 参数面收紧为恰一位置参数 + 旗标至多一次（含夹具与变异证据）+ git 路径 trim 入 cookbook + 夹具变异纪律落 scripts/AGENTS + 5 条销账；池件 7→1。[ADR](.agents/notes/implemented/process/2026-09-15-residual-candidate-disposal.md)
+
 - 2026-09-15｜**演化轮落账批（纪律漏项族处置，FULL）**：12 条纪律漏项候选一次销账——删 HANDOFF ⏭ 复本句 + notes/README 补「外部观测值免同步」「读数伴判据」+ 评审检查项 #2 扩沿引/现值同步；两条批次表类触发表终局判不立，`178b8be`→`ddff158`。[ADR](.agents/notes/implemented/process/2026-09-15-discipline-candidate-disposal.md)
 
 - 2026-09-15｜**演化轮落账批（评审面作用域，FULL）**：池件三候选落账——brief 闸 --lanes 收窄到判据面 + md-links 跳过 .review-briefs/ + tier 迁移提交判负不改闸；三审 1B/5S 全采纳，`de6ba8d`→`0641b45`；README 无漂移。[ADR](.agents/notes/implemented/process/2026-09-15-review-gate-scope-and-evidence.md)
@@ -57,7 +59,6 @@
 
 - 2026-09-14｜**批次 4 重拍（LIGHT；R2 0B+1S 全采纳）**：第二期判裁重议维持判不立（触发条与判裁时逐值同）+ 序 18 因果边现算判已交付（= 第一期派生面）；行 16/17/19/20 落终态，游标推进批次 5，机制零变化。[ADR](.agents/notes/implemented/architecture/2026-09-14-memory-line-phase2-reshoot.md)；`7f9dcc1`→`8686bab`。README 无漂移。
 
-- 2026-09-13｜**批次 3 序 15 情境按需注入裁决（LIGHT；R2 2B+5S 全采纳）**：四派生面全落已裁/不可判面、现网 `injectSignals` 零声明无消费面 → 判不立，机制零变化。[ADR](.agents/notes/implemented/architecture/2026-09-13-situational-injection-verdict.md)；`3fed70f`→`0726e03`。README 无漂移。
 
 
 
