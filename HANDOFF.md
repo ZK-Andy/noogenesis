@@ -11,7 +11,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-15｜**演化轮落账批（纪律漏项族处置，FULL）**：12 条纪律漏项候选一次销账——删 HANDOFF ⏭ 复本句 + notes/README 补「外部观测值免同步」「读数伴判据」+ 评审检查项 #2 扩沿引/现值同步；两条批次表类触发表终局判不立。[ADR](.agents/notes/implemented/process/2026-09-15-discipline-candidate-disposal.md)
+- 2026-09-15｜**演化轮落账批（纪律漏项族处置，FULL）**：12 条纪律漏项候选一次销账——删 HANDOFF ⏭ 复本句 + notes/README 补「外部观测值免同步」「读数伴判据」+ 评审检查项 #2 扩沿引/现值同步；两条批次表类触发表终局判不立，`178b8be`→`ddff158`。[ADR](.agents/notes/implemented/process/2026-09-15-discipline-candidate-disposal.md)
 
 - 2026-09-15｜**演化轮落账批（评审面作用域，FULL）**：池件三候选落账——brief 闸 --lanes 收窄到判据面 + md-links 跳过 .review-briefs/ + tier 迁移提交判负不改闸；三审 1B/5S 全采纳，`de6ba8d`→`0641b45`；README 无漂移。[ADR](.agents/notes/implemented/process/2026-09-15-review-gate-scope-and-evidence.md)
 
