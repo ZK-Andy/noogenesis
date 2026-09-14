@@ -8,7 +8,9 @@
  *     小写、空白→连字符、去标点）或显式 `<a id="slug">` 锚
  *   - `](https://…)` / `](mailto:…)` / `](<…>)` -> 跳过（外链）
  *   - 裸文件名以其所属文件目录解析；前导 `/` 目标以扫描根解析
- *   - 第三方/生成物目录（.cache/bin/obj/node_modules）跳过；`.agents/notes/` 下
+ *   - 第三方/生成物目录（.cache/bin/obj/node_modules）跳过；`.review-briefs/`
+ *     跳过（gitignored 本地评审工件，非仓库文档——其相对链接按所在目录解析，
+ *     归档前后形态不同，校验它们只产生假红）；`.agents/notes/` 下
  *     archived/ 豁免（归档冻结，外链按纪律不校验，见 .agents/notes/README.md），
  *     限定 .agents/ 下，避免误伤无关目录
  * skills/ 目录也校验（引入即适配——上游路径引用未重映射的技能不得引入）。
@@ -85,7 +87,7 @@ function scan(rootArg: string): { checked: number; errors: string[] } {
   const errors: string[] = [];
   let checked = 0;
   // 第三方/生成物目录：缓存、依赖、构建产物（其内 README 常带外部相对链接）
-  const skipSegments = [".cache", "bin", "obj", "node_modules"];
+  const skipSegments = [".cache", "bin", "obj", "node_modules", ".review-briefs"];
   const files = collectMd(rootArg).sort((x, y) => cmpParts(x.parts, y.parts));
   for (const md of files) {
     if (md.parts.some((seg) => skipSegments.includes(seg))) {
@@ -138,6 +140,9 @@ function selfTest(): number {
     // archived 豁免限定 .agents/ 下：裸 archived/ 不豁免
     fs.mkdirSync(join("archived"), { recursive: true });
     fs.writeFileSync(join("archived", "plain.md"), "[gone](nope.md)\n");
+    // 本地评审工件目录整体跳过（gitignored；其链接按工件所在目录解析）
+    fs.mkdirSync(join(".review-briefs", "archive"), { recursive: true });
+    fs.writeFileSync(join(".review-briefs", "archive", "R1-a.md"), "[gone](nope.md)\n");
 
     const { checked, errors } = scan(rootArg);
     check(errors.length === 3, `夹具应产出 3 条违约（broken.md 2 + 裸 archived/plain.md 1），got: ${JSON.stringify(errors)}`);
@@ -149,7 +154,7 @@ function selfTest(): number {
       errors.some((e) => e.endsWith("broken.md: dead anchor '#bad-frag' in 'target.md#bad-frag'")),
       "死锚点夹具未被标记 dead anchor"
     );
-    check(errors.every((e) => !e.includes("frozen.md") && !e.includes("skip.md")),
+    check(errors.every((e) => !e.includes("frozen.md") && !e.includes("skip.md") && !e.includes(".review-briefs")),
       "归档/跳过目录豁免失效");
     check(
       errors.some((e) => e.endsWith("plain.md: missing target 'nope.md'")),

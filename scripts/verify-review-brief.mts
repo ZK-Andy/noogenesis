@@ -20,8 +20,10 @@
  *
  * 泳道推导（单源 = tier 分类）：默认由简报自报 base..head 范围的 tier 决定
  * （FULL→R1/R2/R3，LIGHT→R2；适配先提交后评审的批次序）；--lanes R1,R2,R3
- * 覆盖；保守回退 = 三条全要。飞行中简报的 base..head 必须一致（防一份更窄
- * 的范围把整场评审泳道集静默降级）。
+ * 覆盖 = **只判这些泳道**——目录里他泳道的残留简报（已收口未归档、或 head 已
+ * 滞后于 HEAD 的旧简报）不参与 head/base pin 与重复判据，收口一路后发射余下
+ * 泳道无须先清目录；保守回退 = 三条全要。飞行中简报的 base..head 必须一致
+ * （防一份更窄的范围把整场评审泳道集静默降级）。
  *
  * 输出面：违规明细按泳道（R1→R2→R3）分组打印；跨泳道违规（如 base..head
  * 范围分歧）无泳道前缀，落「violations outside lane scope」兜底节——不变式 =
@@ -354,6 +356,9 @@ function basePinsCommitViolations(briefs: Record<string, string>, repo: string):
 
 /** 跨所需泳道汇总全部违规（结构合规时空）。
  *
+ * lanes 显式给出 ⇒ 只判这些泳道：目录里他泳道的残留简报（已收口未归档、或 head
+ * 已滞后于 HEAD）不进 head/base pin 与重复判据——收口一路后发射余下泳道无须先清
+ * 目录（缺省推导仍按目录全量判：不知哪些泳道在飞时保守从严）。
  * lanes 缺省 ⇒ 由简报自报范围的 tier 推导（FULL 需 R1/R2/R3，LIGHT 需 R2）。
  * 完全无简报文件 = 无评审在飞——空过（使看不到 gitignored 简报目录的 CI
  * 保持绿且安静）。 */
@@ -361,6 +366,7 @@ function checkRepo(repo: string, lanes?: string[] | null): string[] {
   const { paths, duplicates } = briefPaths(repo);
   let out: string[];
   let required: string[];
+  let checked: Record<string, string>;
   if (lanes === null || lanes === undefined) {
     if (LANES.every((l) => paths[l] === undefined)) return duplicates;
     out = [
@@ -370,15 +376,24 @@ function checkRepo(repo: string, lanes?: string[] | null): string[] {
       ...headPinsHeadViolations(paths, repo),
     ];
     required = lanesFromBriefRange(repo, paths);
+    checked = paths;
   } else {
-    out = [...duplicates, ...basePinsCommitViolations(paths, repo), ...headPinsHeadViolations(paths, repo)];
+    checked = {};
+    for (const lane of lanes) {
+      if (paths[lane] !== undefined) checked[lane] = paths[lane]!;
+    }
+    out = [
+      ...duplicates.filter((d) => lanes.some((l) => d.startsWith(`${l}:`))),
+      ...basePinsCommitViolations(checked, repo),
+      ...headPinsHeadViolations(checked, repo),
+    ];
     required = lanes;
   }
   for (const lane of required) {
     const p = paths[lane];
     out.push(...(p !== undefined
       ? violationsForLane(path.join(repo, p), lane)
-      : [`${lane}: missing brief under ${BRIEFS_DIR}/`]));
+      : [`${lane}: missing brief ${BRIEFS_DIR}/R${lane[1]}-*.md (write it before launching; a lane already closed may be left out of --lanes)`]));
   }
   return out;
 }
@@ -713,6 +728,21 @@ function selfTest(): number {
     fs.writeFileSync(path.join(root11, "R2-a.md"), briefText("R2", base, head), "utf-8");
     assertOk(checkRepo(repo, ["R2"]).length === 0, "fixture 15b (resolvable base) should pass");
 
+    // fixture 16：--lanes 显式给出 = 只判这些泳道——目录里他泳道残留简报（已收口
+    // 未归档 / head 滞后 / 重复）不得拦住余下泳道的发射。
+    fs.writeFileSync(path.join(root11, "R1-stale.md"), briefText("R1", base, lightBase), "utf-8");
+    fs.writeFileSync(path.join(root11, "R3-c.md"), briefText("R3", base, head), "utf-8");
+    const vsR3 = checkRepo(repo, ["R3"]);
+    assertOk(vsR3.length === 0,
+      `fixture 16a (--lanes R3 ignores the stale R1 brief) should pass, got ${reprList(vsR3)}`);
+    assertOk(anyMatch(checkRepo(repo, ["R1", "R3"]), (s) => s.includes("R1") && s.includes("!= HEAD")),
+      "fixture 16b (explicit lanes still pin a declared lane's head) should flag R1");
+    fs.writeFileSync(path.join(root11, "R1-stale-b.md"), briefText("R1", base, head), "utf-8");
+    assertOk(!anyMatch(checkRepo(repo, ["R3"]), (s) => s.includes("multiple briefs")),
+      "fixture 16c (--lanes R3 ignores duplicate R1 briefs)");
+    assertOk(anyMatch(checkRepo(repo, ["R1"]), (s) => s.includes("multiple briefs")),
+      "fixture 16d (explicit R1 still reports duplicate R1 briefs)");
+
     // 声明范围分歧 → 违约（防降级闸）
     const root12 = path.join(td, "f12");
     fs.mkdirSync(briefsDirOf(root12), { recursive: true });
@@ -731,7 +761,7 @@ function selfTest(): number {
     assertOk(printed.filter((s) => s === OUTSIDE_LANE_LABEL).length === 1,
       `fixture 13 (fallback section label present exactly once), got ${reprList(printed)}`);
 
-    console.log("verify-review-brief --self-test OK (15 fixtures: structure/self-assertion/lane-derivation/head-pin/base-pin/output-fallback)");
+    console.log("verify-review-brief --self-test OK (16 fixtures: structure/self-assertion/lane-derivation/head-pin/base-pin/lane-scope/output-fallback)");
     return 0;
   } finally {
     fs.rmSync(td, { recursive: true, force: true });
