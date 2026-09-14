@@ -12,7 +12,7 @@
 ### 2.1 分层与依赖方向
 
 - **R1a `[M]` 宿主依赖允许集封闭**：适配层对宿主（`@deepseek-ai/*`）的依赖封闭——值 import 仅收口 index.mts、type-only import 闭集三件、其余模块零宿主依赖；机器面 = adapters 防火墙 selftest（宿主前缀静态 import / 动态 `import()` / `require()` 三形态扫描 + 值闭集与 type-only 闭集断言），同闸并断言 `engine/*.ts` 零第三方 import/require（相对与内建豁免）。判别式：允许集外出现宿主依赖、或 engine 源出现第三方包 = 违反。允许集成员与扩集拍板单源 = [adapters/AGENTS.md](../../adapters/AGENTS.md)。
-- **R1b `[R]` 三族相对 import 互斥**：`engine/`、`adapters/`、`scripts/` 三族源文件之间零相对 import；跨族消费只走各自合同面——适配层 → 引擎 = 仅 spawn `node <包根>/dist/engine/bin.js <命令>`，门禁消费引擎走 `engine/gates.json` 数据件（白名单），scripts 族独立（族内共享件如 `mdref.mts` 同族互 import）。判别式：任一源文件的相对 import 解析落到另一族目录 = 违反。停档理由：判据机械可判，但防火墙 selftest 的真实判据 = 宿主允许集（R1a），不扫跨族相对 import——三族穷尽闸未立（C15 HERO 判据：无失败案例不预立）；实测基线（2026-09-10：环 = 0、跨族边 = 0；2026-09-15：n=64、环 = 0、跨族边 = 0）单源见 §4。触发 = §4「层方向 lint」。族内新件归族判据有家：[scripts/AGENTS.md](../../scripts/AGENTS.md)「新件先归族再选形态」。
+- **R1b `[R]` 三族相对 import 互斥**：`engine/`、`adapters/`、`scripts/` 三族源文件之间零相对 import；跨族消费只走各自合同面——适配层 → 引擎 = 仅 spawn `node <包根>/dist/engine/bin.js <命令>`，门禁消费引擎走 `engine/gates.json` 数据件（白名单），scripts 族独立（族内共享件如 `mdref.mts` 同族互 import）。判别式：任一源文件的相对 import 解析落到另一族目录 = 违反。停档理由：判据机械可判，但防火墙 selftest 的真实判据 = 宿主允许集（R1a），不扫跨族相对 import——三族穷尽闸未立（C15 HERO 判据：无失败案例不预立）；实测基线（读数与口径单源见 §4）。触发 = §4「层方向 lint」。族内新件归族判据有家：[scripts/AGENTS.md](../../scripts/AGENTS.md)「新件先归族再选形态」。
 - **R2 `[R]` 新目录准入四问**：新增顶层目录（或族）前必须四问齐答——①归属（代码三族 / docs 面 / 门禁面 / 数据面 / 过程资产）；②合同面（消费者接口：CLI、exports、白名单、事件、schema）；③依赖方向允许集（import 谁、被谁 import、只过什么合同）；④机器面（哪个闸盖它，无闸则登记触发条件）。答不全 = 先立 ADR 再建目录。判别式：新目录无四问答案即违反。停档理由：目录意图与合同归属是语义判断，机器不可判。
 
 ### 2.2 TS 模块与导出面
@@ -57,10 +57,10 @@
 
 ## 4. 健康闸（触发条件集；全部不立闸）
 
-> 立闸判据 = HERO（检测出什么具体的失败？真出现了下一步做什么不同的事？）；候选按 C15 先例（[B4 ADR Decision 6](../../.agents/notes/implemented/architecture/2026-09-08-b4-mount-wiring.md)）评估，不过者理由与数据在案。测量口径：population = 主链三族全部 TS 源文件（engine/*.ts + adapters/dsh/*.mts + scripts/**/*.mts，排除 dist/node_modules/缓存）；环/边数字实测方法 = 相对 import 静态建图（`.js`/`.mjs` 发射名 → 源名映射）+ DFS 环检测（一次性脚本；两轮读数见下各条，对照结论单源 = [基准 ADR](../../.agents/notes/implemented/architecture/2026-09-15-ts-official-architecture-baseline.md)）。
+> 立闸判据 = HERO（检测出什么具体的失败？真出现了下一步做什么不同的事？）；候选按 C15 先例（[B4 ADR Decision 6](../../.agents/notes/implemented/architecture/2026-09-08-b4-mount-wiring.md)）评估，不过者理由与数据在案。测量口径：population = 主链三族全部 TS 源文件（engine/*.ts + adapters/**/*.mts〔dsh + hermes 两宿主〕+ scripts/**/*.mts，排除 dist/node_modules/缓存）；环/边数字实测方法 = 相对 import 静态建图（`.js`/`.mjs` 发射名 → 源名映射；逐语句计数——静态 `from` 与 `require`/动态 `import()` 各计一条，不按（文件,文件）去重）+ DFS 环检测（一次性脚本；两轮读数见下各条，对照结论单源 = [基准 ADR](../../.agents/notes/implemented/architecture/2026-09-15-ts-official-architecture-baseline.md)）。
 
-- **上帝类闸（单文件行数/依赖扇出上限）——判不立**：实测分布（2026-09-08，B4 ADR 在案；population = 当时全仓源码 .ts/.mts，n=38：行数 p50=152 / p90=516 / max=1158；扇出 max=15）无自然拐点、零失控件。**行数不是失控的度量——职责 = 一句话可述；大体积的合法来源 = 夹具同件纪律与 py 对齐原语单源（pypara）**；上游同款先例 = TS 官方编译器 `checker.ts` ≈ 4 万行，其 Coding guidelines 明写 "Do not add new files :)"（[基准 ADR](../../.agents/notes/implemented/architecture/2026-09-15-ts-official-architecture-baseline.md)）。真失控信号判别式 = 一句话说不清职责 / 改写困难 / 评审反复抓同一件（三有其一才触发本条评估）。触发 = 真实失控件出现 → 以届时 max × 1.5 为候选阈值再过判据。
-- **import 环检测闸——判不立**：实测（口径见节首）两轮——2026-09-10（n=46）81 条相对 import 边、2026-09-15（n=64）146 条：环 = 0、跨族边 = 0、全部可解析——无实证对象，立闸 = 防 speculative。触发 = 真实 import 环出现 → 立环检测闸（本批实测脚本面复用）。
+- **上帝类闸（单文件行数/依赖扇出上限）——判不立**：实测分布（2026-09-08，B4 ADR 在案；population = 当时全仓源码 .ts/.mts，n=38：行数 p50=152 / p90=516 / max=1158；扇出 max=15）无自然拐点、零失控件。**行数不是失控的度量——职责 = 一句话可述；大体积的合法来源 = 夹具同件纪律与 py 对齐原语单源（pypara）**；上游同款先例（TS 官方文件数纪律）见 [基准 ADR](../../.agents/notes/implemented/architecture/2026-09-15-ts-official-architecture-baseline.md)。真失控信号判别式 = 一句话说不清职责 / 改写困难 / 评审反复抓同一件（三有其一才触发本条评估）。触发 = 真实失控件出现 → 以届时 max × 1.5 为候选阈值再过判据。
+- **import 环检测闸——判不立**：实测（口径见节首）两轮——2026-09-10（n=46）81 条、2026-09-15（n=64）146 条相对 import 语句：环 = 0、跨族边 = 0、全部可解析——无实证对象，立闸 = 防 speculative。触发 = 真实 import 环出现 → 立环检测闸（本批实测脚本面复用）。
 - **层方向 lint——未立**：机器面现状 = adapters 宿主允许集闭集（R1a）；跨族互斥无闸（R1b）。触发 = 家族间违规 import 真实出现（R1b 判据命中）→ 评估穷尽三族的层方向 lint 候选。
 - **project references 拆分——不现在做**：现状单 tsconfig 对（`tsconfig.json` noEmit 全仓 + `tsconfig.build.json` 发射面）健康。触发 = 构建/类型检查墙钟实测恶化到阻塞日常迭代 → 按 TS Handbook Project References 评估拆分。
 - **文件名契约闸（禁构建产物/缓存入库）——判不立**：全历史 `--diff-filter=A` 零产物入库 + `.gitignore`/CI/评审三层已盖（C15）。触发 = 真实产物入库发生 → 翻案再立。
