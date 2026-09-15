@@ -436,8 +436,21 @@ function collectJson(dir: string, prefix: string[], out: string[][]): void {
   }
 }
 
-// 面规格（同族原语）：布局判据与 append-only 复算在 genes / capsules / mutations /
-// candidates 四面同形，差异全在规格里（目录名、面名、校验器、事件键）。
+// 同名 id 在各域的候选文件（跨域唯一与 append-only 复算共用）：[dir, domain, <id>.json] 升序。
+function domainCopies(dir: string, dirPath: string, isDir: boolean, id: JSONVal): string[][] {
+  const copies: string[][] = [];
+  if (!isDir) return copies;
+  for (const ent of fs.readdirSync(dirPath, { withFileTypes: true })) {
+    if (fs.existsSync(pyJoin(dirPath, [ent.name, `${pyStr(id)}.json`]))) {
+      copies.push([dir, ent.name, `${pyStr(id)}.json`]);
+    }
+  }
+  copies.sort(segCompare);
+  return copies;
+}
+
+// 面规格（同族原语）：布局判据在 genes / capsules / mutations / candidates 四面同形，
+// append-only 复算在 capsules / mutations 两面同形；差异全在规格里（目录名、面名、校验器、事件键）。
 interface FaceSpec {
   dir: string;
   noun: string;
@@ -503,15 +516,7 @@ interface TrackSpec {
 function recomputeAppendOnly(base: string, face: FaceScan, track: TrackSpec, per: Map<JSONVal, EventRow[]>, errors: string[]): void {
   for (const arr of per.values()) arr.sort((a, b) => a.ms - b.ms);
   for (const [id, evs] of per) {
-    const candidates: string[][] = [];
-    if (face.isDir) {
-      for (const ent of fs.readdirSync(face.dirPath, { withFileTypes: true })) {
-        if (fs.existsSync(pyJoin(face.dirPath, [ent.name, `${pyStr(id)}.json`]))) {
-          candidates.push([face.dir, ent.name, `${pyStr(id)}.json`]);
-        }
-      }
-      candidates.sort(segCompare);
-    }
+    const candidates = domainCopies(face.dir, face.dirPath, face.isDir, id);
     if (candidates.length > 1) {
       errors.push(`${track.noun} id '${pyStr(id)}' present in multiple domains: ${candidates.map((c) => c.join("/")).join(", ")}`);
     }
@@ -623,15 +628,7 @@ function scan(base: string): { checked: number; errors: string[] } {
   // 复算规则分型（S2）：retired 划段；段内 ok 的 added/updated 对工作树复算；
   // fail 事件只查结构不作复算（被拒候选内容 ≠ 工作树状态）
   for (const [gid, evs] of perGene) {
-    const candidates: string[][] = [];
-    if (genes.isDir) {
-      for (const ent of fs.readdirSync(genes.dirPath, { withFileTypes: true })) {
-        if (fs.existsSync(pyJoin(genes.dirPath, [ent.name, `${pyStr(gid)}.json`]))) {
-          candidates.push(["genes", ent.name, `${pyStr(gid)}.json`]);
-        }
-      }
-      candidates.sort(segCompare);
-    }
+    const candidates = domainCopies("genes", genes.dirPath, genes.isDir, gid);
     if (candidates.length > 1) {
       errors.push(`gene id '${pyStr(gid)}' present in multiple domains: ${candidates.map((c) => c.join("/")).join(", ")}`);
     }

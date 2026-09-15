@@ -60,7 +60,7 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](2026-09-13-feature-co
 
 ### C6（新顶层目录准入四问，architecture-standards R2）
 
-① **归属** = 数据面（演化原语落盘，与 `genes/` / `capsules/` / `events/` 同类）。② **合同面** = CLI `mutation add|show` + 事件 kind `mutation.added` + 封闭六字段 schema。③ **依赖方向** = `engine/mutation.ts` 只 import node 内建 + `engine/util.js`；消费方 = `engine/solidify.ts`（写路径）+ `engine/bin.ts`（分发）；闸件 `scripts/verify-gene-format.mts` 以数据件形态读它，不 import engine。④ **机器面** = `verify-gene-format`（既有件扩一节）+ 引擎 self-test 私有夹具。
+① **归属** = 数据面（演化原语落盘，与 `genes/` / `capsules/` / `events/` 同类）。② **合同面** = CLI `mutation add|show` + 事件 kind `mutation.added` + 封闭六字段 schema。③ **依赖方向** = `engine/mutation.ts` 只 import node 内建 + 本族引擎件（[原语协议归口批](../simplification/2026-09-15-primitive-protocol-shared-shell.md) 起 = `engine/protocol.js` 的落盘协议外壳，`engine/util.js` 的直依赖随之转入该件）；消费方 = `engine/solidify.ts`（写路径）+ `engine/bin.ts`（分发）；闸件 `scripts/verify-gene-format.mts` 以数据件形态读它，不 import engine。④ **机器面** = `verify-gene-format`（既有件扩一节）+ 引擎 self-test 私有夹具。
 
 ## Alternatives considered
 

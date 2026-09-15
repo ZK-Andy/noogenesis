@@ -11,6 +11,8 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-15｜**演化轮落账批（同族原语协议归口 + 池件机器面裁决，FULL）**：协议外壳归口 `engine/protocol.ts`，闸件布局 / 复算段收敛为规格实例，池件两节清空。[ADR](.agents/notes/implemented/simplification/2026-09-15-primitive-protocol-shared-shell.md)；`c91ec27`→`538f20a`。
+
 - 2026-09-15｜**演化轮落账批（残余候选 + add 参数收紧，FULL）**：add 参数面收紧为恰一位置参数 + 旗标至多一次 + git 路径 trim 入 cookbook + 夹具变异纪律落 scripts/AGENTS + 6 条销账，池件 7→1，`3965511`→`1093c66`。[ADR](.agents/notes/implemented/process/2026-09-15-residual-candidate-disposal.md)
 
 - 2026-09-15｜**演化轮落账批（纪律漏项族处置，FULL）**：12 条纪律漏项候选一次销账——删 HANDOFF ⏭ 复本句 + notes/README 补「外部观测值免同步」「读数伴判据」+ 评审检查项 #2 扩沿引/现值同步；两条批次表类触发表终局判不立，`178b8be`→`ddff158`。[ADR](.agents/notes/implemented/process/2026-09-15-discipline-candidate-disposal.md)
@@ -56,8 +58,6 @@
 - 2026-09-14｜**批次 6 开门重拍（LIGHT）**：P1 骨架 D3 重议实质维持；序 30 蒸馏以「显式触发 + 压缩在宿主侧 + 产物是候选」放行（被否选项 C 预留内核兑现），S2/D4 零变化，机制零变化；游标 = 序 30 实现轮。[ADR](.agents/notes/implemented/architecture/2026-09-14-p1-d3-distillation-reshoot.md)；`bd1a3a6`→本批。
 
 - 2026-09-14｜**批次 5 开题讨论轮（LIGHT；R2 2B+2S 全采纳）**：四题拍板：taxonomy 与 schema 扩字段+YAML 维持后置、validate.yml 确认全覆盖、协议层归属本仓插件；序 25/27 落账，游标进批次 6（序 30 须重拍 P1 D3）。[ADR](.agents/notes/implemented/architecture/2026-09-14-batch5-opening-round.md)；`8d9eb82`→`8852c21`。
-
-- 2026-09-14｜**批次 4 重拍（LIGHT；R2 0B+1S 全采纳）**：第二期判裁重议维持判不立（触发条与判裁时逐值同）+ 序 18 因果边现算判已交付（= 第一期派生面）；行 16/17/19/20 落终态，游标推进批次 5，机制零变化。[ADR](.agents/notes/implemented/architecture/2026-09-14-memory-line-phase2-reshoot.md)；`7f9dcc1`→`8686bab`。README 无漂移。
 
 
 

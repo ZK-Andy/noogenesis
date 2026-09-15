@@ -8,6 +8,7 @@ import * as path from 'path';
 import { EngineError, KEBAB_RE } from './util.js';
 import { readGene } from './gene.js';
 import { renderGene } from './propose.js';
+import { protocolPath, assertProtocolIdUnique } from './protocol.js';
 
 const CANDIDATES_DIR = 'candidates';
 
@@ -118,19 +119,7 @@ function collect(repoRoot: string): string {
 // ---- add / show：候选落盘与读取 --------------------------------------------
 
 function candidatePath(repoRoot: string, domain: string, id: string) {
-  return path.join(repoRoot, CANDIDATES_DIR, domain, `${id}.json`);
-}
-
-// 跨域 id 唯一性（capsule/mutation 同判据）：候选虽无事件引用，引用无歧义面同构。
-function assertCandidateIdUnique(repoRoot: string, domain: string, id: string) {
-  const root = path.join(repoRoot, CANDIDATES_DIR);
-  if (!fs.existsSync(root)) return;
-  for (const ent of fs.readdirSync(root, { withFileTypes: true })) {
-    if (!ent.isDirectory() || ent.name === domain) continue;
-    if (fs.existsSync(path.join(root, ent.name, `${id}.json`))) {
-      throw new EngineError(`candidate id '${id}' already exists in domain '${ent.name}' — refs must stay unambiguous`);
-    }
-  }
+  return protocolPath(repoRoot, CANDIDATES_DIR, domain, id);
 }
 
 // 候选落盘：读入即以 gene 校验器验形（八字段封闭 schema，skipDirAnchor——源文件可放
@@ -152,7 +141,7 @@ function addCandidate(repoRoot: string, candidateFile: string): { report: string
   if (fs.existsSync(dest)) {
     throw new EngineError(`candidate already exists: candidates/${obj.domain}/${obj.id}.json — delete it explicitly to re-add`);
   }
-  assertCandidateIdUnique(repoRoot, obj.domain, obj.id);
+  assertProtocolIdUnique(repoRoot, CANDIDATES_DIR, 'candidate', obj.domain, obj.id);
   fs.mkdirSync(path.dirname(dest), { recursive: true });
   fs.writeFileSync(dest, JSON.stringify(obj, null, 2) + '\n', 'utf8');
   return {

@@ -8,6 +8,7 @@ import { EngineError, sha256Hex, git, envFingerprint, KEBAB_REF_RE } from './uti
 import { readGene, genePath } from './gene.js';
 import { readCapsule, capsulePath, assertGeneRefsResolvable, assertCapsuleIdUnique } from './capsule.js';
 import { readMutation, mutationPath, assertMutationIdUnique } from './mutation.js';
+import { assertProtocolIdUnique } from './protocol.js';
 import { evaluateGeneObj, formatReport } from './evaluate.js';
 
 function eventsPath(repoRoot: string, ts: string) {
@@ -81,18 +82,6 @@ function redReason(ev: ReturnType<typeof evaluateGeneObj>) {
   return parts.join('; ') || 'unknown';
 }
 
-// 跨树 id 唯一性：同一 id 不得在两个域并存（refs 必须无歧义）。
-function assertIdUnique(repoRoot: string, domain: string, id: string) {
-  const root = path.join(repoRoot, 'genes');
-  if (!fs.existsSync(root)) return;
-  for (const ent of fs.readdirSync(root, { withFileTypes: true })) {
-    if (!ent.isDirectory() || ent.name === domain) continue;
-    if (fs.existsSync(path.join(root, ent.name, `${id}.json`))) {
-      throw new EngineError(`gene id '${id}' already exists in domain '${ent.name}' — refs must stay unambiguous`);
-    }
-  }
-}
-
 // add/update：候选文件须以 <id>.json 命名（ID=文件名锚点对候选同样生效）。
 function solidify(repoRoot: string, engineRoot: string, candidatePath: string, actor: string, links: LinkRefs = {}) {
   if (!actor || !actor.trim()) throw new EngineError('solidify requires --actor <name> (audit trail)');
@@ -101,7 +90,7 @@ function solidify(repoRoot: string, engineRoot: string, candidatePath: string, a
   const link = linkKeys(repoRoot, links);
 
   const gene = readGene(candidatePath, { skipDirAnchor: true });
-  assertIdUnique(repoRoot, gene.domain, gene.id);
+  assertProtocolIdUnique(repoRoot, 'genes', 'gene', gene.domain, gene.id);
   const target = genePath(repoRoot, gene.domain, gene.id);
   const kind = fs.existsSync(target) ? 'gene.updated' : 'gene.added';
 
