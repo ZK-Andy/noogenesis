@@ -176,13 +176,36 @@ function diffMoment(stagedOnly: boolean, since: string | null): DiffMoment {
   };
 }
 
+/** 有效范围基：`--since <rev>` 可解析为提交 AND 与 HEAD 有 merge-base 时用原值；
+ *  否则回退到 `origin/main` 的 fork-point（本地回退 `main`）。**为什么**：CI 的
+ *  `event.before` 是推送前远端 tip，force-push 后它可能已被远端丢弃（孤儿提交）——
+ *  此时 diff 面坏在 git 源而不是变更本身，fail-closed 会把一次合法的改写永久钉红。
+ *  仍 fail-closed 的面：`--since` 不是提交名（拼错的 ref）、或 fork-point 也不可得。 */
+function effectiveBase(repo: string, since: string): string | null {
+  const resolves = runGit(["rev-parse", "--verify", "--quiet", since + "^{commit}"], repo);
+  if (resolves.ok && resolves.stdout.trim() !== "") {
+    const mb = runGit(["merge-base", since, "HEAD"], repo);
+    if (mb.ok && mb.stdout.trim() !== "") return since;
+  }
+  for (const upstream of ["origin/main", "main"]) {
+    const mb = runGit(["merge-base", upstream, "HEAD"], repo);
+    if (mb.ok && mb.stdout.trim() !== "") return mb.stdout.trim();
+  }
+  return null;
+}
+
 /** 所选 git 时刻的变更路径集 + untracked 集（默认模式单次收集，evidenceInChange
  *  复用）：
  *  --staged => index vs HEAD；--since => <base>..HEAD；默认 => 工作树。
  *  git 命令失败返回 null——fail-closed：不可解析的 diff 绝不读成「无 FULL 变更」。 */
 function repoChangedPaths(repo: string, stagedOnly: boolean, since: string | null):
     { paths: string[]; untracked: Set<string> } | null {
-  const moment = diffMoment(stagedOnly, since);
+  let base = since;
+  if (since !== null) {
+    base = effectiveBase(repo, since);
+    if (base === null) return null;
+  }
+  const moment = diffMoment(stagedOnly, base);
   const paths = new Set<string>();
   for (const cmd of moment.pathsCmds) {
     const r = runGit(cmd, repo);
