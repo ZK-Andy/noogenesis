@@ -11,6 +11,8 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-16｜**实发 `noogenesis-dsh@0.2.8`（发版）**：插件日志落盘通道 + review-tier 孤儿 `--since` 回退；`chore(release)` `5a51b17`、tag `dsh-v0.2.8`、npm latest 0.2.8（546.6 kB）；零改写次序（先分支后 tag）。[ADR](.agents/notes/implemented/process/2026-09-09-release-shape-alignment.md) 实发节。
+
 - 2026-09-16｜**插件日志落盘通道（FULL 三审 0B/5S）**：0.2.7 复验实测护栏读数行零观察面（`ctx.logger` 无持久 exporter、壳不落子进程日志）→ 新件 `log-sink.mts` 把 info/warn 追加 `<DSH_HOME>/logs/noogenesis.log`。[ADR](.agents/notes/implemented/bug-fix/2026-09-16-plugin-log-sink.md)；`ed32e79`→`4b65a43`。
 
 - 2026-09-15｜**演化轮落账批（同族原语协议归口 + 池件机器面裁决，FULL）**：协议外壳归口 `engine/protocol.ts`，闸件布局 / 复算段收敛为规格实例，池件两节清空。[ADR](.agents/notes/implemented/simplification/2026-09-15-primitive-protocol-shared-shell.md)；`c91ec27`→`3c0c12e`。
@@ -56,9 +58,6 @@
 - 2026-09-14｜**批次 6 余序 31–33 裁决（LIGHT）**：三面判不立 / 顺延——31 组合能力面归口行 36 + 序 25 渲染语义门；32 与序 5 C3-1 同面；33 依赖链 + D2/D4 双封；游标 = 批次 7。[ADR](.agents/notes/implemented/architecture/2026-09-14-batch6-composition-meta-verdict.md)
 
 - 2026-09-14｜**序 30 蒸馏实现轮（FULL 三审 1B+5S 全采纳）**：`distill` 三子命令（collect/add/show）+ `.noogenesis/candidates/` 候选面 + 闸扩节；九命令计数同步；collect 分诊漏接已修。[ADR](.agents/notes/implemented/architecture/2026-09-14-distill-command.md)；`93fa103`→`3bc2712`。
-
-- 2026-09-14｜**批次 6 开门重拍（LIGHT）**：P1 骨架 D3 重议实质维持；序 30 蒸馏以「显式触发 + 压缩在宿主侧 + 产物是候选」放行（被否选项 C 预留内核兑现），S2/D4 零变化，机制零变化；游标 = 序 30 实现轮。[ADR](.agents/notes/implemented/architecture/2026-09-14-p1-d3-distillation-reshoot.md)；`bd1a3a6`→本批。
-
 
 
 
