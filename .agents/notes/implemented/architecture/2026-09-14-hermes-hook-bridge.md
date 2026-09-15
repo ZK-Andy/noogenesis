@@ -40,4 +40,8 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](2026-09-13-feature-co
 - **档位**：FULL（`adapters/**` 行为契约面 + `.github/workflows/**` 门禁面）→ R1/R2/R3 三重审核。
 - **单源**：adapter 消费契约 = `adapters/hermes/README.md`；本刀判据单源 = `/.oxlintrc.json`（export-docs 半与 `scripts/verify-export-docs.mts` 的域表本刀不接，列未覆盖面）；Hermes 侧协议单源 = 宿主文档 `hooks.md`。
 - **C1 与防火墙**：`adapters/hermes/` 零宿主依赖、零 `.py`/`.sh`；不 import 引擎模块、不 import Hermes 面（v1 只 spawn `node_modules/oxlint/bin/oxlint`）。
+## 真机复验裁决（2026-09-16）
+
+用户拍板**取消** (B) 真会话写码载荷复验，不推进——该面维持未取证。机器面判据不变 = `dist/adapters/hermes/selftest.mjs`（25 断言，离线真 oxlint 覆盖违约 / 干净 / 越界 / 事件外 / 坏 JSON）+ 宿主接线探针的发射与响应形状（`HERMES_HOME=<tmp> hermes hooks test pre_tool_call --payload-file`）。消费契约 [adapters/hermes/README.md](../../../../adapters/hermes/README.md) 末句的「真会话写码载荷走 (B) 真机复验」指针随之失效；该句落在 `adapters/**`（机械触发 FULL），改写随下一批触及该路径的变更同做。
+
 - **未覆盖面（具名触发）**：**export-docs 半判据**（触发 = 判据件开出「给定内容 + 逻辑域」入口，或宿主给出可阻断的写后事件面）；**`SOURCE_ROOTS` 不含 `adapters/hermes`**（新目录导出契约注释面零机器覆盖，本批三件恰好自带 JSDoc 故门禁不说话；触发 = 该目录首件导出面违规实例出现，或判据件域表扩展轮）；`patch` 工具（载荷形状未取证；触发 = 真机 `patch` 命中）；`pre_llm_call` 上下文注入（触发 = 出现 `AGENTS.md` 链覆盖不到的常驻知识面）；Hermes 原生插件面（触发 = C1 放开 Python 或宿主给出 JS/TS plugin API）；`hermes skills trust` 用户侧一步（触发 = 宿主给出项目技能自动信任面）。

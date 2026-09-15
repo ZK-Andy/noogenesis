@@ -74,5 +74,5 @@
 - [x] （A）M1 批 B 防过度混合 D 2026-09-10（FULL 三审全采纳；契约块 + 蒸馏篇 + cases 索引 + 检查项第 5 条），ADR [2026-09-10-m1-guard-anti-overdesign](.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) 第二条 Review 行在案。
 - [x] （D）护栏建设轮余项收尾 2026-09-13：建议行落地（`token-baseline.mts` 每会话一行读数，运行期形状闸）+ 两本账落点（发版账 = release ADR 实发节，三次已回填），[ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md) 落账。
 - [x] （A）批次表 46 项全部终态、表转 implemented（2026-09-14；46 项逐行结论单源 = [批次表 ADR](.agents/notes/implemented/architecture/2026-09-13-feature-completion-backlog.md)）。
-- [ ] （B）Hermes 写码在环 hook 真机复验（本地环境，不入仓）：`~/.hermes/config.yaml` 合并 `adapters/hermes/hooks.example.yml` 后，真会话让 agent 写违约 `.ts`（含 `var`）→ 期望 `pre_tool_call` 拦回（block 消息带规则与行号）；干净写放行；非 `.ts` / 出仓写不触发；判据件故障面（临时改名 oxlint）期望零阻断。
+- [x] （B）Hermes 写码在环 hook 真机复验 2026-09-16 **取消**（用户拍板，不推进）：真会话写码载荷面维持未取证（配置面 `~/.hermes/config.yaml` 不入仓）；判据面 = 离线自测 + 宿主接线探针的发射/响应形状。[裁决](.agents/notes/implemented/architecture/2026-09-14-hermes-hook-bridge.md)。
 - [ ] （A）宿主实跑代移出 peer 区间：宿主自 2026-09-15 17:44 起跑 `0.1.6-alpha.1`（`host.log` 实证），而 peer `^0.1.5-rc.2` 按 semver 预发布规则不含它（`satisfies` 实测 false）→ peer 契约与类型契约（devDep 钉 0.1.5-rc.2）双双落后实跑代；运行期兼容由 2026-09-16 复验证实。待拍板 = 开升代批。[现值](.agents/notes/implemented/architecture/2026-09-13-host-peer-generation-upgrade.md)。
