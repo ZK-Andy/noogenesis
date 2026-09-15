@@ -69,7 +69,7 @@ node dist/engine/bin.js self-test  # 引擎自检（消费预构建 dist）
 │   └── research/           # 设计文档（蜂群框架设计 / 共享层设计 / JIT-Agent 研究）+ 参考引擎调研解剖
 ├── scripts/                # verify-* 机器门禁（.mts，node ≥22.18 原生直跑；lint/export-docs 两闸用 oxlint/typescript devDependency）+ gates.mts 门禁清单单源发射器（含 needs/after DAG）+ release/（bump.mts + release-note.mts：dsh-v tag + 双语 release 正文）
 ├── engine/                 # 演化发动机（Node 零依赖十命令 + gates.json 白名单；pull = 基因库只读消费；observe = 观测输入面；capsule = 执行审计记录；mutation = 执行前意图声明；distill = 失败面汇编与基因候选落盘；源码 TS，运行形态 = tsc dist）
-├── adapters/dsh/           # DSH 适配层（插件壳接线：system-prompt 节 / noo_* 工具 / solidify 人工确认 / geneBankUrl 惰性 pull / 技能随库分发 / 挂载面 A2–A6 五点接线与 A2 开场地图（A6 停止前续跑能力位见 [A6 ADR](.agents/notes/implemented/architecture/2026-09-13-a6-turn-stopping-mount.md)；A8 记录投影已撤，见 [撤除 ADR](.agents/notes/implemented/architecture/2026-09-08-a8-session-record-projection-removal.md)）；B2 起源码 TS，npm 包 = tsc dist）
+├── adapters/dsh/           # DSH 适配层（插件壳接线：system-prompt 节 / noo_* 工具 / solidify 人工确认 / geneBankUrl 惰性 pull / 技能随库分发 / 插件日志落盘（`<DSH_HOME>/logs/noogenesis.log`） / 挂载面 A2–A6 五点接线与 A2 开场地图（A6 停止前续跑能力位见 [A6 ADR](.agents/notes/implemented/architecture/2026-09-13-a6-turn-stopping-mount.md)；A8 记录投影已撤，见 [撤除 ADR](.agents/notes/implemented/architecture/2026-09-08-a8-session-record-projection-removal.md)）；B2 起源码 TS，npm 包 = tsc dist）
 ├── .noogenesis/           # 演化状态面——tracked：genes/ events/ capsules/ mutations/ candidates/ manifest.json；ignored：genes-cache/ observations/
 ├── lefthook.yml            # git 钩子单源（pre-commit 分域 job / pre-push 单编排器；lefthook 内建 postinstall 自动安装）
 ├── templates/              # ADR / AGENTS 分层模板
