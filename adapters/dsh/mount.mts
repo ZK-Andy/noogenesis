@@ -63,7 +63,7 @@ export interface ToolResultLike {
 	content?: Array<{ type?: string; text?: string }>;
 }
 
-/** A5 会话开始 payload（`agent/session-start` 窄面；inject 为非阻塞能力位）。 */
+/** A5 会话开始 payload（`agent/created` 窄面——宿主 0.1.6-alpha.1 起该事件携 `source`；inject 为非阻塞能力位）。 */
 export interface SessionStartPayload extends AgentCarrier {
 	agent?: AgentRef & { inject?(message: unknown): void };
 	source?: unknown;

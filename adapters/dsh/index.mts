@@ -193,11 +193,6 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 		gate: solidifyGate,
 		warn: (message) => logger.warn(message),
 	});
-	ctx.on("agent/created", (payload) => {
-		evolveCommand.tryRegister();
-		bankPull.pullForSession(payload).catch(onCrash);
-	});
-
 	ctx.systemPrompt.section({ name: "tool:noogenesis", order: cfg.sectionOrder, text: BASE_SECTION });
 	ctx.systemPrompt.section({
 		name: "tool:noogenesis:hits",
@@ -224,9 +219,15 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 	// 一条 warn）。 ──
 	const mounts = createMountPolicies(cfg, { warn: (message) => logger.warn(message), isBankSkillsRegistered: bankSkills.isRegistered });
 
-	// A5 会话开始时刻（agent/session-start，hooks 桥四类时刻的会话开始位）：
-	// 非阻塞 inject 能力；异常 catch → warn 降级（hook-protocol 非阻断语义）。
-	ctx.on("agent/session-start", (payload: SessionStartPayload) => {
+	// 会话开始时点（宿主 0.1.6-alpha.1 起由 `agent/created` 单点承载：旧代的
+	// `agent/created`〔仅 `agent`〕与 `agent/session-start`〔`agent` + `source`〕
+	// 合并为该事件的 `{agent, source, signal?}`——升代 ADR 2026-09-16 决定 2）。
+	// 一个 listener 三件事：命令面幂等补注册 + 基因库拉取（非阻塞）+ A5 会话开始
+	// 时刻的 inject 能力位（零策略）；A5 异常 catch → warn 降级（hook-protocol
+	// 非阻断语义）。
+	ctx.on("agent/created", (payload: SessionStartPayload) => {
+		evolveCommand.tryRegister();
+		bankPull.pullForSession(payload).catch(onCrash);
 		try {
 			const lines = mergeSessionStart(mounts.sessionStart, payload);
 			if (lines.length && payload.agent?.inject) payload.agent.inject(adviceMessage(lines));

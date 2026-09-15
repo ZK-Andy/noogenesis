@@ -49,3 +49,7 @@ HERO 两问逐派生面过（检测到什么具体失败 → 真出现后下一�
 - 批次表行 15 标 done（指针 = 本件）；「未交付」计数 32 → 31；批次 3 余行 16（Hypothesize，依赖序 18）与 17（观测面自动接线）。
 - 机制零变化：`adapters/**`、`engine/**`、`cordis.patch.yml`、`package.json` 均不动；本件 LIGHT 档（纯文档收口，路径触发集未命中）。宿主依赖面零新增。
 - 复算口径 = `section.mts` 的 `createHitsSection` 短路行与 `HitsSectionDeps.injectSignals` + `index.mts` 命中节 provider 注册点 + `config.mts` 的 `injectSignals` 缺省与校验 + `engine/select.ts` 的字面归一化匹配 + 本仓 `genes/*/*.json` 的 `signals` 采样 + `grep -rn injectSignals ~/.dsh`（除会话转录零命中）。
+
+## 现值（2026-09-16）
+
+Problem 节引用的设计 §8.3 时刻名 `agent/session-start` 属宿主旧代键位：`0.1.6-alpha.1` 起该时刻由 `agent/created`（`{agent, source, signal?}`）单点承载，A5 仍为零策略能力位、该时刻仍零注入。依据 = [升代 ADR](2026-09-16-host-peer-generation-0-1-6-alpha.md)。

@@ -35,9 +35,9 @@ import type { ToolExecLike, ToolResultLike, TurnStoppingPayload } from "./mount.
 /** 断言助手：条件为假时 `tsc` 报「`false` 不满足 `true` 约束」。 */
 type Assert<T extends true> = T;
 
-// ── 事件键：index.mts 的七个 ctx.on 注册面 ───────────────────────────────
+// ── 事件键：index.mts 的六个 ctx.on 注册面 ───────────────────────────────
+// 会话开始时点 = `agent/created`（宿主演进见该键的断言与升代 ADR 2026-09-16）。
 type _AgentPreStep = Assert<"agent/pre-step" extends keyof Events ? true : false>;
-type _AgentSessionStart = Assert<"agent/session-start" extends keyof Events ? true : false>;
 type _AgentTurnStopping = Assert<"agent/turn-stopping" extends keyof Events ? true : false>;
 type _AgentCreated = Assert<"agent/created" extends keyof Events ? true : false>;
 type _AgentDisposed = Assert<"agent/disposed" extends keyof Events ? true : false>;

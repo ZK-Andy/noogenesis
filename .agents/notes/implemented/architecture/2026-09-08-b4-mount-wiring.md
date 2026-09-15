@@ -85,3 +85,7 @@ Related: [2026-09-06-collab-rebuild-impl](2026-09-06-collab-rebuild-impl.md)（�
 - **A2 开场地图噪音面**：布点件或技能面在场的仓每会话首步多一条 ≤10 行消息（上界 = 9 行，见 Decision 4）；纯零内容仓（无布点/指针/技能面）零注入。技能面随基因库缓存分发，拉过库的下游仓常态在场——单行路标图放宽拍板 = [2026-09-10-m1-guard-anti-overdesign](2026-09-10-m1-guard-anti-overdesign.md)（Erratum 通道同款：事实句随批同步，决定不变）。
 - **WeakMap 会话键生命周期**：会话对象复用/恢复语义下投影状态可能跨「名义同会话」残留——记录件语义只增计数不授权，最坏面 = 记录偏大，无决策面依赖；显式清态 = `session/disposed`（R2 修正后为独立 cordis 事件，WeakMap GC 仍兜底）。
 - **M2 开场地图残余边界（评审收口在案）**：触发 = 每会话首个 pre-step（单门）；若该步恰被其他策略拒绝，地图随步作废（advice 档不可投递）——发生面 = 另一插件显式 reject 首步，宿主默认 fallback 永不 reject；记录件不受影响。
+
+## 现值（2026-09-16）
+
+A5 会话开始时点在宿主 `0.1.6-alpha.1` 上由 `agent/created` 单点承载——旧代该事件仅 `{agent}`、启动驱动的扩展点是独立的 `agent/session-start`，新代合并为 `{agent, source, signal?}`；本层随之把 A5 与「命令面补注册 + 基因库拉取」合为一个 listener（本文件 Decision 1 表内 `agent/session-start` 行指旧代键位）。依据与读数 = [升代 ADR](2026-09-16-host-peer-generation-0-1-6-alpha.md)。

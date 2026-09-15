@@ -23,7 +23,7 @@ hooks:
 
 - 协议 = Hermes shell hook：stdin 收 `{hook_event_name, tool_name, tool_input, session_id, cwd, extra}`；本层只读 `hook_event_name` / `tool_name` / `tool_input.path` / `tool_input.content` / `cwd`。stdout 只发 block 形状（Hermes-canonical `action`/`message`），其余情况不写 stdout。
 - 自测（离线、无需 Hermes）：`npm run build && node dist/adapters/hermes/selftest.mjs`。
-- 宿主接线探针：`HERMES_HOME=<tmp> hermes hooks test pre_tool_call --payload-file <fixture>`——注意 `--payload-file` 的内容并入载荷 `extra`，宿主合成的 `tool_input` 是占位值，故该命令验证的是**发射与响应形状**，判据本身由自测覆盖；真会话写码载荷走 (B) 真机复验。
+- 宿主接线探针：`HERMES_HOME=<tmp> hermes hooks test pre_tool_call --payload-file <fixture>`——注意 `--payload-file` 的内容并入载荷 `extra`，宿主合成的 `tool_input` 是占位值，故该命令验证的是**发射与响应形状**，判据本身由自测覆盖；真会话写码载荷未取证（真机复验 2026-09-16 取消，[裁决](../../.agents/notes/implemented/architecture/2026-09-14-hermes-hook-bridge.md)）。
 
 ## 未覆盖（具名触发）
 

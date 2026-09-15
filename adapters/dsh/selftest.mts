@@ -1418,7 +1418,7 @@ function writeFixtureGene(repoRoot: string): void {
 		const sinkLogPath = path.join(sinkHome, "logs", "noogenesis.log");
 		assert.match(fs.readFileSync(sinkLogPath, "utf8"), /noogenesis wired \(repoRoot=/);
 		ok("mounts: plugin log sink appends the mount line under <DSH_HOME>/logs/noogenesis.log (host logger preserved)");
-		for (const event of ["agent/session-start", "agent/pre-step", "tools/pre-execute", "tools/post-execute", "agent/turn-stopping"]) {
+		for (const event of ["agent/created", "agent/pre-step", "tools/pre-execute", "tools/post-execute", "agent/turn-stopping"]) {
 			assert.equal(listeners.get(event)?.length, 1, `${event} must be wired exactly once`);
 		}
 		// 注册 = 可重试注入（index → registerBankSkills 走 ctx.inject(["skills"], …)）。
@@ -1430,7 +1430,7 @@ function writeFixtureGene(repoRoot: string): void {
 		const preStep = listeners.get("agent/pre-step")![0]!;
 		const toolPre = listeners.get("tools/pre-execute")![0]!;
 		const toolPost = listeners.get("tools/post-execute")![0]!;
-		const sessionStart = listeners.get("agent/session-start")![0]!;
+		const sessionStart = listeners.get("agent/created")![0]!;
 		const turnStopping = listeners.get("agent/turn-stopping")![0]!;
 
 		// A2：首步地图追加一条建议消息（技能只在缓存通道且未注册 → 地图无路标行，
