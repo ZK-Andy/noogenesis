@@ -115,6 +115,29 @@ function scanTree(repo: string): Record<string, Record<string, unknown>> {
   return out;
 }
 
+/** 跨族状态根常量一致性：engine/state.ts 与 scripts/state.mts 各持一份（三族相对
+ *  import 互斥），本判据把「两份必须同值」钉住——漂移会让引擎与门禁各自找路径失败。
+ *  读源文本而不是 import：engine 与 scripts 不互相 import 是架构规则。 */
+function checkStateRootParity(repo: string): string[] {
+  const read = (p: string): string | null => {
+    try {
+      const m = fs.readFileSync(path.join(repo, p), "utf-8").match(/STATE_ROOT\s*=\s*['"]{1}([^'"]+)['"]{1}/u);
+      return m ? (m[1] ?? null) : null;
+    } catch {
+      return null;
+    }
+  };
+  const engineRoot = read("engine/state.ts");
+  const scriptsRoot = read("scripts/state.mts");
+  if (engineRoot === null || scriptsRoot === null) {
+    return ["engine/state.ts 与 scripts/state.mts 的 STATE_ROOT 常量均须可解析（跨族状态根一致性）"];
+  }
+  if (engineRoot !== scriptsRoot) {
+    return ["STATE_ROOT 跨族漂移：engine/state.ts='" + engineRoot + "' vs scripts/state.mts='" + scriptsRoot + "'"];
+  }
+  return [];
+}
+
 /** 校验 repo：返回 [检查项数, 错误列表]。 */
 function verify(repo: string): [number, string[]] {
   const errors: string[] = [];
@@ -328,6 +351,8 @@ function main(): number {
     repo = normPyPath(v);
   }
   const [checked, errors] = verify(repo);
+  const parity = checkStateRootParity(repo);
+  errors.push(...parity);
   console.log(`Checked manifest vs ${checked} items`);
   if (errors.length > 0) {
     for (const e of errors) console.log(`FAIL: ${e}`);

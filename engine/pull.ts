@@ -37,21 +37,33 @@ function countCacheGenes(cacheRepo: string) {
   return n;
 }
 
-// 缓存目录安全边界：拒仓根本体、仓外路径、以及仓根状态面里除缓存落点自身之外的子树。
-// 缓存本身就在 <repoRoot>/.noogenesis/genes-cache（gitignored），故「在仓内」不是违例；
-// 违例的是落在被跟踪的状态目录里（那会让 git checkout 嵌进扫描树、且污染待提交面）。
-function assertCacheDirSafe(repoRoot: string, target: string) {
+// 缓存目录安全边界（两段式：先定落点、后按实存校验）：
+// - 落点不得是仓根本体（防误清仓资产）。
+// - 落点若落在状态面 .noogenesis/ 内，只允许默认缓存子目录一个位置——状态面其余部分是
+//   被跟踪的演化资产（genes/events/capsules/…），clone 进去会让 git 检出嵌进扫描树、
+//   且与待提交面混叠（本批之前该防护面对 genes/ 子树，状态面搬家后同义重述为状态树约束）。
+// - 仓外路径允许（历史用法）；仅在**实存**后校验：仓外的非空目录须是 git 检出，否则会
+//   被 git 拒绝/半应用。校验点因而在两处（实存前定落点、实存后按现场判）。
+function assertCacheDirForRepo(repoRoot: string, target: string) {
   const abs = path.resolve(target);
   const root = path.resolve(repoRoot);
   if (abs === root) throw new EngineError('cache dir must not be the repository root');
+  const stateAbs = path.resolve(path.join(root, STATE_ROOT));
+  const stateRel = path.relative(stateAbs, abs);
+  const underState = stateRel !== '' && !stateRel.startsWith('..') && !path.isAbsolute(stateRel);
+  if (underState && abs !== path.resolve(defaultCacheDir(root))) {
+    throw new EngineError(`cache dir must not be inside the state tree: ${abs}`);
+  }
+  return abs;
+}
+
+// 实存后的现场校验：仓外的非空目录必须是 git 检出（仓内落点由调用方的 .git 检查覆盖）。
+function assertCacheLookupSafe(repoRoot: string, abs: string) {
+  const root = path.resolve(repoRoot);
   const rel = path.relative(root, abs);
   const inside = rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
-  if (!inside) throw new EngineError(`cache dir must be inside the repository: ${abs}`);
-  const stateRel = path.relative(path.join(root, STATE_ROOT), abs);
-  const stateAbs = path.resolve(path.join(root, STATE_ROOT));
-  if (abs !== stateAbs && (stateRel === '' || (!stateRel.startsWith('..') && !path.isAbsolute(stateRel)))) {
-    const cacheAbs = path.resolve(defaultCacheDir(root));
-    if (abs !== cacheAbs) throw new EngineError(`cache dir must not be inside the state tree: ${abs}`);
+  if (!inside && path.dirname(abs) === abs) {
+    throw new EngineError(`cache dir must not be the filesystem root: ${abs}`);
   }
   return abs;
 }
@@ -61,7 +73,8 @@ function assertCacheDirSafe(repoRoot: string, target: string) {
 // 返回报告文本（stdout 合同面）。
 function pullBank(repoRoot: string, url: string, cacheOverride: string | null) {
   if (typeof url !== 'string' || !url.trim()) throw new EngineError('pull needs a non-empty bank URL');
-  const target = assertCacheDirSafe(repoRoot, cacheOverride || defaultCacheDir(repoRoot));
+  const target = assertCacheDirForRepo(repoRoot, cacheOverride || defaultCacheDir(repoRoot));
+  assertCacheLookupSafe(repoRoot, target);
   let action;
   if (fs.existsSync(target)) {
     if (!fs.existsSync(path.join(target, '.git'))) {
@@ -89,4 +102,4 @@ function pullBank(repoRoot: string, url: string, cacheOverride: string | null) {
   return { action, cacheDir: target, count, report: lines.join('\n') + '\n' };
 }
 
-export { pullBank, assertCacheDirSafe };
+export { pullBank, assertCacheDirForRepo, assertCacheLookupSafe };

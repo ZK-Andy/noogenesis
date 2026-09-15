@@ -26,7 +26,7 @@ import { fileURLToPath } from "node:url";
 const PROGRAM = "verify-secrets.mts";
 
 /** 扫描面（相对仓根）：符号链接不跟随（`withFileTypes` 的目录判定已排除）。 */
-const SCAN_ROOTS = ["genes", "events", path.join(".noogenesis", "observations")];
+const SCAN_ROOTS = [path.join(".noogenesis", "genes"), path.join(".noogenesis", "events"), path.join(".noogenesis", "observations")];
 
 /** 命中明细输出上限（一份文件被批量污染时不刷屏；尾行报剩余条数）。 */
 const MAX_REPORTED = 20;
@@ -319,8 +319,8 @@ function selfTest(): number {
 			return root;
 		};
 		const clean = mk("clean", {
-			"genes/process/g.json": '{"id":"g","summary":"uses no literal credentials"}\n',
-			"events/2026-09.jsonl": '{"ts":"t","actor":"t","kind":"gene.added","evidence":"evaluate ok: all 16 gates green"}\n',
+			".noogenesis/genes/process/g.json": '{"id":"g","summary":"uses no literal credentials"}\n',
+			".noogenesis/events/2026-09.jsonl": '{"ts":"t","actor":"t","kind":"gene.added","evidence":"evaluate ok: all 16 gates green"}\n',
 		});
 		expect("clean", 0, clean);
 		// 观测面在场但无命中边（观测数据本身不是凭据）：仍是 PASS，覆盖「有数据」路径
@@ -329,16 +329,16 @@ function selfTest(): number {
 		}));
 
 		expect("gene-face", 1, mk("gene-face", {
-			"genes/process/g.json": '{"id":"g","summary":"key AKIAIOSFODNN7EXAMPLE"}\n',
+			".noogenesis/genes/process/g.json": '{"id":"g","summary":"key AKIAIOSFODNN7EXAMPLE"}\n',
 		}));
 		expect("event-evidence-face", 1, mk("event-face", {
-			"events/2026-09.jsonl": '{"ts":"t","evidence":"used ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"}\n',
+			".noogenesis/events/2026-09.jsonl": '{"ts":"t","evidence":"used ghp_ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"}\n',
 		}));
 		expect("observation-face", 1, mk("obs-face", {
 			".noogenesis/observations/2026-09.jsonl": '{"ts":"t","signal":"s","gene":"a/b","outcome":"ok","evidence":"DB_PASSWORD=hunter2hunter2xy"}\n',
 		}));
 		expect("unicode-filename-agnostic", 1, mk("nested", {
-			"genes/域/g.json": '{"id":"g","summary":"sk-ant-api03-AAAABBBBCCCCDDDDEEEE"}\n',
+			".noogenesis/genes/域/g.json": '{"id":"g","summary":"sk-ant-api03-AAAABBBBCCCCDDDDEEEE"}\n',
 		}));
 		expect("missing-root", 2, path.join(dir, "does-not-exist"));
 	} finally {

@@ -1,6 +1,6 @@
 // gene.ts — Gene 落盘协议（schema ADR S1）：封闭字段 schema、目录锚点、ID=文件名、白名单子集。
 // 字段表当前为 3 必选（summary/signals + 目录锚点 domain/id）+ 3 可选（constraints/validation/avoid），
-// 口径 = .agents/notes/implemented/architecture/2026-09-16-gene-constraint-form.md。
+// 口径 = .agents/notes/implemented/architecture/2026-09-16-state-root-under-noogenesis.md 决定 3。
 
 import * as fs from 'fs';
 import * as path from 'path';
@@ -82,6 +82,10 @@ function scanGenes(repoRoot: string, opts: { cache?: boolean } = {}) {
     // 缓存 = 银行仓的浅克隆，其状态面同样在 STATE_ROOT 下。
     const cache = path.join(cacheDir(repoRoot), STATE_ROOT, 'genes');
     if (fs.existsSync(cache)) roots.push(cache);
+    else if (fs.existsSync(path.join(cacheDir(repoRoot), 'genes'))) {
+      // 旧布局缓存（状态面搬家前克隆，基因在克隆根 genes/）：零诊断会让离线会话静默丢缓存命中。
+      process.stderr.write('engine: cache uses the pre-.noogenesis layout; run engine pull to refresh it\n');
+    }
   }
   const out: { path: string; ref: string; obj: any }[] = [];
   const seen = new Set<string>();

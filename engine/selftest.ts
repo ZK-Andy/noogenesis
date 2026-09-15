@@ -1014,7 +1014,11 @@ function selfTest() {
     ok(throwsEngine(() => pullBank(bad, bank)), 'pull: non-git cache dir refused (fail-closed)');
     ok(throwsEngine(() => pullBank(bad, '')), 'pull: empty URL refused');
     ok(throwsEngine(() => pullBank(bad, bank, bad)), 'pull: cache dir = repo root refused');
-    ok(throwsEngine(() => pullBank(bad, bank, path.join(genesDir(bad), 'sub'))), 'pull: cache dir inside the repository refused');
+    ok(throwsEngine(() => pullBank(bad, bank, path.join(genesDir(bad), 'sub'))), 'pull: cache dir inside the state tree refused');
+    ok(throwsEngine(() => pullBank(bad, bank, path.join(bad, '.noogenesis'))), 'pull: cache dir = state root refused');
+    fs.rmSync(defaultCacheDir(bad), { recursive: true, force: true }); // 清掉非 git 探针，给仓外落点让位
+    const outside = path.join(os.tmpdir(), 'noo-outside-' + process.pid + '-' + Date.now()); // 不预建：目标不存在才是「仓外可 clone」的判据面
+    ok(pullBank(bad, bank, outside).action === 'cloned', 'pull: cache dir outside the repository allowed');
     const bin = path.join(__dirname, 'bin.js');
     ok(spawnCode([bin, 'pull'], bad) === 2, 'bin: pull without URL -> exit 2 (usage)');
     ok(spawnCode([bin, 'pull', 'x', '--cache'], bad) === 2, 'bin: --cache without value -> exit 2 (usage)');
