@@ -14,6 +14,8 @@
  * - 停止前 payload 键存在性 + 形状相容（A6 能力位；对应 `mount.mts` 的
  *   `TurnStoppingPayload`——该面全字段可选，形状相容单独对宿主改名/删键零
  *   证伪力，故 `agent` / `agent.steer` 两键另配存在性断言）；
+ * - 会话开始 payload 消费键存在性 + 形状相容（A5 能力位；对应 `mount.mts` 的
+ *   `SessionStartPayload`——同 A6 口径，消费键 = `agent.inject`）；
  * - 决策判别式：`PreToolDecision` 三态、`PostToolDecision` 的 accept/block 与
  *   `additionalContexts`（`index.mts` 的消费面）；
  * - tokenMeter 读数面：服务键 `tokenMeter`（`index.mts` 的 `ctx.get` 取用点）、
@@ -30,7 +32,7 @@
 import type { Context, Events } from "@deepseek-ai/cordis";
 import type { PostToolDecision, PreToolDecision, ToolExecution, ToolExecutionResult } from "@deepseek-ai/dsh-tools";
 import type { TokenMeasurement, TokenMeter } from "@deepseek-ai/dsh-token-meter";
-import type { ToolExecLike, ToolResultLike, TurnStoppingPayload } from "./mount.mjs";
+import type { SessionStartPayload, ToolExecLike, ToolResultLike, TurnStoppingPayload } from "./mount.mjs";
 
 /** 断言助手：条件为假时 `tsc` 报「`false` 不满足 `true` 约束」。 */
 type Assert<T extends true> = T;
@@ -40,6 +42,10 @@ type Assert<T extends true> = T;
 type _AgentPreStep = Assert<"agent/pre-step" extends keyof Events ? true : false>;
 type _AgentTurnStopping = Assert<"agent/turn-stopping" extends keyof Events ? true : false>;
 type _AgentCreated = Assert<"agent/created" extends keyof Events ? true : false>;
+// A5 消费面（`index.mts` 的 `payload.agent.inject` 非阻塞投递）：窄面全字段可选，
+// 形状相容单独对改名/删键零证伪力，故消费键另配存在性断言（同 A6 口径）。
+type _CreatedAgentInjectKey = Assert<"inject" extends keyof Parameters<Events["agent/created"]>[0]["agent"] ? true : false>;
+type _CreatedShape = Assert<Parameters<Events["agent/created"]>[0] extends SessionStartPayload ? true : false>;
 type _AgentDisposed = Assert<"agent/disposed" extends keyof Events ? true : false>;
 type _ToolsPreExecute = Assert<"tools/pre-execute" extends keyof Events ? true : false>;
 type _ToolsPostExecute = Assert<"tools/post-execute" extends keyof Events ? true : false>;

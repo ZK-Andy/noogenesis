@@ -219,14 +219,16 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 	// 一条 warn）。 ──
 	const mounts = createMountPolicies(cfg, { warn: (message) => logger.warn(message), isBankSkillsRegistered: bankSkills.isRegistered });
 
-	// 会话开始时点（宿主 0.1.6-alpha.1 起由 `agent/created` 单点承载：旧代的
-	// `agent/created`〔仅 `agent`〕与 `agent/session-start`〔`agent` + `source`〕
-	// 合并为该事件的 `{agent, source, signal?}`——升代 ADR 2026-09-16 决定 2）。
-	// 一个 listener 三件事：命令面幂等补注册 + 基因库拉取（非阻塞）+ A5 会话开始
-	// 时刻的 inject 能力位（零策略）；A5 异常 catch → warn 降级（hook-protocol
-	// 非阻断语义）。
+	// 会话开始时点（`agent/created` = 宿主的启动驱动扩展点，payload `{agent, source, signal?}`；
+	// 键位与世代 = ADR 2026-09-16-host-peer-generation-0-1-6-alpha）。一个 listener 三件事：
+	// 命令面幂等补注册 + 基因库拉取（非阻塞）+ A5 会话开始 inject 能力位（零策略）。宿主
+	// 该事件 serial——listener 抛错即否掉 agent 创建，故三件事各自 catch → warn 降级。
 	ctx.on("agent/created", (payload: SessionStartPayload) => {
-		evolveCommand.tryRegister();
+		try {
+			evolveCommand.tryRegister();
+		} catch (cause) {
+			logger.warn(`noogenesis command registration failed: ${cause instanceof Error ? cause.message : String(cause)}`);
+		}
 		bankPull.pullForSession(payload).catch(onCrash);
 		try {
 			const lines = mergeSessionStart(mounts.sessionStart, payload);

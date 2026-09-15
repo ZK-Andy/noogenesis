@@ -23,7 +23,7 @@ Related: 前批 [2026-09-13-host-peer-generation-upgrade](2026-09-13-host-peer-g
 
 1. **目标代 = 宿主实跑代 `0.1.6-alpha.1`**：根 `peerDependencies` 两件同对齐 `^0.1.6-alpha.1`；`@deepseek-ai/dsh-token-meter` 精确 devDependency `0.1.6-alpha.1`（type-only 契约面，值允许集不变）；`package-lock.json` 同提交。
 2. **A5 会话开始时点迁到 `agent/created`**：删 `agent/session-start` listener，其 inject 能力位（零策略）与该事件的命令面幂等补注册、基因库拉取合为**一个** listener——「每挂载点恰一个 `ctx.on`」纪律不变；两件事都非阻塞，旧代「创建 → 会话开始」的先后序在本层零消费，合并无可观察差异。`host-api-contract.mts` 删 `_AgentSessionStart`（`agent/created` 键断言原本在场），断言键集 7 → 6。
-3. **升级路径 = 世代整体替换**：单件跨代装必 ERESOLVE（[cookbook](../../../../docs/cookbook.md)「环境」条）——做法 = 从 `package-lock.json` 摘掉全部 `@deepseek-ai/*` 条目 + 删 `node_modules/@deepseek-ai`，再 `npm install --cache=<可写目录>` 重新解析。
+3. **升级路径 = 世代整体替换**：单件跨代装必 ERESOLVE（症状与根因 = [cookbook](../../../../docs/cookbook.md)「环境」条），装法（摘 lock 条目 + 删旧树 + 重装）同条承载，本件不重述。
 4. **失效指针同批收口**：取消真机复验留下的 [`adapters/hermes/README.md`](../../../../adapters/hermes/README.md) 末句；B4 接线 ADR 与情境注入裁决 ADR 的 A5 事件名现值一并改指。
 
 ## Alternatives considered
@@ -39,12 +39,12 @@ Related: 前批 [2026-09-13-host-peer-generation-upgrade](2026-09-13-host-peer-g
 
 - **正面**：断言面与运行面重新同源；宿主事件面重构在 `tsc` 面即红（本次实证：升代后立刻报 `_AgentSessionStart`）；consumer 侧 peer 满足；`agent/created` 单点承载三件事，接线面比「两事件两 listener」更小。
 - **负面（自诺账延续）**：`dsh-token-meter` 仍精确钉法——下次升代必须带它同代，否则断言面钉旧代而 peer 面已前移；alpha 代 API 漂移由 `tsc` 契约断言 + 运行期形状闸两通道兜（后者保留）。
-- **行为面**：A5 零策略（`mounts.sessionStart` 恒空集），迁移零可观察行为变化；新代 `agent/created` 是 serial 且「listener 抛错即创建失败」，本层该 listener 全程非阻塞、异常内部消化（`mergeSessionStart` 已被 try/catch 包住）——降级纪律不变。
-- **影响面清账（四类）**：合同面 = 根 `peerDependencies` 区间 + devDep 版本（跨边界契约 → FULL）；机器面 = `host-api-contract.mts` 断言键集 + `selftest.mts` 接线夹具事件表；数据面 = 无（lock 是派生面）；散文面 = `adapters/dsh/README.md` 挂载面行 + `mount.mts` 类型注 + B4 / 情境注入两 ADR 现值 + `adapters/hermes/README.md` 失效指针。
+- **行为面**：A5 零策略（`mounts.sessionStart` 恒空集），迁移零可观察行为变化；新代 `agent/created` 是 serial 且「listener 抛错即创建失败」，本层该 listener 的三件事各自 catch → warn 降级（命令面补注册、A5 合并与投递各带 try，基因库拉取走 `.catch(onCrash)`）——无 veto 路径，降级纪律不变。
+- **影响面清账（四类）**：合同面 = 根 `peerDependencies` 区间 + devDep 版本（跨边界契约 → FULL）；机器面 = `host-api-contract.mts`（事件键集 7→6 + A5 消费键 `agent.inject` 的存在性与形状相容）+ `selftest.mts` 接线夹具（事件表 + 命令面补注册支）；数据面 = 无（lock 是派生面）；散文面 = `adapters/dsh/README.md` 挂载面行 + `mount.mts` 类型注 + B4 / 情境注入 / 前批升代三 ADR 现值 + `docs/cookbook.md`「环境」条装法 + `adapters/hermes/README.md` 失效指针。
 - **未覆盖**：其余宿主包（`dsh-hooks-claude-code` / `dsh-hooks-codex` 等）的事件面不在断言集（本层零消费）；新代新增事件（`agent/status` / `agent/inbox/*` / `agent/assistant-stream`）不接——触发 = 出现具名消费者。
 
 ## 落地读数（2026-09-16）
 
 - 世代替换：23 件 `@deepseek-ai/dsh-*` 全 `0.1.6-alpha.1`（`node_modules/@deepseek-ai/*/package.json` 逐件读）；lock 内 `0.1.5-rc` 零命中；`npm ls --depth=0` 顶层两 peer + tokenMeter 俱在。
-- 判据面：`tsc --noEmit` exit 0；`npm run build` exit 0；`node dist/adapters/dsh/selftest.mjs` 124 组全绿；`node dist/adapters/hermes/selftest.mjs` 25 断言全绿。
+- 判据面：`tsc --noEmit` exit 0；`npm run build` exit 0；`node dist/adapters/dsh/selftest.mjs` 124 组全绿（含接线夹具的 A5 命令面补注册支）；`node dist/adapters/hermes/selftest.mjs` 25 断言全绿。
 - 在环判据当轮实证：删旧 listener 的中间态被 A4 lint 在环判据拦回（`evolveCommand` 未用），同轮修正——[升格批](2026-09-09-lint-block-and-staged-hook.md) 的 `feedback` 替换回执语义按设计生效。

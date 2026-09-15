@@ -1379,6 +1379,10 @@ function writeFixtureGene(repoRoot: string): void {
 		const injectCalls: Array<{ deps: string[]; callback: (scoped: unknown) => void }> = [];
 		let fakeTokenMeter: { measure(session: unknown): unknown } | undefined;
 		let fakeUserQuestions: { ask(question: unknown): Promise<unknown> } | undefined;
+		// 晚到的 commands 服务：`commandsReady` 翻转前模拟缺席、翻转后在场（补注册成功支）。
+		let commandsReady = false;
+		const commandRegs: unknown[] = [];
+		const fakeCommands = { register: (def: unknown) => { commandRegs.push(def); } };
 		const fakeMountCtx = {
 			tools: { register: () => {} },
 			systemPrompt: { section: () => {} },
@@ -1388,6 +1392,7 @@ function writeFixtureGene(repoRoot: string): void {
 			get: (name: string) => {
 				if (name === "tokenMeter") return fakeTokenMeter;
 				if (name === "userQuestions") return fakeUserQuestions;
+				if (name === "commands") return commandsReady ? fakeCommands : undefined;
 				return undefined;
 			},
 			// cordis runtime fiber 语义：未进 inject 声明的服务直读属性即抛（`ctx.get` 才返回
@@ -1533,9 +1538,14 @@ function writeFixtureGene(repoRoot: string): void {
 		assert.match(fs.readFileSync(sinkLogPath, "utf8"), /noogenesis export-docs feedback offline/);
 		ok("mounts: A4 wiring — non-write passthrough; both judges degrade with one warn per session (both appended to the sink)");
 
-		// A5：零策略件 → 无注入不抛（能力位在场即冒烟）。
+		// A5：零策略件 → 无注入不抛（能力位在场即冒烟）；同点钉命令面补注册成功支
+		// （commands 服务晚到 → `registry.register` 恰一次、再派发不重注册）。
+		commandsReady = true;
 		await sessionStart({ agent });
-		ok("mounts: A5 wiring — session-start capability wired, zero-policy no-op safe");
+		assert.equal(commandRegs.filter((d) => (d as { name?: string } | undefined)?.name === "evolve").length, 1, "late commands service registers /evolve exactly once");
+		await sessionStart({ agent });
+		assert.equal(commandRegs.length, 1, "second creation does not re-register");
+		ok("mounts: A5 wiring — session-start capability wired, zero-policy no-op safe; late commands service registers /evolve once (idempotent)");
 
 		// A6：零策略件 → 无续跑、零 warn（能力位在场即冒烟；投递与降级两分支在策略
 		// 增挂前不可达，合并语义由上面的单测钉住）。

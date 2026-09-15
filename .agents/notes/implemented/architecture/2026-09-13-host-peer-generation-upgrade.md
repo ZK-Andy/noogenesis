@@ -52,4 +52,4 @@ Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
 
 ## 现值（2026-09-16）
 
-宿主实跑代 = `0.1.6-alpha.1`（`~/.dsh/logs/host.log` 的 `[host] dsh 版本` 行自 2026-09-15 17:44 起；profile 树的 `dsh-tools` / `dsh-llm` / `dsh-token-meter` 同代）。两条自诺账随之显形：`^0.1.5-rc.2` 按 semver 预发布规则**不含** `0.1.6-alpha.1`（`semver.satisfies('0.1.6-alpha.1','^0.1.5-rc.2')` = false，`includePrerelease` 亦 false）——peer 区间不覆盖实跑代；类型契约 devDep 仍钉 `0.1.5-rc.2`，故「断言面与运行面同源」在当前代上不成立。运行期兼容由 2026-09-16 真机复验证实（该代上装载、token 读数、A6 零 warn 全绿）。开升代批的拍板 = [HANDOFF-todos](../../../../HANDOFF-todos.md) A 条。
+宿主实跑代 = `0.1.6-alpha.1`（`~/.dsh/logs/host.log` 的 `[host] dsh 版本` 行自 2026-09-15 17:44 起；profile 树的 `dsh-tools` / `dsh-llm` / `dsh-token-meter` 同代）。**当前 peer / 契约代与实跑代同源**：根 `peerDependencies` 两件 `^0.1.6-alpha.1`、`dsh-token-meter` 精确 devDependency 同版本——本件两条自诺账（区间覆盖实跑代、断言面与运行面同源）由第二次升代批兑现，该批的决定、两代 d.ts 对照与读数 = [升代 ADR](2026-09-16-host-peer-generation-0-1-6-alpha.md)。
