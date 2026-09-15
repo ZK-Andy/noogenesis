@@ -72,6 +72,15 @@ Review: FULL/2026-09-09/R1=ok R2=ok R3=ok
 - 次序照旧：分支 leg 先推（`7b41759..ad2e549`），tag leg 后推（`dsh-v0.2.6`，目标 commit 已可达 → 零 outgoing 跳过档位强制）；`npm publish --cache=/tmp/npm-publish-cache`（本机 `~/.npm` 只读；`npm view` 同需该 flag）。
 - **修复账**：本区间新增 bug-fix 类 ADR 1 件——`bank-skill-provider-registration`。前两次实发节的修复账于 2026-09-13 回填（口径 = 相邻 tag 之间新增的 `.agents/notes/implemented/bug-fix/**` 件数；`git log --diff-filter=A` 手填，无新工具）。
 
+### 实发 0.2.7（2026-09-16）
+
+- 内容三条：① 状态面收进 `.noogenesis/`（genes/events/capsules/mutations/candidates/manifest 统一到家，`.gitignore` 只忽略两个可再生子面）② 基因形态收窄为约束声明（删 `strategy`，schema 七字段，存量六件重写并补 `gene.updated`）③ 该批还含 0.2.6 之后累积的十余批（命令面 list/distill、Hermes 桥、A6 能力位、覆盖面静默绿治理、纪律漏项处置等），区间共 162 提交。
+- `chore(release)` commit `73946cd`（package.json + lock 同提交）；版本面（双语 README 版本锚 + HANDOFF M2 行）随 amend 并入同一提交；annotated tag `dsh-v0.2.7` 指向 `73946cd`。
+- `npm latest` = 0.2.7（49 件 / 160.2 kB）；GitHub Release `dsh-v0.2.7`（Latest、非 draft）。
+- **修复账**：本区间新增 bug-fix 类 ADR 6 件——`2026-09-15-add-command-arg-contract`、`2026-09-15-md-links-review-artifacts`、`2026-09-15-doc-budgets-missing-manifest`、`2026-09-13-adapter-service-read-lazy-get`、`2026-09-13-review-brief-base-resolvability`、`2026-09-16-review-tier-orphan-since-fallback`。
+- **次序实证（新增）**：本次分支 leg 走了一次 `--force-with-lease`（amend 版本面把版本锚并进 `chore(release)`）——CI 的评审档位步随即必红（`event.before` 已被丢弃，见 `2026-09-16-review-tier-orphan-since-fallback`）；该件修复后，改写推送不再钉红。**教训：`--force-with-lease` 虽被 Git 纪律允许，但每次改写都会让当次推送的 CI 评审档位步依赖一件尚不存在的回退修复——改写前先问「这次改写值不值得带上那次修复」。**
+- **判据 6 时序（第三次实证）**：`bump.mts` 后 `package-invariants` 当场判 0.2.6 漂移（双语 README + HANDOFF 仍 0.2.6）——修法同前：改版本面 → `git commit --amend` 并入 bump 提交。
+
 ## Risks
 
 - **双语 body 手工对齐漂移**：release-note 脚本输出的英文节逐字镜像 commit 标题（本仓 commit 标题为中文）——英文节需发布者翻译润色；保持「脚本生成骨架 + 发布者润色」分工，脚本输出含 `EN_POLISH_HINT` 提示行防照贴即发。

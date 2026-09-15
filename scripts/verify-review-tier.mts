@@ -16,7 +16,8 @@
  * 不算），且该行须由本变更集**引入**（diff 内为新增行 / ADR 整文件新增）——同变更集
  * 触碰旧已评审 ADR 时其历史 Review 行不算本批证据（防搭车，2026-09-10）。
  * 格式与严格度规则单源 review.md §1。proposed ADR 不能自证。git 时刻不可解析
- * （坏 ref / git 失败）即违约，绝不静默按「无 FULL 变更」放行（fail-closed：
+ * 按「回退默认分支 fork-point」兜底；兜底也不可得（坏 ref 且无默认分支，或 git 命令失败）
+ * 才即违约，绝不静默按「无 FULL 变更」放行（fail-closed：
  * 逃逸防护闸不得把不可解析 diff 读成无变更）。
  *
  * diff 范围（调用方按 git 时刻选模式）：
@@ -180,7 +181,7 @@ function diffMoment(stagedOnly: boolean, since: string | null): DiffMoment {
  *  否则回退到 `origin/main` 的 fork-point（本地回退 `main`）。**为什么**：CI 的
  *  `event.before` 是推送前远端 tip，force-push 后它可能已被远端丢弃（孤儿提交）——
  *  此时 diff 面坏在 git 源而不是变更本身，fail-closed 会把一次合法的改写永久钉红。
- *  仍 fail-closed 的面：`--since` 不是提交名（拼错的 ref）、或 fork-point 也不可得。 */
+ *  仍 fail-closed 的面：`--since` 不是提交名**且**仓里没有可回退的默认分支，或 git 命令本身失败。 */
 function effectiveBase(repo: string, since: string): string | null {
   const resolves = runGit(["rev-parse", "--verify", "--quiet", since + "^{commit}"], repo);
   if (resolves.ok && resolves.stdout.trim() !== "") {
@@ -368,7 +369,7 @@ function scan(repo: string, stagedOnly = false, since: string | null = null): st
 }
 
 /** 建一个带已提交基线的隔离夹具仓。 */
-function newRepo(td: string, name: string): string {
+function newRepo(td: string, name: string, branch?: string): string {
   const repo = path.join(td, name);
   fs.mkdirSync(path.join(repo, NOTES_DIR, "implemented", "process"), { recursive: true });
   fs.mkdirSync(path.join(repo, "docs"));
@@ -377,7 +378,7 @@ function newRepo(td: string, name: string): string {
   const git = (...args: string[]): void => {
     spawnSync("git", args, { cwd: repo, stdio: ["ignore", "ignore", "ignore"] });
   };
-  git("init", "-q");
+  git("init", "-q", ...(branch === undefined ? [] : ["-b", branch]));
   git("config", "user.email", "t@t");
   git("config", "user.name", "t");
   git("add", "-A");
@@ -529,11 +530,35 @@ function selfTest(): number {
     ok(scan(r).some((x) => x.includes("FULL-tier change lacks review evidence")),
       "proposed ADR self-Review does not clear a FULL change");
 
-    // 11) git 时刻失败即 fail-closed：--since 坏 ref 是违约，绝不静默放行
+    // 11) 回退也不可得 → fail-closed：无默认分支的仓 + 非提交名 ref，不可读成「无变更」
     r = newRepo(td, "f11");
     rows = scan(r, false, "no-such-ref");
     ok(rows.some((x) => x.includes("git moment failed")),
-      "--since with an unparsable ref fails closed");
+      "--since fails closed only when no fallback base exists in the repo");
+
+    // 11b) 孤儿 --since（force-push 丢弃了 CI 的 event.before）→ 回退默认分支 fork-point
+    r = newRepo(td, "f11b");
+    const gitIn = (...args: string[]): { code: number | null; out: string } => {
+      const p = spawnSync("git", args, { cwd: r, encoding: "utf8" });
+      return { code: p.status, out: (p.stdout ?? "").trim() };
+    };
+    gitIn("branch", "-M", "main");
+    const headBase = gitIn("rev-parse", "HEAD").out;
+    writeIn(r, "scripts/verify-x.py", "# new gate\n");
+    commitAll(r, "full change w/o evidence");
+    gitIn("branch", "-f", "main", "HEAD");
+    writeIn(r, "scripts/verify-x.py", "# rewritten\n");
+    commitAll(r, "rewritten full change w/o evidence");
+    const tree = gitIn("rev-parse", headBase + "^{tree}").out;
+    const orphan = gitIn("commit-tree", tree, "-p", headBase, "-m", "orphan event.before (force-pushed away)").out;
+    rows = scan(r, false, orphan);
+    ok(rows.some((x) => x.includes("FULL-tier change lacks review evidence")),
+      "orphan --since falls back to the default-branch fork point and still judges the range");
+
+    // 11c) 非提交名 ref + 有回退锚：不落 fail-closed（回退接住，判定照常走）
+    rows = scan(r, false, "no-such-ref");
+    ok(!rows.some((x) => x.includes("git moment failed")),
+      "an unparsable ref falls back to the default branch instead of failing closed");
 
     // 12) 搭车防线：范围含已评审 ADR（Review 行历史引入）+ 本批新 FULL 变更
     //     ——旧 ADR 的 Review 行不在本变更集 diff 内，不得给新变更搭车（L45）。
@@ -601,7 +626,7 @@ function selfTest(): number {
   }
 
   if (failed === 0) {
-    out("verify-review-tier --self-test OK (23 fixtures: triggers/evidence/modes/fail-closed/ride-along/staged)");
+    out("verify-review-tier --self-test OK (25 fixtures: triggers/evidence/modes/fail-closed/ride-along/staged/fallback)");
   } else {
     errOut("verify-review-tier --self-test FAIL");
   }

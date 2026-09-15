@@ -16,4 +16,5 @@
 ## 硬规则（跨仓有效）
 
 - **宁跳版本号，不重打已发布的 tag**（desktop v0.3.4 三次重打被迫出 v0.3.5 的教训）。
+- **发布分支腿避免 `--force-with-lease`**：改写推送会把 CI 的评审档位步钉在「已被丢弃的 `event.before`」上（回退修复见 [orphan-since ADR](../notes/implemented/bug-fix/2026-09-16-review-tier-orphan-since-fallback.md)）；能追加提交就别改写。
 - 发布涉及的面（门禁脚本/打包脚本）变更必须先走 feature-flow 全链路，不在发版会话顺手改。
