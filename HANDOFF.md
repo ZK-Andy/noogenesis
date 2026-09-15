@@ -11,6 +11,8 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-16｜**插件日志落盘通道（FULL 三审 0B/5S）**：0.2.7 复验实测护栏读数行零观察面（`ctx.logger` 无持久 exporter、壳不落子进程日志）→ 新件 `log-sink.mts` 把 info/warn 追加 `<DSH_HOME>/logs/noogenesis.log`。[ADR](.agents/notes/implemented/bug-fix/2026-09-16-plugin-log-sink.md)；`ed32e79`→`4b65a43`。
+
 - 2026-09-15｜**演化轮落账批（同族原语协议归口 + 池件机器面裁决，FULL）**：协议外壳归口 `engine/protocol.ts`，闸件布局 / 复算段收敛为规格实例，池件两节清空。[ADR](.agents/notes/implemented/simplification/2026-09-15-primitive-protocol-shared-shell.md)；`c91ec27`→`3c0c12e`。
 
 - 2026-09-15｜**演化轮落账批（残余候选 + add 参数收紧，FULL）**：add 参数面收紧为恰一位置参数 + 旗标至多一次 + git 路径 trim 入 cookbook + 夹具变异纪律落 scripts/AGENTS + 6 条销账，池件 7→1，`3965511`→`1093c66`。[ADR](.agents/notes/implemented/process/2026-09-15-residual-candidate-disposal.md)
@@ -57,8 +59,6 @@
 
 - 2026-09-14｜**批次 6 开门重拍（LIGHT）**：P1 骨架 D3 重议实质维持；序 30 蒸馏以「显式触发 + 压缩在宿主侧 + 产物是候选」放行（被否选项 C 预留内核兑现），S2/D4 零变化，机制零变化；游标 = 序 30 实现轮。[ADR](.agents/notes/implemented/architecture/2026-09-14-p1-d3-distillation-reshoot.md)；`bd1a3a6`→本批。
 
-- 2026-09-14｜**批次 5 开题讨论轮（LIGHT；R2 2B+2S 全采纳）**：四题拍板：taxonomy 与 schema 扩字段+YAML 维持后置、validate.yml 确认全覆盖、协议层归属本仓插件；序 25/27 落账，游标进批次 6（序 30 须重拍 P1 D3）。[ADR](.agents/notes/implemented/architecture/2026-09-14-batch5-opening-round.md)；`8d9eb82`→`8852c21`。
-
 
 
 
@@ -99,6 +99,7 @@ Noogenesis（心源）：DeepSeek Harness 之上的"蜂群进化框架"；终极
 - **Capsule 原语已落地**（批次表序 1，FULL 三审全采纳；[ADR](.agents/notes/implemented/architecture/2026-09-13-capsule-primitive.md) implemented）：`.noogenesis/capsules/<domain>/<id>.json` 封闭七字段（`id`/`domain`/`gene_ids`/`trigger`/`steps`/`outcome`/`evidence`）= 一次真实执行的审计记录（主设计 §5.1），其 `gene_ids`/`steps`/`evidence` 兼作共享层稿 §6.2 的可复现路径面；写读命令 `capsule add|show` 与基因共用原子提交面（含索引回滚），append-only、同 id 重记即拒；`verify-gene-format.mts` 覆盖 `.noogenesis/capsules/` 与按 kind 条件化的事件键集，复算 = `capsule_sha` ↔ 文件字节 + 引用须曾成功入档（退役不追溯失效）。批次表序 1 行标 done。
 - **评审实质执行已拍板落账**（ADR [2026-09-10-review-execution-reconciliation](.agents/notes/implemented/architecture/2026-09-10-review-execution-reconciliation.md) implemented，FULL 三审全采纳）：session-close 步骤 2 扩评审机器面闭集标记对账（假完成收尾必暴露 + 跨会话证据出口）；②收口触点提醒缓议（触发 = ③对账暴露真实漏网；接线候选 engine 代理 / 钩子桥停止前在案，advice 预拍板、阻断判不立）；F3 三路实质维持语义面不设防。
 - **护栏三件均已终局**（拍板与判据单源 = [护栏建设轮 ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md)）：token 基线两轨 = 常驻注入字面预算判据（装载期 fail-closed）+ 宿主读数建议行（每会话一行 info，`adapters/dsh/token-baseline.mts`；形状断言改运行期闸，理由与触发条见该 ADR 勘误）；改进度量 = 两本账（评审账 = ADR `Review:` 行 + 滚动窗条目；发版后修复账 = release ADR 实发节，三次已回填）；canary 判不立。
+- **插件日志落盘通道已落地**（复验缺陷驱动；[ADR](.agents/notes/implemented/bug-fix/2026-09-16-plugin-log-sink.md) implemented，FULL 三审 R1 0B/3S、R2 0B/3S、R3 0B/2S，采纳 5 拒绝 1）：0.2.7 装机复验实测护栏读数行**零观察面**——本 profile 的 `ctx.logger` 只有 cordis 内存环一个 exporter（进程退出即丢），桌面壳只把 dsh 子进程 stderr 收进内存尾、仅在退出/失败落 `host.log`（同环境先例 = `dsh-frecency` 自建 `~/.dsh/logs/dsh-frecency.log`）；影响面 = 读数行 + 全部 15 处 warn / 2 处 info。修法 = 新件 `adapters/dsh/log-sink.mts` 把每条 info/warn 追加 `<DSH_HOME>/logs/noogenesis.log`（best-effort 静默；路径归一化对齐宿主 `resolveDshHome`）并原样转交宿主 logger；`token-baseline.mts` 的读数行与两条降级 warn 行带 `session=<id>`，B 类复验判据可从单文件复算（todos 观察面随之改）。
 - **A6 停止前能力位已接线**（批次表序 7；[ADR](.agents/notes/implemented/architecture/2026-09-13-a6-turn-stopping-mount.md) implemented，FULL 三审 R1 1B/2S、R2 2B/3S、R3 4B/3S，采纳 13 拒绝 2）：`agent/turn-stopping` 单 listener——`mount.mts` 窄面 + `mergeTurnStopping`（首个 `steer` 胜出）、`mount-policies.mts` 零策略通道、`host-api-contract.mts` 键存在性 + payload 形状相容两组断言、selftest 合并语义 + 零策略冒烟。**档位结论 = 停止前只有续跑档**：宿主回合循环按 `inbox.nextStep.length === 0` 收口，`agent.inject` 在该边界同为 `next-step` 入队（同样再跑一步），故本点无 advice 面。策略面：记录投影判不立（A8 已封）、评审收口触点提醒维持缓议、停止前扫描维持不做——触发条见该 ADR Decision 2。
 - **M3 评审实质执行记录件已判终态**（批次表序 8；[重拍 ADR](.agents/notes/implemented/architecture/2026-09-13-m3-review-record-verdict.md) implemented）：原形态「记录落事件轨」立宿主约束面判不可实现（A8 已封：`Session.append` 无 `ignorable` 写入口 + 读路径对下游插件事件 fail-closed）；同一失败面（声称 FULL 收口而三路无记录）由 session-close 步骤 2 的 ③ 对账步零代码承接（2026-09-10 落卡）；② 收口触点提醒（advice）与停止前候选（续跑档）维持既有触发（= ③ 对账抓到真实漏网，首跑以来的收尾对账均留痕、零假完成），不新立机器件。
 - **M1 升格档已判终态**（批次表序 9；[评估 ADR](.agents/notes/implemented/architecture/2026-09-13-m1-escalation-verdict.md) implemented）：服从面实测（宿主卷实扫 183 份 v3 卷，单机单仓）advice 注入 51 次、其中 47 次（92%）随后照办；未照办的 4 例全在一卷且含「插件态复位后重发行」噪声、零代价归因，带评审代价的两例发生在 advice 发行面存在之前 → **维持单次 advice 档，不升阻断**（命中面是语义代理，非 lint 式客观违规判据）；升格触发 T1（代价实例，须 advice 已发行）/T2（客观判据出现）/T3（服从率跌破基线 → 反向收窄）具名。

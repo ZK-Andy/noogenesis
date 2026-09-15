@@ -1,6 +1,9 @@
 # Agent Note: 插件日志落盘通道——ctx.logger 在装机形态零观察面，读数与降级留痕落 <DSH_HOME>/logs/noogenesis.log
 
 Status: implemented
+Review: FULL/2026-09-16/R1=ok R2=ok R3=ok
+
+批注：三路评审对象 = `ed32e79..4b65a43`（实现 `00483d3` + 文档同步 `2f47084` + R1/R2 处置 `70847e2` + R3 处置 `4b65a43`）；R1（简化）0B/3S、R2（代码）0B/3S、R3（ADR/文档）0B/2S，采纳 5 拒绝 1（明细见末节）。
 
 ## Problem
 
@@ -51,6 +54,6 @@ Status: implemented
 - **交付件**：新件 `adapters/dsh/log-sink.mts`（`resolveLogFile` / `createLogSink` / `LogTarget` / `LogWriter`）；`index.mts` 的 `logger` 改为 `createLogSink({ target: ctx.logger("noogenesis") })` 并透传全部既有消费面（`askFactory` 改为收 logger 形参，不再自取 `ctx.logger`）；`token-baseline.mts` 的读数行与两条降级 warn 行加 `session=<id>`。
 - **判据面**：`selftest.mts` 加 6 组（逐行时间戳与消息原文 / 两个失败面各自吞错 / `DSH_HOME` 三态路径解析 / `DSH_HOME` 归一化（`~` 展开与绝对化）/ 缺省 writer 真写文件 / `apply` 冒烟经临时 `DSH_HOME` 断言装载行与 A4 两条降级 warn 均落盘）；读数行与降级 warn 行的 `session=` 形状断言加在既有读数组内。
 - **读数**：`npm run build`（tsc）exit 0；`node dist/adapters/dsh/selftest.mjs` 全绿（124 组）；`verify-export-docs.mts` 49 件源码全过；`oxlint` 0 warning / 0 error。
-- **评审处置（FULL 三审 R1/R2，2026-09-16）**：采纳四条——`resolveLogFile` 归一化对齐宿主 `resolveDshHome`（R2-S1）、两条降级 warn 行补 `session=<id>`（R2-S3）、新增行缩进归位（R1-S1 ∩ R2-S2）、README 与护栏 ADR 的 Problem 证据重述收成指针（R1-S3）；拒绝一条——把 `log-sink.mts` 的注入旋钮（`file` / `append` / `resolveLogFile` 形参）压到消费者下限（R1-S2；其自陈反驳成立：hermetic 自测手段，删掉要改成进程级 env 改写，`append` 另由本件边界句显式辩护）。
+- **评审处置（FULL 三审，2026-09-16）**：采纳五条——`resolveLogFile` 归一化对齐宿主 `resolveDshHome`（R2-S1）、两条降级 warn 行补 `session=<id>`（R2-S3）、新增行缩进归位（R1-S1 ∩ R2-S2）、README 与护栏 ADR 的 Problem 证据重述收成指针（R1-S3）、本件 Problem 读数补判据与可复跑命令（R3-S1 修正错读数 12/3→15/2、R3-S2 补检索面枚举与 `host.log` 抽取规则/n）；拒绝一条——把 `log-sink.mts` 的注入旋钮（`file` / `append` / `resolveLogFile` 形参）压到消费者下限（R1-S2；其自陈反驳成立：hermetic 自测手段，删掉要改成进程级 env 改写，`append` 另由本件边界句显式辩护）。
 - **接线边界**：不进 `inject`、不新增宿主服务读取面、不改 `gates.json`、零新增依赖；宿主 `ctx.logger` 仍收到同一条消息（宿主将来接 exporter 时两边都收）。
 - **随之同步**：`adapters/dsh/README.md`「语义与失败模式」增落盘条并改读数行口径；护栏建设轮 ADR 的读数口径句同步 `session=` 与落盘通道；`HANDOFF-todos` 两条 B 类复验判据的观察面由「宿主日志」改为本文件（触发 = 下次发版装机后）。
