@@ -2,6 +2,8 @@
 
 Status: implemented
 
+Review: FULL/2026-09-16/R1=ok R2=ok R3=ok
+
 > Provenance：本仓原创（2026-09-16 讨论轮收敛 → 同轮实现）。取代 [gene-event-schema](2026-09-05-gene-event-schema.md) S1 的字段表行与落盘目录行（该 ADR 其余口径不变）；相关 = [P1 骨架](2026-09-05-p1-engine-skeleton.md) D1/D3、[P2 共享消费](2026-09-06-p2-shared-consumer.md) D2/D5/D6、[技能随库分发](2026-09-06-skills-ride-bank.md)。
 
 ## Problem
@@ -56,15 +58,6 @@ Status: implemented
 - **残余**：`list` 命令的 cache 标记路径此前缺一层（`.noogenesis/genes-cache/genes` 应为 `<cache>/.noogenesis/genes`），本批随路径重写一并纠正。
 - **证据**：`tsc --noEmit`、`npm run build`、engine self-test、adapter self-test 118 组、hermes self-test 25 断言、`verify-gene-format`（20 项）与 `verify-manifest`（12 项）全绿。
 
-## Review
-
-Review: FULL/2026-09-16/R1=ok R2=ok R3=ok
-
-三泳道 findings 全部采纳（无驳回），处置批 `6c09537`：
-
-- **R1（简化面）2 Blocker / 3 Suggestion**：`verify-secrets` 扫描面与 `lefthook.yml` 的 secrets job glob 随状态面搬家（旧地址 = 凭据防线零覆盖且报 OK）；`engine/README.md` 合同面字段口径同步；被超车的 schema ADR 加取代指针；`verify-manifest` 增跨族 `STATE_ROOT` 一致性判据；旧布局缓存加 stderr 诊断。
-- **R2（代码面）2 Blocker / 4 Suggestion**：悬空 ADR 指针（代码注释 + 事件 evidence）改正并补 6 行带路径锚点的 `gene.updated`；缓存守卫收窄为「状态树内只允许默认缓存落点」（状态根本身与其余子树一律拒），并撤回「必须在仓内」这一未预期的收紧、补仓外/状态根两组夹具；9 件源文本行尾换行补回；夹具文案与判据面对齐。
-- **R3（ADR 与文档面）2 Blocker / 2 Suggestion**：双语 README 结构树随状态面改写（发布面文档）；`engine/README.md` 安全模型删 `strategy` 点名；本 ADR 字段计数改正为 4 必选 + 3 可选；schema ADR 头部补取代指针。
 
 ## Related
 
