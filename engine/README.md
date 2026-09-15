@@ -41,7 +41,7 @@ node dist/engine/bin.js self-test                           # 元评测夹具（
 | `util.ts` | 归一化 / SHA-256 / 环境指纹 / 结构化 spawn / git 封装 / 槽值推导 / 改动面度量（blast-radius） |
 | `protocol.ts` | 同族原语（gene/capsule/mutation）共享的落盘协议外壳：封闭字段面 + id/domain 双锚点 + 读入抛物 + 跨域 id 唯一 + 落盘路径 |
 | `gates.ts` + `gates.json` | 验证白名单（fail-closed 装载） |
-| `gene.ts` | Gene 八字段封闭 schema / 目录扫描（含缓存合并扫描） |
+| `gene.ts` | Gene 七字段封闭 schema / 目录扫描（含缓存合并扫描） |
 | `capsule.ts` | Capsule 七字段封闭 schema / 写入与读取（`capsule add` / `capsule show`） |
 | `mutation.ts` | Mutation 六字段封闭 schema / 写入与读取（`mutation add` / `mutation show`） |
 | `distill.ts` | 蒸馏面（批次 6 序 30）：失败面汇编 + 候选落盘（`distill collect` / `add` / `show`；候选 = 基因形落 `.noogenesis/candidates/`，压缩在宿主侧） |
@@ -70,7 +70,7 @@ node dist/engine/bin.js self-test                           # 元评测夹具（
 
 1. **白名单封闭**：`gates.json` 是唯一可执行命令来源；字面匹配；结构化 spawn 参数数组直传，永不 shell 拼接。白名单缺失 / 格式坏 / 条目脚本不存在 → evaluate 拒跑，不静默退化。
 2. **引擎零网络**：不发请求、不开端口（骨架 ADR D1/D3 一脉）。
-3. **基因不含可执行内容**：`strategy` / `avoid` 是渲染文本，永不 eval；`propose` 只做字符串拼接。
+3. **基因不含可执行内容**：`avoid` 是渲染文本，永不 eval；`propose` 只做字符串拼接。
 4. **子进程最小 env**：只透传 `PATH` / `HOME` / `LANG`；工作目录锁死仓根。
 5. **fail-closed**：任何解析失败（git 事实、白名单、基因 JSON）都是错误而非空集。
 

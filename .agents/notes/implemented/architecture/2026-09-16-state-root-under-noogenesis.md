@@ -36,7 +36,7 @@ Status: implemented
 
 ### 3. 基因形态收窄：删 `strategy`，基因只留判得了的东西
 
-字段表（3 必选 + 3 可选 + 两锚点）：`id` / `domain` / `summary` / `signals`（触发，唯一机器读者）/ `constraints`（可执行谓词：`max_files`、`forbidden_paths`）/ `validation`（要求通过的白名单闸名）/ `avoid`（失败面警告）。`strategy` 删除——执行步骤的家是流程卡与技能（[doc-standards](../../../../docs/method/doc-standards.md) 的 tier 表），不是被演化物。
+字段表（4 必选——`summary` / `signals` + `id` / `domain` 两锚点；3 可选）：`id` / `domain` / `summary` / `signals`（触发，唯一机器读者）/ `constraints`（可执行谓词：`max_files`、`forbidden_paths`）/ `validation`（要求通过的白名单闸名）/ `avoid`（失败面警告）。`strategy` 删除——执行步骤的家是流程卡与技能（[doc-standards](../../../../docs/method/doc-standards.md) 的 tier 表），不是被演化物。
 
 存量六件同批改写：只删 `strategy` 字段，未降格、未改域。逐件补 `gene.updated` 事件（新 sha），与 `git mv` 同批提交——内容寻址复算面因此自洽。
 
@@ -55,6 +55,16 @@ Status: implemented
 - **事件轨不回填**：既有事件行保持原样；六件存量基因的复算由本批追加的 `gene.updated` 承担。
 - **残余**：`list` 命令的 cache 标记路径此前缺一层（`.noogenesis/genes-cache/genes` 应为 `<cache>/.noogenesis/genes`），本批随路径重写一并纠正。
 - **证据**：`tsc --noEmit`、`npm run build`、engine self-test、adapter self-test 118 组、hermes self-test 25 断言、`verify-gene-format`（20 项）与 `verify-manifest`（12 项）全绿。
+
+## Review
+
+Review: FULL/2026-09-16/R1=ok R2=ok R3=ok
+
+三泳道 findings 全部采纳（无驳回），处置批 `6c09537`：
+
+- **R1（简化面）2 Blocker / 3 Suggestion**：`verify-secrets` 扫描面与 `lefthook.yml` 的 secrets job glob 随状态面搬家（旧地址 = 凭据防线零覆盖且报 OK）；`engine/README.md` 合同面字段口径同步；被超车的 schema ADR 加取代指针；`verify-manifest` 增跨族 `STATE_ROOT` 一致性判据；旧布局缓存加 stderr 诊断。
+- **R2（代码面）2 Blocker / 4 Suggestion**：悬空 ADR 指针（代码注释 + 事件 evidence）改正并补 6 行带路径锚点的 `gene.updated`；缓存守卫收窄为「状态树内只允许默认缓存落点」（状态根本身与其余子树一律拒），并撤回「必须在仓内」这一未预期的收紧、补仓外/状态根两组夹具；9 件源文本行尾换行补回；夹具文案与判据面对齐。
+- **R3（ADR 与文档面）2 Blocker / 2 Suggestion**：双语 README 结构树随状态面改写（发布面文档）；`engine/README.md` 安全模型删 `strategy` 点名；本 ADR 字段计数改正为 4 必选 + 3 可选；schema ADR 头部补取代指针。
 
 ## Related
 

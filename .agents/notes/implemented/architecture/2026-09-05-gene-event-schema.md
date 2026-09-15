@@ -3,6 +3,8 @@
 Status: implemented
 Review: FULL/2026-09-05/R1=ok R2=ok R3=ok
 
+> **部分取代**：S1 的字段表行（`strategy` 已删）与落盘目录行（状态面收进 `.noogenesis/`）已被 [2026-09-16-state-root-under-noogenesis](2026-09-16-state-root-under-noogenesis.md) 取代；本文其余口径不变。
+>
 > Provenance：本仓原创设计（2026-09-05 立项讨论轮）。骨架选型的上游拍板见 [2026-09-05-p1-engine-skeleton](2026-09-05-p1-engine-skeleton.md)（D1 零依赖 JSON / D2 显式信号 / D3 确定性 propose / D4 保守评估）；本 ADR 承接协议细节，逐题拍板。原语字段渊源自[主设计 §5.1](../../../../docs/research/dsh-swarm-evolution-framework-design.md)，按 P1 语义收窄处逐条注明。"协议先行"正例出自[演化史解剖](../../../../docs/research/evomap-evolver-engine-evolution.md)的 D2 阶段里程碑（该文档的阶段标签，与本 ADR 决策编号无涉）。
 
 ## Problem
