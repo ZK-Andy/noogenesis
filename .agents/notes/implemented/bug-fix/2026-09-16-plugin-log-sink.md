@@ -47,7 +47,7 @@ Review: FULL/2026-09-16/R1=ok R2=ok R3=ok
 - **正面**：装机形态首次有插件侧持久留痕；两条待复验的 B 类判据（[HANDOFF-todos](../../../../HANDOFF-todos.md) B 第 1/2 条）判据面从「宿主日志」改为该文件；A3/A6 与各挂载点降级 warn 全部可事后查。
 - **负面（显式接受）**：① 通道自身故障（无写权限 / 磁盘满 / 目录不可建）静默；② 单文件无上界——触发条 = 出现可持续增长形态（如每工具调用一行）；③ 消息含路径与子进程输出摘要（bank pull 的 stdout 摘要），凭据面与 `host.log` 同级，且 `verify-secrets` 的扫描面是仓内 `.noogenesis/`、不含本文件（不入仓）。
 - **依赖与环境**：写权限 = 宿主进程权限（桌面形态 = 用户 home）；`dsh-frecency` 已在同一路径 `~/.dsh/logs/` 实证可写。
-- **未覆盖**：无 exporter 的宿主形态下本通道照写（这恰是它存在的理由）；读数行的「随会话增长」这半条判据仍待装机复验——本件只恢复可观测性，不改读数语义。
+- **未覆盖**：无 exporter 的宿主形态下本通道照写（这恰是它存在的理由）。读数行的装机复验结论与判据半条的处置见下「复验落账」。
 
 ## 落账（2026-09-16）
 
@@ -57,3 +57,13 @@ Review: FULL/2026-09-16/R1=ok R2=ok R3=ok
 - **评审处置（FULL 三审，2026-09-16）**：采纳五条——`resolveLogFile` 归一化对齐宿主 `resolveDshHome`（R2-S1）、两条降级 warn 行补 `session=<id>`（R2-S3）、新增行缩进归位（R1-S1 ∩ R2-S2）、README 与护栏 ADR 的 Problem 证据重述收成指针（R1-S3）、本件 Problem 读数补判据与可复跑命令（R3-S1 修正错读数 12/3→15/2、R3-S2 补检索面枚举与 `host.log` 抽取规则/n）；拒绝一条——把 `log-sink.mts` 的注入旋钮（`file` / `append` / `resolveLogFile` 形参）压到消费者下限（R1-S2；其自陈反驳成立：hermetic 自测手段，删掉要改成进程级 env 改写，`append` 另由本件边界句显式辩护）。
 - **接线边界**：不进 `inject`、不新增宿主服务读取面、不改 `gates.json`、零新增依赖；宿主 `ctx.logger` 仍收到同一条消息（宿主将来接 exporter 时两边都收）。
 - **随之同步**：`adapters/dsh/README.md`「语义与失败模式」增落盘条并改读数行口径；护栏建设轮 ADR 的读数口径句同步 `session=` 与落盘通道；`HANDOFF-todos` 两条 B 类复验判据的观察面由「宿主日志」改为本文件（触发 = 下次发版装机后）。
+
+## 复验落账（2026-09-16）
+
+装机 `noogenesis-dsh@0.2.8` + 桌面重启后实测（宿主 `0.1.6-alpha.1`，本机 dotnet-desktop profile）：
+
+- `grep -o 'session=[^ ]*' <DSH_HOME>/logs/noogenesis.log | sort | uniq -c` → 两会话各 1 行：`session-49001e90…` surfaceTokens=15624、`session-11115f0c…` =316694，均非零；两会话装机后各有 ≥2 个 `step/start`，第三个活跃会话零 `step/start` 故零读数（与「首步跳过 / 单步会话零读数」一致）。
+- `grep -inE 'warn|error|fail|unavailable|mismatch' <DSH_HOME>/logs/noogenesis.log` → 零匹配。
+- 服务缺席静默与两条降级 warn 各恰一条：本机不可达（唯一装本插件的 profile 带 tokenMeter），由 `node dist/adapters/dsh/selftest.mjs` 124 组覆盖，夹具断言的 warn 行同带 `session=`。
+
+**判据面**：复验判据的「随会话增长」半条撤销——读数每会话至多一次，同会话内无观察面；该半条的可达形态 = 跨会话对照（新会话 15624 对续跑长会话 316694，同向）。读数口径单源仍 = [护栏建设轮 ADR](../../implemented/architecture/2026-09-13-guardrail-construction-round.md) 决定 1 落账节。

@@ -88,7 +88,7 @@ Review: FULL/2026-09-09/R1=ok R2=ok R3=ok
 - **次序（本批零改写，0.2.7 教训的直接应用）**：`bump.mts 0.2.8` 后 `package-invariants` 判据 6 当场拒（双语 README + HANDOFF 仍 0.2.7），package.json + lock 留 staged → 改版本面（工作树）→ 同提交落盘（判据读工作树）→ 先推分支 leg、后推 tag leg。**全程未用 `--force-with-lease`**。
 - `npm latest` = 0.2.8（50 件 / 546.6 kB unpacked；`npm publish --cache=/tmp/npm-publish-cache`——本机 `~/.npm` 只读）；GitHub Release `dsh-v0.2.8`（Latest、非 draft），正文 = `.cache/release-body-0.2.8.md`（脚本骨架 + 发布者润色：中文四条用户可读句 + 英文逐条翻译 + 首节 `<h3 id>` 锚补齐）。
 - **修复账**：本区间新增 bug-fix 类 ADR 2 件——`2026-09-16-plugin-log-sink`、`2026-09-16-review-tier-orphan-since-fallback`。
-- **实机验收转交**（[todos](../../../../HANDOFF-todos.md) B 条）：装机 0.2.8 后复跑——① `<DSH_HOME>/logs/noogenesis.log` 每会话自第二步起恰一行 `noogenesis token baseline reading: session=<id> surfaceTokens=<n>`（非零、随会话增长），无 token-meter 的 profile 零 warn、`measure` 抛错时该会话恰一条 warn；② 装机会话正常关回合、该文件零 `turn-stopping mount failed` / `turn-stop steering` warn。
+- **实机验收转交**（[todos](../../../../HANDOFF-todos.md) B 条）：装机 0.2.8 后复跑——① `<DSH_HOME>/logs/noogenesis.log` 每会话自第二步起恰一行 `noogenesis token baseline reading: session=<id> surfaceTokens=<n>`（非零、随会话增长），无 token-meter 的 profile 零 warn、`measure` 抛错时该会话恰一条 warn；② 装机会话正常关回合、该文件零 `turn-stopping mount failed` / `turn-stop steering` warn。已复验（2026-09-16，装机 0.2.8）：见 [落盘通道 ADR](../bug-fix/2026-09-16-plugin-log-sink.md) 复验落账与 [HANDOFF-todos](../../../../HANDOFF-todos.md) 两条 `[x]`；「随会话增长」半条撤销。
 ## Risks
 
 - **双语 body 手工对齐漂移**：release-note 脚本输出的英文节逐字镜像 commit 标题（本仓 commit 标题为中文）——英文节需发布者翻译润色；保持「脚本生成骨架 + 发布者润色」分工，脚本输出含 `EN_POLISH_HINT` 提示行防照贴即发。

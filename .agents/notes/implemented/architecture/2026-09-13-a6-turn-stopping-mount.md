@@ -49,3 +49,7 @@ Related: 批次表 [2026-09-13-feature-completion-backlog](2026-09-13-feature-co
 - 机器面：`gates.json` 条目集与门禁名不变；adapter self-test 断言面随本批扩（合并语义逐条 + 接线冒烟 + 类型契约两组互补断言）。
 - 接线与策略分工在案：能力位提供唯一续跑通道，策略启用须另案过 HERO——序 8（M3 记录件，蓝图 M3 行点名 `A6 + A4 + A8`）为同批已排序消费者；序 9（M1 升格档）接点在 A2/A3，不在本点。
 - 残余边界：零策略下唯一投递分支（steer 投递）与两条降级分支不可达，仅由合并语义单测与假 ctx 冒烟钉住；策略增挂时补投递面夹具。
+
+## 复验落账（2026-09-16）
+
+装机 `noogenesis-dsh@0.2.8` + 桌面重启后实测（宿主 `0.1.6-alpha.1`）：装机会话正常关回合（桌面会话 `turn/end` 携 `reason.kind="completed"`）；`<DSH_HOME>/logs/noogenesis.log` 零 `turn-stopping mount failed` / `turn-stop steering` warn——零策略面零投递零 warn，与 Decision 3 一致（判据串 = `index.mts` 三处 warn；装载期 listener 注册零诊断）。

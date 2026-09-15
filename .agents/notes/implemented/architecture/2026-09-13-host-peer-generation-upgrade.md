@@ -49,3 +49,7 @@ Review: FULL/2026-09-13/R1=ok R2=ok R3=ok
   - 探针 A：把已装 `dsh-token-meter` 的 `types.d.ts` 里 `surfaceTokens` 改名 → `tsc` 报 `TS2339`（`TokenMeasurement` 上无该属性，`_TokenSurfaceTokensNumber` 的索引访问即红）、exit 2；还原后 `tsc` 绿（`sha256sum -c` 核对还原件）。键存在性无需单独一条断言：索引访问本身就是键存在的判据。
   - 探针 B：临时删掉 `host-api-contract.mts` 的 token-meter import（保留服务键断言）→ `"tokenMeter" extends keyof Context` 报 `TS2344`；还原后 `tsc` 绿。证明服务键断言的真值来源是该包的 cordis Context 混入面，而非 `Context` 自带成员。
 - **门禁**：`ts-typecheck` / `lint` / adapter selftest（109 夹具组）/ `package-invariants` / `host-service-reads` / `export-docs` / `adr-format` / `doc-budgets` / `md-links` 全绿（`scripts/gates.mts --run --skip review-tier,review-brief,change-scope`）；三道结构性例外按各自机制单独跑。
+
+## 现值（2026-09-16）
+
+宿主实跑代 = `0.1.6-alpha.1`（`~/.dsh/logs/host.log` 的 `[host] dsh 版本` 行自 2026-09-15 17:44 起；profile 树的 `dsh-tools` / `dsh-llm` / `dsh-token-meter` 同代）。两条自诺账随之显形：`^0.1.5-rc.2` 按 semver 预发布规则**不含** `0.1.6-alpha.1`（`semver.satisfies('0.1.6-alpha.1','^0.1.5-rc.2')` = false，`includePrerelease` 亦 false）——peer 区间不覆盖实跑代；类型契约 devDep 仍钉 `0.1.5-rc.2`，故「断言面与运行面同源」在当前代上不成立。运行期兼容由 2026-09-16 真机复验证实（该代上装载、token 读数、A6 零 warn 全绿）。开升代批的拍板 = [HANDOFF-todos](../../../../HANDOFF-todos.md) A 条。
