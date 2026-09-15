@@ -36,6 +36,7 @@ import { validateConfig, DEFAULT_GENE_BANK_URL } from "./config.mjs";
 import { createSessionStore, mergePreStep, mergeSessionStart, mergeToolPost, mergeToolPre, mergeTurnStopping } from "./mount.mjs";
 import { createMountPolicies, createSubtreeRulesPolicies, inspectSkillSurface, SKILL_DIR_CANDIDATES } from "./mount-policies.mjs";
 import { createTokenBaselineReading } from "./token-baseline.mjs";
+import { createLogSink, resolveLogFile } from "./log-sink.mjs";
 import { registerEvolveCommand, handleEvolveCommand, evolveHelp } from "./commands.mjs";
 import { createLintFeedbackPolicies } from "./lint-feedback.mjs";
 import type { LintDiagnostic, LintRunContext } from "./lint-feedback.mjs";
@@ -239,7 +240,7 @@ function writeFixtureGene(repoRoot: string): void {
 
 	// 首步不读（宿主系统提示面在 pre-step 派发之后才追加进 session log）：
 	// 首步即使服务在场也不发行；第二步读一次，此后每会话不再读。
-	const session = {};
+	const session = { id: "s-1" };
 	read(session);
 	assert.equal(reports.length, 0);
 	assert.equal(warns.length, 0);
@@ -247,10 +248,11 @@ function writeFixtureGene(repoRoot: string): void {
 	read(session);
 	read(session);
 	assert.equal(reports.length, 1);
+	assert.match(reports[0]!, /session=s-1 /);
 	assert.match(reports[0]!, /surfaceTokens=4321/);
 	assert.match(reports[0]!, /observation only/);
 	assert.equal(warns.length, 0);
-	ok("token baseline: first step skipped (host system face lands after pre-step), then exactly one reading per session");
+	ok("token baseline: first step skipped (host system face lands after pre-step), then exactly one reading per session — the line carries the session identity");
 
 	// 缺席：静默且**不消耗**该会话的读数预算——服务晚挂载后仍读得到。
 	present = false;
@@ -319,7 +321,65 @@ function writeFixtureGene(repoRoot: string): void {
 	read("session-id");
 	assert.equal(warns.length, 4);
 	assert.equal(reports.length, 2);
-	ok("token baseline: missing session object is a silent no-op");
+	// 会话对象在场但 id 非字符串（宿主形状漂移）→ 身份位写 `?`，读数照发。
+	measurement = { surfaceTokens: 4321 };
+	const anonymous = {};
+	read(anonymous);
+	read(anonymous);
+	assert.equal(reports.length, 3);
+	assert.match(reports[2]!, /session=\? surfaceTokens=4321/);
+	ok("token baseline: missing session object is a silent no-op; a session without a string id still reports as session=?");
+}
+
+// ── 2e) 插件日志落盘通道（ADR 2026-09-16-plugin-log-sink）────────────────
+{
+	const lines: Array<{ file: string; line: string }> = [];
+	const host: string[] = [];
+	const sink = createLogSink({
+		target: { info: (m) => host.push(`info:${m}`), warn: (m) => host.push(`warn:${m}`) },
+		file: "/home/u/.dsh/logs/noogenesis.log",
+		append: (file, line) => lines.push({ file, line }),
+	});
+	sink.info("noogenesis wired (repoRoot=/repo)");
+	sink.warn("noogenesis bank pull failed (exit 1)");
+	assert.equal(lines.length, 2);
+	assert.equal(lines[0]!.file, "/home/u/.dsh/logs/noogenesis.log");
+	assert.match(lines[0]!.line, /^\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] noogenesis wired \(repoRoot=\/repo\)\n$/);
+	// 消息原样转交宿主 logger（落盘不夺宿主通道）。
+	assert.deepEqual(host, ["info:noogenesis wired (repoRoot=/repo)", "warn:noogenesis bank pull failed (exit 1)"]);
+	ok("log sink: one timestamped line per message, message verbatim, host logger still receives it");
+
+	// 两个失败面各自吞错：追加抛错（只读 / 磁盘满）与宿主发行抛错都不得上抛。
+	const resilient = createLogSink({
+		target: {
+			info: () => { throw new Error("logger exploded"); },
+			warn: () => { throw new Error("logger exploded"); },
+		},
+		file: "/home/u/.dsh/logs/noogenesis.log",
+		append: () => { throw new Error("EROFS: read-only file system"); },
+	});
+	assert.doesNotThrow(() => {
+		resilient.info("x");
+		resilient.warn("y");
+	});
+	ok("log sink: append and host-emit failures are swallowed — logging never breaks a step");
+
+	// 路径解析：DSH_HOME 在场即用；缺席或只有空白回退 <home>/.dsh。
+	assert.equal(resolveLogFile({ DSH_HOME: "/home/u/.dsh" }, "/home/u"), "/home/u/.dsh/logs/noogenesis.log");
+	assert.equal(resolveLogFile({}, "/home/u"), "/home/u/.dsh/logs/noogenesis.log");
+	assert.equal(resolveLogFile({ DSH_HOME: "   " }, "/home/u"), "/home/u/.dsh/logs/noogenesis.log");
+	ok("log sink: DSH_HOME drives the path; absent or blank falls back to <home>/.dsh");
+
+	// 缺省落盘面真写文件（临时 DSH_HOME，不触真实 home）——注入 append 的用例钉不到这一层。
+	const realHome = fs.mkdtempSync(path.join(os.tmpdir(), "noo-log-sink-"));
+	const realFile = resolveLogFile({ DSH_HOME: realHome }, realHome);
+	const real = createLogSink({ target: { info: () => {}, warn: () => {} }, file: realFile });
+	real.info("noogenesis token baseline reading: session=s-9 surfaceTokens=1234 (observation only)");
+	assert.match(
+		fs.readFileSync(realFile, "utf8"),
+		/^\[\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z\] noogenesis token baseline reading: session=s-9 surfaceTokens=1234 \(observation only\)\n$/,
+	);
+	ok("log sink: the default writer creates <DSH_HOME>/logs and appends the real line");
 }
 
 // ── 3) tools：依赖注入面（假 defineTool + 假引擎，退出码映射全路径） ──────
@@ -1336,7 +1396,20 @@ function writeFixtureGene(repoRoot: string): void {
 				injectCalls.push({ deps, callback });
 			},
 		};
-		apply(fakeMountCtx as never, { repoRoot: repo, geneBankUrl: false });
+		// 落盘通道（ADR 2026-09-16-plugin-log-sink）：apply 期指向临时 DSH_HOME，绝不写真实
+		// ~/.dsh/logs。路径在造件时解析一次，故恢复环境变量后后续 warn 仍落该临时件。
+		const sinkHome = fs.mkdtempSync(path.join(os.tmpdir(), "noo-sink-home-"));
+		const priorDshHome = process.env.DSH_HOME;
+		process.env.DSH_HOME = sinkHome;
+		try {
+			apply(fakeMountCtx as never, { repoRoot: repo, geneBankUrl: false });
+		} finally {
+			if (priorDshHome === undefined) delete process.env.DSH_HOME;
+			else process.env.DSH_HOME = priorDshHome;
+		}
+		const sinkLogPath = path.join(sinkHome, "logs", "noogenesis.log");
+		assert.match(fs.readFileSync(sinkLogPath, "utf8"), /noogenesis wired \(repoRoot=/);
+		ok("mounts: plugin log sink appends the mount line under <DSH_HOME>/logs/noogenesis.log (host logger preserved)");
 		for (const event of ["agent/session-start", "agent/pre-step", "tools/pre-execute", "tools/post-execute", "agent/turn-stopping"]) {
 			assert.equal(listeners.get(event)?.length, 1, `${event} must be wired exactly once`);
 		}
@@ -1345,7 +1418,7 @@ function writeFixtureGene(repoRoot: string): void {
 		assert.deepEqual(injectCalls[0]!.deps, ["skills"]);
 		ok("mounts: index wiring — surviving five mounting points registered one listener each; skills registration defers on ctx.inject");
 
-		const agent = { session: { header: { cwd: repo } } };
+		const agent = { session: { id: "session-fixture", header: { cwd: repo } } };
 		const preStep = listeners.get("agent/pre-step")![0]!;
 		const toolPre = listeners.get("tools/pre-execute")![0]!;
 		const toolPost = listeners.get("tools/post-execute")![0]!;
@@ -1372,6 +1445,9 @@ function writeFixtureGene(repoRoot: string): void {
 		fakeTokenMeter = { measure: () => ({ surfaceTokens: 4242 }) };
 		await preStep({ agent, turn: 1, step: 3 }, async () => ({ kind: "enter", messages: [] }));
 		assert.equal(infos.filter((m) => m.includes("surfaceTokens=4242")).length, 1);
+		// 读数行走落盘通道（同一批消息），且带会话身份（ADR 决定 3）。
+		assert.match(infos.find((m) => m.includes("surfaceTokens=4242"))!, /session=session-fixture /);
+		assert.match(fs.readFileSync(sinkLogPath, "utf8"), /session=session-fixture surfaceTokens=4242/);
 		await preStep({ agent, turn: 1, step: 4 }, async () => ({ kind: "enter", messages: [] }));
 		assert.equal(infos.filter((m) => m.includes("surfaceTokens=4242")).length, 1, "one reading per session");
 		fakeTokenMeter = { measure: () => { throw new Error("replay tail unreadable"); } };
@@ -1444,7 +1520,10 @@ function writeFixtureGene(repoRoot: string): void {
 		assert.equal(await toolPost(writeExec, {}, async () => postDownstream), postDownstream);
 		assert.equal(warns.filter((m) => m.includes("lint feedback offline")).length, 1);
 		assert.equal(warns.filter((m) => m.includes("export-docs feedback offline")).length, 1);
-		ok("mounts: A4 wiring — non-write passthrough; both judges degrade with one warn per session");
+		// 降级 warn 与 info 走同一落盘通道：A4 两条离线提示在文件里逐条可查。
+		assert.match(fs.readFileSync(sinkLogPath, "utf8"), /noogenesis lint feedback offline/);
+		assert.match(fs.readFileSync(sinkLogPath, "utf8"), /noogenesis export-docs feedback offline/);
+		ok("mounts: A4 wiring — non-write passthrough; both judges degrade with one warn per session (both appended to the sink)");
 
 		// A5：零策略件 → 无注入不抛（能力位在场即冒烟）。
 		await sessionStart({ agent });

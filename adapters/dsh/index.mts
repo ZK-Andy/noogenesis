@@ -30,6 +30,8 @@ import { createBankPullScheduler } from "./bank-pull.mjs";
 import { registerBankSkills } from "./skill-provider.mjs";
 import { createTokenBaselineReading } from "./token-baseline.mjs";
 import type { TokenMeterLike } from "./token-baseline.mjs";
+import { createLogSink } from "./log-sink.mjs";
+import type { LogTarget } from "./log-sink.mjs";
 import { validateConfig } from "./config.mjs";
 import { mergePreStep, mergeSessionStart, mergeToolPost, mergeToolPre, mergeTurnStopping, createSessionWarnOnce } from "./mount.mjs";
 import type { PreStepPayload, SessionStartPayload, ToolExecLike, ToolResultLike, TurnStoppingPayload } from "./mount.mjs";
@@ -77,9 +79,13 @@ function adviceMessage(lines: string[]): unknown {
  * userQuestions 封装：disposal 时经 `ctx.get` 懒取用（缺席/不可用 → null → 降级只提醒）。
  * ask 兜底 ASK_TIMEOUT_MS——应答方半存活时 ask 可能永久挂起（emitDisposed
  * 不 await listener promise，挂起不阻塞关停但闭包驻留），超时按"仅提醒"处理；
- * 迟到的真实回答被丢弃，提醒文案里已带可手跑的精确命令。
+ * 迟到的真实回答被丢弃，提醒文案里已带可手跑的精确命令。降级提示走调用方传入的
+ * 落盘 logger——与其余接线同一通道（ADR 2026-09-16-plugin-log-sink），不另取 ctx.logger。
+ *
+ * @param ctx 宿主 context（只用于 `ctx.get("userQuestions")` 懒取用）。
+ * @param logger 落盘 logger（`createLogSink` 产物）；ask 失败时留一条 warn。
  */
-function askFactory(ctx: HostContext): (candidates: string[]) => Promise<AskDecision> {
+function askFactory(ctx: HostContext, logger: LogTarget): (candidates: string[]) => Promise<AskDecision> {
 	return async (candidates) => {
 		const userQuestions = ctx.get("userQuestions") as UserQuestionsLike | undefined;
 		if (!userQuestions) return null;
@@ -108,7 +114,7 @@ function askFactory(ctx: HostContext): (candidates: string[]) => Promise<AskDeci
 			const item = answer.answers?.find((entry: any) => entry.id === "noo-solidify");
 			return item?.selected?.includes("Archive now") ? "archive" : "later";
 		} catch (cause) {
-			ctx.logger("noogenesis").warn(`noo-solidify ask unavailable (${cause instanceof Error ? cause.message : String(cause)}); falling back to notice`);
+			logger.warn(`noo-solidify ask unavailable (${cause instanceof Error ? cause.message : String(cause)}); falling back to notice`);
 			return null;
 		} finally {
 			clearTimeout(timer);
@@ -123,7 +129,10 @@ function askFactory(ctx: HostContext): (candidates: string[]) => Promise<AskDeci
 export function apply(ctx: HostContext, config: unknown = {}): void {
 	const cfg = validateConfig(config);
 	const repoRoot = resolveRepoRoot(cfg);
-	const logger = ctx.logger("noogenesis");
+	// 宿主 logger 外包一层落盘（ADR 2026-09-16-plugin-log-sink）：本 profile 的
+	// ctx.logger 只有 cordis 内存环一个 exporter，不落盘即零观察面；log-sink 同时
+	// 追加 <DSH_HOME>/logs/noogenesis.log 并把消息原样转交宿主 logger。
+	const logger = createLogSink({ target: ctx.logger("noogenesis") });
 	// A3 advice 投递降级提示（每会话至多一条；keyless carve-out 见 createSessionWarnOnce）。
 	const warnOnceAdvisory = createSessionWarnOnce((message) => logger.warn(message));
 	// A6 续跑投递降级提示：独立预算——与 A3 共用同一每会话布尔时，先告警的一路会
@@ -180,7 +189,7 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 		runEngine,
 		stagingDir: cfg.stagingDir,
 		actor: cfg.actor,
-		ask: cfg.askOnDispose ? askFactory(ctx) : null,
+		ask: cfg.askOnDispose ? askFactory(ctx, logger) : null,
 		gate: solidifyGate,
 		warn: (message) => logger.warn(message),
 	});
@@ -354,7 +363,7 @@ export function apply(ctx: HostContext, config: unknown = {}): void {
 			actor: cfg.actor,
 			candidates,
 			logger,
-			ask: cfg.askOnDispose ? askFactory(ctx) : null,
+			ask: cfg.askOnDispose ? askFactory(ctx, logger) : null,
 			runEngine,
 		}).catch((cause) => {
 			logger.warn(`noogenesis solidify trigger failed: ${cause instanceof Error ? cause.message : String(cause)}`);

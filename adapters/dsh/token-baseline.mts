@@ -23,7 +23,9 @@
  * 读数口径：`measure(session)` 的 `surfaceTokens` 是宿主对**当前 session surface**
  * （durable log 折叠面 = system / user / assistant / tool-result）的启发式估值，
  * in-history 形态下含宿主 persona 与 AGENTS.md 注入；它是点时刻快照，不是本插件
- * 注入面的真值，不进任何判据。
+ * 注入面的真值，不进任何判据。读数行带会话身份（`session=<id>`，非字符串写 `?`）：
+ * 落盘通道（`log-sink.mts` → `<DSH_HOME>/logs/noogenesis.log`）上的复验判据要能
+ * 从单文件复算「每会话恰一行」（ADR 2026-09-16-plugin-log-sink 决定 3）。
  *
  * 本模块零宿主依赖（防火墙规则 2；`selftest.mts` 机器扫描 import 面）。
  */
@@ -82,6 +84,9 @@ export function createTokenBaselineReading(sink: TokenBaselineSink): (session: u
 			emit(() => sink.warn(`noogenesis token baseline shape mismatch (surfaceTokens=${typeof tokens}); host token-meter drift, observation skipped`));
 			return;
 		}
-		emit(() => sink.report(`noogenesis token baseline reading: surfaceTokens=${tokens} (whole hosted surface, host heuristic estimate; observation only)`));
+		// 会话身份进读数行：判据要能从单文件复算「每会话恰一行」（ADR 决定 3）；id 非字符串
+	// 时写 `?`——与 surfaceTokens 同款形状守卫，不为宿主漂移造新分支。
+	const sessionId = typeof (session as { id?: unknown }).id === "string" ? (session as { id: string }).id : "?";
+	emit(() => sink.report(`noogenesis token baseline reading: session=${sessionId} surfaceTokens=${tokens} (whole hosted surface, host heuristic estimate; observation only)`));
 	};
 }
