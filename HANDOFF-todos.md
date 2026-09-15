@@ -11,8 +11,7 @@
 - [x] （B）胶囊 01 v0 首次真实评审：FULL 三审 2026-09-05 完成（Blocker 4→全修），对照样本在 journal 2026-09 卷。
 - [x] （C）简化候选三件拍板+实施 2026-09-05（含 verify-adr-format 虚引用清理），ADR [2026-09-05-consolidate-r1-simplification-candidates](.agents/notes/implemented/simplification/2026-09-05-consolidate-r1-simplification-candidates.md)。
 - [x] （C）cookbook 第二批原子蒸馏 2026-09-05：desktop 通用 4 条（跨平台 shell 五连坑/YAML≠CI 接受/CI 缓存 ref 隔离/沙箱只验降级分支）+ dsh-continual-evolve FAQ 2 条（推理模型空正文/遍历键当数据键），共 21 条全绿。
-- [x] （A）整仓许可切换 AGPL-3.0 2026-09-05：LICENSE/README/共享层设计稿/.agents AGENTS 出处声明同步，上游 MIT 版权与许可文本集中于 THIRD-PARTY-NOTICES.md，ADR [2026-09-05-license-agpl-3](.agents/notes/implemented/process/2026-09-05-license-agpl-3.md)。
-- [x] （B）许可切换批 FULL 三审 2026-09-05（R1 0B/2S、R2 1B/2S、R3 0B/4S，全采纳收口）：证据行落 license ADR 头部，tier `--since 2b45531 --enforce` 转绿。
+- [x] （A）整仓许可切换 AGPL-3.0 2026-09-05（FULL 三审全采纳）：LICENSE/README/设计稿/AGENTS 出处声明同步，上游 MIT 文本集中 [THIRD-PARTY-NOTICES](THIRD-PARTY-NOTICES.md)；[ADR](.agents/notes/implemented/process/2026-09-05-license-agpl-3.md)。
 - [x] （B）CI validate.yml 首跑复验 2026-09-05：push 三触发（2 绿 + 1 concurrency 取消），run 33970832391@74661d4 全绿——七门禁 + review-tier `--since event.before --enforce` 真强制 + 6 self-test；brief 闸按设计仅本地预发射，不入 CI。
 - [x] （D）P1 立项收口（三审全采纳）：ADR [p1-engine-skeleton](.agents/notes/implemented/architecture/2026-09-05-p1-engine-skeleton.md)、[gene-event-schema](.agents/notes/implemented/architecture/2026-09-05-gene-event-schema.md)。
 - [x] （D）P1 引擎实现轮 2026-09-05（FULL 三审全采纳）：`engine/` 四命令 + gates.json + 第十门禁 + self-test + 首批 6 基因入档；ADR [2026-09-05-p1-engine-implementation](.agents/notes/implemented/architecture/2026-09-05-p1-engine-implementation.md)。
@@ -74,5 +73,6 @@
 - [x] （A）M1 批 B 防过度混合 D 2026-09-10（FULL 三审全采纳；契约块 + 蒸馏篇 + cases 索引 + 检查项第 5 条），ADR [2026-09-10-m1-guard-anti-overdesign](.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) 第二条 Review 行在案。
 - [x] （D）护栏建设轮余项收尾 2026-09-13：建议行落地（`token-baseline.mts` 每会话一行读数，运行期形状闸）+ 两本账落点（发版账 = release ADR 实发节，三次已回填），[ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md) 落账。
 - [x] （A）批次表 46 项全部终态、表转 implemented（2026-09-14；46 项逐行结论单源 = [批次表 ADR](.agents/notes/implemented/architecture/2026-09-13-feature-completion-backlog.md)）。
+- [ ] （B）0.2.9 装机真机复验（触发 = 下次装机后）：① 宿主 `0.1.6-alpha.1` 上零 peer 告警；② A5 迁移后会话开始时点由 `agent/created` 单点承载——`<DSH_HOME>/logs/noogenesis.log` 有 `noogenesis wired` 行且零 `session-start mount failed` / `command registration failed` warn。判据单源 = [升代 ADR](.agents/notes/implemented/architecture/2026-09-16-host-peer-generation-0-1-6-alpha.md)。
 - [x] （B）Hermes 写码在环 hook 真机复验 2026-09-16 **取消**（用户拍板，不推进）：真会话写码载荷面维持未取证（配置面 `~/.hermes/config.yaml` 不入仓）；判据面 = 离线自测 + 宿主接线探针的发射/响应形状。[裁决](.agents/notes/implemented/architecture/2026-09-14-hermes-hook-bridge.md)。
 - [x] （A）宿主 peer 集二次升代 2026-09-16（三审 R1 1B/3S、R2 0B/4S、R3 0B/3S 全采纳）：peer 两件 `^0.1.6-alpha.1` + tokenMeter devDep 同代，附 A5 时点迁移。[ADR](.agents/notes/implemented/architecture/2026-09-16-host-peer-generation-0-1-6-alpha.md)。

@@ -89,6 +89,16 @@ Review: FULL/2026-09-09/R1=ok R2=ok R3=ok
 - `npm latest` = 0.2.8（50 件 / 546.6 kB unpacked；`npm publish --cache=/tmp/npm-publish-cache`——本机 `~/.npm` 只读）；GitHub Release `dsh-v0.2.8`（Latest、非 draft），正文 = `.cache/release-body-0.2.8.md`（脚本骨架 + 发布者润色：中文四条用户可读句 + 英文逐条翻译 + 首节 `<h3 id>` 锚补齐）。
 - **修复账**：本区间新增 bug-fix 类 ADR 2 件——`2026-09-16-plugin-log-sink`、`2026-09-16-review-tier-orphan-since-fallback`。
 - **实机验收转交**（[todos](../../../../HANDOFF-todos.md) B 条）：装机 0.2.8 后复跑——① `<DSH_HOME>/logs/noogenesis.log` 每会话自第二步起恰一行 `noogenesis token baseline reading: session=<id> surfaceTokens=<n>`（非零、随会话增长），无 token-meter 的 profile 零 warn、`measure` 抛错时该会话恰一条 warn；② 装机会话正常关回合、该文件零 `turn-stopping mount failed` / `turn-stop steering` warn。已复验（2026-09-16，装机 0.2.8）：见 [落盘通道 ADR](../bug-fix/2026-09-16-plugin-log-sink.md) 复验落账与 [HANDOFF-todos](../../../../HANDOFF-todos.md) 两条 `[x]`；「随会话增长」半条撤销。
+### 实发 0.2.9（2026-09-16）
+
+- 内容两条：① 宿主 peer 集二次升代至 `0.1.6-alpha.1`（peer 区间同代收窄 + `dsh-token-meter` 精确 devDep 同代）② 宿主把 `agent/session-start` 并入 `agent/created` 逼出的 A5 会话开始时点迁移（[ADR](../architecture/2026-09-16-host-peer-generation-0-1-6-alpha.md)）。
+- `chore(release)` commit `4109d79`（package.json + lock + 双语 README 版本锚 + HANDOFF M2 行同一提交）；annotated tag `dsh-v0.2.9` 指向 `4109d79`。
+- **版本面次序（判据 6 第五次实证）**：`bump.mts 0.2.9` 后 `package-invariants` 当场拒（双语 README + HANDOFF 仍 0.2.8）→ 版本面改在工作树 → 同提交落盘。**另修一处形态冲突**：滚动窗 0.2.8 条目用了 `noogenesis-dsh@0.2.8` 锚形态，被本闸按现值判漂移 → 该条目改为非锚形态（版本锚形态的唯一家 = M2 版本行）；候选已入池。
+- **推送次序**：分支 leg 先推（`06ba179..4109d79`，pre-push 全绿），tag leg 后推。**本批零改写**。
+- `npm latest` = 0.2.9（50 件 / 165.1 kB tarball / 548.0 kB unpacked；`npm publish --cache=<可写目录>`——本机 `~/.npm` 只读）；GitHub Release `dsh-v0.2.9`（Latest、非 draft），标题与正文 = 脚本骨架 + 发布者润色（英文节逐条翻译；脚本的 `> Note:` 提示行未发布）。
+- **修复账**：本区间新增 bug-fix 类 ADR **0 件**（`git log --diff-filter=A --name-only dsh-v0.2.8..dsh-v0.2.9 -- .agents/notes/implemented/bug-fix/` 零命中——本区间为一次升代批 + 其评审处置）。
+- **实机验收转交**（[todos](../../../../HANDOFF-todos.md) B 条）：装机 0.2.9 后复跑——① 宿主 `0.1.6-alpha.1` 上零 peer 告警；② A5 迁移后会话开始时点由 `agent/created` 单点承载（`noogenesis wired` 行 + 零 `session-start mount failed` / `command registration failed` warn）。
+
 ## Risks
 
 - **双语 body 手工对齐漂移**：release-note 脚本输出的英文节逐字镜像 commit 标题（本仓 commit 标题为中文）——英文节需发布者翻译润色；保持「脚本生成骨架 + 发布者润色」分工，脚本输出含 `EN_POLISH_HINT` 提示行防照贴即发。

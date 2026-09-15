@@ -11,6 +11,8 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-16｜**实发 noogenesis-dsh 0.2.9（发版）**：宿主 peer 集二次升代 + A5 会话开始时点迁移；`chore(release)` `4109d79`、tag `dsh-v0.2.9`、npm latest 0.2.9；零改写。[ADR](.agents/notes/implemented/architecture/2026-09-16-host-peer-generation-0-1-6-alpha.md)。
+
 - 2026-09-16｜**宿主 peer 集二次升代至 0.1.6-alpha.1（FULL 三审 1B/4S/3S 全采纳）**：契约断言升代即红一条 → A5 会话开始时点并入 `agent/created`；装法归 cookbook [环境] 条。[ADR](.agents/notes/implemented/architecture/2026-09-16-host-peer-generation-0-1-6-alpha.md)；`9a7c007`+`66c2f5d`。
 
 - 2026-09-16｜**0.2.8 真机复验（B 类两条销账）**：落盘文件每会话恰一行读数（15624/316694，非零）零 warn、A6 零 `turn-stop*` warn 且回合正常关；顺带实测宿主实跑代已移 `0.1.6-alpha.1`，peer 区间不含它 → A 条待拍板。[落盘 ADR](.agents/notes/implemented/bug-fix/2026-09-16-plugin-log-sink.md) 复验落账。
@@ -57,7 +59,6 @@
 
 - 2026-09-14｜**批次 7 序 35 多 harness 第一刀**：第二宿主 = Hermes（原生 `AGENTS.md` 链 + `.agents/skills` 技能路径）；交付 = `adapters/hermes/` 写码在环拦回 hook 桥；游标 = 序 36。[ADR](.agents/notes/implemented/architecture/2026-09-14-hermes-hook-bridge.md)
 
-- 2026-09-14｜**批次 7 序 34 一行安装收口（LIGHT）**：宿主 `dsh plugin` 首用初始化 + 包自带 `dsh.bundle.patch` 自动入层 → 一行装、一行起；交付 = 根 README 双语安装节四条路径（装 / 起 / 专用 app profile / 本地检出），零机器面；游标 = 批次 7 序 35。[ADR](.agents/notes/implemented/architecture/2026-09-14-one-line-install.md)
 
 
 
