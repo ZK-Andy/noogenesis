@@ -11,7 +11,7 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
-- 2026-09-15｜**演化轮落账批（同族原语协议归口 + 池件机器面裁决，FULL）**：协议外壳归口 `engine/protocol.ts`，闸件布局 / 复算段收敛为规格实例，池件两节清空。[ADR](.agents/notes/implemented/simplification/2026-09-15-primitive-protocol-shared-shell.md)；`c91ec27`→`538f20a`。
+- 2026-09-15｜**演化轮落账批（同族原语协议归口 + 池件机器面裁决，FULL）**：协议外壳归口 `engine/protocol.ts`，闸件布局 / 复算段收敛为规格实例，池件两节清空。[ADR](.agents/notes/implemented/simplification/2026-09-15-primitive-protocol-shared-shell.md)；`c91ec27`→`3c0c12e`。
 
 - 2026-09-15｜**演化轮落账批（残余候选 + add 参数收紧，FULL）**：add 参数面收紧为恰一位置参数 + 旗标至多一次 + git 路径 trim 入 cookbook + 夹具变异纪律落 scripts/AGENTS + 6 条销账，池件 7→1，`3965511`→`1093c66`。[ADR](.agents/notes/implemented/process/2026-09-15-residual-candidate-disposal.md)
 
