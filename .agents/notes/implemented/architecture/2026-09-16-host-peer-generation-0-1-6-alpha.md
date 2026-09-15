@@ -61,3 +61,10 @@ R1（简化）1B/3S、R2（代码）0B/4S、R3（ADR 面）0B/3S——**采纳 1
 - **R2-S4**：接线夹具令 commands 服务恒缺席、补注册成功支零覆盖（删该调用自测仍全绿）→ 已加晚到服务支，断言 `register` 恰一次且再派发不重注册。
 - **R3-S1 / R3-S2**：与情境注入件的链接单向、决定 3 括注与「不重述」相抵 → 已补相对链接、删括注。
 - **R3-S3**：本批令 HANDOFF-todos (A) 条兑现 → 收口翻 `[x]` 并改指本件。
+
+## 复验落账（2026-09-16）
+
+装机 `noogenesis-dsh@0.2.9`（market `update noogenesis-dsh -> noogenesis-dsh@0.2.9 exit=0`）+ 桌面重启后实测（宿主 `0.1.6-alpha.1`，本机 dotnet-desktop profile）：
+
+- **peer 面**：宿主注入的两件 `@deepseek-ai/dsh-llm` / `dsh-tools` 均为 `0.1.6-alpha.1`，对 peer 区间 `^0.1.6-alpha.1` `semver.satisfies` 双 `true`；装机条目零 warn；`<DSH_HOME>/logs/noogenesis.log` 全文件 12 行、零 `warn|error|fail`。**判据边界（反面读数）**：`pnpm peers check` 在本 profile 恒红——profile `pnpm-workspace.yaml` 的 `autoInstallPeers: false` 加上宿主注入的 `@deepseek-ai/*` 不落 profile `node_modules`，「missing / conflicting peer」对 profile 内每个插件同命中（本包与 `dsh-frecency@0.1.2` 皆在列）；故该命令不作本条判据，判据 = 区间包含实跑代 + 装机与装载零 warn。
+- **`agent/created` 单点承载**：装机件 `dist/adapters/dsh/index.mjs` 六个挂载点各恰一个 `ctx.on`（`agent/created` 计 1），全树零 `agent/session-start` 事件名；本次装载该 listener 三件事各有观察面——`noogenesis wired` 1 条、`bank pulled` 1 条（本仓缓存 HEAD `af7169d` = 本仓 HEAD）、本会话读数行 `session=session-6aa064a0…` surfaceTokens=6556；零 `command registration failed` / `session-start mount failed` warn。

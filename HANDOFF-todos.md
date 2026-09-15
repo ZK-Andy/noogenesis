@@ -73,6 +73,6 @@
 - [x] （A）M1 批 B 防过度混合 D 2026-09-10（FULL 三审全采纳；契约块 + 蒸馏篇 + cases 索引 + 检查项第 5 条），ADR [2026-09-10-m1-guard-anti-overdesign](.agents/notes/implemented/architecture/2026-09-10-m1-guard-anti-overdesign.md) 第二条 Review 行在案。
 - [x] （D）护栏建设轮余项收尾 2026-09-13：建议行落地（`token-baseline.mts` 每会话一行读数，运行期形状闸）+ 两本账落点（发版账 = release ADR 实发节，三次已回填），[ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md) 落账。
 - [x] （A）批次表 46 项全部终态、表转 implemented（2026-09-14；46 项逐行结论单源 = [批次表 ADR](.agents/notes/implemented/architecture/2026-09-13-feature-completion-backlog.md)）。
-- [ ] （B）0.2.9 装机真机复验（触发 = 下次装机后）：① 宿主 `0.1.6-alpha.1` 上零 peer 告警；② A5 迁移后会话开始时点由 `agent/created` 单点承载——`<DSH_HOME>/logs/noogenesis.log` 有 `noogenesis wired` 行且零 `session-start mount failed` / `command registration failed` warn。判据单源 = [升代 ADR](.agents/notes/implemented/architecture/2026-09-16-host-peer-generation-0-1-6-alpha.md)。
+- [x] （B）0.2.9 装机复验 2026-09-16：① peer `^0.1.6-alpha.1` 含宿主两件、装机 exit=0 且装载日志零 warn；② `agent/created` 单点承载、零 mount warn。[复验落账](.agents/notes/implemented/architecture/2026-09-16-host-peer-generation-0-1-6-alpha.md)
 - [x] （B）Hermes 写码在环 hook 真机复验 2026-09-16 **取消**（用户拍板，不推进）：真会话写码载荷面维持未取证（配置面 `~/.hermes/config.yaml` 不入仓）；判据面 = 离线自测 + 宿主接线探针的发射/响应形状。[裁决](.agents/notes/implemented/architecture/2026-09-14-hermes-hook-bridge.md)。
 - [x] （A）宿主 peer 集二次升代 2026-09-16（三审 R1 1B/3S、R2 0B/4S、R3 0B/3S 全采纳）：peer 两件 `^0.1.6-alpha.1` + tokenMeter devDep 同代，附 A5 时点迁移。[ADR](.agents/notes/implemented/architecture/2026-09-16-host-peer-generation-0-1-6-alpha.md)。
