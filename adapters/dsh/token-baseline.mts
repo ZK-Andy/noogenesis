@@ -23,7 +23,7 @@
  * 读数口径：`measure(session)` 的 `surfaceTokens` 是宿主对**当前 session surface**
  * （durable log 折叠面 = system / user / assistant / tool-result）的启发式估值，
  * in-history 形态下含宿主 persona 与 AGENTS.md 注入；它是点时刻快照，不是本插件
- * 注入面的真值，不进任何判据。读数行带会话身份（`session=<id>`，非字符串写 `?`）：
+ * 注入面的真值，不进任何判据。读数行与两条降级 warn 行都带会话身份（`session=<id>`，非字符串写 `?`）：
  * 落盘通道（`log-sink.mts` → `<DSH_HOME>/logs/noogenesis.log`）上的复验判据要能
  * 从单文件复算「每会话恰一行」（ADR 2026-09-16-plugin-log-sink 决定 3）。
  *
@@ -65,6 +65,10 @@ export function createTokenBaselineReading(sink: TokenBaselineSink): (session: u
 	};
 	return (session) => {
 		if (typeof session !== "object" || session === null || read.has(session)) return;
+		// 会话身份（ADR 决定 3）：读数行与两条降级 warn 行都带 `session=<id>`——判据
+		// 「每会话恰一行」与「`measure` 抛错时该会话恰一条 warn」都要能从落盘单文件复算。
+		// id 非字符串写 `?`（宿主形状守卫，不为漂移造新分支）。
+		const sessionId = typeof (session as { id?: unknown }).id === "string" ? (session as { id: string }).id : "?";
 		if (!started.has(session)) {
 			started.add(session);
 			return;
@@ -77,16 +81,13 @@ export function createTokenBaselineReading(sink: TokenBaselineSink): (session: u
 			tokens = (meter.measure(session) as { surfaceTokens?: unknown } | null | undefined)?.surfaceTokens;
 		} catch (cause) {
 			read.add(session);
-			emit(() => sink.warn(`noogenesis token baseline unavailable (${cause instanceof Error ? cause.message : String(cause)}); observation skipped`));
+			emit(() => sink.warn(`noogenesis token baseline unavailable: session=${sessionId} (${cause instanceof Error ? cause.message : String(cause)}); observation skipped`));
 			return;
 		}
 		if (typeof tokens !== "number") {
-			emit(() => sink.warn(`noogenesis token baseline shape mismatch (surfaceTokens=${typeof tokens}); host token-meter drift, observation skipped`));
+			emit(() => sink.warn(`noogenesis token baseline shape mismatch: session=${sessionId} (surfaceTokens=${typeof tokens}); host token-meter drift, observation skipped`));
 			return;
 		}
-		// 会话身份进读数行：判据要能从单文件复算「每会话恰一行」（ADR 决定 3）；id 非字符串
-	// 时写 `?`——与 surfaceTokens 同款形状守卫，不为宿主漂移造新分支。
-	const sessionId = typeof (session as { id?: unknown }).id === "string" ? (session as { id: string }).id : "?";
-	emit(() => sink.report(`noogenesis token baseline reading: session=${sessionId} surfaceTokens=${tokens} (whole hosted surface, host heuristic estimate; observation only)`));
+		emit(() => sink.report(`noogenesis token baseline reading: session=${sessionId} surfaceTokens=${tokens} (whole hosted surface, host heuristic estimate; observation only)`));
 	};
 }

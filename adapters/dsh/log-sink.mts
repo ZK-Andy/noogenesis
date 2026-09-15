@@ -12,7 +12,7 @@
  */
 import { appendFileSync, mkdirSync } from "node:fs";
 import { homedir } from "node:os";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 
 /** 宿主 logger 面（本层透传 + 落盘的最小消费面；`ctx.logger(name)` 的形状）。 */
 export interface LogTarget {
@@ -26,12 +26,17 @@ export interface LogTarget {
 export type LogWriter = (file: string, line: string) => void;
 
 /**
- * 落盘文件路径：`<DSH_HOME>/logs/noogenesis.log`。`DSH_HOME` 缺席或只有空白时回退
- * `<home>/.dsh`——该变量由宿主进程设置（桌面壳与 headless 都设），回退仅服务未设它的宿主。
+ * 落盘文件路径：`<DSH_HOME>/logs/noogenesis.log`。取值与归一化对齐宿主
+ * `resolveDshHome`（`@deepseek-ai/dsh-home-paths`）：`DSH_HOME` 缺席或只有空白 →
+ * `<home>/.dsh`；`~` / `~/` / `~\` 前缀按 OS home 展开；结果绝对化——相对值与
+ * `~` 不归一会让落点随宿主进程 cwd 漂移（dsh 常从项目目录启动，即在仓内造出字面
+ * `~` 目录，且复验判据声明的观测面找不到文件）。`DSH_HOME` 来自宿主进程环境：
+ * 桌面壳 spawn 时写入其生效 home，headless 下由启动器或用户设；宿主自身只读它。
  */
 export function resolveLogFile(env: Record<string, string | undefined> = process.env, home: string = homedir()): string {
-	const dshHome = env.DSH_HOME?.trim();
-	return join(dshHome ? dshHome : join(home, ".dsh"), "logs", "noogenesis.log");
+	const configured = env.DSH_HOME?.trim();
+	const base = configured ? expandHome(configured, home) : join(home, ".dsh");
+	return join(resolve(base), "logs", "noogenesis.log");
 }
 
 /**
@@ -65,6 +70,13 @@ export function createLogSink({ target, file = resolveLogFile(), append = append
 		info: (message) => emit("info", message),
 		warn: (message) => emit("warn", message),
 	};
+}
+
+/** `~` / `~/` / `~\` 前缀按 OS home 展开（与宿主 `expandHomePath` 同形；其余值原样返回）。 */
+function expandHome(value: string, home: string): string {
+	if (value === "~") return home;
+	if (value.startsWith("~/") || value.startsWith("~\\")) return join(home, value.slice(2));
+	return value;
 }
 
 /** 缺省追加面：同步追加（每会话行数为 O(1)、行短，异步面不成比例）。 */

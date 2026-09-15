@@ -267,38 +267,38 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.match(reports[1]!, /surfaceTokens=4321/);
 	ok("token baseline: absent service stays silent without consuming the session's reading budget");
 
-	// 形状不符（宿主改字段/改类型）：每会话一条 warn，不发行、不抛。
+	// 形状不符（宿主改字段/改类型）：每会话一条 warn，不发行、不抛；warn 行带会话身份。
 	measurement = { totalTokens: 7 };
-	const drifted = {};
+	const drifted = { id: "s-drift" };
 	read(drifted);
 	read(drifted);
 	assert.equal(reports.length, 2);
 	assert.equal(warns.length, 1);
-	assert.match(warns[0]!, /shape mismatch \(surfaceTokens=undefined\)/);
+	assert.match(warns[0]!, /shape mismatch: session=s-drift \(surfaceTokens=undefined\)/);
 	measurement = 1234;
-	const primitive = {};
+	const primitive = { id: "s-prim" };
 	read(primitive);
 	read(primitive);
 	assert.equal(reports.length, 2);
-	assert.match(warns[1]!, /shape mismatch \(surfaceTokens=undefined\)/);
-	ok("token baseline: shape mismatch degrades with one warn per session, never reports");
+	assert.match(warns[1]!, /shape mismatch: session=s-prim \(surfaceTokens=undefined\)/);
+	ok("token baseline: shape mismatch degrades with one warn per session (line carries the session identity), never reports");
 
 	// 两条失败路径（measure 抛错 / 服务读法抛错）都只留一条 warn 并记账——
-	// 每会话至多一条的承诺在**全部**路径成立（不靠 warn 侧去重）。
+	// 每会话至多一条的承诺在**全部**路径成立（不靠 warn 侧去重），且每条 warn 可归属会话。
 	mode = "measureThrows";
-	const replayFailed = {};
+	const replayFailed = { id: "s-throw" };
 	read(replayFailed);
 	read(replayFailed);
 	assert.equal(reports.length, 2);
 	assert.equal(warns.length, 3);
-	assert.match(warns[2]!, /token baseline unavailable \(replay tail unreadable\)/);
+	assert.match(warns[2]!, /token baseline unavailable: session=s-throw \(replay tail unreadable\)/);
 	mode = "meterThrows";
-	const lookupFailed = {};
+	const lookupFailed = { id: "s-lookup" };
 	read(lookupFailed);
 	read(lookupFailed);
 	assert.equal(reports.length, 2);
 	assert.equal(warns.length, 4);
-	assert.match(warns[3]!, /token baseline unavailable \(service lookup exploded\)/);
+	assert.match(warns[3]!, /token baseline unavailable: session=s-lookup \(service lookup exploded\)/);
 	mode = "ok";
 	ok("token baseline: measure and service-lookup failures each degrade with one warn, then stay quiet");
 
@@ -369,6 +369,14 @@ function writeFixtureGene(repoRoot: string): void {
 	assert.equal(resolveLogFile({}, "/home/u"), "/home/u/.dsh/logs/noogenesis.log");
 	assert.equal(resolveLogFile({ DSH_HOME: "   " }, "/home/u"), "/home/u/.dsh/logs/noogenesis.log");
 	ok("log sink: DSH_HOME drives the path; absent or blank falls back to <home>/.dsh");
+
+	// 归一化对齐宿主 resolveDshHome：`~` 系列展开 + 相对值绝对化（不归一即在宿主 cwd 下
+	// 造出字面 `~` 目录，且判据声明的观测面找不到文件）。
+	assert.equal(resolveLogFile({ DSH_HOME: "~/x" }, "/home/u"), "/home/u/x/logs/noogenesis.log");
+	assert.equal(resolveLogFile({ DSH_HOME: "~" }, "/home/u"), "/home/u/logs/noogenesis.log");
+	assert.equal(resolveLogFile({ DSH_HOME: "~\\x" }, "/home/u"), "/home/u/x/logs/noogenesis.log");
+	assert.equal(resolveLogFile({ DSH_HOME: "./rel" }, "/home/u"), path.join(process.cwd(), "rel", "logs", "noogenesis.log"));
+	ok("log sink: DSH_HOME is normalized like the host's resolveDshHome (tilde expansion + absolutization)");
 
 	// 缺省落盘面真写文件（临时 DSH_HOME，不触真实 home）——注入 append 的用例钉不到这一层。
 	const realHome = fs.mkdtempSync(path.join(os.tmpdir(), "noo-log-sink-"));

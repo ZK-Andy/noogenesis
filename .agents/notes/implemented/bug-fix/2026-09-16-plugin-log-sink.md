@@ -21,11 +21,11 @@ Status: implemented
 
 本件拍板并同批落地（落地读数见末节）。
 
-**决定 1：适配层加文件落盘通道**。落点 = 新件 `adapters/dsh/log-sink.mts`（零宿主依赖、可脱离 DSH 自测），路径 = `<DSH_HOME>/logs/noogenesis.log`（`DSH_HOME` 缺席或空白回退 `~/.dsh`）。每条 `info/warn` 追加一行 `[<ISO8601>] <message>`，**消息原文不改写**；同一条随后**原样转交**宿主 `ctx.logger`——不夺宿主通道，宿主将来接上 exporter 时两边都收。
+**决定 1：适配层加文件落盘通道**。落点 = 新件 `adapters/dsh/log-sink.mts`（零宿主依赖、可脱离 DSH 自测），路径 = `<DSH_HOME>/logs/noogenesis.log`（取值与归一化对齐宿主 `resolveDshHome`：`DSH_HOME` 缺席或空白回退 `~/.dsh`；`~` / `~/` / `~\` 前缀按 OS home 展开；结果绝对化——相对值不归一会让落点随宿主进程 cwd 漂移，恰是本件要修的观察面失效）。每条 `info/warn` 追加一行 `[<ISO8601>] <message>`，**消息原文不改写**；同一条随后**原样转交**宿主 `ctx.logger`——不夺宿主通道，宿主将来接上 exporter 时两边都收。
 
 **决定 2：best-effort，三个动作各自吞错**。建目录、追加、宿主发行任一步失败都静默：本通道是插件侧最后观察面，抛错会把「留痕失败」变成「一步失败」，与五挂载点「降级不阻断」纪律相反。**显式接受**该通道自身故障不可见。
 
-**决定 3：读数行带会话身份**——`noogenesis token baseline reading: session=<id> surfaceTokens=<n> (whole hosted surface, host heuristic estimate; observation only)`。理由 = 决定 1 的复验判据要能从单文件复算「每会话恰一行」（`session=` 字段直接 `sort | uniq -c`），否则只能靠时间戳猜会话边界。`<id>` 取 `session.id`，非字符串写 `?`（宿主形状守卫，与既有形状闸同款纪律）。
+**决定 3：观察行带会话身份**——读数行 `noogenesis token baseline reading: session=<id> surfaceTokens=<n> (…)`，两条降级 warn 行 `noogenesis token baseline unavailable: session=<id> (…)` 与 `noogenesis token baseline shape mismatch: session=<id> (surfaceTokens=<typeof>)`。理由 = 决定 1 的复验判据要能从单文件复算两半（「每会话恰一行」与「`measure` 抛错时该会话恰一条 warn」；`session=` 字段直接 `sort | uniq -c`），否则只能靠时间戳猜会话边界。`<id>` 取 `session.id`，非字符串写 `?`（宿主形状守卫，与既有形状闸同款纪律）。
 
 **决定 4：不引入轮转与行数上限**。本插件每会话行数为 O(1)（1 条读数 + 少数降级 warn），一个发版周期内文件以 KB 计；出现真实增长形态再立（触发条见 Consequences）。
 
@@ -45,10 +45,12 @@ Status: implemented
 - **负面（显式接受）**：① 通道自身故障（无写权限 / 磁盘满 / 目录不可建）静默；② 单文件无上界——触发条 = 出现可持续增长形态（如每工具调用一行）；③ 消息含路径与子进程输出摘要（bank pull 的 stdout 摘要），凭据面与 `host.log` 同级，且 `verify-secrets` 的扫描面是仓内 `.noogenesis/`、不含本文件（不入仓）。
 - **依赖与环境**：写权限 = 宿主进程权限（桌面形态 = 用户 home）；`dsh-frecency` 已在同一路径 `~/.dsh/logs/` 实证可写。
 - **未覆盖**：无 exporter 的宿主形态下本通道照写（这恰是它存在的理由）；读数行的「随会话增长」这半条判据仍待装机复验——本件只恢复可观测性，不改读数语义。
+
 ## 落账（2026-09-16）
 
-- **交付件**：新件 `adapters/dsh/log-sink.mts`（`resolveLogFile` / `createLogSink` / `LogTarget` / `LogWriter`）；`index.mts` 的 `logger` 改为 `createLogSink({ target: ctx.logger("noogenesis") })` 并透传全部既有消费面（`askFactory` 改为收 logger 形参，不再自取 `ctx.logger`）；`token-baseline.mts` 读数行加 `session=<id>`。
-- **判据面**：`selftest.mts` 加 5 组（逐行时间戳与消息原文 / 两个失败面各自吞错 / `DSH_HOME` 三态路径解析 / 缺省 writer 真写文件 / `apply` 冒烟经临时 `DSH_HOME` 断言装载行与 A4 两条降级 warn 均落盘）；读数行带 `session=` 的形状与兜底断言加在既有读数组内。
-- **读数**：`npm run build`（tsc）exit 0；`node dist/adapters/dsh/selftest.mjs` 全绿（123 组）；`verify-export-docs.mts` 49 件源码全过；`oxlint` 0 warning / 0 error。
+- **交付件**：新件 `adapters/dsh/log-sink.mts`（`resolveLogFile` / `createLogSink` / `LogTarget` / `LogWriter`）；`index.mts` 的 `logger` 改为 `createLogSink({ target: ctx.logger("noogenesis") })` 并透传全部既有消费面（`askFactory` 改为收 logger 形参，不再自取 `ctx.logger`）；`token-baseline.mts` 的读数行与两条降级 warn 行加 `session=<id>`。
+- **判据面**：`selftest.mts` 加 6 组（逐行时间戳与消息原文 / 两个失败面各自吞错 / `DSH_HOME` 三态路径解析 / `DSH_HOME` 归一化（`~` 展开与绝对化）/ 缺省 writer 真写文件 / `apply` 冒烟经临时 `DSH_HOME` 断言装载行与 A4 两条降级 warn 均落盘）；读数行与降级 warn 行的 `session=` 形状断言加在既有读数组内。
+- **读数**：`npm run build`（tsc）exit 0；`node dist/adapters/dsh/selftest.mjs` 全绿（124 组）；`verify-export-docs.mts` 49 件源码全过；`oxlint` 0 warning / 0 error。
+- **评审处置（FULL 三审 R1/R2，2026-09-16）**：采纳四条——`resolveLogFile` 归一化对齐宿主 `resolveDshHome`（R2-S1）、两条降级 warn 行补 `session=<id>`（R2-S3）、新增行缩进归位（R1-S1 ∩ R2-S2）、README 与护栏 ADR 的 Problem 证据重述收成指针（R1-S3）；拒绝一条——把 `log-sink.mts` 的注入旋钮（`file` / `append` / `resolveLogFile` 形参）压到消费者下限（R1-S2；其自陈反驳成立：hermetic 自测手段，删掉要改成进程级 env 改写，`append` 另由本件边界句显式辩护）。
 - **接线边界**：不进 `inject`、不新增宿主服务读取面、不改 `gates.json`、零新增依赖；宿主 `ctx.logger` 仍收到同一条消息（宿主将来接 exporter 时两边都收）。
 - **随之同步**：`adapters/dsh/README.md`「语义与失败模式」增落盘条并改读数行口径；护栏建设轮 ADR 的读数口径句同步 `session=` 与落盘通道；`HANDOFF-todos` 两条 B 类复验判据的观察面由「宿主日志」改为本文件（触发 = 下次发版装机后）。
