@@ -2,31 +2,19 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { EngineError, KEBAB_RE } from './util.js';
+import { KEBAB_RE } from './util.js';
+import { protocolNonObject, protocolIdentityErrors, readProtocolFile, protocolPath } from './protocol.js';
 
 // S1 字段表：4 必选 + 3 可选（constraints/validation/avoid）+ 目录锚点 domain。
 // 封闭 schema：未知顶层字段即违约。
-// obj 保持 any：不可信 JSON 面，逐字段运行时守卫。
+const KNOWN_GENE_FIELDS = new Set(['id', 'domain', 'summary', 'signals', 'strategy', 'constraints', 'validation', 'avoid']);
+
+// obj 保持 any：不可信 JSON 面，逐字段运行时守卫。身份面（未知字段 + id/domain 锚点）与另两
+// 原语共用协议外壳，本函数只接 gene 的值域面。
 function validateGene(obj: any, opts: { fileName: string; parentDir: string | null }) {
-  const errors: string[] = [];
-  const { fileName, parentDir } = opts;
-  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
-    return ['gene must be a JSON object'];
-  }
-  const known = new Set(['id', 'domain', 'summary', 'signals', 'strategy', 'constraints', 'validation', 'avoid']);
-  for (const k of Object.keys(obj)) {
-    if (!known.has(k)) errors.push(`unknown field: ${k}`);
-  }
-  if (typeof obj.id !== 'string' || !KEBAB_RE.test(obj.id)) {
-    errors.push(`id must be kebab-case string, got ${JSON.stringify(obj.id)}`);
-  } else if (fileName !== `${obj.id}.json`) {
-    errors.push(`id '${obj.id}' must equal filename (got ${fileName})`);
-  }
-  if (typeof obj.domain !== 'string' || !KEBAB_RE.test(obj.domain)) {
-    errors.push(`domain must be kebab-case string, got ${JSON.stringify(obj.domain)}`);
-  } else if (parentDir !== null && parentDir !== obj.domain) {
-    errors.push(`domain '${obj.domain}' must equal its directory (${parentDir})`);
-  }
+  const nonObject = protocolNonObject(obj, 'gene');
+  if (nonObject) return nonObject;
+  const errors = protocolIdentityErrors(obj, { fields: KNOWN_GENE_FIELDS, ...opts });
   if (typeof obj.summary !== 'string' || !obj.summary.trim()) errors.push('summary must be a non-empty string');
 
   // 数组字段同形校验；signals/strategy ≥1，validation/avoid 空即违约
@@ -75,23 +63,7 @@ function validateGene(obj: any, opts: { fileName: string; parentDir: string | nu
 // solidify 的候选文件可放在 genes/ 之外（入档位置由 solidify 决定），故可关。
 // validation ⊆ 白名单的检查单源在 evaluate.evaluateGeneObj，此处不重复。
 function readGene(filePath: string, opts: { skipDirAnchor?: boolean } = {}) {
-  const fileName = path.basename(filePath);
-  const parentDir = opts.skipDirAnchor ? null : path.basename(path.dirname(filePath));
-  let raw;
-  try {
-    raw = fs.readFileSync(filePath, 'utf8');
-  } catch (e) {
-    throw new EngineError(`cannot read gene file ${filePath}: ${(e as Error).message}`);
-  }
-  let obj;
-  try {
-    obj = JSON.parse(raw);
-  } catch (e) {
-    throw new EngineError(`${filePath}: not valid JSON: ${(e as Error).message}`);
-  }
-  const errors = validateGene(obj, { fileName, parentDir });
-  if (errors.length) throw new EngineError(`${filePath}: ${errors.join('; ')}`);
-  return obj;
+  return readProtocolFile(filePath, { noun: 'gene', skipDirAnchor: opts.skipDirAnchor, validate: validateGene });
 }
 
 // P2 缓存落点单源：pull 与合并扫描共用此事实。
@@ -142,7 +114,7 @@ function scanGenes(repoRoot: string, opts: { cache?: boolean } = {}) {
 }
 
 function genePath(repoRoot: string, domain: string, id: string) {
-  return path.join(repoRoot, 'genes', domain, `${id}.json`);
+  return protocolPath(repoRoot, 'genes', domain, id);
 }
 
 export { validateGene, readGene, scanGenes, genePath, defaultCacheDir };

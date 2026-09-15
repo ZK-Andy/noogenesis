@@ -39,6 +39,7 @@ node dist/engine/bin.js self-test                           # 元评测夹具（
 |---|---|
 | `bin.ts` | CLI 分发 + 用法 |
 | `util.ts` | 归一化 / SHA-256 / 环境指纹 / 结构化 spawn / git 封装 / 槽值推导 / 改动面度量（blast-radius） |
+| `protocol.ts` | 同族原语（gene/capsule/mutation）共享的落盘协议外壳：封闭字段面 + id/domain 双锚点 + 读入抛物 + 跨域 id 唯一 + 落盘路径 |
 | `gates.ts` + `gates.json` | 验证白名单（fail-closed 装载） |
 | `gene.ts` | Gene 八字段封闭 schema / 目录扫描（含缓存合并扫描） |
 | `capsule.ts` | Capsule 七字段封闭 schema / 写入与读取（`capsule add` / `capsule show`） |

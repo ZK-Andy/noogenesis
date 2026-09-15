@@ -129,13 +129,12 @@ function isKebab(v: unknown): boolean {
   return typeof v === "string" && KEBAB_RE.test(v);
 }
 
-// ---------- 校验主体 ----------
-
-function checkGene(data: JSONVal, rel: string, stem: string, parent: string, whitelist: Set<JSONVal>): string[] {
+// 身份面（封闭字段集 + id=文件名 + domain=父目录）：genes / capsules / mutations /
+// candidates 四面共用，差异只在字段集。
+function checkIdentity(data: { [key: string]: JSONVal }, rel: string, stem: string, parent: string, fields: Set<string>): string[] {
   const errors: string[] = [];
-  if (!isObj(data)) return [`${rel}: gene must be a JSON object`];
   for (const k of Object.keys(data)) {
-    if (!KNOWN_GENE_FIELDS.has(k)) errors.push(`${rel}: unknown field: ${k}`);
+    if (!fields.has(k)) errors.push(`${rel}: unknown field: ${k}`);
   }
   const id = data.id;
   if (!isKebab(id)) errors.push(`${rel}: id must be kebab-case string`);
@@ -143,6 +142,14 @@ function checkGene(data: JSONVal, rel: string, stem: string, parent: string, whi
   const domain = data.domain;
   if (!isKebab(domain)) errors.push(`${rel}: domain must be kebab-case string`);
   else if (domain !== parent) errors.push(`${rel}: domain '${domain}' must equal its directory (${parent})`);
+  return errors;
+}
+
+// ---------- 校验主体 ----------
+
+function checkGene(data: JSONVal, rel: string, stem: string, parent: string, whitelist: Set<JSONVal>): string[] {
+  if (!isObj(data)) return [`${rel}: gene must be a JSON object`];
+  const errors = checkIdentity(data, rel, stem, parent, KNOWN_GENE_FIELDS);
   const summary = data.summary;
   if (!(typeof summary === "string" && pyStrip(summary) !== "")) {
     errors.push(`${rel}: summary must be a non-empty string`);
@@ -197,17 +204,8 @@ function checkGene(data: JSONVal, rel: string, stem: string, parent: string, whi
 // Capsule 协议（批次 1 序 1 ADR C2）：封闭七字段；outcome 二值且 fail 必带 reason；
 // 元素级非空校验与 engine/capsule.ts 的 validateCapsule 镜像。
 function checkCapsule(data: JSONVal, rel: string, stem: string, parent: string): string[] {
-  const errors: string[] = [];
   if (!isObj(data)) return [`${rel}: capsule must be a JSON object`];
-  for (const k of Object.keys(data)) {
-    if (!KNOWN_CAPSULE_FIELDS.has(k)) errors.push(`${rel}: unknown field: ${k}`);
-  }
-  const id = data.id;
-  if (!isKebab(id)) errors.push(`${rel}: id must be kebab-case string`);
-  else if (id !== stem) errors.push(`${rel}: id '${id}' must equal filename (${stem})`);
-  const domain = data.domain;
-  if (!isKebab(domain)) errors.push(`${rel}: domain must be kebab-case string`);
-  else if (domain !== parent) errors.push(`${rel}: domain '${domain}' must equal its directory (${parent})`);
+  const errors = checkIdentity(data, rel, stem, parent, KNOWN_CAPSULE_FIELDS);
 
   const geneIds = data.gene_ids;
   if (!Array.isArray(geneIds) || !geneIds.every((x) => typeof x === "string" && GENE_REF_RE.test(x))) {
@@ -253,17 +251,8 @@ function checkCapsule(data: JSONVal, rel: string, stem: string, parent: string):
 // Mutation 协议（批次 1 序 2 ADR C2）：封闭六字段；risk_level 三值封闭，
 // category/target/expected_effect 无值域但须非空；与 engine/mutation.ts 的 validateMutation 镜像。
 function checkMutation(data: JSONVal, rel: string, stem: string, parent: string): string[] {
-  const errors: string[] = [];
   if (!isObj(data)) return [`${rel}: mutation must be a JSON object`];
-  for (const k of Object.keys(data)) {
-    if (!KNOWN_MUTATION_FIELDS.has(k)) errors.push(`${rel}: unknown field: ${k}`);
-  }
-  const id = data.id;
-  if (!isKebab(id)) errors.push(`${rel}: id must be kebab-case string`);
-  else if (id !== stem) errors.push(`${rel}: id '${id}' must equal filename (${stem})`);
-  const domain = data.domain;
-  if (!isKebab(domain)) errors.push(`${rel}: domain must be kebab-case string`);
-  else if (domain !== parent) errors.push(`${rel}: domain '${domain}' must equal its directory (${parent})`);
+  const errors = checkIdentity(data, rel, stem, parent, KNOWN_MUTATION_FIELDS);
 
   for (const field of ["category", "target", "expected_effect"] as const) {
     const v = data[field];
@@ -447,142 +436,134 @@ function collectJson(dir: string, prefix: string[], out: string[][]): void {
   }
 }
 
+// 面规格（同族原语）：布局判据与 append-only 复算在 genes / capsules / mutations /
+// candidates 四面同形，差异全在规格里（目录名、面名、校验器、事件键）。
+interface FaceSpec {
+  dir: string;
+  noun: string;
+  check: (data: JSONVal, rel: string, stem: string, parent: string) => string[];
+}
+
+// 面扫描结果：id → 相对段（跨域唯一 / 复算段共用），目录存在性与绝对路径给复算段复用。
+interface FaceScan {
+  dir: string;
+  dirPath: string;
+  isDir: boolean;
+  files: Map<string, string[]>;
+  count: number;
+}
+
+// 布局封闭（<dir>/<domain>/<id>.json）+ 协议校验 + 跨域 id 唯一；目录缺席或为空 → 空结果。
+function scanFace(base: string, spec: FaceSpec, errors: string[]): FaceScan {
+  const dirPath = pyJoin(base, [spec.dir]);
+  const isDir = fs.existsSync(dirPath) && fs.statSync(dirPath).isDirectory();
+  const files = new Map<string, string[]>();
+  let count = 0;
+  if (!isDir) return { dir: spec.dir, dirPath, isDir, files, count };
+  const all: string[][] = [];
+  collectJson(dirPath, [spec.dir], all);
+  all.sort(segCompare);
+  for (const rel of all) {
+    count += 1;
+    if (rel.length !== 3 || rel[0] !== spec.dir) {
+      errors.push(`${rel.join("/")}: ${spec.noun} files must be at ${spec.dir}/<domain>/<id>.json layout`);
+      continue;
+    }
+    const fsPath = pyJoin(base, rel);
+    const parsed = pyJSONParse(readTextFatal(fsPath));
+    if (!parsed.ok) {
+      errors.push(`${fsPath}: not valid JSON: ${parsed.message}`);
+      continue;
+    }
+    const data = parsed.value;
+    errors.push(...spec.check(data, rel.join("/"), pyStem(rel[2]!), rel[1]!));
+    const id = isObj(data) ? data.id : null;
+    if (typeof id === "string") {
+      if (files.has(id)) {
+        errors.push(`${fsPath}: duplicate ${spec.noun} id '${id}' (also ${pyJoin(base, files.get(id)!)})`);
+      }
+      files.set(id, rel);
+    }
+  }
+  return { dir: spec.dir, dirPath, isDir, files, count };
+}
+
+// append-only 复算规格：面（capsules / mutations）无 update/retire 分段，事件轨只认
+// <noun>.added(ok) 的 sha 复算与「工作树必须有事件轨」两条，差异全在规格里。
+interface TrackSpec {
+  noun: string;
+  eventKind: string;
+  shaKey: string;
+  sealHint: string;
+  trailHint: string;
+}
+
+// 复算：<eventKind>(ok) 的 <shaKey> 必须等于文件字节 sha256；工作树文件与事件轨须互相
+// 印证——有轨无文件 / 有文件无轨都违约。
+function recomputeAppendOnly(base: string, face: FaceScan, track: TrackSpec, per: Map<JSONVal, EventRow[]>, errors: string[]): void {
+  for (const arr of per.values()) arr.sort((a, b) => a.ms - b.ms);
+  for (const [id, evs] of per) {
+    const candidates: string[][] = [];
+    if (face.isDir) {
+      for (const ent of fs.readdirSync(face.dirPath, { withFileTypes: true })) {
+        if (fs.existsSync(pyJoin(face.dirPath, [ent.name, `${pyStr(id)}.json`]))) {
+          candidates.push([face.dir, ent.name, `${pyStr(id)}.json`]);
+        }
+      }
+      candidates.sort(segCompare);
+    }
+    if (candidates.length > 1) {
+      errors.push(`${track.noun} id '${pyStr(id)}' present in multiple domains: ${candidates.map((c) => c.join("/")).join(", ")}`);
+    }
+    const okAdds = evs.filter((e) => e.ev.outcome === "ok" && e.ev.kind === track.eventKind);
+    if (candidates.length === 0) {
+      if (okAdds.length > 0) errors.push(`${track.noun} '${pyStr(id)}': accepted event but no worktree file exists`);
+      continue;
+    }
+    const target = candidates[0]!;
+    if (okAdds.length === 0) {
+      errors.push(`${pyJoin(base, target)}: no accepted ${track.eventKind} event but the file exists`);
+      continue;
+    }
+    const digest = sha256Hex(fs.readFileSync(pyJoin(base, target)));
+    const latestOk = okAdds[okAdds.length - 1]!;
+    if (digest !== latestOk.ev[track.shaKey]) {
+      errors.push(`${pyJoin(base, target)}: ${track.shaKey} mismatch (event ${pyStr(latestOk.ev[track.shaKey]).slice(0, 12)}… vs file ${digest.slice(0, 12)}…) — ${track.sealHint}`);
+    }
+  }
+  for (const [id, rel] of face.files) {
+    if (!per.has(id)) errors.push(`${pyJoin(base, rel)}: ${track.trailHint}`);
+  }
+}
+
 function scan(base: string): { checked: number; errors: string[] } {
   const errors: string[] = [];
   const wl = loadWhitelist(base);
   errors.push(...wl.errors);
   let checked = 0;
 
-  const genesPath = pyJoin(base, ["genes"]);
-  const genesIsDir = fs.existsSync(genesPath) && fs.statSync(genesPath).isDirectory();
-  const geneFiles = new Map<string, string[]>();
-  if (genesIsDir) {
-    const all: string[][] = [];
-    collectJson(genesPath, ["genes"], all);
-    all.sort(segCompare);
-    for (const rel of all) {
-      checked += 1;
-      // 布局封闭：只认 genes/<domain>/<id>.json（与引擎 scanGenes 单层扫描镜像）
-      if (rel.length !== 3 || rel[0] !== "genes") {
-        errors.push(`${rel.join("/")}: gene files must be at genes/<domain>/<id>.json layout`);
-        continue;
-      }
-      const fsPath = pyJoin(base, rel);
-      const display = fsPath;
-      const parsed = pyJSONParse(readTextFatal(fsPath));
-      if (!parsed.ok) {
-        errors.push(`${display}: not valid JSON: ${parsed.message}`);
-        continue;
-      }
-      const data = parsed.value;
-      errors.push(...checkGene(data, rel.join("/"), pyStem(rel[2]!), rel[1]!, wl.names));
-      const gid = isObj(data) ? data.id : null;
-      if (typeof gid === "string") {
-        if (geneFiles.has(gid)) {
-          errors.push(`${display}: duplicate gene id '${gid}' (also ${pyJoin(base, geneFiles.get(gid)!)})`);
-        }
-        geneFiles.set(gid, rel);
-      }
-    }
-  }
+  // genes / capsules / mutations / candidates：布局封闭 + 协议面 + 跨域 id 唯一同形；
+  // candidates 复用基因校验器、无事件轨（distill add 不发事件）故无复算面。
+  const genes = scanFace(base, {
+    dir: "genes", noun: "gene",
+    check: (data, rel, stem, parent) => checkGene(data, rel, stem, parent, wl.names),
+  }, errors);
+  checked += genes.count;
 
-  // capsules/：布局封闭 capsules/<domain>/<id>.json + 协议面 + 跨域 id 唯一
-  const capsPath = pyJoin(base, ["capsules"]);
-  const capsIsDir = fs.existsSync(capsPath) && fs.statSync(capsPath).isDirectory();
-  const capsuleFiles = new Map<string, string[]>();
-  if (capsIsDir) {
-    const all: string[][] = [];
-    collectJson(capsPath, ["capsules"], all);
-    all.sort(segCompare);
-    for (const rel of all) {
-      checked += 1;
-      if (rel.length !== 3 || rel[0] !== "capsules") {
-        errors.push(`${rel.join("/")}: capsule files must be at capsules/<domain>/<id>.json layout`);
-        continue;
-      }
-      const fsPath = pyJoin(base, rel);
-      const parsed = pyJSONParse(readTextFatal(fsPath));
-      if (!parsed.ok) {
-        errors.push(`${fsPath}: not valid JSON: ${parsed.message}`);
-        continue;
-      }
-      const data = parsed.value;
-      errors.push(...checkCapsule(data, rel.join("/"), pyStem(rel[2]!), rel[1]!));
-      const cid = isObj(data) ? data.id : null;
-      if (typeof cid === "string") {
-        if (capsuleFiles.has(cid)) {
-          errors.push(`${fsPath}: duplicate capsule id '${cid}' (also ${pyJoin(base, capsuleFiles.get(cid)!)})`);
-        }
-        capsuleFiles.set(cid, rel);
-      }
-    }
-  }
+  const capsules = scanFace(base, {
+    dir: "capsules", noun: "capsule", check: checkCapsule,
+  }, errors);
+  checked += capsules.count;
 
-  // mutations/：布局封闭 mutations/<domain>/<id>.json + 协议面 + 跨域 id 唯一
-  const mutsPath = pyJoin(base, ["mutations"]);
-  const mutsIsDir = fs.existsSync(mutsPath) && fs.statSync(mutsPath).isDirectory();
-  const mutationFiles = new Map<string, string[]>();
-  if (mutsIsDir) {
-    const all: string[][] = [];
-    collectJson(mutsPath, ["mutations"], all);
-    all.sort(segCompare);
-    for (const rel of all) {
-      checked += 1;
-      if (rel.length !== 3 || rel[0] !== "mutations") {
-        errors.push(`${rel.join("/")}: mutation files must be at mutations/<domain>/<id>.json layout`);
-        continue;
-      }
-      const fsPath = pyJoin(base, rel);
-      const parsed = pyJSONParse(readTextFatal(fsPath));
-      if (!parsed.ok) {
-        errors.push(`${fsPath}: not valid JSON: ${parsed.message}`);
-        continue;
-      }
-      const data = parsed.value;
-      errors.push(...checkMutation(data, rel.join("/"), pyStem(rel[2]!), rel[1]!));
-      const mid = isObj(data) ? data.id : null;
-      if (typeof mid === "string") {
-        if (mutationFiles.has(mid)) {
-          errors.push(`${fsPath}: duplicate mutation id '${mid}' (also ${pyJoin(base, mutationFiles.get(mid)!)})`);
-        }
-        mutationFiles.set(mid, rel);
-      }
-    }
-  }
+  const mutations = scanFace(base, {
+    dir: "mutations", noun: "mutation", check: checkMutation,
+  }, errors);
+  checked += mutations.count;
 
-  // candidates/：布局封闭 candidates/<domain>/<id>.json + 协议面（基因形，批次 6 序 30 —
-  // 镜像 engine/gene.ts 校验）+ candidates 内跨域 id 唯一。候选无事件轨（distill add
-  // 不发事件），无复算面——只查结构（与 fail/retired 事件分型同理）。
-  const candsPath = pyJoin(base, ["candidates"]);
-  const candsIsDir = fs.existsSync(candsPath) && fs.statSync(candsPath).isDirectory();
-  const candidateFiles = new Map<string, string[]>();
-  if (candsIsDir) {
-    const all: string[][] = [];
-    collectJson(candsPath, ["candidates"], all);
-    all.sort(segCompare);
-    for (const rel of all) {
-      checked += 1;
-      if (rel.length !== 3 || rel[0] !== "candidates") {
-        errors.push(`${rel.join("/")}: candidate files must be at candidates/<domain>/<id>.json layout`);
-        continue;
-      }
-      const fsPath = pyJoin(base, rel);
-      const parsed = pyJSONParse(readTextFatal(fsPath));
-      if (!parsed.ok) {
-        errors.push(`${fsPath}: not valid JSON: ${parsed.message}`);
-        continue;
-      }
-      const data = parsed.value;
-      errors.push(...checkGene(data, rel.join("/"), pyStem(rel[2]!), rel[1]!, wl.names));
-      const kid = isObj(data) ? data.id : null;
-      if (typeof kid === "string") {
-        if (candidateFiles.has(kid)) {
-          errors.push(`${fsPath}: duplicate candidate id '${kid}' (also ${pyJoin(base, candidateFiles.get(kid)!)})`);
-        }
-        candidateFiles.set(kid, rel);
-      }
-    }
-  }
+  checked += scanFace(base, {
+    dir: "candidates", noun: "candidate",
+    check: (data, rel, stem, parent) => checkGene(data, rel, stem, parent, wl.names),
+  }, errors).count;
 
   // events/：结构 + 月卷 + 时间序；并按 id 聚出事件流（ts 稳定排序）
   const perGene = new Map<JSONVal, EventRow[]>();
@@ -643,9 +624,9 @@ function scan(base: string): { checked: number; errors: string[] } {
   // fail 事件只查结构不作复算（被拒候选内容 ≠ 工作树状态）
   for (const [gid, evs] of perGene) {
     const candidates: string[][] = [];
-    if (genesIsDir) {
-      for (const ent of fs.readdirSync(genesPath, { withFileTypes: true })) {
-        if (fs.existsSync(pyJoin(genesPath, [ent.name, `${pyStr(gid)}.json`]))) {
+    if (genes.isDir) {
+      for (const ent of fs.readdirSync(genes.dirPath, { withFileTypes: true })) {
+        if (fs.existsSync(pyJoin(genes.dirPath, [ent.name, `${pyStr(gid)}.json`]))) {
           candidates.push(["genes", ent.name, `${pyStr(gid)}.json`]);
         }
       }
@@ -683,93 +664,34 @@ function scan(base: string): { checked: number; errors: string[] } {
   }
 
   // 工作树基因必须有事件轨（solidify 是唯一入口）
-  for (const [gid, rel] of geneFiles) {
+  for (const [gid, rel] of genes.files) {
     if (!perGene.has(gid)) errors.push(`${pyJoin(base, rel)}: gene has no event trail — place genes only via solidify`);
   }
 
-  // 复算规则（批次 1 序 1 ADR C4）：capsule.added(ok) 的 capsule_sha 必须等于文件字节 sha256；
-  // 工作树 Capsule 必须有事件轨（recordCapsule 是唯一入口）。Capsule append-only，无 retire/update 段。
-  for (const arr of perCapsule.values()) arr.sort((a, b) => a.ms - b.ms);
-  for (const [cid, evs] of perCapsule) {
-    const candidates: string[][] = [];
-    if (capsIsDir) {
-      for (const ent of fs.readdirSync(capsPath, { withFileTypes: true })) {
-        if (fs.existsSync(pyJoin(capsPath, [ent.name, `${pyStr(cid)}.json`]))) {
-          candidates.push(["capsules", ent.name, `${pyStr(cid)}.json`]);
-        }
-      }
-      candidates.sort(segCompare);
-    }
-    if (candidates.length > 1) {
-      errors.push(`capsule id '${pyStr(cid)}' present in multiple domains: ${candidates.map((c) => c.join("/")).join(", ")}`);
-    }
-    const okAdds = evs.filter((e) => e.ev.outcome === "ok" && e.ev.kind === "capsule.added");
-    if (candidates.length === 0) {
-      if (okAdds.length > 0) errors.push(`capsule '${pyStr(cid)}': accepted event but no worktree file exists`);
-      continue;
-    }
-    const target = candidates[0]!;
-    if (okAdds.length === 0) {
-      errors.push(`${pyJoin(base, target)}: no accepted capsule.added event but the file exists`);
-      continue;
-    }
-    const digest = sha256Hex(fs.readFileSync(pyJoin(base, target)));
-    const latestOk = okAdds[okAdds.length - 1]!;
-    if (digest !== latestOk.ev.capsule_sha) {
-      errors.push(`${pyJoin(base, target)}: capsule_sha mismatch (event ${pyStr(latestOk.ev.capsule_sha).slice(0, 12)}… vs file ${digest.slice(0, 12)}…) — capsules/ changes must go through capsule add`);
-    }
-  }
-  for (const [cid, rel] of capsuleFiles) {
-    if (!perCapsule.has(cid)) errors.push(`${pyJoin(base, rel)}: capsule has no event trail — record capsules only via capsule add`);
-  }
-
-  // 复算规则（批次 1 序 2 ADR C4）：mutation.added(ok) 的 mutation_sha 必须等于文件字节
-  // sha256；工作树 Mutation 必须有事件轨（recordMutation 是唯一入口）。声明 append-only，
-  // 无 update/retire 段。
-  for (const arr of perMutation.values()) arr.sort((a, b) => a.ms - b.ms);
-  for (const [mid, evs] of perMutation) {
-    const candidates: string[][] = [];
-    if (mutsIsDir) {
-      for (const ent of fs.readdirSync(mutsPath, { withFileTypes: true })) {
-        if (fs.existsSync(pyJoin(mutsPath, [ent.name, `${pyStr(mid)}.json`]))) {
-          candidates.push(["mutations", ent.name, `${pyStr(mid)}.json`]);
-        }
-      }
-      candidates.sort(segCompare);
-    }
-    if (candidates.length > 1) {
-      errors.push(`mutation id '${pyStr(mid)}' present in multiple domains: ${candidates.map((c) => c.join("/")).join(", ")}`);
-    }
-    const okAdds = evs.filter((e) => e.ev.outcome === "ok" && e.ev.kind === "mutation.added");
-    if (candidates.length === 0) {
-      if (okAdds.length > 0) errors.push(`mutation '${pyStr(mid)}': accepted event but no worktree file exists`);
-      continue;
-    }
-    const target = candidates[0]!;
-    if (okAdds.length === 0) {
-      errors.push(`${pyJoin(base, target)}: no accepted mutation.added event but the file exists`);
-      continue;
-    }
-    const digest = sha256Hex(fs.readFileSync(pyJoin(base, target)));
-    const latestOk = okAdds[okAdds.length - 1]!;
-    if (digest !== latestOk.ev.mutation_sha) {
-      errors.push(`${pyJoin(base, target)}: mutation_sha mismatch (event ${pyStr(latestOk.ev.mutation_sha).slice(0, 12)}… vs file ${digest.slice(0, 12)}…) — mutations/ changes must go through mutation add`);
-    }
-  }
-  for (const [mid, rel] of mutationFiles) {
-    if (!perMutation.has(mid)) errors.push(`${pyJoin(base, rel)}: mutation has no event trail — declare mutations only via mutation add`);
-  }
+  // 复算规则（批次 1 序 1/2 ADR C4）：capsules / mutations 同治——<kind>(ok) 的 sha 必须等于
+  // 文件字节 sha256，工作树文件必须有事件轨（capsule add / mutation add 是唯一入口）；
+  // 两原语 append-only，无 retire/update 段。
+  recomputeAppendOnly(base, capsules, {
+    noun: "capsule", eventKind: "capsule.added", shaKey: "capsule_sha",
+    sealHint: "capsules/ changes must go through capsule add",
+    trailHint: "capsule has no event trail — record capsules only via capsule add",
+  }, perCapsule, errors);
+  recomputeAppendOnly(base, mutations, {
+    noun: "mutation", eventKind: "mutation.added", shaKey: "mutation_sha",
+    sealHint: "mutations/ changes must go through mutation add",
+    trailHint: "mutation has no event trail — declare mutations only via mutation add",
+  }, perMutation, errors);
 
   // 跨链可解析（批次 1 序 3 ADR E2）：mutation_id / capsule_id 记裸 id，须命中同名原语文件。
   // 两者都是 append-only、无退役面，故按 id 集判在场（域不参与判定）。
   for (const [vol, rows] of volumes) {
     for (const r of rows) {
       const linkedMutation = r.ev.mutation_id;
-      if (typeof linkedMutation === "string" && !mutationFiles.has(linkedMutation)) {
+      if (typeof linkedMutation === "string" && !mutations.files.has(linkedMutation)) {
         errors.push(`${vol}:${r.lineno}: mutation_id '${linkedMutation}' not in mutations/ — declare it first`);
       }
       const linkedCapsule = r.ev.capsule_id;
-      if (typeof linkedCapsule === "string" && !capsuleFiles.has(linkedCapsule)) {
+      if (typeof linkedCapsule === "string" && !capsules.files.has(linkedCapsule)) {
         errors.push(`${vol}:${r.lineno}: capsule_id '${linkedCapsule}' not in capsules/ — record it first`);
       }
     }
@@ -785,7 +707,7 @@ function scan(base: string): { checked: number; errors: string[] } {
       everPlaced.add(gid);
     }
   }
-  for (const [, rel] of capsuleFiles) {
+  for (const [, rel] of capsules.files) {
     const parsed = pyJSONParse(readTextFatal(pyJoin(base, rel)));
     if (!parsed.ok || !isObj(parsed.value)) continue;
     const refs = parsed.value.gene_ids;

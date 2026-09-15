@@ -5,7 +5,8 @@
 
 import * as fs from 'fs';
 import * as path from 'path';
-import { EngineError, KEBAB_RE, KEBAB_REF_RE } from './util.js';
+import { EngineError, KEBAB_REF_RE } from './util.js';
+import { protocolNonObject, protocolIdentityErrors, readProtocolFile, assertProtocolIdUnique, protocolPath } from './protocol.js';
 
 const KNOWN_CAPSULE_FIELDS = new Set(['id', 'domain', 'gene_ids', 'trigger', 'steps', 'outcome', 'evidence']);
 
@@ -18,26 +19,12 @@ function requireNonEmptyStringArray(field: string, v: unknown, errors: string[])
   }
 }
 
-// obj 保持 any：不可信 JSON 面，逐字段运行时守卫（与 gene.ts 同姿态）。
+// obj 保持 any：不可信 JSON 面，逐字段运行时守卫（与 gene.ts 同姿态）。身份面（未知字段 +
+// id/domain 锚点）与另两原语共用协议外壳，本函数只接 Capsule 的值域面。
 function validateCapsule(obj: any, opts: { fileName: string; parentDir: string | null }): string[] {
-  const errors: string[] = [];
-  const { fileName, parentDir } = opts;
-  if (!obj || typeof obj !== 'object' || Array.isArray(obj)) {
-    return ['capsule must be a JSON object'];
-  }
-  for (const k of Object.keys(obj)) {
-    if (!KNOWN_CAPSULE_FIELDS.has(k)) errors.push(`unknown field: ${k}`);
-  }
-  if (typeof obj.id !== 'string' || !KEBAB_RE.test(obj.id)) {
-    errors.push(`id must be kebab-case string, got ${JSON.stringify(obj.id)}`);
-  } else if (fileName !== `${obj.id}.json`) {
-    errors.push(`id '${obj.id}' must equal filename (got ${fileName})`);
-  }
-  if (typeof obj.domain !== 'string' || !KEBAB_RE.test(obj.domain)) {
-    errors.push(`domain must be kebab-case string, got ${JSON.stringify(obj.domain)}`);
-  } else if (parentDir !== null && parentDir !== obj.domain) {
-    errors.push(`domain '${obj.domain}' must equal its directory (${parentDir})`);
-  }
+  const nonObject = protocolNonObject(obj, 'capsule');
+  if (nonObject) return nonObject;
+  const errors = protocolIdentityErrors(obj, { fields: KNOWN_CAPSULE_FIELDS, ...opts });
 
   // gene_ids：至少一条 <domain>/<id> 引用（内容寻址面在事件 capsule_sha，不在引用串）。
   if (!Array.isArray(obj.gene_ids) || !obj.gene_ids.every((s: unknown) => typeof s === 'string' && KEBAB_REF_RE.test(s))) {
@@ -75,23 +62,7 @@ function validateCapsule(obj: any, opts: { fileName: string; parentDir: string |
 // 读入并校验单个 Capsule 文件。目录锚点（domain == 父目录）只约束 capsules/ 内的落盘位置；
 // recordCapsule 的候选文件可放在 capsules/ 之外，故可关。
 function readCapsule(filePath: string, opts: { skipDirAnchor?: boolean } = {}) {
-  const fileName = path.basename(filePath);
-  const parentDir = opts.skipDirAnchor ? null : path.basename(path.dirname(filePath));
-  let raw;
-  try {
-    raw = fs.readFileSync(filePath, 'utf8');
-  } catch (e) {
-    throw new EngineError(`cannot read capsule file ${filePath}: ${(e as Error).message}`);
-  }
-  let obj;
-  try {
-    obj = JSON.parse(raw);
-  } catch (e) {
-    throw new EngineError(`${filePath}: not valid JSON: ${(e as Error).message}`);
-  }
-  const errors = validateCapsule(obj, { fileName, parentDir });
-  if (errors.length) throw new EngineError(`${filePath}: ${errors.join('; ')}`);
-  return obj;
+  return readProtocolFile(filePath, { noun: 'capsule', skipDirAnchor: opts.skipDirAnchor, validate: validateCapsule });
 }
 
 // Capsule 引用的基因必须命中本仓 genes/（复算规则 2）：缓存面是分发副本、可丢弃，
@@ -107,18 +78,11 @@ function assertGeneRefsResolvable(repoRoot: string, geneIds: string[]) {
 
 // 跨树 id 唯一性：同一 id 不得在两个域并存（事件只记 id，引用必须无歧义）。
 function assertCapsuleIdUnique(repoRoot: string, domain: string, id: string) {
-  const root = path.join(repoRoot, 'capsules');
-  if (!fs.existsSync(root)) return;
-  for (const ent of fs.readdirSync(root, { withFileTypes: true })) {
-    if (!ent.isDirectory() || ent.name === domain) continue;
-    if (fs.existsSync(path.join(root, ent.name, `${id}.json`))) {
-      throw new EngineError(`capsule id '${id}' already exists in domain '${ent.name}' — refs must stay unambiguous`);
-    }
-  }
+  assertProtocolIdUnique(repoRoot, 'capsules', 'capsule', domain, id);
 }
 
 function capsulePath(repoRoot: string, domain: string, id: string) {
-  return path.join(repoRoot, 'capsules', domain, `${id}.json`);
+  return protocolPath(repoRoot, 'capsules', domain, id);
 }
 
 // 人读渲染（capsule show）：确定性输出，逐字断言见 engine self-test 的 GOLDEN 夹具。
