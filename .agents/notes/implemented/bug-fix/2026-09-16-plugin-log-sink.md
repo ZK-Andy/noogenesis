@@ -9,11 +9,11 @@ Status: implemented
 四条实测读数（可复跑）：
 
 1. 该行经 `ctx.logger("noogenesis").info(…)` 发行（`adapters/dsh/index.mts`）。
-2. cordis `LoggerService` 只把消息派给已注册的 exporter（`cordis` 4.0.2 `lib/index.js` 的 `LoggerService` 构造与 `Logger._method`：遍历 `service.exporters`，无匹配 exporter 即丢弃）。本 profile 已装包全量检索（`@deepseek-ai/*` 全部已装包 + profile 各包，n = 4 处检索面）只有 cordis 自带的 1 个 exporter = 内存环（`bufferSize = 1000`，进程退出即丢）；`dsh-base` bundle patch 无 logger 行、profile 用户 patch 无 logger 行、`@deepseek-ai/cordis-plugin-logger-console` 未装。
-3. 桌面壳不转发 dsh 子进程日志：`HarnessRuntimeHost.Attempt.cs` 的 `ErrorDataReceived` 只把 stderr 收进**内存尾**，`RuntimeSupervisor.cs` 仅在子进程退出/失败时把 `TakeLast(8)` 写进 `host.log`；`HostLog.cs` 的唯一写者是壳自身——实测 `host.log`（472 KB）标签封闭集 = `[host]/[update]/[tray]/[nav]/[supervisor]/[bootstrap]/[health]/[cli-shim]`，零 `noogenesis` 行。
+2. cordis `LoggerService` 只把消息派给已注册的 exporter（`cordis` 4.0.2 `lib/index.js` 的 `LoggerService` 构造与 `Logger._method`：遍历 `service.exporters`，无匹配 exporter 即丢弃）。本 profile 全量检索（4 个检索面：`@deepseek-ai/*` 已装包树的 `exporter(` 命中、profile 各包、`dsh-base` bundle patch 行、profile 用户 patch 行——`grep -rn 'exporter(' <dsh 树> --include='*.js'` 除 cordis 自身零命中，两处 patch 均无 logger 行，`@deepseek-ai/cordis-plugin-logger-console` 未装）只有 cordis 自带的 1 个 exporter = 内存环（`bufferSize = 1000`，进程退出即丢）。
+3. 桌面壳不转发 dsh 子进程日志：`HarnessRuntimeHost.Attempt.cs` 的 `ErrorDataReceived` 只把 stderr 收进**内存尾**，`RuntimeSupervisor.cs` 仅在子进程退出/失败时把 `TakeLast(8)` 写进 `host.log`；`HostLog.cs` 的唯一写者是壳自身——实测 `host.log`（472461 字节 / 5718 行）的标签封闭集（`grep -o '\[[a-z-]*\]' ~/.dsh/logs/host.log | sort -u`）= `[bootstrap]/[cli-shim]/[health]/[host]/[nav]/[supervisor]/[tray]/[update]` 八个，`noogenesis` 命中 1 次且为外链导航行【探索性 · 单机单份日志】。
 4. 同环境独立先例：`dsh-frecency/src/log.ts` 头注——桌面 `host.log` 只承载壳自身通道、插件级 `logger.info` 被滤掉，故该插件自建 `~/.dsh/logs/dsh-frecency.log`。
 
-影响面不止读数行：同一路径上**全部** `logger.info/warn` 都不可见——A3/A6 的 `warnOnce`、bank pull 失败、技能 provider 诊断、五挂载点各自的降级 warn（`index.mts` 现 12 处 warn / 3 处 info）。装机形态下「降级留痕」整体零读者，事后排障只能查会话卷，而会话卷不承载插件日志。
+影响面不止读数行：同一路径上**全部** `logger.info/warn` 都不可见——A3/A6 的 `warnOnce`、bank pull 失败、技能 provider 诊断、五挂载点各自的降级 warn（`index.mts`：`grep -o '\.warn(' … | wc -l` = 15、`\.info(` = 2，base 与 HEAD 同值）。装机形态下「降级留痕」整体零读者，事后排障只能查会话卷，而会话卷不承载插件日志。
 
 现象与机制分离：「该行不可观测」是上述四条实测的直接读数；「桌面壳为何不转发子进程 stdout」未取壳侧设计意图，本件只按实现读数陈述。
 
