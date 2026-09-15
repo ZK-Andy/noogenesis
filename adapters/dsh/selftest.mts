@@ -73,11 +73,10 @@ const FIXTURE_GENE = {
 	domain: "demo",
 	summary: "demo gene for adapter selftest",
 	signals: ["demo signal", "另一个 信号"],
-	strategy: ["step one", "step two"],
 };
 
 function writeFixtureGene(repoRoot: string): void {
-	const dir = path.join(repoRoot, "genes", "demo");
+	const dir = path.join(repoRoot, ".noogenesis", "genes", "demo");
 	fs.mkdirSync(dir, { recursive: true });
 	fs.writeFileSync(path.join(dir, `${FIXTURE_GENE.id}.json`), JSON.stringify(FIXTURE_GENE, null, 2) + "\n");
 }
@@ -168,8 +167,8 @@ function writeFixtureGene(repoRoot: string): void {
 {
 	// 基线固定面：BASE_SECTION 是预算口径外的常量注入（预算只盖命中节），
 	// 其长度漂移即改基线依据，故钉住实测值。
-	assert.equal(BASE_SECTION.length, 545, "BASE_SECTION is the frozen resident baseline (545 chars) — a change here re-bases the budget");
-	ok("resident budget: base section length pinned (545 chars)");
+	assert.equal(BASE_SECTION.length, 548, "BASE_SECTION is the frozen resident baseline (548 chars) — a change here re-bases the budget");
+	ok("resident budget: base section length pinned (548 chars)");
 
 	// 预算与缺省同源：已发布缺省必须过判据（否则升级后插件拿自己的缺省配置
 	// 装载失败）；上界与判据共用同一导出值，自测不重推公式。
@@ -185,13 +184,13 @@ function writeFixtureGene(repoRoot: string): void {
 
 	// 成本模型的可核验假设：ref 上界对着本仓真实基因逐件核（越界即红，
 	// 提示同变更调整 MAX_HIT_REF_CHARS）——手抄估值只有能被证伪时才算上界。
-	const geneDir = path.join(REPO_ROOT, "genes");
+	const geneDir = path.join(REPO_ROOT, ".noogenesis", "genes");
 	const refs = fs.readdirSync(geneDir, { withFileTypes: true })
 		.filter((entry) => entry.isDirectory())
 		.flatMap((domain) => fs.readdirSync(path.join(geneDir, domain.name))
 			.filter((file) => file.endsWith(".json"))
 			.map((file) => `${domain.name}/${path.basename(file, ".json")}`));
-	assert.ok(refs.length > 0, "genes/ must hold at least one gene for the ref bound to be meaningful");
+	assert.ok(refs.length > 0, ".noogenesis/genes/ must hold at least one gene for the ref bound to be meaningful");
 	for (const ref of refs) {
 		assert.ok(ref.length <= MAX_HIT_REF_CHARS, `gene ref ${ref} (${ref.length} chars) exceeds MAX_HIT_REF_CHARS=${MAX_HIT_REF_CHARS} — raise the constant with the change`);
 	}
@@ -640,11 +639,11 @@ function writeFixtureGene(repoRoot: string): void {
 
 	// e2e：真实引擎 pull（本地临时 bank）→ 缓存基因经 select 命中
 	const bank = tempRepo("bank");
-	const bankGeneDir = path.join(bank, "genes", "demo");
+	const bankGeneDir = path.join(bank, ".noogenesis", "genes", "demo");
 	fs.mkdirSync(bankGeneDir, { recursive: true });
 	fs.writeFileSync(path.join(bankGeneDir, "bank-only.json"), JSON.stringify({
 		id: "bank-only", domain: "demo", summary: "bank-only gene",
-		signals: ["bank-only signal"], strategy: ["bank step"],
+		signals: ["bank-only signal"],
 	}, null, 2) + "\n");
 	execFileSync("git", ["-C", bank, "add", "-A"], { stdio: "pipe" });
 	execFileSync("git", ["-C", bank, "-c", "user.email=t@t", "-c", "user.name=t", "commit", "-qm", "bank gene"], { stdio: "pipe" });
@@ -659,11 +658,11 @@ function writeFixtureGene(repoRoot: string): void {
 	ok("bank-pull: e2e — real engine pull caches bank genes; select hits cache-only gene");
 
 	// 本仓优先遮蔽：同 ref 双份 → 本仓版本胜出
-	const shadowDir = path.join(target, "genes", "demo");
+	const shadowDir = path.join(target, ".noogenesis", "genes", "demo");
 	fs.mkdirSync(shadowDir, { recursive: true });
 	fs.writeFileSync(path.join(shadowDir, "bank-only.json"), JSON.stringify({
 		id: "bank-only", domain: "demo", summary: "local wins",
-		signals: ["bank-only signal"], "strategy": ["local step"],
+		signals: ["bank-only signal"],
 	}, null, 2) + "\n");
 	const shadowed = runEngineSync(["select", "bank-only signal"], { repoRoot: target });
 	assert.match(shadowed.stdout, /demo\/bank-only\s+local wins/);

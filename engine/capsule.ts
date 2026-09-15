@@ -6,7 +6,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { EngineError, KEBAB_REF_RE } from './util.js';
-import { protocolNonObject, protocolIdentityErrors, readProtocolFile, assertProtocolIdUnique, protocolPath } from './protocol.js';
+import { protocolNonObject, protocolIdentityErrors, readProtocolFile, assertProtocolIdUnique } from './protocol.js';
+import { genesDir, capsulesDir } from './state.js';
 
 const KNOWN_CAPSULE_FIELDS = new Set(['id', 'domain', 'gene_ids', 'trigger', 'steps', 'outcome', 'evidence']);
 
@@ -59,30 +60,30 @@ function validateCapsule(obj: any, opts: { fileName: string; parentDir: string |
   return errors;
 }
 
-// 读入并校验单个 Capsule 文件。目录锚点（domain == 父目录）只约束 capsules/ 内的落盘位置；
-// recordCapsule 的候选文件可放在 capsules/ 之外，故可关。
+// 读入并校验单个 Capsule 文件。目录锚点（domain == 父目录）只约束状态 Capsule 目录内的
+// 落盘位置；recordCapsule 的候选文件可放在其外，故可关。
 function readCapsule(filePath: string, opts: { skipDirAnchor?: boolean } = {}) {
   return readProtocolFile(filePath, { noun: 'capsule', skipDirAnchor: opts.skipDirAnchor, validate: validateCapsule });
 }
 
-// Capsule 引用的基因必须命中本仓 genes/（复算规则 2）：缓存面是分发副本、可丢弃，
+// Capsule 引用的基因必须命中本仓状态基因目录（复算规则 2）：缓存面是分发副本、可丢弃，
 // 引用缓存基因的 Capsule 在缓存退场后即悬空，故不作可解析面。
 function assertGeneRefsResolvable(repoRoot: string, geneIds: string[]) {
   for (const ref of geneIds) {
     const [domain, id] = ref.split('/') as [string, string];
-    if (!fs.existsSync(path.join(repoRoot, 'genes', domain, `${id}.json`))) {
-      throw new EngineError(`capsule references gene '${ref}' not in genes/ (cache copies do not count)`);
+    if (!fs.existsSync(path.join(genesDir(repoRoot), domain, `${id}.json`))) {
+      throw new EngineError(`capsule references gene '${ref}' not in the state gene dir (cache copies do not count)`);
     }
   }
 }
 
 // 跨树 id 唯一性：同一 id 不得在两个域并存（事件只记 id，引用必须无歧义）。
 function assertCapsuleIdUnique(repoRoot: string, domain: string, id: string) {
-  assertProtocolIdUnique(repoRoot, 'capsules', 'capsule', domain, id);
+  assertProtocolIdUnique(capsulesDir(repoRoot), 'capsule', domain, id);
 }
 
 function capsulePath(repoRoot: string, domain: string, id: string) {
-  return protocolPath(repoRoot, 'capsules', domain, id);
+  return path.join(capsulesDir(repoRoot), domain, id + '.json');
 }
 
 // 人读渲染（capsule show）：确定性输出，逐字断言见 engine self-test 的 GOLDEN 夹具。

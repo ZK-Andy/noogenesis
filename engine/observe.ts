@@ -1,8 +1,8 @@
 // observe.ts — 观测输入面（融合立宪 ADR D8/D10；实现 ADR 2026-09-11）：
-// 事实在 git（events/ 轨，只有写得复算规则的才进），观测在本面
+// 事实在 git（状态 events/ 轨，只有写得复算规则的才进），观测在状态观测面
 // （.noogenesis/observations/，gitignored、append-only、可丢弃）。
 // 记忆图的边 (signal::gene)→{ok,fail,last_ts} 在读路径现算，不落盘、不进 git；
-// 现算只读本面——边的事实侧身份（命中 ref 与 signal）来自本次 genes/ 扫描，
+// 现算只读本面——边的事实侧身份（命中 ref 与 signal）来自本次基因扫描，
 // events/ 轨不参与边计算。
 // 姿态分面：写路径 fail-closed（坏记录写不进），读路径 warn-skip（坏行/坏面只丢
 // 自身权重，不让 select 变红）——与 P2「缓存侧 warn-skip / 本仓 fail-closed」同构。
@@ -10,9 +10,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import { EngineError, normalizeSignal, KEBAB_REF_RE } from './util.js';
+import { observationsDir } from './state.js';
 
-// 落点与 P2 缓存同属 .noogenesis/（.gitignore 整目录忽略）；月卷节奏与 events/ 同。
-const OBS_SUBDIR = '.noogenesis/observations';
 // evidence 是单行说明而非落盘正文：上限防单条记录失控（观测面必须保持可丢可扫）。
 const EVIDENCE_MAX_CHARS = 200;
 const OUTCOMES = new Set(['ok', 'fail']);
@@ -21,10 +20,6 @@ const KNOWN_FIELDS = new Set(['ts', 'actor', 'signal', 'gene', 'outcome', 'evide
 // 拼进 select 的 advice 行（stdout 契约面），宽松形状（如含空白/换行的可解析串）
 // 会把一行拆成两行，让非 `advice:` 行被适配层当命中行注入常驻节。
 const TS_RE = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/;
-
-function observationsDir(repoRoot: string): string {
-  return path.join(repoRoot, OBS_SUBDIR);
-}
 
 // 月卷文件名 = 写入时刻的 YYYY-MM（与 events/ 月卷同切法）。
 function observationPath(repoRoot: string, ts: string): string {

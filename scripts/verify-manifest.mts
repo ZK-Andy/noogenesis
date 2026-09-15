@@ -28,6 +28,7 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 import { cmpPyStr, normPyPath, KEBAB_RE } from "./pypara.mts";
+import { stateGenesDir, stateManifest } from "./state.mts";
 
 const ENTRY_FIELDS = ["ref", "path", "summary", "signals"];
 
@@ -84,7 +85,7 @@ function isDir(p: string): boolean {
  *  JSON 坏文件记为 {_error}，由 verify 汇入错误清单。 */
 function scanTree(repo: string): Record<string, Record<string, unknown>> {
   const out: Record<string, Record<string, unknown>> = {};
-  const root = path.join(repo, "genes");
+  const root = stateGenesDir(repo);
   if (!isDir(root)) return out;
   for (const domainDir of fs.readdirSync(root, { withFileTypes: true })
       .filter((e) => e.isDirectory())
@@ -117,10 +118,10 @@ function scanTree(repo: string): Record<string, Record<string, unknown>> {
 /** 校验 repo：返回 [检查项数, 错误列表]。 */
 function verify(repo: string): [number, string[]] {
   const errors: string[] = [];
-  const mpath = path.join(repo, "manifest.json");
+  const mpath = stateManifest(repo);
   if (!isFile(mpath)) {
     const tree = scanTree(repo);
-    return [Object.keys(tree).length + 1, ["manifest.json missing at repo root (run scripts/gen-manifest.mts)"]];
+    return [Object.keys(tree).length + 1, ["manifest.json missing under .noogenesis/ (run scripts/gen-manifest.mts)"]];
   }
   let manifest: any;
   try {
@@ -167,7 +168,7 @@ function verify(repo: string): [number, string[]] {
     }
     rows[ref] = entry;
     const p = entry["path"];
-    if (p !== `genes/${ref}.json`) {
+    if (p !== `.noogenesis/genes/${ref}.json`) {
       errors.push(`${where}: path must be genes/<domain>/<id>.json matching ref, got ${pyRepr(p)}`);
       continue;
     }
@@ -221,24 +222,24 @@ function verify(repo: string): [number, string[]] {
 /** 离线夹具自检：构造合规与违约 genes 树 + manifest，违约样例必须 FAIL、合规样例必须 PASS。 */
 function selfTest(): number {
   const gene = (domain: string, gid: string, summary = "s"): string =>
-    JSON.stringify({ "id": gid, "domain": domain, "summary": summary, "signals": [`${gid} signal`], "strategy": ["step"] }, null, 2) + "\n";
+    JSON.stringify({ "id": gid, "domain": domain, "summary": summary, "signals": [`${gid} signal`] }, null, 2) + "\n";
 
   const manifestOf = (entries: Array<Record<string, unknown>>): string =>
     JSON.stringify({ "version": 1, "genes": entries }, null, 2) + "\n";
 
   const entry = (ref: string, summary = "s", signals?: string[]): Record<string, unknown> => ({
     "ref": ref,
-    "path": `genes/${ref}.json`,
+    "path": `.noogenesis/genes/${ref}.json`,
     "summary": summary,
     "signals": signals ?? [`${ref.split("/")[1]} signal`],
   });
 
   const conforming = (t: string): void => {
-    fs.mkdirSync(path.join(t, "genes/process"), { recursive: true });
-    fs.mkdirSync(path.join(t, "genes/doc"), { recursive: true });
-    fs.writeFileSync(path.join(t, "genes/process/alpha.json"), gene("process", "alpha"), "utf-8");
-    fs.writeFileSync(path.join(t, "genes/doc/beta.json"), gene("doc", "beta"), "utf-8");
-    fs.writeFileSync(path.join(t, "manifest.json"), manifestOf(
+    fs.mkdirSync(path.join(t, ".noogenesis/genes/process"), { recursive: true });
+    fs.mkdirSync(path.join(t, ".noogenesis/genes/doc"), { recursive: true });
+    fs.writeFileSync(path.join(t, ".noogenesis/genes/process/alpha.json"), gene("process", "alpha"), "utf-8");
+    fs.writeFileSync(path.join(t, ".noogenesis/genes/doc/beta.json"), gene("doc", "beta"), "utf-8");
+    fs.writeFileSync(path.join(t, '.noogenesis', 'manifest.json'), manifestOf(
       [entry("doc/beta"), entry("process/alpha")].sort((a, b) => cmpPyStr(a["ref"] as string, b["ref"] as string))), "utf-8");
   };
 
@@ -246,41 +247,41 @@ function selfTest(): number {
   cases.push([conforming, [], "manifest matching genes tree -> pass"]);
 
   const missingManifest = (t: string): void => {
-    fs.mkdirSync(path.join(t, "genes/process"), { recursive: true });
-    fs.writeFileSync(path.join(t, "genes/process/alpha.json"), gene("process", "alpha"), "utf-8");
+    fs.mkdirSync(path.join(t, ".noogenesis/genes/process"), { recursive: true });
+    fs.writeFileSync(path.join(t, ".noogenesis/genes/process/alpha.json"), gene("process", "alpha"), "utf-8");
   };
   cases.push([missingManifest, ["manifest.json missing"], "no manifest -> fail"]);
 
   const summaryDrift = (t: string): void => {
     conforming(t);
-    fs.writeFileSync(path.join(t, "manifest.json"), manifestOf(
+    fs.writeFileSync(path.join(t, '.noogenesis', 'manifest.json'), manifestOf(
       [entry("doc/beta"), entry("process/alpha", "edited")].sort((a, b) => cmpPyStr(a["ref"] as string, b["ref"] as string))), "utf-8");
   };
   cases.push([summaryDrift, ["summary drift"], "manifest summary drift -> fail"]);
 
   const missingRow = (t: string): void => {
     conforming(t);
-    fs.writeFileSync(path.join(t, "genes/doc/gamma.json"), gene("doc", "gamma"), "utf-8");
+    fs.writeFileSync(path.join(t, ".noogenesis/genes/doc/gamma.json"), gene("doc", "gamma"), "utf-8");
   };
   cases.push([missingRow, ["missing gene doc/gamma"], "gene without manifest row -> fail"]);
 
   const staleRow = (t: string): void => {
     conforming(t);
-    fs.unlinkSync(path.join(t, "genes/doc/beta.json"));
+    fs.unlinkSync(path.join(t, ".noogenesis/genes/doc/beta.json"));
   };
   cases.push([staleRow, ["stale entry doc/beta"], "manifest row without file -> fail"]);
 
   const unsorted = (t: string): void => {
     conforming(t);
-    fs.writeFileSync(path.join(t, "manifest.json"), manifestOf([entry("process/alpha"), entry("doc/beta")]), "utf-8");
+    fs.writeFileSync(path.join(t, '.noogenesis', 'manifest.json'), manifestOf([entry("process/alpha"), entry("doc/beta")]), "utf-8");
   };
   cases.push([unsorted, ["must be sorted"], "unsorted refs -> fail"]);
 
   const badPath = (t: string): void => {
     conforming(t);
     const e = entry("doc/beta");
-    e["path"] = "genes/doc/beta.yaml";
-    fs.writeFileSync(path.join(t, "manifest.json"), manifestOf([entry("process/alpha"), e]), "utf-8");
+    e["path"] = ".noogenesis/genes/doc/beta.yaml";
+    fs.writeFileSync(path.join(t, '.noogenesis', 'manifest.json'), manifestOf([entry("process/alpha"), e]), "utf-8");
   };
   cases.push([badPath, ["path must be genes/"], "path not matching ref layout -> fail"]);
 

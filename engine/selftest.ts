@@ -13,7 +13,8 @@ import { validateObservation, buildObservation, recordObservation, readObservati
 import { renderGene } from './propose.js';
 import { evaluateGeneObj, checkConstraints, formatReport } from './evaluate.js';
 import { solidify, retire, recordCapsule, recordMutation } from './solidify.js';
-import { genePath, scanGenes, defaultCacheDir } from './gene.js';
+import { genePath, scanGenes } from './gene.js';
+import { cacheDir as defaultCacheDir, genesDir, eventsDir, capsulesDir, candidatesDir } from './state.js';
 import { capsulePath, readCapsule, renderCapsule } from './capsule.js';
 import { mutationPath, readMutation, renderMutation } from './mutation.js';
 import { collect, addCandidate, showCandidate, candidatePath } from './distill.js';
@@ -74,7 +75,7 @@ function mkRepo(root: string) {
 }
 
 function writeGene(root: string, domain: string, obj: any, fileName?: string) {
-  const dir = path.join(root, 'genes', domain);
+  const dir = path.join(genesDir(root), domain);
   fs.mkdirSync(dir, { recursive: true });
   const p = path.join(dir, fileName || `${obj.id}.json`);
   fs.writeFileSync(p, JSON.stringify(obj, null, 2) + '\n');
@@ -97,7 +98,7 @@ function stubScript(root: string) {
 }
 
 function readEvents(root: string): any[] {
-  const dir = path.join(root, 'events');
+  const dir = eventsDir(root);
   if (!fs.existsSync(dir)) return [];
   const out: any[] = [];
   for (const f of fs.readdirSync(dir).sort()) {
@@ -120,11 +121,9 @@ function selfTest() {
     const td = mkTemp();
     writeGene(td, 'process', {
       id: 'gene-a', domain: 'process', summary: 'A', signals: ['push force', 'review'],
-      strategy: ['s1'],
     });
     writeGene(td, 'doc', {
       id: 'gene-b', domain: 'doc', summary: 'B', signals: ['doc budget'],
-      strategy: ['s1'],
     });
     ok(selectGenes(td, ['push force']).hits.length === 1, 'select: exact hit');
     ok(selectGenes(td, ['  PUSH   force ']).hits.length === 1, 'select: normalized hit (case/space)');
@@ -138,11 +137,9 @@ function selfTest() {
     const td = mkTemp();
     writeGene(td, 'process', {
       id: 'gene-a', domain: 'process', summary: 'A', signals: ['push force', 'review'],
-      strategy: ['s1'],
     });
     writeGene(td, 'doc', {
       id: 'gene-b', domain: 'doc', summary: 'B', signals: ['push force'],
-      strategy: ['s1'],
     });
 
     // 零观测 = 默认零成本：stdout 与无观测面时逐字节相同，且不发射 advice 行
@@ -213,7 +210,7 @@ function selfTest() {
 
     // 读路径面级降级：观测面被同名文件占位（ENOTDIR）→ 空集 + warn，绝不是红/崩溃
     const bd = mkTemp();
-    writeGene(bd, 'process', { id: 'gene-a', domain: 'process', summary: 'A', signals: ['k'], strategy: ['s1'] });
+    writeGene(bd, 'process', { id: 'gene-a', domain: 'process', summary: 'A', signals: ['k'] });
     fs.mkdirSync(path.join(bd, '.noogenesis'), { recursive: true });
     fs.writeFileSync(path.join(bd, '.noogenesis', 'observations'), 'not a directory\n');
     ok(readObservations(bd).records.length === 0, 'observe: unlistable face degrades to empty (no throw)');
@@ -222,7 +219,7 @@ function selfTest() {
 
     // CLI 面：observe 命令分派 + 退出码三档（fail-closed 与用法错都是 exit 2）
     const ce = mkRepo(mkTemp());
-    writeGene(ce, 'process', { id: 'gene-a', domain: 'process', summary: 'A', signals: ['review'], strategy: ['s1'] });
+    writeGene(ce, 'process', { id: 'gene-a', domain: 'process', summary: 'A', signals: ['review'] });
     const bin = path.join(__dirname, 'bin.js');
     ok(spawnCode([bin, 'observe', '--signal', 'review', '--gene', 'process/gene-a', '--outcome', 'ok', '--actor', 't'], ce) === 0,
       'bin: observe valid record -> exit 0');
@@ -237,11 +234,11 @@ function selfTest() {
 
     // 命令面 ADR：list 只读盘点 —— 三资产枚举 + cache 标记 + 用法参量 exit 2。
     const ld = mkRepo(mkTemp());
-    writeGene(ld, 'process', { id: 'gene-a', domain: 'process', summary: 'A', signals: ['k'], strategy: ['s1'] });
+    writeGene(ld, 'process', { id: 'gene-a', domain: 'process', summary: 'A', signals: ['k'] });
     ok(spawnStdout([bin, 'list'], ld).replace(/\r/g, '') === 'genes: 1\ngene process/gene-a\ncapsules: 0\nmutations: 0\n',
       'bin: list enumerates genes deterministically');
-    fs.mkdirSync(path.join(ld, '.noogenesis', 'genes-cache', 'genes', 'process'), { recursive: true });
-    fs.writeFileSync(path.join(ld, '.noogenesis', 'genes-cache', 'genes', 'process', 'b.json'), JSON.stringify({ id: 'b', domain: 'process', summary: 'B', signals: ['k'], strategy: ['s1'] }));
+    fs.mkdirSync(path.join(defaultCacheDir(ld), '.noogenesis', 'genes', 'process'), { recursive: true });
+    fs.writeFileSync(path.join(defaultCacheDir(ld), '.noogenesis', 'genes', 'process', 'b.json'), JSON.stringify({ id: 'b', domain: 'process', summary: 'B', signals: ['k'] }));
     ok(spawnStdout([bin, 'list'], ld).includes('gene process/gene-a\ngene process/b (cache)'), 'bin: list marks cache genes');
     ok(spawnCode([bin, 'list', 'extra'], ld) === 2, 'bin: list rejects arguments -> exit 2');
   }
@@ -251,16 +248,11 @@ function selfTest() {
     const gene = {
       id: 'sample-gene', domain: 'process', summary: 'one-line summary',
       signals: ['sample signal'],
-      strategy: ['step one', 'step two'],
       constraints: { max_files: 3, forbidden_paths: ['engine/', 'docs/'] },
       avoid: ['do not do x'],
     };
     const GOLDEN =
       '[noo-gene process/sample-gene] one-line summary\n' +
-      '\n' +
-      'strategy:\n' +
-      '1. step one\n' +
-      '2. step two\n' +
       '\n' +
       'constraints:\n' +
       '- max_files: 3\n' +
@@ -268,8 +260,8 @@ function selfTest() {
       '\n' +
       'avoid:\n' +
       '- do not do x\n';
-    ok(renderGene(gene) === GOLDEN, 'propose: golden render exact match');
-    ok(renderGene(gene) === renderGene(JSON.parse(JSON.stringify(gene))), 'propose: deterministic across parses');
+    ok(renderGene('process/sample-gene', gene) === GOLDEN, 'propose: golden render exact match');
+    ok(renderGene('process/sample-gene', gene) === renderGene('process/sample-gene', JSON.parse(JSON.stringify(gene))), 'propose: deterministic across parses');
   }
 
   // --- 4) evaluate：白名单外命令拒 / fail-closed / 约束违约 ---
@@ -285,7 +277,7 @@ function selfTest() {
     writeGates(gatesDir, gatesDoc);
     const gene = {
       id: 'ev-gene', domain: 'process', summary: 'evaluate fixture',
-      signals: ['x'], strategy: ['s'], validation: ['stub-pass-1'],
+      signals: ['x'], validation: ['stub-pass-1'],
     };
     const ev = evaluateGeneObj(td, gatesDir, gene, 'process/ev-gene');
     ok(ev.ok === true, 'evaluate: all stub gates green -> ok');
@@ -382,10 +374,10 @@ function selfTest() {
     writeGates(gatesDir, [{ name: 'stub-pass', cmd: 'python3', args: ['scripts/stub-pass.py'] }]);
     const gene = {
       id: 'sol-gene', domain: 'process', summary: 'solidify fixture',
-      signals: ['sol'], strategy: ['s'],
+      signals: ['sol'],
     };
-    const staging = path.join(td, 'candidates');
-    fs.mkdirSync(staging);
+    const staging = path.join(candidatesDir(td));
+    fs.mkdirSync(staging, { recursive: true });
     const candPath = path.join(staging, 'sol-gene.json');
     fs.writeFileSync(candPath, JSON.stringify(gene, null, 2) + '\n');
 
@@ -400,7 +392,7 @@ function selfTest() {
     ok(events[0].gene_sha === fileSha, 'solidify: gene_sha recomputes from file bytes');
     // 原子证据：同一 commit 同时含 genes/ 与 events/ 两个路径
     const files = git(td, ['show', '--name-only', '--format=', 'HEAD']).trim().split('\n').sort();
-    ok(files.length === 2 && files.some((f) => f.startsWith('genes/')) && files.some((f) => f.startsWith('events/')),
+    ok(files.length === 2 && files.some((f) => f.startsWith('.noogenesis/genes/')) && files.some((f) => f.startsWith('.noogenesis/events/')),
       'solidify: genes/ + events/ in the SAME commit');
     ok(git(td, ['rev-list', '--count', 'HEAD']).trim() === '2', 'solidify: exactly one extra commit');
 
@@ -479,14 +471,14 @@ function selfTest() {
       const rGene = { ...gene, id: 'rollback-gene' };
       const rPath = path.join(staging, 'rollback-gene.json');
       fs.writeFileSync(rPath, JSON.stringify(rGene, null, 2) + '\n');
-      const evFilesBefore = fs.readdirSync(path.join(td, 'events')).sort();
-      const eventsBefore = fs.readFileSync(path.join(td, 'events', evFilesBefore[evFilesBefore.length - 1] ?? ''), 'utf8');
+      const evFilesBefore = fs.readdirSync(eventsDir(td)).sort();
+      const eventsBefore = fs.readFileSync(path.join(eventsDir(td), evFilesBefore[evFilesBefore.length - 1] ?? ''), 'utf8');
       let threw = false;
       try { solidify(td, gatesDir, rPath, 'tester'); } catch (e) { threw = e instanceof EngineError; }
       ok(threw, 'solidify: commit failure raises EngineError');
       ok(!fs.existsSync(genePath(td, 'process', 'rollback-gene')), 'solidify: rollback removes placed gene');
-      const evFilesAfter = fs.readdirSync(path.join(td, 'events')).sort();
-      const eventsAfter = fs.readFileSync(path.join(td, 'events', evFilesAfter[evFilesAfter.length - 1] ?? ''), 'utf8');
+      const evFilesAfter = fs.readdirSync(eventsDir(td)).sort();
+      const eventsAfter = fs.readFileSync(path.join(eventsDir(td), evFilesAfter[evFilesAfter.length - 1] ?? ''), 'utf8');
       ok(eventsAfter === eventsBefore, 'solidify: rollback removes appended event line');
       ok(git(td, ['diff', '--cached', '--name-only']).trim().split('\n').filter((l) => l.includes('rollback-gene')).length === 0,
         'solidify: rollback leaves no staged residue');
@@ -500,10 +492,10 @@ function selfTest() {
     mkRepo(td);
     writeGene(td, 'process', {
       id: 'cap-gene', domain: 'process', summary: 'capsule fixture',
-      signals: ['cap'], strategy: ['s'],
+      signals: ['cap'],
     });
-    const staging = path.join(td, 'candidates');
-    fs.mkdirSync(staging);
+    const staging = path.join(candidatesDir(td));
+    fs.mkdirSync(staging, { recursive: true });
     const cap = {
       id: 'cap-1', domain: 'process', gene_ids: ['process/cap-gene'],
       trigger: 'cap', steps: ['s1'], outcome: { status: 'ok' }, evidence: ['gate green'],
@@ -521,7 +513,7 @@ function selfTest() {
     ok(capEv?.capsule_sha === sha256Hex(fs.readFileSync(target)),
       'capsule: capsule_sha recomputes from file bytes');
     const files = git(td, ['show', '--name-only', '--format=', 'HEAD']).trim().split('\n').sort();
-    ok(files.length === 2 && files.some((f) => f.startsWith('capsules/')) && files.some((f) => f.startsWith('events/')),
+    ok(files.length === 2 && files.some((f) => f.startsWith('.noogenesis/capsules/')) && files.some((f) => f.startsWith('.noogenesis/events/')),
       'capsule: capsules/ + events/ in the SAME commit');
 
     // append-only：同 id 重复记录拒收（无 capsule.updated 面）
@@ -591,8 +583,8 @@ function selfTest() {
   {
     const td = mkTemp();
     mkRepo(td);
-    const staging = path.join(td, 'candidates');
-    fs.mkdirSync(staging);
+    const staging = path.join(candidatesDir(td));
+    fs.mkdirSync(staging, { recursive: true });
     const mut = {
       id: 'mut-1', domain: 'process', category: 'refactor', target: 'engine/bin.ts',
       expected_effect: 'command dispatch stays byte-identical', risk_level: 'low',
@@ -610,7 +602,7 @@ function selfTest() {
     ok(mutEv?.mutation_sha === sha256Hex(fs.readFileSync(target)),
       'mutation: mutation_sha recomputes from file bytes');
     const files = git(td, ['show', '--name-only', '--format=', 'HEAD']).trim().split('\n').sort();
-    ok(files.length === 2 && files.some((f) => f.startsWith('mutations/')) && files.some((f) => f.startsWith('events/')),
+    ok(files.length === 2 && files.some((f) => f.startsWith('.noogenesis/mutations/')) && files.some((f) => f.startsWith('.noogenesis/events/')),
       'mutation: mutations/ + events/ in the SAME commit');
 
     // append-only：同 id 重复声明拒收（无 mutation.updated 面）
@@ -693,20 +685,20 @@ function selfTest() {
     mkRepo(td);
     writeGene(td, 'process', {
       id: 'dst-gene', domain: 'process', summary: 'distill fixture',
-      signals: ['dst'], strategy: ['s'], avoid: ['avoid row one'],
+      signals: ['dst'], avoid: ['avoid row one'],
     });
     // 三类汇编面：events fail 行 + capsules fail + genes avoid
     const staging = path.join(td, 'staging');
-    fs.mkdirSync(staging);
-    fs.mkdirSync(path.join(td, 'events'), { recursive: true });
-    fs.appendFileSync(path.join(td, 'events', '2026-01.jsonl'),
+    fs.mkdirSync(staging, { recursive: true });
+    fs.mkdirSync(eventsDir(td), { recursive: true });
+    fs.appendFileSync(path.join(eventsDir(td), '2026-01.jsonl'),
       JSON.stringify({ ts: '2026-01-01T00:00:00.000Z', actor: 't', kind: 'gene.added', gene: 'gone', gene_sha: 'a'.repeat(64), outcome: 'fail: gate red', evidence: 'evaluate ok: all 9 gates green' }) + '\n');
-    fs.mkdirSync(path.join(td, 'capsules', 'process'), { recursive: true });
-    fs.writeFileSync(path.join(td, 'capsules', 'process', 'cap-f.json'),
+    fs.mkdirSync(path.join(capsulesDir(td), 'process'), { recursive: true });
+    fs.writeFileSync(path.join(capsulesDir(td), 'process', 'cap-f.json'),
       JSON.stringify({ id: 'cap-f', domain: 'process', gene_ids: ['process/dst-gene'], trigger: 't', steps: ['s'], outcome: { status: 'fail', reason: 'gate red' }, evidence: ['e'] }));
     fs.writeFileSync(path.join(staging, 'cand-1.json'), JSON.stringify({
       id: 'cand-1', domain: 'process', summary: 'candidate from failures',
-      signals: ['dst'], strategy: ['step one'],
+      signals: ['dst'],
     }, null, 2) + '\n');
 
     const digest = collect(td);
@@ -727,9 +719,9 @@ function selfTest() {
       'distill: re-adding same candidate refused');
     const badGene = path.join(staging, 'cand-2.json');
     fs.writeFileSync(badGene, JSON.stringify({ id: 'cand-2', domain: 'process', summary: 'x' }) + '\n');
-    ok(throwsEngine(() => addCandidate(td, badGene)), 'distill: gene-shaped validation refused (no signals/strategy)');
+    ok(throwsEngine(() => addCandidate(td, badGene)), 'distill: gene-shaped validation refused (no signals)');
     const dup = path.join(staging, 'cand-3.json');
-    fs.writeFileSync(dup, JSON.stringify({ id: 'cand-1', domain: 'doc', summary: 'x', signals: ['d'], strategy: ['s'] }) + '\n');
+    fs.writeFileSync(dup, JSON.stringify({ id: 'cand-1', domain: 'doc', summary: 'x', signals: ['d'] }) + '\n');
     ok(throwsEngine(() => addCandidate(td, dup)), 'distill: cross-domain duplicate id refused');
 
     // show：基因渲染复用（确定性输出）
@@ -739,13 +731,13 @@ function selfTest() {
     // CLI 面：collect/add/show 与用法错
     const bin = path.join(__dirname, 'bin.js');
     fs.writeFileSync(path.join(staging, 'cand-4.json'), JSON.stringify({
-      id: 'cand-4', domain: 'doc', summary: 'x', signals: ['d'], strategy: ['s'],
+      id: 'cand-4', domain: 'doc', summary: 'x', signals: ['d'],
     }) + '\n');
     ok(spawnCode([bin, 'distill', 'collect'], td) === 0, 'bin: distill collect -> exit 0');
     // collect 分诊面：坏 JSON 面（事件行/文件）→ EngineError → exit 2（非堆栈 exit 1）
-    fs.appendFileSync(path.join(td, 'events', '2099-01.jsonl'), '{broken\n');
+    fs.appendFileSync(path.join(eventsDir(td), '2099-01.jsonl'), '{broken\n');
     ok(spawnCode([bin, 'distill', 'collect'], td) === 2, 'bin: distill collect with broken event line -> exit 2');
-    fs.unlinkSync(path.join(td, 'events', '2099-01.jsonl'));
+    fs.unlinkSync(path.join(eventsDir(td), '2099-01.jsonl'));
     ok(spawnCode([bin, 'distill', 'add', path.join(staging, 'cand-4.json')], td) === 0,
       'bin: distill add -> exit 0');
     const shown = execFileSync('node', [bin, 'distill', 'show', 'doc/cand-4'], { cwd: td, encoding: 'utf8', stdio: 'pipe' });
@@ -764,10 +756,10 @@ function selfTest() {
     stubScript(td);
     writeGene(td, 'process', {
       id: 'link-gene', domain: 'process', summary: 'event field fixture',
-      signals: ['link'], strategy: ['s'],
+      signals: ['link'],
     });
-    const staging = path.join(td, 'candidates');
-    fs.mkdirSync(staging);
+    const staging = path.join(candidatesDir(td));
+    fs.mkdirSync(staging, { recursive: true });
 
     // 先造被引两端：mutation 声明（执行前）+ capsule 记录（执行后）
     const mutCand = path.join(staging, 'link-mut.json');
@@ -792,14 +784,14 @@ function selfTest() {
     const freshCand = path.join(staging, 'fresh-gene.json');
     fs.writeFileSync(freshCand, JSON.stringify({
       id: 'fresh-gene', domain: 'process', summary: 'event field fixture',
-      signals: ['link'], strategy: ['s'],
+      signals: ['link'],
     }, null, 2) + '\n');
     ok(solidify(td, gatesDir, freshCand, 'tester', { mutation: 'process/link-mut', capsule: 'process/link-cap' }).ok === true,
       'event: solidify add with cross-links accepted');
     const geneCand = path.join(staging, 'link-gene.json');
     fs.writeFileSync(geneCand, JSON.stringify({
       id: 'link-gene', domain: 'process', summary: 'event field fixture',
-      signals: ['link'], strategy: ['s'],
+      signals: ['link'],
     }, null, 2) + '\n');
     const r = solidify(td, gatesDir, geneCand, 'tester', { mutation: 'process/link-mut', capsule: 'process/link-cap' });
     ok(r.ok === true, 'event: solidify update with cross-links accepted');
@@ -813,7 +805,7 @@ function selfTest() {
     // 悬空 / 形错引用拒写：不留文件、不留事件
     const dangling = path.join(staging, 'dangling-gene.json');
     fs.writeFileSync(dangling, JSON.stringify({
-      id: 'dangling-gene', domain: 'process', summary: 'x', signals: ['x'], strategy: ['s'],
+      id: 'dangling-gene', domain: 'process', summary: 'x', signals: ['x'],
     }, null, 2) + '\n');
     ok(throwsEngine(() => solidify(td, gatesDir, dangling, 'tester', { mutation: 'process/no-such-mut' })),
       'event: dangling mutation ref refused');
@@ -852,7 +844,7 @@ function selfTest() {
     const bin = path.join(engineCopy, 'bin.js');
     const cliGene = path.join(staging, 'cli-gene.json');
     fs.writeFileSync(cliGene, JSON.stringify({
-      id: 'cli-gene', domain: 'process', summary: 'x', signals: ['x'], strategy: ['s'],
+      id: 'cli-gene', domain: 'process', summary: 'x', signals: ['x'],
     }, null, 2) + '\n');
     ok(spawnCode([bin, 'solidify', cliGene, '--actor', 't', '--mutation', 'process/link-mut', '--capsule', 'process/link-cap'], td) === 0,
       'bin: solidify with cross-link flags -> exit 0');
@@ -869,8 +861,8 @@ function selfTest() {
   {
     const td = mkTemp();
     mkRepo(td);
-    fs.mkdirSync(path.join(td, 'genes', 'process'), { recursive: true });
-    fs.writeFileSync(path.join(td, 'genes', 'process', 'broken.json'), '{not json');
+    fs.mkdirSync(path.join(genesDir(td), 'process'), { recursive: true });
+    fs.writeFileSync(path.join(genesDir(td), 'process', 'broken.json'), '{not json');
     const bin = path.join(__dirname, 'bin.js');
     ok(spawnCode([bin, 'select', 'anything'], td) === 2,
       'bin: malformed gene + select -> exit 2 (fail-closed, no stack)');
@@ -908,7 +900,7 @@ function selfTest() {
     // select / propose happy path：真 bin、真基因、真 spawn
     writeGene(td, 'process', {
       id: 'e2e-gene', domain: 'process', summary: 'e2e fixture',
-      signals: ['e2e signal'], strategy: ['step'],
+      signals: ['e2e signal'],
     });
     const bin = path.join(__dirname, 'bin.js');
     const out = execFileSync('node', [bin, 'select', 'E2E  Signal'], { cwd: td, encoding: 'utf8', stdio: 'pipe' });
@@ -931,12 +923,12 @@ function selfTest() {
     fs.cpSync(__dirname, engineCopy, { recursive: true });
     stubScript(td);
     writeGates(engineCopy, [{ name: 'stub-pass', cmd: 'python3', args: ['scripts/stub-pass.py'] }]);
-    const staging = path.join(td, 'candidates');
-    fs.mkdirSync(staging);
+    const staging = path.join(candidatesDir(td));
+    fs.mkdirSync(staging, { recursive: true });
     const cand = path.join(staging, 'e2e-solid.json');
     fs.writeFileSync(cand, JSON.stringify({
       id: 'e2e-solid', domain: 'gates', summary: 'solidify e2e',
-      signals: ['sol'], strategy: ['s'],
+      signals: ['sol'],
     }, null, 2) + '\n');
     execFileSync('node', [path.join(engineCopy, 'bin.js'), 'solidify', cand, '--actor', 't'],
       { cwd: td, encoding: 'utf8', stdio: 'pipe' });
@@ -962,7 +954,7 @@ function selfTest() {
     mkRepo(bank);
     writeGene(bank, 'doc', {
       id: 'bank-gene', domain: 'doc', summary: 'bank copy',
-      signals: ['bank signal'], strategy: ['bank step'],
+      signals: ['bank signal'],
     });
     git(bank, ['add', '-A']);
     git(bank, ['commit', '-qm', 'bank gene']);
@@ -971,7 +963,7 @@ function selfTest() {
     mkRepo(td);
     writeGene(td, 'process', {
       id: 'local-gene', domain: 'process', summary: 'local copy',
-      signals: ['local signal'], strategy: ['local step'],
+      signals: ['local signal'],
     });
 
     const { pullBank } = require('./pull.js');
@@ -987,14 +979,15 @@ function selfTest() {
     // 本仓优先：同 ref 双份 → 本仓版本胜出（缓存副本被遮蔽，不报错）
     writeGene(td, 'doc', {
       id: 'bank-gene', domain: 'doc', summary: 'local wins',
-      signals: ['bank signal'], strategy: ['local step'],
+      signals: ['bank signal'],
     });
     const hit = scanGenes(td).find((g) => g.ref === 'doc/bank-gene');
     ok(hit && hit.obj.summary === 'local wins' && hit.path.startsWith(td),
       'merge: repo gene shadows same-ref cache copy (repo-first)');
 
     // 缓存侧坏 JSON → warn-skip（降级不红）；本仓坏 JSON 仍 fail-closed。
-    fs.writeFileSync(path.join(defaultCacheDir(td), 'genes', 'doc', 'broken.json'), '{not json');
+    fs.mkdirSync(path.join(defaultCacheDir(td), '.noogenesis', 'genes', 'doc'), { recursive: true });
+    fs.writeFileSync(path.join(defaultCacheDir(td), '.noogenesis', 'genes', 'doc', 'broken.json'), '{not json');
     const withBad = selectGenes(td, ['bank signal']);
     ok(withBad.hits.length === 1 && withBad.hits[0]?.ref === 'doc/bank-gene',
       'merge: unparseable CACHE gene skipped (degrade, not red)');
@@ -1007,7 +1000,7 @@ function selfTest() {
     // 更新：bank 新增基因 → --ff-only 更新 + 计数（报告面容错：坏文件不计入）
     writeGene(bank, 'gates', {
       id: 'bank-gene-2', domain: 'gates', summary: 'second',
-      signals: ['bank2'], strategy: ['s'],
+      signals: ['bank2'],
     });
     git(bank, ['add', '-A']);
     git(bank, ['commit', '-qm', 'second gene']);
@@ -1021,7 +1014,7 @@ function selfTest() {
     ok(throwsEngine(() => pullBank(bad, bank)), 'pull: non-git cache dir refused (fail-closed)');
     ok(throwsEngine(() => pullBank(bad, '')), 'pull: empty URL refused');
     ok(throwsEngine(() => pullBank(bad, bank, bad)), 'pull: cache dir = repo root refused');
-    ok(throwsEngine(() => pullBank(bad, bank, path.join(bad, 'genes', 'sub'))), 'pull: cache dir inside genes/ subtree refused');
+    ok(throwsEngine(() => pullBank(bad, bank, path.join(genesDir(bad), 'sub'))), 'pull: cache dir inside the repository refused');
     const bin = path.join(__dirname, 'bin.js');
     ok(spawnCode([bin, 'pull'], bad) === 2, 'bin: pull without URL -> exit 2 (usage)');
     ok(spawnCode([bin, 'pull', 'x', '--cache'], bad) === 2, 'bin: --cache without value -> exit 2 (usage)');

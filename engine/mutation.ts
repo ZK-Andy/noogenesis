@@ -2,8 +2,11 @@
 // ID=文件名。Mutation = 执行前的意图声明（主设计 §5.1：意图 + 风险），与 Capsule（执行后
 // 的审计事实）是同一次演化的两端，不合并——声明而未执行是合法状态。
 // 写路径（recordMutation）与基因/Capsule 共用 solidify.ts 的原子提交面。
+// 落盘目录 = state.ts 单源（仓根 .noogenesis/mutations/）。
 
-import { protocolNonObject, protocolIdentityErrors, readProtocolFile, assertProtocolIdUnique, protocolPath } from './protocol.js';
+import * as path from 'path';
+import { protocolNonObject, protocolIdentityErrors, readProtocolFile, assertProtocolIdUnique } from './protocol.js';
+import { mutationsDir } from './state.js';
 
 // risk_level 是设计 §5.1 明列的三值封闭集；category/target/expected_effect 无值域
 // （taxonomy 未决，批次表序 23）——预设枚举即造分类法，故只校验非空。
@@ -26,19 +29,19 @@ function validateMutation(obj: any, opts: { fileName: string; parentDir: string 
   return errors;
 }
 
-// 读入并校验单个 Mutation 文件。目录锚点（domain == 父目录）只约束 mutations/ 内的
-// 落盘位置；recordMutation 的候选文件可放在 mutations/ 之外，故可关。
+// 读入并校验单个 Mutation 文件。目录锚点（domain == 父目录）只约束状态 Mutation 目录内的
+// 落盘位置；recordMutation 的候选文件可放在其外，故可关。
 function readMutation(filePath: string, opts: { skipDirAnchor?: boolean } = {}) {
   return readProtocolFile(filePath, { noun: 'mutation', skipDirAnchor: opts.skipDirAnchor, validate: validateMutation });
 }
 
 // 跨树 id 唯一性：同一 id 不得在两个域并存（事件只记 id，引用必须无歧义）。
 function assertMutationIdUnique(repoRoot: string, domain: string, id: string) {
-  assertProtocolIdUnique(repoRoot, 'mutations', 'mutation', domain, id);
+  assertProtocolIdUnique(mutationsDir(repoRoot), 'mutation', domain, id);
 }
 
 function mutationPath(repoRoot: string, domain: string, id: string) {
-  return protocolPath(repoRoot, 'mutations', domain, id);
+  return path.join(mutationsDir(repoRoot), domain, `${id}.json`);
 }
 
 // 人读渲染（mutation show）：确定性输出，逐字断言见 engine self-test 的 GOLDEN 夹具。

@@ -64,7 +64,7 @@ export const MAX_HIT_LINES = DEFAULT_MAX_INDEX_GENES + 1;
 /**
  * 命中节常驻注入预算（字符），字面判据的阈面（护栏立项 ADR 决定 1：token
  * 基线不变量改两轨，字面预算即阻断面）。由「已发布缺省 + 一行」的最坏情形
- * 推导——预算与缺省同源，改缺省即自动跟随。`BASE_SECTION`（545 字符）另计
+ * 推导——预算与缺省同源，改缺省即自动跟随。`BASE_SECTION`（548 字符）另计
  * 不占本预算（基线本身固定，增长路径只有命中节）。
  *
  * **改动义务（code-standards §2.1）**：本值随 `MAX_SUMMARY_CHARS` /
@@ -94,7 +94,7 @@ export function assertResidentSectionBudget(maxGenes: number): void {
 /** 常驻基座节：措辞即行为——只陈述真实能力与写路径纪律，不许诺未接线的能力。 */
 export const BASE_SECTION = [
 	"Noogenesis evolution gene bank is wired to this session.",
-	"Genes are compact, behavior-oriented playbooks (strategy steps + constraints + AVOID warnings) curated in the target repo's genes/ directory.",
+	"Genes are compact constraint declarations (constraints + validation + AVOID warnings) curated in the target repo's .noogenesis/genes/ directory.",
 	"Signals are explicit: genes match literal normalized phrases — they are never auto-scanned.",
 	"Use noo_select with signal phrases to find matching genes, noo_propose to render a gene's injection text, noo_evaluate to run its validation gates.",
 	"Archiving a new gene (solidify) is a write path: it only runs with explicit human approval at session end.",

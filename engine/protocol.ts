@@ -55,8 +55,9 @@ function readProtocolFile(filePath: string, opts: { noun: string; skipDirAnchor?
 }
 
 // 跨树 id 唯一性：同一 id 不得在两个域并存（事件只记 id，引用必须无歧义）。
-function assertProtocolIdUnique(repoRoot: string, dir: string, noun: string, domain: string, id: string) {
-  const root = path.join(repoRoot, dir);
+// dirAbs 为原语状态目录绝对路径（调用方由 state.ts 派生），本件不拼仓根。
+function assertProtocolIdUnique(dirAbs: string, noun: string, domain: string, id: string) {
+  const root = dirAbs;
   if (!fs.existsSync(root)) return;
   for (const ent of fs.readdirSync(root, { withFileTypes: true })) {
     if (!ent.isDirectory() || ent.name === domain) continue;
@@ -66,8 +67,4 @@ function assertProtocolIdUnique(repoRoot: string, dir: string, noun: string, dom
   }
 }
 
-function protocolPath(repoRoot: string, dir: string, domain: string, id: string) {
-  return path.join(repoRoot, dir, domain, `${id}.json`);
-}
-
-export { protocolNonObject, protocolIdentityErrors, readProtocolFile, assertProtocolIdUnique, protocolPath };
+export { protocolNonObject, protocolIdentityErrors, readProtocolFile, assertProtocolIdUnique };

@@ -27,6 +27,7 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 import * as os from "node:os";
 import { cmpPyStr, normPyPath, KEBAB_RE } from "./pypara.mts";
+import { stateGenesDir, stateManifest } from "./state.mts";
 
 
 interface GeneEntry { ref: string; path: string; summary: string; signals: string[] }
@@ -45,7 +46,7 @@ function isDir(p: string): boolean {
 /** 扫描 genes/<domain>/<id>.json → 每基因一条 {ref, path, summary, signals}，按 ref 排序。
  *  协议违约抛 GeneProtocolError（realRun 转 exit 1）。 */
 function scanGenes(repo: string): GeneEntry[] {
-  const root = path.join(repo, "genes");
+  const root = stateGenesDir(repo);
   const entries: GeneEntry[] = [];
   if (!isDir(root)) return entries;
   for (const domainDir of fs.readdirSync(root, { withFileTypes: true })
@@ -103,21 +104,21 @@ function selfTest(): number {
       fs.writeFileSync(p, content, "utf-8");
     };
     const gene = (id: string, domain: string): string =>
-      JSON.stringify({ id, domain, summary: `s of ${id}`, signals: [`${id} signal`], strategy: ["step"] }, null, 2) + "\n";
+      JSON.stringify({ id, domain, summary: `s of ${id}`, signals: [`${id} signal`] }, null, 2) + "\n";
 
     // 空树（无 genes/ 目录）→ 空条目
     fs.mkdirSync(path.join(repo, "empty"), { recursive: true });
     if (scanGenes(path.join(repo, "empty")).length !== 0) failures.push("无 genes/ 目录应为空集");
 
     // 合规：两域三基因，跨域按 ref 排序
-    write("genes/doc/alpha.json", gene("alpha", "doc"));
-    write("genes/doc/beta.json", gene("beta", "doc"));
-    write("genes/process/gamma.json", gene("gamma", "process"));
+    write(".noogenesis/genes/doc/alpha.json", gene("alpha", "doc"));
+    write(".noogenesis/genes/doc/beta.json", gene("beta", "doc"));
+    write(".noogenesis/genes/process/gamma.json", gene("gamma", "process"));
     const entries = scanGenes(repo);
     if (JSON.stringify(entries.map((e) => e.ref)) !== JSON.stringify(["doc/alpha", "doc/beta", "process/gamma"])) {
       failures.push(`合规扫描 ref 序不符：${JSON.stringify(entries.map((e) => e.ref))}`);
     }
-    if (entries[0]!.path !== "genes/doc/alpha.json" || entries[0]!.summary !== "s of alpha" || JSON.stringify(entries[0]!.signals) !== JSON.stringify(["alpha signal"])) {
+    if (entries[0]!.path !== ".noogenesis/genes/doc/alpha.json" || entries[0]!.summary !== "s of alpha" || JSON.stringify(entries[0]!.signals) !== JSON.stringify(["alpha signal"])) {
       failures.push(`条目内容不符：${JSON.stringify(entries[0])}`);
     }
 
@@ -140,12 +141,12 @@ function selfTest(): number {
       }
     };
 
-    expectProtocol({ "genes/doc/bad.json": "{" }, "not valid JSON", "非 JSON 基因");
-    expectProtocol({ "genes/doc/bad.json": "[1]" }, "gene must be a JSON object", "非对象基因");
-    expectProtocol({ "genes/doc/bad.json": JSON.stringify({ id: "other", domain: "doc", summary: "s", signals: ["x"] }) }, "id must equal filename stem", "id 与文件名不符");
-    expectProtocol({ "genes/doc/bad.json": JSON.stringify({ id: "bad", domain: "process", summary: "s", signals: ["x"] }) }, "domain must equal its directory", "domain 与目录不符");
-    expectProtocol({ "genes/doc/bad.json": JSON.stringify({ id: "bad", domain: "doc", summary: "  ", signals: ["x"] }) }, "summary must be a non-empty string", "空 summary");
-    expectProtocol({ "genes/doc/bad.json": JSON.stringify({ id: "bad", domain: "doc", summary: "s", signals: [] }) }, "signals must be a non-empty array of strings", "空 signals");
+    expectProtocol({ ".noogenesis/genes/doc/bad.json": "{" }, "not valid JSON", "非 JSON 基因");
+    expectProtocol({ ".noogenesis/genes/doc/bad.json": "[1]" }, "gene must be a JSON object", "非对象基因");
+    expectProtocol({ ".noogenesis/genes/doc/bad.json": JSON.stringify({ id: "other", domain: "doc", summary: "s", signals: ["x"] }) }, "id must equal filename stem", "id 与文件名不符");
+    expectProtocol({ ".noogenesis/genes/doc/bad.json": JSON.stringify({ id: "bad", domain: "process", summary: "s", signals: ["x"] }) }, "domain must equal its directory", "domain 与目录不符");
+    expectProtocol({ ".noogenesis/genes/doc/bad.json": JSON.stringify({ id: "bad", domain: "doc", summary: "  ", signals: ["x"] }) }, "summary must be a non-empty string", "空 summary");
+    expectProtocol({ ".noogenesis/genes/doc/bad.json": JSON.stringify({ id: "bad", domain: "doc", summary: "s", signals: [] }) }, "signals must be a non-empty array of strings", "空 signals");
 
     if (failures.length > 0) {
       for (const f of failures) console.log(`SELF-TEST FAIL: ${f}`);
@@ -185,7 +186,7 @@ function main(): number {
   }
   const entries = scanGenesSafe(repo);
   const manifest = { version: 1, genes: entries };
-  const out = path.join(repo, "manifest.json");
+  const out = stateManifest(repo);
   // 与 py json.dumps(ensure_ascii=False, indent=2)+"\n" 逐字节等价（夹具实测）。
   const text = JSON.stringify(manifest, null, 2) + "\n";
   if (fs.existsSync(out) && fs.readFileSync(out, "utf-8") === text) {

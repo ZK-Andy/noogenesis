@@ -3,7 +3,7 @@
   "genes": [
     {
       "ref": "doc/doc-budget-overflow",
-      "path": "genes/doc/doc-budget-overflow.json",
+      "path": ".noogenesis/genes/doc/doc-budget-overflow.json",
       "summary": "字数超限的处理序：迁移 → 精简 → 才允许提额度",
       "signals": [
         "字数超限",
@@ -14,7 +14,7 @@
     },
     {
       "ref": "doc/doc-single-home",
-      "path": "genes/doc/doc-single-home.json",
+      "path": ".noogenesis/genes/doc/doc-single-home.json",
       "summary": "每个事实只有一个家：rationale→ADR、踩坑→cookbook、方法→docs/method、规则→AGENTS",
       "signals": [
         "文档放哪",
@@ -25,7 +25,7 @@
     },
     {
       "ref": "gates/new-gene-curation",
-      "path": "genes/gates/new-gene-curation.json",
+      "path": ".noogenesis/genes/gates/new-gene-curation.json",
       "summary": "新基因只能人工策展进入：翻译 → evaluate 全绿 → solidify 原子入档",
       "signals": [
         "新增基因",
@@ -36,7 +36,7 @@
     },
     {
       "ref": "gates/push-precheck-order",
-      "path": "genes/gates/push-precheck-order.json",
+      "path": ".noogenesis/genes/gates/push-precheck-order.json",
       "summary": "push 前先用 change-scope 定 diff 面，再选最窄检查子集",
       "signals": [
         "push 前检查",
@@ -47,7 +47,7 @@
     },
     {
       "ref": "process/git-reconcile-extra-commits",
-      "path": "genes/process/git-reconcile-extra-commits.json",
+      "path": ".noogenesis/genes/process/git-reconcile-extra-commits.json",
       "summary": "HEAD 比 HANDOFF 多出提交时，先逐条查明再继续",
       "signals": [
         "git 对账",
@@ -58,7 +58,7 @@
     },
     {
       "ref": "process/history-rewrite-lease",
-      "path": "genes/process/history-rewrite-lease.json",
+      "path": ".noogenesis/genes/process/history-rewrite-lease.json",
       "summary": "改写历史只用 --force-with-lease=<branch>:<observed-oid>，改写后重新审计评审状态",
       "signals": [
         "force push",

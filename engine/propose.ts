@@ -1,15 +1,14 @@
 // propose.ts — 确定性渲染器（骨架 ADR D3）：gene → 注入文本，同输入必同输出。
-// 边界写死：propose 永不产生新基因、不触 LLM、零网络——只把已入档基因渲染为紧凑控制信号块。
+// 边界写死：propose 永不产生新基因、不触 LLM、零网络——只把已入档基因渲染为紧凑约束块
+// （signals 命中面由 select 负责，渲染只出约束与避开面）。
 
 import { EngineError } from './util.js';
 
 // 金样渲染（self-test 以精确字符串断言锁定；改这里必须同轮改金样）。
-function renderGene(gene: any) {
+// ref 取自扫描结果的 <domain>/<id>（调用方给），obj 是不带 ref 字段的基因正文。
+function renderGene(ref: string, gene: any) {
   const L: string[] = [];
-  L.push(`[noo-gene ${gene.domain}/${gene.id}] ${gene.summary}`);
-  L.push('');
-  L.push('strategy:');
-  gene.strategy.forEach((s: string, i: number) => L.push(`${i + 1}. ${s}`));
+  L.push(`[noo-gene ${ref}] ${gene.summary}`);
   if (gene.constraints) {
     L.push('');
     L.push('constraints:');

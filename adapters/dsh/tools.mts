@@ -107,7 +107,7 @@ export function registerNooTools(ctx: ToolHost, { defineTool, runEngine, repoRoo
 	register(defineTool({
 		name: "noo_propose",
 		description:
-			"Render a gene's deterministic injection text (strategy steps + constraints + AVOID). Deterministic: same input, same output. Read-only.",
+			"Render a gene's deterministic injection text (constraints + AVOID). Deterministic: same input, same output. Read-only.",
 		parameters: {
 			gene: { type: "string", description: 'Gene reference "<domain>/<id>", e.g. "process/git-reconcile-extra-commits".' },
 		},

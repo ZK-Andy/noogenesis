@@ -22,7 +22,8 @@ node_modules/
 # docs/research/evomap-evolver-engine-evolution.md，永不入库）
 /.research-mirror/
 
-# .noogenesis/ = 本地状态面（不入库）：genes-cache/ = P2 只读消费缓存
-# （ADR 2026-09-06-p2-shared-consumer）；observations/ = 观测输入面（可丢弃，
-# 丢了只丢观测权重——ADR 2026-09-11-memory-line-phase1-observation-face）
-/.noogenesis/
+# .noogenesis/ = 演化状态面：genes（含 genes-cache 消费缓存与状态原语）/events 等 tracked；
+# 只忽略可再生子面——genes-cache/（P2 只读消费缓存，ADR 2026-09-06-p2-shared-consumer）
+# 与 observations/（观测输入面，丢了只丢观测权重——ADR 2026-09-11-memory-line-phase1）。
+/.noogenesis/genes-cache/
+/.noogenesis/observations/

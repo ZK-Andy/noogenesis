@@ -4,9 +4,9 @@
  * .agents/notes/implemented/architecture/2026-09-05-gene-event-schema.md）。
  *
  * 判据（仓库根，默认 cwd；--repo 可指根）：
- * - genes/<domain>/<id>.json（S1 — 封闭八字段 schema，镜像 engine/gene.js）：
+ * - 状态 genes/<domain>/<id>.json（S1 — 封闭七字段 schema，镜像 engine/gene.ts）：
  *   id/domain kebab-case 且分别等于文件名 stem 与父目录名；summary 非空；
- *   signals/strategy 为 ≥1 项字符串数组；constraints 可选非空对象（键封闭：
+ *   signals 为 ≥1 项字符串数组；constraints 可选非空对象（键封闭：
  *   max_files 正整数 / forbidden_paths 非空字符串数组）；validation 可选（kebab
  *   闸名且必须在 engine/gates.json 白名单内）；avoid 可选字符串数组（空数组违约，
  *   应省略字段）；id 全树唯一（引用不歧义）；布局封闭 genes/<domain>/<id>.json。
@@ -67,6 +67,7 @@ import * as os from "node:os";
 import * as crypto from "node:crypto";
 import { pyStrip, splitLines, pyRepr, pyStr, pyNorm, pyJoin, segCompare, pyStem, readTextFatal, pyOsErrMsg, pyJSONParse, pyDumps, pyFromIso, MS_PER_DAY, KEBAB_RE } from "./pypara.mts";
 import type { JSONVal } from "./pypara.mts";
+import { STATE_ROOT } from "./state.mts";
 
 const SHA_RE = /^[0-9a-f]{64}$/;
 const VOL_RE = /^(\d{4}-\d{2})\.jsonl$/;
@@ -101,7 +102,7 @@ function optionalEventKeysFor(kind: string): string[] {
   return GENE_EVENT_OPTIONAL_LIST;
 }
 const KNOWN_GENE_FIELDS = new Set([
-  "id", "domain", "summary", "signals", "strategy", "constraints", "validation", "avoid",
+  "id", "domain", "summary", "signals", "constraints", "validation", "avoid",
 ]);
 const KNOWN_CAPSULE_FIELDS = new Set([
   "id", "domain", "gene_ids", "trigger", "steps", "outcome", "evidence",
@@ -154,7 +155,7 @@ function checkGene(data: JSONVal, rel: string, stem: string, parent: string, whi
   if (!(typeof summary === "string" && pyStrip(summary) !== "")) {
     errors.push(`${rel}: summary must be a non-empty string`);
   }
-  for (const [field, minimum] of [["signals", 1], ["strategy", 1]] as const) {
+  for (const [field, minimum] of [["signals", 1]] as const) {
     const v = data[field];
     if (!Array.isArray(v) || !v.every((x) => typeof x === "string")) {
       errors.push(`${rel}: ${field} must be an array of strings`);
@@ -550,23 +551,23 @@ function scan(base: string): { checked: number; errors: string[] } {
   // genes / capsules / mutations / candidates：布局封闭 + 协议面 + 跨域 id 唯一同形；
   // candidates 复用基因校验器、无事件轨（distill add 不发事件）故无复算面。
   const genes = scanFace(base, {
-    dir: "genes", noun: "gene",
+    dir: STATE_ROOT + "/genes", noun: "gene",
     check: (data, rel, stem, parent) => checkGene(data, rel, stem, parent, wl.names),
   }, errors);
   checked += genes.count;
 
   const capsules = scanFace(base, {
-    dir: "capsules", noun: "capsule", check: checkCapsule,
+    dir: STATE_ROOT + "/capsules", noun: "capsule", check: checkCapsule,
   }, errors);
   checked += capsules.count;
 
   const mutations = scanFace(base, {
-    dir: "mutations", noun: "mutation", check: checkMutation,
+    dir: STATE_ROOT + "/mutations", noun: "mutation", check: checkMutation,
   }, errors);
   checked += mutations.count;
 
   checked += scanFace(base, {
-    dir: "candidates", noun: "candidate",
+    dir: STATE_ROOT + "/candidates", noun: "candidate",
     check: (data, rel, stem, parent) => checkGene(data, rel, stem, parent, wl.names),
   }, errors).count;
 
@@ -574,13 +575,13 @@ function scan(base: string): { checked: number; errors: string[] } {
   const perGene = new Map<JSONVal, EventRow[]>();
   const perCapsule = new Map<JSONVal, EventRow[]>();
   const perMutation = new Map<JSONVal, EventRow[]>();
-  const eventsPath = pyJoin(base, ["events"]);
+  const eventsPath = pyJoin(base, [STATE_ROOT, "events"]);
   const eventsIsDir = fs.existsSync(eventsPath) && fs.statSync(eventsPath).isDirectory();
   const volumes: Array<[string, EventRow[]]> = [];
   if (eventsIsDir) {
     const volNames = fs.readdirSync(eventsPath).filter((n) => n.endsWith(".jsonl")).sort();
     for (const name of volNames) {
-      const vol = pyJoin(base, ["events", name]);
+      const vol = pyJoin(base, [STATE_ROOT, "events", name]);
       const rows = checkEvents(vol, vol, errors);
       checked += rows.length;
       volumes.push([vol, rows]);
@@ -628,7 +629,7 @@ function scan(base: string): { checked: number; errors: string[] } {
   // 复算规则分型（S2）：retired 划段；段内 ok 的 added/updated 对工作树复算；
   // fail 事件只查结构不作复算（被拒候选内容 ≠ 工作树状态）
   for (const [gid, evs] of perGene) {
-    const candidates = domainCopies("genes", genes.dirPath, genes.isDir, gid);
+    const candidates = domainCopies(STATE_ROOT + "/genes", genes.dirPath, genes.isDir, gid);
     if (candidates.length > 1) {
       errors.push(`gene id '${pyStr(gid)}' present in multiple domains: ${candidates.map((c) => c.join("/")).join(", ")}`);
     }
@@ -670,12 +671,12 @@ function scan(base: string): { checked: number; errors: string[] } {
   // 两原语 append-only，无 retire/update 段。
   recomputeAppendOnly(base, capsules, {
     noun: "capsule", eventKind: "capsule.added", shaKey: "capsule_sha",
-    sealHint: "capsules/ changes must go through capsule add",
+    sealHint: ".noogenesis/capsules/ changes must go through capsule add",
     trailHint: "capsule has no event trail — record capsules only via capsule add",
   }, perCapsule, errors);
   recomputeAppendOnly(base, mutations, {
     noun: "mutation", eventKind: "mutation.added", shaKey: "mutation_sha",
-    sealHint: "mutations/ changes must go through mutation add",
+    sealHint: ".noogenesis/mutations/ changes must go through mutation add",
     trailHint: "mutation has no event trail — declare mutations only via mutation add",
   }, perMutation, errors);
 
@@ -712,7 +713,7 @@ function scan(base: string): { checked: number; errors: string[] } {
     for (const ref of refs) {
       if (typeof ref !== "string") continue;
       const [rd, ri] = ref.split("/");
-      const live = fs.existsSync(pyJoin(base, ["genes", rd ?? "", `${ri ?? ""}.json`]));
+      const live = fs.existsSync(pyJoin(base, [STATE_ROOT, "genes", rd ?? "", `${ri ?? ""}.json`]));
       if (!live && !everPlaced.has(ri ?? "")) {
         errors.push(`${pyJoin(base, rel)}: capsule references gene '${ref}' never placed in genes/`);
       }
@@ -736,7 +737,6 @@ function geneDoc(gid = "sample-gene", domain = "process", over: { [key: string]:
     domain,
     summary: "one-line",
     signals: ["push"],
-    strategy: ["step"],
   };
   Object.assign(doc, over);
   return `${pyDumps(doc, 2)}\n`;
@@ -813,7 +813,7 @@ function shaOf(t: string, rel: string): string {
 function linkedEventLine(t: string, over: { [key: string]: JSONVal }, ts = "2026-09-05T02:00:00Z"): string {
   const fields: { [key: string]: JSONVal } = {
     ts, actor: "t", kind: "gene.added", gene: "sample-gene",
-    gene_sha: shaOf(t, "genes/process/sample-gene.json"), outcome: "ok", evidence: "e",
+    gene_sha: shaOf(t, ".noogenesis/genes/process/sample-gene.json"), outcome: "ok", evidence: "e",
   };
   Object.assign(fields, over);
   return pyDumps(fields, null);
@@ -821,22 +821,22 @@ function linkedEventLine(t: string, over: { [key: string]: JSONVal }, ts = "2026
 
 function selfTest(): number {
   const WHITELIST = '{"version": 1, "gates": [{"name": "stub", "cmd": "python3", "args": ["scripts/stub.py"]}]}';
-  const fileSha = (t: string): string => shaOf(t, "genes/process/sample-gene.json");
+  const fileSha = (t: string): string => shaOf(t, ".noogenesis/genes/process/sample-gene.json");
   // [tree-builder, expected_violation_substrings, desc]
   const cases: Array<[(t: string) => void, string[], string]> = [];
 
   const conforming = (t: string): void => {
     mk(t, "engine/gates.json", WHITELIST);
     mk(t, "scripts/stub.py", "print('ok')\n");
-    mk(t, "genes/process/sample-gene.json", geneDoc("sample-gene", "process", { validation: ["stub"] }));
+    mk(t, ".noogenesis/genes/process/sample-gene.json", geneDoc("sample-gene", "process", { validation: ["stub"] }));
     // sha 占位，下方替换为真值
-    mk(t, "events/2026-09.jsonl", `${eventLine()}\n`);
+    mk(t, ".noogenesis/events/2026-09.jsonl", `${eventLine()}\n`);
   };
   const fixSha = (t: string): void => {
     // 让事件 sha 与文件一致（conforming 用）
     fs.writeFileSync(
-      path.join(t, "events", "2026-09.jsonl"),
-      `${eventLine("gene.added", "sample-gene", shaOf(t, "genes/process/sample-gene.json"))}\n`,
+      path.join(t, ".noogenesis/events", "2026-09.jsonl"),
+      `${eventLine("gene.added", "sample-gene", shaOf(t, ".noogenesis/genes/process/sample-gene.json"))}\n`,
     );
   };
 
@@ -845,7 +845,7 @@ function selfTest(): number {
   cases.push([
     (t) => {
       conforming(t); fixSha(t);
-      mk(t, "genes/process/other-name.json", geneDoc()); // id 与文件名不一致
+      mk(t, ".noogenesis/genes/process/other-name.json", geneDoc()); // id 与文件名不一致
     },
     ["must equal filename"], "id != filename -> fail",
   ]);
@@ -853,9 +853,9 @@ function selfTest(): number {
   cases.push([
     (t) => {
       conforming(t); fixSha(t);
-      fs.unlinkSync(path.join(t, "genes", "process", "sample-gene.json"));
-      mk(t, "genes/doc/sample-gene.json", geneDoc("sample-gene", "process"));
-      fs.unlinkSync(path.join(t, "events", "2026-09.jsonl"));
+      fs.unlinkSync(path.join(t, ".noogenesis/genes", "process", "sample-gene.json"));
+      mk(t, ".noogenesis/genes/doc/sample-gene.json", geneDoc("sample-gene", "process"));
+      fs.unlinkSync(path.join(t, ".noogenesis/events", "2026-09.jsonl"));
       // doc 域文件 + 无事件 → 事件轨缺失亦报；只断言域锚点违约出现
     },
     ["must equal its directory"], "domain != dir -> fail",
@@ -864,7 +864,7 @@ function selfTest(): number {
   cases.push([
     (t) => {
       conforming(t); fixSha(t);
-      mk(t, "genes/process/sample-gene.json", geneDoc("sample-gene", "process", { mutation_id: "m1" }));
+      mk(t, ".noogenesis/genes/process/sample-gene.json", geneDoc("sample-gene", "process", { mutation_id: "m1" }));
     },
     ["unknown field: mutation_id"], "unknown field -> fail",
   ]);
@@ -872,7 +872,7 @@ function selfTest(): number {
   cases.push([
     (t) => {
       conforming(t); fixSha(t);
-      mk(t, "genes/process/sample-gene.json", geneDoc("sample-gene", "process", { validation: ["ghost"] }));
+      mk(t, ".noogenesis/genes/process/sample-gene.json", geneDoc("sample-gene", "process", { validation: ["ghost"] }));
     },
     ["not in the whitelist"], "validation outside whitelist -> fail",
   ]);
@@ -880,7 +880,7 @@ function selfTest(): number {
   cases.push([
     (t) => {
       mk(t, "engine/gates.json", '{"version": 1, "gates": [{"name": "stub", "cmd": "python3", "args": ["scripts/ghost.py"]}]}');
-      mk(t, "genes/process/sample-gene.json", geneDoc());
+      mk(t, ".noogenesis/genes/process/sample-gene.json", geneDoc());
     },
     ["referenced script does not exist"], "whitelist script missing -> fail",
   ]);
@@ -888,7 +888,7 @@ function selfTest(): number {
   cases.push([
     (t) => {
       conforming(t); fixSha(t);
-      mk(t, "events/2026-09.jsonl",
+      mk(t, ".noogenesis/events/2026-09.jsonl",
         `${eventLine("gene.added", "sample-gene", fileSha(t))}\n`
         + `${eventLine("gene.mutated", "sample-gene", "b".repeat(64))}\n`);
     },
@@ -898,7 +898,7 @@ function selfTest(): number {
   cases.push([
     (t) => {
       conforming(t); fixSha(t);
-      mk(t, "genes/process/sample-gene.json", geneDoc("sample-gene", "process", { summary: "edited by hand" }));
+      mk(t, ".noogenesis/genes/process/sample-gene.json", geneDoc("sample-gene", "process", { summary: "edited by hand" }));
     },
     ["gene_sha mismatch"], "worktree edit without solidify -> fail",
   ]);
@@ -906,7 +906,7 @@ function selfTest(): number {
   cases.push([
     (t) => {
       conforming(t); fixSha(t);
-      mk(t, "events/2026-09.jsonl",
+      mk(t, ".noogenesis/events/2026-09.jsonl",
         `${eventLine("gene.added", "sample-gene", fileSha(t))}\n`
         + `${eventLine("gene.retired", "sample-gene", "c".repeat(64))}\n`);
     },
@@ -916,7 +916,7 @@ function selfTest(): number {
   cases.push([
     (t) => {
       conforming(t); fixSha(t);
-      mk(t, "events/2026-09.jsonl",
+      mk(t, ".noogenesis/events/2026-09.jsonl",
         `${eventLine("gene.added", "sample-gene", fileSha(t))}\n`
         + `${eventLine("gene.added", "sample-gene", fileSha(t), "ok", "2026-09-05T00:00:00Z")}\n`);
     },
@@ -927,7 +927,7 @@ function selfTest(): number {
     (t) => {
       mk(t, "engine/gates.json", WHITELIST);
       mk(t, "scripts/stub.py", "print('ok')\n");
-      mk(t, "genes/process/sample-gene.json", geneDoc());
+      mk(t, ".noogenesis/genes/process/sample-gene.json", geneDoc());
     },
     ["no event trail"], "gene without events -> fail",
   ]);
@@ -935,7 +935,7 @@ function selfTest(): number {
   cases.push([
     (t) => {
       conforming(t); fixSha(t);
-      mk(t, "events/2026-09.jsonl", `${eventLine("gene.added", "sample-gene", null, "rejected")}\n`);
+      mk(t, ".noogenesis/events/2026-09.jsonl", `${eventLine("gene.added", "sample-gene", null, "rejected")}\n`);
     },
     ["outcome must be"], "outcome neither ok nor fail: -> fail",
   ]);
@@ -943,7 +943,7 @@ function selfTest(): number {
   cases.push([
     (t) => {
       conforming(t); fixSha(t);
-      mk(t, "events/2026-08.jsonl",
+      mk(t, ".noogenesis/events/2026-08.jsonl",
         `${eventLine("gene.added", "sample-gene", fileSha(t), "ok", "2026-07-01T00:00:00Z")}\n`);
     },
     ["outside volume month"], "ts far outside volume month -> fail",
@@ -953,7 +953,7 @@ function selfTest(): number {
   cases.push([
     (t) => {
       conforming(t); fixSha(t);
-      mk(t, "events/2026-09.jsonl",
+      mk(t, ".noogenesis/events/2026-09.jsonl",
         `${eventLine("gene.added", "sample-gene", fileSha(t))}\n`
         + `${eventLine("gene.updated", "sample-gene", "d".repeat(64), "fail: stub-fail exit 1")}\n`);
     },
@@ -964,7 +964,7 @@ function selfTest(): number {
     (t) => {
       mk(t, "engine/gates.json", WHITELIST);
       mk(t, "scripts/stub.py", "print('ok')\n");
-      mk(t, "events/2026-09.jsonl",
+      mk(t, ".noogenesis/events/2026-09.jsonl",
         `${eventLine("gene.added", "never-kept", "e".repeat(64), "fail: stub-fail exit 1")}\n`);
     },
     [], "rejected-only candidate (no file) -> pass",
@@ -975,9 +975,9 @@ function selfTest(): number {
     (t) => {
       mk(t, "engine/gates.json", WHITELIST);
       mk(t, "scripts/stub.py", "print('ok')\n");
-      mk(t, "genes/loose.json", geneDoc("sample-gene", "genes"));
+      mk(t, ".noogenesis/genes/loose.json", geneDoc("sample-gene", "genes"));
     },
-    ["genes/<domain>/<id>.json layout"], "flat gene file -> fail",
+    [".noogenesis/genes/<domain>/<id>.json layout"], "flat gene file -> fail",
   ]);
 
   // 夹具：跨卷 ts 乱序（月界 ±1 天容差内仍须可辨）
@@ -985,8 +985,8 @@ function selfTest(): number {
     (t) => {
       conforming(t); fixSha(t);
       const sha = fileSha(t);
-      mk(t, "events/2026-09.jsonl", `${eventLine("gene.added", "sample-gene", sha, "ok", "2026-10-01T00:00:00Z")}\n`);
-      mk(t, "events/2026-10.jsonl", `${eventLine("gene.added", "sample-gene", sha, "ok", "2026-09-30T00:00:00Z")}\n`);
+      mk(t, ".noogenesis/events/2026-09.jsonl", `${eventLine("gene.added", "sample-gene", sha, "ok", "2026-10-01T00:00:00Z")}\n`);
+      mk(t, ".noogenesis/events/2026-10.jsonl", `${eventLine("gene.added", "sample-gene", sha, "ok", "2026-09-30T00:00:00Z")}\n`);
     },
     ["cross-volume disorder"], "next volume starts before previous ends -> fail",
   ]);
@@ -995,21 +995,21 @@ function selfTest(): number {
   const capsuleTree = (t: string): void => {
     mk(t, "engine/gates.json", WHITELIST);
     mk(t, "scripts/stub.py", "print('ok')\n");
-    mk(t, "genes/process/sample-gene.json", geneDoc());
-    mk(t, "capsules/process/sample-capsule.json", capsuleDoc());
-    mk(t, "events/2026-09.jsonl",
-      `${eventLine("gene.added", "sample-gene", shaOf(t, "genes/process/sample-gene.json"))}\n`
-      + `${capsuleEventLine("sample-capsule", shaOf(t, "capsules/process/sample-capsule.json"))}\n`);
+    mk(t, ".noogenesis/genes/process/sample-gene.json", geneDoc());
+    mk(t, ".noogenesis/capsules/process/sample-capsule.json", capsuleDoc());
+    mk(t, ".noogenesis/events/2026-09.jsonl",
+      `${eventLine("gene.added", "sample-gene", shaOf(t, ".noogenesis/genes/process/sample-gene.json"))}\n`
+      + `${capsuleEventLine("sample-capsule", shaOf(t, ".noogenesis/capsules/process/sample-capsule.json"))}\n`);
   };
-  const capsuleSha = (t: string): string => shaOf(t, "capsules/process/sample-capsule.json");
+  const capsuleSha = (t: string): string => shaOf(t, ".noogenesis/capsules/process/sample-capsule.json");
 
   cases.push([capsuleTree, [], "capsule conforming tree -> pass"]);
 
   cases.push([
     (t) => {
       capsuleTree(t);
-      mk(t, "capsules/process/sample-capsule.json", capsuleDoc("sample-capsule", "process", { mutation_id: "m1" }));
-      mk(t, "events/2026-09.jsonl", `${capsuleEventLine("sample-capsule")}\n`);
+      mk(t, ".noogenesis/capsules/process/sample-capsule.json", capsuleDoc("sample-capsule", "process", { mutation_id: "m1" }));
+      mk(t, ".noogenesis/events/2026-09.jsonl", `${capsuleEventLine("sample-capsule")}\n`);
     },
     ["unknown field: mutation_id"], "capsule unknown field -> fail",
   ]);
@@ -1017,8 +1017,8 @@ function selfTest(): number {
   cases.push([
     (t) => {
       capsuleTree(t);
-      mk(t, "capsules/process/sample-capsule.json", capsuleDoc("sample-capsule", "process", { outcome: { status: "fail" } }));
-      mk(t, "events/2026-09.jsonl", `${capsuleEventLine("sample-capsule")}\n`);
+      mk(t, ".noogenesis/capsules/process/sample-capsule.json", capsuleDoc("sample-capsule", "process", { outcome: { status: "fail" } }));
+      mk(t, ".noogenesis/events/2026-09.jsonl", `${capsuleEventLine("sample-capsule")}\n`);
     },
     ["outcome.reason must be a non-empty string"], "capsule fail without reason -> fail",
   ]);
@@ -1026,8 +1026,8 @@ function selfTest(): number {
   cases.push([
     (t) => {
       capsuleTree(t);
-      mk(t, "capsules/process/sample-capsule.json", capsuleDoc("sample-capsule", "process", { gene_ids: ["process/no-such-gene"] }));
-      mk(t, "events/2026-09.jsonl", `${capsuleEventLine("sample-capsule")}\n`);
+      mk(t, ".noogenesis/capsules/process/sample-capsule.json", capsuleDoc("sample-capsule", "process", { gene_ids: ["process/no-such-gene"] }));
+      mk(t, ".noogenesis/events/2026-09.jsonl", `${capsuleEventLine("sample-capsule")}\n`);
     },
     ["capsule references gene 'process/no-such-gene' never placed in genes/"], "capsule dangling gene ref -> fail",
   ]);
@@ -1036,9 +1036,9 @@ function selfTest(): number {
   cases.push([
     (t) => {
       capsuleTree(t);
-      const geneSha = shaOf(t, "genes/process/sample-gene.json");
-      fs.unlinkSync(path.join(t, "genes", "process", "sample-gene.json"));
-      mk(t, "events/2026-09.jsonl",
+      const geneSha = shaOf(t, ".noogenesis/genes/process/sample-gene.json");
+      fs.unlinkSync(path.join(t, ".noogenesis/genes", "process", "sample-gene.json"));
+      mk(t, ".noogenesis/events/2026-09.jsonl",
         `${eventLine("gene.added", "sample-gene", geneSha)}\n`
         + `${capsuleEventLine("sample-capsule", capsuleSha(t))}\n`
         + `${eventLine("gene.retired", "sample-gene", geneSha, "ok", "2026-09-05T03:00:00Z")}\n`);
@@ -1049,7 +1049,7 @@ function selfTest(): number {
   cases.push([
     (t) => {
       capsuleTree(t);
-      fs.unlinkSync(path.join(t, "capsules", "process", "sample-capsule.json"));
+      fs.unlinkSync(path.join(t, ".noogenesis/capsules", "process", "sample-capsule.json"));
     },
     ["accepted event but no worktree file"], "capsule event without file -> fail",
   ]);
@@ -1057,8 +1057,8 @@ function selfTest(): number {
   cases.push([
     (t) => {
       capsuleTree(t);
-      mk(t, "events/2026-09.jsonl",
-        `${eventLine("gene.added", "sample-gene", shaOf(t, "genes/process/sample-gene.json"))}\n`
+      mk(t, ".noogenesis/events/2026-09.jsonl",
+        `${eventLine("gene.added", "sample-gene", shaOf(t, ".noogenesis/genes/process/sample-gene.json"))}\n`
         + `${capsuleEventLine("sample-capsule", capsuleSha(t), "fail: gates red")}\n`);
     },
     ["no accepted capsule.added event but the file exists"], "capsule file without ok event -> fail",
@@ -1067,9 +1067,9 @@ function selfTest(): number {
   cases.push([
     (t) => {
       capsuleTree(t);
-      mk(t, "capsules/doc/sample-capsule.json", capsuleDoc("sample-capsule", "doc"));
-      mk(t, "events/2026-09.jsonl",
-        `${eventLine("gene.added", "sample-gene", shaOf(t, "genes/process/sample-gene.json"))}\n`
+      mk(t, ".noogenesis/capsules/doc/sample-capsule.json", capsuleDoc("sample-capsule", "doc"));
+      mk(t, ".noogenesis/events/2026-09.jsonl",
+        `${eventLine("gene.added", "sample-gene", shaOf(t, ".noogenesis/genes/process/sample-gene.json"))}\n`
         + `${capsuleEventLine("sample-capsule", capsuleSha(t))}\n`
         + `${capsuleEventLine("sample-capsule", "f".repeat(64), "ok", "2026-09-05T03:00:00Z")}\n`);
     },
@@ -1079,8 +1079,8 @@ function selfTest(): number {
   cases.push([
     (t) => {
       capsuleTree(t);
-      mk(t, "capsules/process/sample-capsule.json", capsuleDoc("sample-capsule", "process", { gene_ids: [] }));
-      mk(t, "events/2026-09.jsonl", `${capsuleEventLine("sample-capsule")}\n`);
+      mk(t, ".noogenesis/capsules/process/sample-capsule.json", capsuleDoc("sample-capsule", "process", { gene_ids: [] }));
+      mk(t, ".noogenesis/events/2026-09.jsonl", `${capsuleEventLine("sample-capsule")}\n`);
     },
     ["gene_ids must have at least 1 item(s)"], "capsule empty gene_ids -> fail",
   ]);
@@ -1088,8 +1088,8 @@ function selfTest(): number {
   cases.push([
     (t) => {
       capsuleTree(t);
-      mk(t, "capsules/process/sample-capsule.json", capsuleDoc("sample-capsule", "process", { outcome: { status: "ok", reason: "why" } }));
-      mk(t, "events/2026-09.jsonl", `${capsuleEventLine("sample-capsule")}\n`);
+      mk(t, ".noogenesis/capsules/process/sample-capsule.json", capsuleDoc("sample-capsule", "process", { outcome: { status: "ok", reason: "why" } }));
+      mk(t, ".noogenesis/events/2026-09.jsonl", `${capsuleEventLine("sample-capsule")}\n`);
     },
     ["outcome.reason is only for status fail"], "capsule ok carrying reason -> fail",
   ]);
@@ -1098,16 +1098,16 @@ function selfTest(): number {
     (t) => {
       mk(t, "engine/gates.json", WHITELIST);
       mk(t, "scripts/stub.py", "print('ok')\n");
-      mk(t, "genes/process/sample-gene.json", geneDoc());
-      mk(t, "capsules/loose.json", capsuleDoc());
+      mk(t, ".noogenesis/genes/process/sample-gene.json", geneDoc());
+      mk(t, ".noogenesis/capsules/loose.json", capsuleDoc());
     },
-    ["capsules/<domain>/<id>.json layout"], "flat capsule file -> fail",
+    [".noogenesis/capsules/<domain>/<id>.json layout"], "flat capsule file -> fail",
   ]);
 
   cases.push([
     (t) => {
       capsuleTree(t);
-      mk(t, "capsules/process/Bad_ID.json", capsuleDoc("Bad_ID", "process"));
+      mk(t, ".noogenesis/capsules/process/Bad_ID.json", capsuleDoc("Bad_ID", "process"));
     },
     ["id must be kebab-case string"], "capsule id non-kebab -> fail",
   ]);
@@ -1115,7 +1115,7 @@ function selfTest(): number {
   cases.push([
     (t) => {
       capsuleTree(t);
-      mk(t, "capsules/process/sample-capsule.json", capsuleDoc("sample-capsule", "process", { evidence: ["edited by hand"] }));
+      mk(t, ".noogenesis/capsules/process/sample-capsule.json", capsuleDoc("sample-capsule", "process", { evidence: ["edited by hand"] }));
     },
     ["capsule_sha mismatch"], "capsule worktree edit without capsule add -> fail",
   ]);
@@ -1124,8 +1124,8 @@ function selfTest(): number {
     (t) => {
       mk(t, "engine/gates.json", WHITELIST);
       mk(t, "scripts/stub.py", "print('ok')\n");
-      mk(t, "genes/process/sample-gene.json", geneDoc());
-      mk(t, "capsules/process/sample-capsule.json", capsuleDoc());
+      mk(t, ".noogenesis/genes/process/sample-gene.json", geneDoc());
+      mk(t, ".noogenesis/capsules/process/sample-capsule.json", capsuleDoc());
     },
     ["capsule has no event trail"], "capsule without events -> fail",
   ]);
@@ -1133,8 +1133,8 @@ function selfTest(): number {
   cases.push([
     (t) => {
       capsuleTree(t);
-      mk(t, "events/2026-09.jsonl",
-        `${eventLine("gene.added", "sample-gene", shaOf(t, "genes/process/sample-gene.json"))}\n`
+      mk(t, ".noogenesis/events/2026-09.jsonl",
+        `${eventLine("gene.added", "sample-gene", shaOf(t, ".noogenesis/genes/process/sample-gene.json"))}\n`
         + `${eventLine("capsule.added", "sample-capsule", capsuleSha(t), "ok", "2026-09-05T02:00:00Z")}\n`);
     },
     ["event fields must be exactly"], "capsule event carrying gene keys -> fail",
@@ -1143,7 +1143,7 @@ function selfTest(): number {
   cases.push([
     (t) => {
       capsuleTree(t);
-      mk(t, "capsules/process/sample-capsule.json", capsuleDoc("sample-capsule", "doc"));
+      mk(t, ".noogenesis/capsules/process/sample-capsule.json", capsuleDoc("sample-capsule", "doc"));
     },
     ["must equal its directory"], "capsule domain != dir -> fail",
   ]);
@@ -1152,19 +1152,19 @@ function selfTest(): number {
   const mutationTree = (t: string): void => {
     mk(t, "engine/gates.json", WHITELIST);
     mk(t, "scripts/stub.py", "print('ok')\n");
-    mk(t, "mutations/process/sample-mutation.json", mutationDoc());
-    mk(t, "events/2026-09.jsonl",
-      `${mutationEventLine("sample-mutation", shaOf(t, "mutations/process/sample-mutation.json"))}\n`);
+    mk(t, ".noogenesis/mutations/process/sample-mutation.json", mutationDoc());
+    mk(t, ".noogenesis/events/2026-09.jsonl",
+      `${mutationEventLine("sample-mutation", shaOf(t, ".noogenesis/mutations/process/sample-mutation.json"))}\n`);
   };
-  const mutationSha = (t: string): string => shaOf(t, "mutations/process/sample-mutation.json");
+  const mutationSha = (t: string): string => shaOf(t, ".noogenesis/mutations/process/sample-mutation.json");
 
   cases.push([mutationTree, [], "mutation conforming tree -> pass"]);
 
   cases.push([
     (t) => {
       mutationTree(t);
-      mk(t, "mutations/process/sample-mutation.json", mutationDoc("sample-mutation", "process", { gene_ids: ["process/sample-gene"] }));
-      mk(t, "events/2026-09.jsonl", `${mutationEventLine("sample-mutation")}\n`);
+      mk(t, ".noogenesis/mutations/process/sample-mutation.json", mutationDoc("sample-mutation", "process", { gene_ids: ["process/sample-gene"] }));
+      mk(t, ".noogenesis/events/2026-09.jsonl", `${mutationEventLine("sample-mutation")}\n`);
     },
     ["unknown field: gene_ids"], "mutation unknown field -> fail",
   ]);
@@ -1172,8 +1172,8 @@ function selfTest(): number {
   cases.push([
     (t) => {
       mutationTree(t);
-      mk(t, "mutations/process/sample-mutation.json", mutationDoc("sample-mutation", "process", { risk_level: "catastrophic" }));
-      mk(t, "events/2026-09.jsonl", `${mutationEventLine("sample-mutation")}\n`);
+      mk(t, ".noogenesis/mutations/process/sample-mutation.json", mutationDoc("sample-mutation", "process", { risk_level: "catastrophic" }));
+      mk(t, ".noogenesis/events/2026-09.jsonl", `${mutationEventLine("sample-mutation")}\n`);
     },
     ["risk_level must be one of low|medium|high"], "mutation risk_level outside closed set -> fail",
   ]);
@@ -1181,8 +1181,8 @@ function selfTest(): number {
   cases.push([
     (t) => {
       mutationTree(t);
-      mk(t, "mutations/process/sample-mutation.json", mutationDoc("sample-mutation", "process", { category: "  " }));
-      mk(t, "events/2026-09.jsonl", `${mutationEventLine("sample-mutation")}\n`);
+      mk(t, ".noogenesis/mutations/process/sample-mutation.json", mutationDoc("sample-mutation", "process", { category: "  " }));
+      mk(t, ".noogenesis/events/2026-09.jsonl", `${mutationEventLine("sample-mutation")}\n`);
     },
     ["category must be a non-empty string"], "mutation blank category -> fail",
   ]);
@@ -1190,9 +1190,9 @@ function selfTest(): number {
   cases.push([
     (t) => {
       mutationTree(t);
-      mk(t, "mutations/process/sample-mutation.json",
+      mk(t, ".noogenesis/mutations/process/sample-mutation.json",
         `${pyDumps({ id: "sample-mutation", domain: "process", category: "refactor", target: "engine/bin.ts", risk_level: "low" }, 2)}\n`);
-      mk(t, "events/2026-09.jsonl", `${mutationEventLine("sample-mutation")}\n`);
+      mk(t, ".noogenesis/events/2026-09.jsonl", `${mutationEventLine("sample-mutation")}\n`);
     },
     ["expected_effect must be a non-empty string"], "mutation missing expected_effect -> fail",
   ]);
@@ -1200,7 +1200,7 @@ function selfTest(): number {
   cases.push([
     (t) => {
       mutationTree(t);
-      fs.unlinkSync(path.join(t, "mutations", "process", "sample-mutation.json"));
+      fs.unlinkSync(path.join(t, ".noogenesis/mutations", "process", "sample-mutation.json"));
     },
     ["accepted event but no worktree file"], "mutation event without file -> fail",
   ]);
@@ -1208,7 +1208,7 @@ function selfTest(): number {
   cases.push([
     (t) => {
       mutationTree(t);
-      mk(t, "events/2026-09.jsonl", `${mutationEventLine("sample-mutation", mutationSha(t), "fail: superseded")}\n`);
+      mk(t, ".noogenesis/events/2026-09.jsonl", `${mutationEventLine("sample-mutation", mutationSha(t), "fail: superseded")}\n`);
     },
     ["no accepted mutation.added event but the file exists"], "mutation file without ok event -> fail",
   ]);
@@ -1216,7 +1216,7 @@ function selfTest(): number {
   cases.push([
     (t) => {
       mutationTree(t);
-      mk(t, "events/2026-09.jsonl",
+      mk(t, ".noogenesis/events/2026-09.jsonl",
         `${mutationEventLine("sample-mutation", mutationSha(t))}\n`
         + `${mutationEventLine("sample-mutation", "f".repeat(64), "ok", "2026-09-05T03:00:00Z")}\n`);
     },
@@ -1227,7 +1227,7 @@ function selfTest(): number {
     (t) => {
       mk(t, "engine/gates.json", WHITELIST);
       mk(t, "scripts/stub.py", "print('ok')\n");
-      mk(t, "mutations/process/sample-mutation.json", mutationDoc());
+      mk(t, ".noogenesis/mutations/process/sample-mutation.json", mutationDoc());
     },
     ["mutation has no event trail"], "mutation without events -> fail",
   ]);
@@ -1235,8 +1235,8 @@ function selfTest(): number {
   cases.push([
     (t) => {
       mutationTree(t);
-      mk(t, "mutations/doc/sample-mutation.json", mutationDoc("sample-mutation", "doc"));
-      mk(t, "events/2026-09.jsonl",
+      mk(t, ".noogenesis/mutations/doc/sample-mutation.json", mutationDoc("sample-mutation", "doc"));
+      mk(t, ".noogenesis/events/2026-09.jsonl",
         `${mutationEventLine("sample-mutation", mutationSha(t))}\n`
         + `${mutationEventLine("sample-mutation", "f".repeat(64), "ok", "2026-09-05T03:00:00Z")}\n`);
     },
@@ -1247,15 +1247,15 @@ function selfTest(): number {
     (t) => {
       mk(t, "engine/gates.json", WHITELIST);
       mk(t, "scripts/stub.py", "print('ok')\n");
-      mk(t, "mutations/loose.json", mutationDoc());
+      mk(t, ".noogenesis/mutations/loose.json", mutationDoc());
     },
-    ["mutations/<domain>/<id>.json layout"], "flat mutation file -> fail",
+    [".noogenesis/mutations/<domain>/<id>.json layout"], "flat mutation file -> fail",
   ]);
 
   cases.push([
     (t) => {
       mutationTree(t);
-      mk(t, "mutations/process/Bad_ID.json", mutationDoc("Bad_ID", "process"));
+      mk(t, ".noogenesis/mutations/process/Bad_ID.json", mutationDoc("Bad_ID", "process"));
     },
     ["id must be kebab-case string"], "mutation id non-kebab -> fail",
   ]);
@@ -1263,7 +1263,7 @@ function selfTest(): number {
   cases.push([
     (t) => {
       mutationTree(t);
-      mk(t, "mutations/process/sample-mutation.json", mutationDoc("sample-mutation", "doc"));
+      mk(t, ".noogenesis/mutations/process/sample-mutation.json", mutationDoc("sample-mutation", "doc"));
     },
     ["must equal its directory"], "mutation domain != dir -> fail",
   ]);
@@ -1271,7 +1271,7 @@ function selfTest(): number {
   cases.push([
     (t) => {
       mutationTree(t);
-      mk(t, "events/2026-09.jsonl",
+      mk(t, ".noogenesis/events/2026-09.jsonl",
         `${eventLine("mutation.added", "sample-mutation", mutationSha(t))}\n`);
     },
     ["event fields must be exactly"], "mutation event carrying gene keys -> fail",
@@ -1280,7 +1280,7 @@ function selfTest(): number {
   cases.push([
     (t) => {
       mutationTree(t);
-      mk(t, "events/2026-09.jsonl",
+      mk(t, ".noogenesis/events/2026-09.jsonl",
         `${mutationEventLine("sample-mutation", mutationSha(t))}\n`
         + `${mutationEventLine("sample-mutation", "not-a-sha", "ok", "2026-09-05T03:00:00Z")}\n`);
     },
@@ -1290,7 +1290,7 @@ function selfTest(): number {
   cases.push([
     (t) => {
       mutationTree(t);
-      mk(t, "events/2026-09.jsonl",
+      mk(t, ".noogenesis/events/2026-09.jsonl",
         `${mutationEventLine("sample-mutation", mutationSha(t))}\n`
         + `${mutationEventLine("Bad_ID", "f".repeat(64), "ok", "2026-09-05T03:00:00Z")}\n`);
     },
@@ -1301,7 +1301,7 @@ function selfTest(): number {
   const candidateTree = (t: string): void => {
     mk(t, "engine/gates.json", WHITELIST);
     mk(t, "scripts/stub.py", "print('ok')\n");
-    mk(t, "candidates/process/sample-candidate.json", geneDoc("sample-candidate", "process", { validation: ["stub"] }));
+    mk(t, ".noogenesis/candidates/process/sample-candidate.json", geneDoc("sample-candidate", "process", { validation: ["stub"] }));
   };
 
   cases.push([candidateTree, [], "candidate conforming tree (no event trail) -> pass"]);
@@ -1309,7 +1309,7 @@ function selfTest(): number {
   cases.push([
     (t) => {
       candidateTree(t);
-      mk(t, "candidates/process/sample-candidate.json", geneDoc("sample-candidate", "process", { validation: ["ghost"] }));
+      mk(t, ".noogenesis/candidates/process/sample-candidate.json", geneDoc("sample-candidate", "process", { validation: ["ghost"] }));
     },
     ["not in the whitelist"], "candidate validation outside whitelist -> fail",
   ]);
@@ -1318,15 +1318,15 @@ function selfTest(): number {
     (t) => {
       mk(t, "engine/gates.json", WHITELIST);
       mk(t, "scripts/stub.py", "print('ok')\n");
-      mk(t, "candidates/loose.json", geneDoc("sample-candidate", "candidates"));
+      mk(t, ".noogenesis/candidates/loose.json", geneDoc("sample-candidate", "candidates"));
     },
-    ["candidates/<domain>/<id>.json layout"], "flat candidate file -> fail",
+    [".noogenesis/candidates/<domain>/<id>.json layout"], "flat candidate file -> fail",
   ]);
 
   cases.push([
     (t) => {
       candidateTree(t);
-      mk(t, "candidates/doc/sample-candidate.json", geneDoc("sample-candidate", "doc"));
+      mk(t, ".noogenesis/candidates/doc/sample-candidate.json", geneDoc("sample-candidate", "doc"));
     },
     ["duplicate candidate id"], "candidate id in two domains -> fail",
   ]);
@@ -1334,7 +1334,7 @@ function selfTest(): number {
   cases.push([
     (t) => {
       candidateTree(t);
-      mk(t, "candidates/process/sample-candidate.json", geneDoc("sample-candidate", "doc"));
+      mk(t, ".noogenesis/candidates/process/sample-candidate.json", geneDoc("sample-candidate", "doc"));
     },
     ["must equal its directory"], "candidate domain != dir -> fail",
   ]);
@@ -1343,24 +1343,24 @@ function selfTest(): number {
   const linkTree = (t: string): void => {
     mk(t, "engine/gates.json", WHITELIST);
     mk(t, "scripts/stub.py", "print('ok')\n");
-    mk(t, "genes/process/sample-gene.json", geneDoc());
-    mk(t, "capsules/process/sample-capsule.json", capsuleDoc());
-    mk(t, "mutations/process/sample-mutation.json", mutationDoc());
-    mk(t, "events/2026-09.jsonl",
-      `${eventLine("gene.added", "sample-gene", shaOf(t, "genes/process/sample-gene.json"))}\n`
-      + `${capsuleEventLine("sample-capsule", shaOf(t, "capsules/process/sample-capsule.json"))}\n`
-      + `${mutationEventLine("sample-mutation", shaOf(t, "mutations/process/sample-mutation.json"))}\n`);
+    mk(t, ".noogenesis/genes/process/sample-gene.json", geneDoc());
+    mk(t, ".noogenesis/capsules/process/sample-capsule.json", capsuleDoc());
+    mk(t, ".noogenesis/mutations/process/sample-mutation.json", mutationDoc());
+    mk(t, ".noogenesis/events/2026-09.jsonl",
+      `${eventLine("gene.added", "sample-gene", shaOf(t, ".noogenesis/genes/process/sample-gene.json"))}\n`
+      + `${capsuleEventLine("sample-capsule", shaOf(t, ".noogenesis/capsules/process/sample-capsule.json"))}\n`
+      + `${mutationEventLine("sample-mutation", shaOf(t, ".noogenesis/mutations/process/sample-mutation.json"))}\n`);
   };
 
   // 合规：跨链键 + 环境指纹（gene 面三键、capsule 面 mutation_id）都必须放行
   cases.push([
     (t) => {
       linkTree(t);
-      mk(t, "events/2026-09.jsonl",
-        `${eventLine("gene.added", "sample-gene", shaOf(t, "genes/process/sample-gene.json"))}\n`
+      mk(t, ".noogenesis/events/2026-09.jsonl",
+        `${eventLine("gene.added", "sample-gene", shaOf(t, ".noogenesis/genes/process/sample-gene.json"))}\n`
         + `${linkedEventLine(t, { mutation_id: "sample-mutation", capsule_id: "sample-capsule", env_fingerprint: "node26.8.1/linux/x64" }, "2026-09-05T02:00:00Z")}\n`
-        + `${pyDumps({ ts: "2026-09-05T03:00:00Z", actor: "t", kind: "capsule.added", capsule: "sample-capsule", capsule_sha: shaOf(t, "capsules/process/sample-capsule.json"), outcome: "ok", evidence: "e", mutation_id: "sample-mutation", env_fingerprint: "node26.8.1/linux/x64" }, null)}\n`
-        + `${mutationEventLine("sample-mutation", shaOf(t, "mutations/process/sample-mutation.json"), "ok", "2026-09-05T04:00:00Z")}\n`);
+        + `${pyDumps({ ts: "2026-09-05T03:00:00Z", actor: "t", kind: "capsule.added", capsule: "sample-capsule", capsule_sha: shaOf(t, ".noogenesis/capsules/process/sample-capsule.json"), outcome: "ok", evidence: "e", mutation_id: "sample-mutation", env_fingerprint: "node26.8.1/linux/x64" }, null)}\n`
+        + `${mutationEventLine("sample-mutation", shaOf(t, ".noogenesis/mutations/process/sample-mutation.json"), "ok", "2026-09-05T04:00:00Z")}\n`);
     },
     [], "event optional keys (links + fingerprint) -> pass",
   ]);
@@ -1369,8 +1369,8 @@ function selfTest(): number {
   cases.push([
     (t) => {
       linkTree(t);
-      mk(t, "events/2026-09.jsonl",
-        `${eventLine("gene.added", "sample-gene", shaOf(t, "genes/process/sample-gene.json"))}\n`
+      mk(t, ".noogenesis/events/2026-09.jsonl",
+        `${eventLine("gene.added", "sample-gene", shaOf(t, ".noogenesis/genes/process/sample-gene.json"))}\n`
         + `${linkedEventLine(t, { intent: "x" })}\n`);
     },
     ["event fields must be exactly"], "event unknown field -> fail",
@@ -1380,9 +1380,9 @@ function selfTest(): number {
   cases.push([
     (t) => {
       linkTree(t);
-      mk(t, "events/2026-09.jsonl",
-        `${eventLine("gene.added", "sample-gene", shaOf(t, "genes/process/sample-gene.json"))}\n`
-        + `${pyDumps({ ts: "2026-09-05T02:00:00Z", actor: "t", kind: "gene.added", gene: "sample-gene", gene_sha: shaOf(t, "genes/process/sample-gene.json"), outcome: "ok" }, null)}\n`);
+      mk(t, ".noogenesis/events/2026-09.jsonl",
+        `${eventLine("gene.added", "sample-gene", shaOf(t, ".noogenesis/genes/process/sample-gene.json"))}\n`
+        + `${pyDumps({ ts: "2026-09-05T02:00:00Z", actor: "t", kind: "gene.added", gene: "sample-gene", gene_sha: shaOf(t, ".noogenesis/genes/process/sample-gene.json"), outcome: "ok" }, null)}\n`);
     },
     ["event fields must be exactly"], "event missing required key -> fail",
   ]);
@@ -1391,7 +1391,7 @@ function selfTest(): number {
   cases.push([
     (t) => {
       mutationTree(t);
-      mk(t, "events/2026-09.jsonl",
+      mk(t, ".noogenesis/events/2026-09.jsonl",
         `${mutationEventLine("sample-mutation", mutationSha(t))}\n`
         + `${pyDumps({ ts: "2026-09-05T03:00:00Z", actor: "t", kind: "mutation.added", mutation: "sample-mutation", mutation_sha: mutationSha(t), mutation_id: "sample-mutation", outcome: "ok", evidence: "e" }, null)}\n`);
     },
@@ -1402,11 +1402,11 @@ function selfTest(): number {
   cases.push([
     (t) => {
       linkTree(t);
-      mk(t, "events/2026-09.jsonl",
-        `${eventLine("gene.added", "sample-gene", shaOf(t, "genes/process/sample-gene.json"))}\n`
+      mk(t, ".noogenesis/events/2026-09.jsonl",
+        `${eventLine("gene.added", "sample-gene", shaOf(t, ".noogenesis/genes/process/sample-gene.json"))}\n`
         + `${linkedEventLine(t, { mutation_id: "sample-mutation", capsule_id: "sample-capsule", env_fingerprint: "node26.8.1-nightly20260101/linux/x64" }, "2026-09-05T02:00:00Z")}\n`
-        + `${capsuleEventLine("sample-capsule", shaOf(t, "capsules/process/sample-capsule.json"), "ok", "2026-09-05T03:00:00Z")}\n`
-        + `${mutationEventLine("sample-mutation", shaOf(t, "mutations/process/sample-mutation.json"), "ok", "2026-09-05T04:00:00Z")}\n`);
+        + `${capsuleEventLine("sample-capsule", shaOf(t, ".noogenesis/capsules/process/sample-capsule.json"), "ok", "2026-09-05T03:00:00Z")}\n`
+        + `${mutationEventLine("sample-mutation", shaOf(t, ".noogenesis/mutations/process/sample-mutation.json"), "ok", "2026-09-05T04:00:00Z")}\n`);
     },
     [], "env_fingerprint prerelease suffix -> pass",
   ]);
@@ -1414,8 +1414,8 @@ function selfTest(): number {
   cases.push([
     (t) => {
       linkTree(t);
-      mk(t, "events/2026-09.jsonl",
-        `${eventLine("gene.added", "sample-gene", shaOf(t, "genes/process/sample-gene.json"))}\n`
+      mk(t, ".noogenesis/events/2026-09.jsonl",
+        `${eventLine("gene.added", "sample-gene", shaOf(t, ".noogenesis/genes/process/sample-gene.json"))}\n`
         + `${linkedEventLine(t, { env_fingerprint: "linux" })}\n`);
     },
     ["env_fingerprint must be node"], "env_fingerprint bad shape -> fail",
@@ -1424,8 +1424,8 @@ function selfTest(): number {
   cases.push([
     (t) => {
       linkTree(t);
-      mk(t, "events/2026-09.jsonl",
-        `${eventLine("gene.added", "sample-gene", shaOf(t, "genes/process/sample-gene.json"))}\n`
+      mk(t, ".noogenesis/events/2026-09.jsonl",
+        `${eventLine("gene.added", "sample-gene", shaOf(t, ".noogenesis/genes/process/sample-gene.json"))}\n`
         + `${linkedEventLine(t, { mutation_id: "no-such-mutation" })}\n`);
     },
     ["mutation_id 'no-such-mutation' not in mutations/"], "dangling mutation_id -> fail",
@@ -1434,8 +1434,8 @@ function selfTest(): number {
   cases.push([
     (t) => {
       linkTree(t);
-      mk(t, "events/2026-09.jsonl",
-        `${eventLine("gene.added", "sample-gene", shaOf(t, "genes/process/sample-gene.json"))}\n`
+      mk(t, ".noogenesis/events/2026-09.jsonl",
+        `${eventLine("gene.added", "sample-gene", shaOf(t, ".noogenesis/genes/process/sample-gene.json"))}\n`
         + `${linkedEventLine(t, { capsule_id: "no-such-capsule" })}\n`);
     },
     ["capsule_id 'no-such-capsule' not in capsules/"], "dangling capsule_id -> fail",
@@ -1444,8 +1444,8 @@ function selfTest(): number {
   cases.push([
     (t) => {
       linkTree(t);
-      mk(t, "events/2026-09.jsonl",
-        `${eventLine("gene.added", "sample-gene", shaOf(t, "genes/process/sample-gene.json"))}\n`
+      mk(t, ".noogenesis/events/2026-09.jsonl",
+        `${eventLine("gene.added", "sample-gene", shaOf(t, ".noogenesis/genes/process/sample-gene.json"))}\n`
         + `${linkedEventLine(t, { mutation_id: "process/sample-mutation" })}\n`);
     },
     ["mutation_id must be a bare kebab-case id"], "cross-link with domain ref form -> fail",

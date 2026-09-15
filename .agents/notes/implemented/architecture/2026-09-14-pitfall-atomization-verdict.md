@@ -4,7 +4,7 @@ Status: implemented
 
 Review: LIGHT/2026-09-14/语义评审（范围化子代理单路 R2：2 Blocker + 3 Suggestion 全采纳——cookbook「四元素机器强制」为假陈述 → 收窄为「外形机器强制 + 四段头注约定」（Problem 与 Decision 1 同改）；「三条理由」实为四条 → 并入 signal 消费者；三条同面基因早于 `distill add` → 样例措辞收窄到「策展 → evaluate → solidify」段；gene 八字段可选面补全；简报两处根相对链接改 `../` 形）
 
-Related: 批次表 [行 40](2026-09-13-feature-completion-backlog.md) · 主设计 [§10 / §8.2 / §7.2](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 踩坑原子家 [cookbook](../../../../docs/cookbook.md) + [verify-cookbook](../../../../scripts/verify-cookbook.mts) · 踩坑形态档位 [doc-standards tier 表](../../../../docs/method/doc-standards.md) · 迁移先例 [capsule-01-migration-plan](../../../../journal/capsule-01-migration-plan.md) · 入档权 [D3 重拍 ADR](2026-09-14-p1-d3-distillation-reshoot.md) · 转化通道 [distill ADR](2026-09-14-distill-command.md) · 策展纪律 [new-gene-curation](../../../../genes/gates/new-gene-curation.json) · gene schema [gene.ts](../../../../engine/gene.ts) · 选择注入面 [select.ts](../../../../engine/select.ts) · 地址面归属 [行 42](2026-09-13-feature-completion-backlog.md) · 前序裁决 [序 39](2026-09-14-elegant-implementation-verdict.md) / [序 38](2026-09-14-project-init-domain-verdict.md) · 档位判据 [review.md](../../../../docs/method/review.md)
+Related: 批次表 [行 40](2026-09-13-feature-completion-backlog.md) · 主设计 [§10 / §8.2 / §7.2](../../../../docs/research/dsh-swarm-evolution-framework-design.md) · 踩坑原子家 [cookbook](../../../../docs/cookbook.md) + [verify-cookbook](../../../../scripts/verify-cookbook.mts) · 踩坑形态档位 [doc-standards tier 表](../../../../docs/method/doc-standards.md) · 迁移先例 [capsule-01-migration-plan](../../../../journal/capsule-01-migration-plan.md) · 入档权 [D3 重拍 ADR](2026-09-14-p1-d3-distillation-reshoot.md) · 转化通道 [distill ADR](2026-09-14-distill-command.md) · 策展纪律 [new-gene-curation](../../../../.noogenesis/genes/gates/new-gene-curation.json) · gene schema [gene.ts](../../../../engine/gene.ts) · 选择注入面 [select.ts](../../../../engine/select.ts) · 地址面归属 [行 42](2026-09-13-feature-completion-backlog.md) · 前序裁决 [序 39](2026-09-14-elegant-implementation-verdict.md) / [序 38](2026-09-14-project-init-domain-verdict.md) · 档位判据 [review.md](../../../../docs/method/review.md)
 
 ## Problem
 
@@ -12,7 +12,7 @@ Related: 批次表 [行 40](2026-09-13-feature-completion-backlog.md) · 主设�
 
 - **每坑一原子已在场**：`docs/cookbook.md` 49 条，域标签封闭集（演化 7 / 门禁 19 / 文档 4 / 协作 7 / 环境 11 / 上游 1）；条目外形（标题域标签 + 真实日期 + 非空正文）由 `scripts/verify-cookbook.mts` 机器强制，正文的症状 / 根因 / 规避 / 来源四段是 cookbook 头注的作者约定（非机器强制，另有条目只落其中数段）；[doc-standards](../../../../docs/method/doc-standards.md) tier 表已定「cookbook = 带域标签的踩坑原子（procedure）」；迁移计划在案「每条 = 症状/根因/规避/来源四段（对齐 §8.2 原子胶囊）」。
 - **基因面 = 控制信号投影，不是第二份踩坑档**：6 基因（doc 2 / gates 2 / process 2），八字段封闭 schema（`id`/`domain`/`summary`/`signals`/`strategy` 必选 + `constraints`/`validation`/`avoid` 可选；单源 `engine/gene.ts`）；其中三条与既有踩坑同面——`doc-budget-overflow` ↔ [文档] 预算管字数不管段落密度、`doc-single-home` ↔ [文档] 交接双源漂移、`git-reconcile-extra-commits` ↔ [协作] 未记录的提交导致决策误读。schema 无 `source`/`version` 字段（[distill ADR](2026-09-14-distill-command.md) Alternatives 已拒 `source`；版本与地址面现仅 `gene_sha`，归批次表行 42）。
-- **转化通道已交付、零新增**：任意 gene 形候选经 `distill add` 落 `candidates/<domain>/<id>.json` → `evaluate`（`gates.json` 白名单全绿）→ `solidify`（`gene.added` 事件 + `genes/` 原子入档）；纪律单源 = [new-gene-curation](../../../../genes/gates/new-gene-curation.json)。
+- **转化通道已交付、零新增**：任意 gene 形候选经 `distill add` 落 `candidates/<domain>/<id>.json` → `evaluate`（`gates.json` 白名单全绿）→ `solidify`（`gene.added` 事件 + `genes/` 原子入档）；纪律单源 = [new-gene-curation](../../../../.noogenesis/genes/gates/new-gene-curation.json)。
 - **入档权钉死**：[D3 重拍 ADR](2026-09-14-p1-d3-distillation-reshoot.md) Decision 1/2——新基因只经人工策展、引擎零 LLM、`propose` 不产新基因、候选不落 `genes/` 不参与 `select`。
 - **采集源不含 cookbook**：`distill collect` 汇编三类持久失败面（events fail 行 / capsules fail / genes `avoid`），范围单源 = [D3 重拍 ADR](2026-09-14-p1-d3-distillation-reshoot.md) Decision 2 点名集。
 - **自动沉淀已被负结果封**：[cookbook](../../../../docs/cookbook.md) [演化] 首条（#18 用户判定）——自动蒸馏零可追溯收益、token 成本倒挂；策展制即其正面结论。
@@ -30,7 +30,7 @@ Related: 批次表 [行 40](2026-09-13-feature-completion-backlog.md) · 主设�
 
 ### 3. 转化通道 = 人工策展，已交付零新增
 
-单条踩坑在有真实消费者时由人译为基因形候选 → `distill add` → `evaluate` → `solidify`；纪律单源 = [new-gene-curation](../../../../genes/gates/new-gene-curation.json)。既有三条踩坑同面基因（2026-09-05 入档）即「人工策展 → evaluate → solidify」段的现成样例；`distill add` 候选落盘步为其后（序 30）新增，尚无同面样例。
+单条踩坑在有真实消费者时由人译为基因形候选 → `distill add` → `evaluate` → `solidify`；纪律单源 = [new-gene-curation](../../../../.noogenesis/genes/gates/new-gene-curation.json)。既有三条踩坑同面基因（2026-09-05 入档）即「人工策展 → evaluate → solidify」段的现成样例；`distill add` 候选落盘步为其后（序 30）新增，尚无同面样例。
 
 ### 4. 把 cookbook 纳入 `distill collect` 采集源判不立
 

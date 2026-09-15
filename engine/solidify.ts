@@ -1,5 +1,5 @@
-// solidify.ts — 入档闸（骨架 ADR D4 + schema ADR S2）：evaluate 全绿才落 genes/，
-// genes/ 变更与 events/ 追加行放同一 commit（原子证据：基因更替与审计记录不可分离）。
+// solidify.ts — 入档闸（骨架 ADR D4 + schema ADR S2）：evaluate 全绿才落状态基因目录，
+// 基因变更与 events/ 追加行放同一 commit（原子证据：基因更替与审计记录不可分离）。
 // gene_sha = 基因文件字节内容的 SHA-256（内容寻址锚点，落 Event 不进文件名）。
 
 import * as fs from 'fs';
@@ -9,12 +9,13 @@ import { readGene, genePath } from './gene.js';
 import { readCapsule, capsulePath, assertGeneRefsResolvable, assertCapsuleIdUnique } from './capsule.js';
 import { readMutation, mutationPath, assertMutationIdUnique } from './mutation.js';
 import { assertProtocolIdUnique } from './protocol.js';
+import { eventsDir, genesDir } from './state.js';
 import { evaluateGeneObj, formatReport } from './evaluate.js';
 
 function eventsPath(repoRoot: string, ts: string) {
   // YYYY-MM，月卷与 journal 同节奏
   const vol = ts.slice(0, 7);
-  return path.join(repoRoot, 'events', `${vol}.jsonl`);
+  return path.join(eventsDir(repoRoot), `${vol}.jsonl`);
 }
 
 // 可选跨链引用（批次 1 序 3 ADR E2/E5）：旗标取 `<domain>/<id>`，落进事件取裸 id。
@@ -90,7 +91,7 @@ function solidify(repoRoot: string, engineRoot: string, candidatePath: string, a
   const link = linkKeys(repoRoot, links);
 
   const gene = readGene(candidatePath, { skipDirAnchor: true });
-  assertProtocolIdUnique(repoRoot, 'genes', 'gene', gene.domain, gene.id);
+  assertProtocolIdUnique(genesDir(repoRoot), 'gene', gene.domain, gene.id);
   const target = genePath(repoRoot, gene.domain, gene.id);
   const kind = fs.existsSync(target) ? 'gene.updated' : 'gene.added';
 

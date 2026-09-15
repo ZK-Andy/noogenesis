@@ -1,28 +1,30 @@
 // pull.ts — 共享客户端（P2 ADR 2026-09-06-p2-shared-consumer D2/D4 + 实现轮拍板 A/A/A）：
 // 只读消费基因库——git clone/pull 进仓内缓存，缓存并入读路径扫描根（select/propose）。
-// 默认离线：不跑 pull 就没有缓存目录，引擎行为与 0.1.1 完全一致。
+// 默认离线：不跑 pull 就没有缓存目录，引擎行为与无共享层时完全一致。
 // 本仓基因优先：同名 ref（domain/id）缓存副本被遮蔽，不报错（本仓 = 策展活体，库 = 分发副本）。
 // 零依赖纪律：git 以结构化子进程调用（util.run，参数数组直传、永不 shell、最小 env）。
 
 import * as fs from 'fs';
 import * as path from 'path';
 import { EngineError, run } from './util.js';
-import { readGene, defaultCacheDir } from './gene.js';
+import { readGene } from './gene.js';
+import { cacheDir as defaultCacheDir, STATE_ROOT } from './state.js';
 
-function bankHead(cacheDir: string) {
-  const r = run('git', ['rev-parse', 'HEAD'], cacheDir);
+function bankHead(dir: string) {
+  const r = run('git', ['rev-parse', 'HEAD'], dir);
   return r.code === 0 ? r.stdout.trim() : '(unknown)';
 }
 
-function bankOrigin(cacheDir: string): string | null {
-  const r = run('git', ['remote', 'get-url', 'origin'], cacheDir);
+function bankOrigin(dir: string): string | null {
+  const r = run('git', ['remote', 'get-url', 'origin'], dir);
   return r.code === 0 ? r.stdout.trim() : null;
 }
 
 // 报告面容错计数：缓存里可解析的基因数（坏文件静默跳过——报告行不该被分发
 // 副本里的单个坏文件炸掉；消费面的降级语义在 scanGenes 缓存分支）。
 function countCacheGenes(cacheRepo: string) {
-  const root = path.join(cacheRepo, 'genes');
+  // 缓存 = 银行仓的浅克隆，其状态面同样在 STATE_ROOT 下。
+  const root = path.join(cacheRepo, STATE_ROOT, 'genes');
   if (!fs.existsSync(root)) return 0;
   let n = 0;
   for (const d of fs.readdirSync(root, { withFileTypes: true })) {
@@ -35,26 +37,31 @@ function countCacheGenes(cacheRepo: string) {
   return n;
 }
 
-// 缓存目录安全边界：绝不指向 repoRoot 本体、genes/ 本身或其子树（防误清仓
-// 资产、防 git checkout 嵌进本仓扫描树——评审 R2-S5）。
-function assertCacheDirSafe(repoRoot: string, cacheDir: string) {
-  const abs = path.resolve(cacheDir);
-  if (abs === path.resolve(repoRoot)) throw new EngineError('cache dir must not be the repository root');
-  const genesAbs = path.resolve(repoRoot, 'genes');
-  if (abs === genesAbs) throw new EngineError('cache dir must not be the genes/ directory');
-  const rel = path.relative(genesAbs, abs);
-  if (rel && !rel.startsWith('..') && !path.isAbsolute(rel)) {
-    throw new EngineError(`cache dir must not be inside genes/: ${abs}`);
+// 缓存目录安全边界：拒仓根本体、仓外路径、以及仓根状态面里除缓存落点自身之外的子树。
+// 缓存本身就在 <repoRoot>/.noogenesis/genes-cache（gitignored），故「在仓内」不是违例；
+// 违例的是落在被跟踪的状态目录里（那会让 git checkout 嵌进扫描树、且污染待提交面）。
+function assertCacheDirSafe(repoRoot: string, target: string) {
+  const abs = path.resolve(target);
+  const root = path.resolve(repoRoot);
+  if (abs === root) throw new EngineError('cache dir must not be the repository root');
+  const rel = path.relative(root, abs);
+  const inside = rel === '' || (!rel.startsWith('..') && !path.isAbsolute(rel));
+  if (!inside) throw new EngineError(`cache dir must be inside the repository: ${abs}`);
+  const stateRel = path.relative(path.join(root, STATE_ROOT), abs);
+  const stateAbs = path.resolve(path.join(root, STATE_ROOT));
+  if (abs !== stateAbs && (stateRel === '' || (!stateRel.startsWith('..') && !path.isAbsolute(stateRel)))) {
+    const cacheAbs = path.resolve(defaultCacheDir(root));
+    if (abs !== cacheAbs) throw new EngineError(`cache dir must not be inside the state tree: ${abs}`);
   }
   return abs;
 }
 
 // 拉取基因库到仓内缓存。已有缓存 → 校验 origin 一致（换库 URL 静默更新旧库
-// 是评审 R2-S3 的指认：不一致即 fail-closed 并给出指引）→ --ff-only 更新；
-// 否则 shallow clone。返回报告文本（stdout 合同面）。
-function pullBank(repoRoot: string, url: string, cacheDir: string | null) {
+// 是不一致即 fail-closed 的既有口径：给出指引）→ --ff-only 更新；否则 shallow clone。
+// 返回报告文本（stdout 合同面）。
+function pullBank(repoRoot: string, url: string, cacheOverride: string | null) {
   if (typeof url !== 'string' || !url.trim()) throw new EngineError('pull needs a non-empty bank URL');
-  const target = assertCacheDirSafe(repoRoot, cacheDir || defaultCacheDir(repoRoot));
+  const target = assertCacheDirSafe(repoRoot, cacheOverride || defaultCacheDir(repoRoot));
   let action;
   if (fs.existsSync(target)) {
     if (!fs.existsSync(path.join(target, '.git'))) {
