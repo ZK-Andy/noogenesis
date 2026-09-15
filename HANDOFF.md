@@ -11,6 +11,8 @@
 
 > 滚动窗有界（≤24 条、每条 ≤260 字，机器强制）：只保近期会话批次的**摘要**（日期｜类型｜ADR 指针｜一句话结论），全文下沉 journal；durable 结论在 ADR/cookbook/README/AGENTS，此处不复述。
 
+- 2026-09-16｜**宿主 peer 集二次升代至 0.1.6-alpha.1（FULL 三审 1B/4S/3S 全采纳）**：契约断言升代即红一条 → A5 会话开始时点并入 `agent/created`；装法归 cookbook [环境] 条。[ADR](.agents/notes/implemented/architecture/2026-09-16-host-peer-generation-0-1-6-alpha.md)；`9a7c007`+`66c2f5d`。
+
 - 2026-09-16｜**0.2.8 真机复验（B 类两条销账）**：落盘文件每会话恰一行读数（15624/316694，非零）零 warn、A6 零 `turn-stop*` warn 且回合正常关；顺带实测宿主实跑代已移 `0.1.6-alpha.1`，peer 区间不含它 → A 条待拍板。[落盘 ADR](.agents/notes/implemented/bug-fix/2026-09-16-plugin-log-sink.md) 复验落账。
 
 - 2026-09-16｜**实发 `noogenesis-dsh@0.2.8`（发版）**：插件日志落盘通道 + review-tier 孤儿 `--since` 回退；`chore(release)` `5a51b17`、tag `dsh-v0.2.8`、npm latest 0.2.8（546.6 kB）；零改写次序（先分支后 tag）。[ADR](.agents/notes/implemented/process/2026-09-09-release-shape-alignment.md) 实发节。
@@ -57,7 +59,6 @@
 
 - 2026-09-14｜**批次 7 序 34 一行安装收口（LIGHT）**：宿主 `dsh plugin` 首用初始化 + 包自带 `dsh.bundle.patch` 自动入层 → 一行装、一行起；交付 = 根 README 双语安装节四条路径（装 / 起 / 专用 app profile / 本地检出），零机器面；游标 = 批次 7 序 35。[ADR](.agents/notes/implemented/architecture/2026-09-14-one-line-install.md)
 
-- 2026-09-14｜**批次 6 余序 31–33 裁决（LIGHT）**：三面判不立 / 顺延——31 组合能力面归口行 36 + 序 25 渲染语义门；32 与序 5 C3-1 同面；33 依赖链 + D2/D4 双封；游标 = 批次 7。[ADR](.agents/notes/implemented/architecture/2026-09-14-batch6-composition-meta-verdict.md)
 
 
 

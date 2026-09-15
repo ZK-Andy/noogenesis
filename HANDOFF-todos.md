@@ -75,4 +75,4 @@
 - [x] （D）护栏建设轮余项收尾 2026-09-13：建议行落地（`token-baseline.mts` 每会话一行读数，运行期形状闸）+ 两本账落点（发版账 = release ADR 实发节，三次已回填），[ADR](.agents/notes/implemented/architecture/2026-09-13-guardrail-construction-round.md) 落账。
 - [x] （A）批次表 46 项全部终态、表转 implemented（2026-09-14；46 项逐行结论单源 = [批次表 ADR](.agents/notes/implemented/architecture/2026-09-13-feature-completion-backlog.md)）。
 - [x] （B）Hermes 写码在环 hook 真机复验 2026-09-16 **取消**（用户拍板，不推进）：真会话写码载荷面维持未取证（配置面 `~/.hermes/config.yaml` 不入仓）；判据面 = 离线自测 + 宿主接线探针的发射/响应形状。[裁决](.agents/notes/implemented/architecture/2026-09-14-hermes-hook-bridge.md)。
-- [ ] （A）宿主实跑代移出 peer 区间：宿主自 2026-09-15 17:44 起跑 `0.1.6-alpha.1`（`host.log` 实证），而 peer `^0.1.5-rc.2` 按 semver 预发布规则不含它（`satisfies` 实测 false）→ peer 契约与类型契约（devDep 钉 0.1.5-rc.2）双双落后实跑代；运行期兼容由 2026-09-16 复验证实。待拍板 = 开升代批。[现值](.agents/notes/implemented/architecture/2026-09-13-host-peer-generation-upgrade.md)。
+- [x] （A）宿主 peer 集二次升代 2026-09-16（三审 R1 1B/3S、R2 0B/4S、R3 0B/3S 全采纳）：peer 两件 `^0.1.6-alpha.1` + tokenMeter devDep 同代，附 A5 时点迁移。[ADR](.agents/notes/implemented/architecture/2026-09-16-host-peer-generation-0-1-6-alpha.md)。
